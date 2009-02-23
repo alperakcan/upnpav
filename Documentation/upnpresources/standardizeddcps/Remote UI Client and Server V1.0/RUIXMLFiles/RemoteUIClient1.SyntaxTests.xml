@@ -1,0 +1,94 @@
+<ServiceControlSyntaxTestCases>
+	<ServiceType>RemoteUIClient</ServiceType>
+	<ServiceVersion>1</ServiceVersion>
+	<TestCaseList>
+		<TestCase>
+			<Id>1</Id>
+			<Category>Valid Action And Valid InArgs</Category>
+			<ActionName>Connect</ActionName>
+			<InArgs>
+			  <RequestedConnections>5604,
+XRT://1.23.345.1/My_Music_Player0xa12c67
+local://127.4.6.1/null,
+VNC://1.23.345.2/My_Photo_Viewer,
+RDP://1.23.345.3/Super_Chess
+</RequestedConnections>
+			</InArgs>
+			<ExpectedReturnCode>ACTION_AND_INARGS_ARE_VALID</ExpectedReturnCode>
+		</TestCase>
+		<TestCase>
+			<Id>2</Id>
+			<Category>Valid Action And Valid InArgs</Category>
+			<ActionName>Disconnect</ActionName>
+			<InArgs>
+			  <RequestedDisconnects>XRT://1.23.345.1/My_Music_Player0xa12c67</RequestedDisconnects>
+			</InArgs>
+			<ExpectedReturnCode>ACTION_AND_INARGS_ARE_VALID</ExpectedReturnCode>
+		</TestCase>
+		<TestCase>
+			<Id>3</Id>
+			<Category>Valid Action And Valid InArgs</Category>
+			<ActionName>GetCurrentConnections</ActionName>
+			<ExpectedReturnCode>ACTION_AND_INARGS_ARE_VALID</ExpectedReturnCode>
+		</TestCase>
+		<TestCase>
+			<Id>4</Id>
+			<Category>Valid Action And Valid InArgs</Category>
+			<ActionName>GetDeviceProfile</ActionName>
+			<ExpectedReturnCode>ACTION_AND_INARGS_ARE_VALID</ExpectedReturnCode>
+		</TestCase>
+		<TestCase>
+			<Id>5</Id>
+			<Category>Valid Action And Valid InArgs</Category>
+			<ActionName>GetUIListing</ActionName>
+			<ExpectedReturnCode>ACTION_AND_INARGS_ARE_VALID</ExpectedReturnCode>
+		</TestCase>
+		<TestCase>
+			<Id>6</Id>
+			<Category>Valid Action And Valid InArgs</Category>
+			<ActionName>AddUIListing</ActionName>
+			<InArgs>
+			  <InputUIList>&lt;uilist xmlns="urn:schemas-upnp-org:remoteui:uilist-1-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&gt;
+  &lt;ui&gt;
+    &lt;uiID&gt;6789-568&lt;/uiID&gt;
+    &lt;name&gt;DVD Browser&lt;/name&gt;
+    &lt;protocol shortName="VNC"&gt;
+      &lt;uri&gt;VNC://1.8.7.2:5920&lt;/uri&gt;
+    &lt;/protocol&gt;
+  &lt;/ui&gt;
+&lt;/uilist&gt;
+</InputUIList>
+			</InArgs>
+			<ExpectedReturnCode>ACTION_AND_INARGS_ARE_VALID</ExpectedReturnCode>
+		</TestCase>
+		<TestCase>
+			<Id>7</Id>
+			<Category>Valid Action And Valid InArgs</Category>
+			<ActionName>RemoveUIListing</ActionName>
+			<InArgs>
+			  <RemoveUIList>VNC://1.23.345.2/My_Photo_Viewer,RDP://1.23.345.3/Super_Chess</RemoveUIList>
+			</InArgs>
+			<ExpectedReturnCode>ACTION_AND_INARGS_ARE_VALID</ExpectedReturnCode>
+		</TestCase>
+		<TestCase>
+			<Id>8</Id>
+			<Category>Valid Action And Valid InArgs</Category>
+			<ActionName>DisplayMessage</ActionName>
+			<InArgs>
+			  <MessageType>text/plain</MessageType>
+			  <Message>How are you</Message>
+			</InArgs>
+			<ExpectedReturnCode>ACTION_AND_INARGS_ARE_VALID</ExpectedReturnCode>
+		</TestCase>
+		<TestCase>
+			<Id>9</Id>
+			<Category>Valid Action And Valid InArgs</Category>
+			<ActionName>ProcessInput</ActionName>
+			<InArgs>
+			 <InputDataType>UNICODE</InputDataType>
+			 <InputData>A86F</InputData>
+			</InArgs>
+			<ExpectedReturnCode>ACTION_AND_INARGS_ARE_VALID</ExpectedReturnCode>
+		</TestCase>
+	</TestCaseList>
+</ServiceControlSyntaxTestCases>

@@ -1,0 +1,3 @@
+
+SUBDIRS  = Documentation
+SUBDIRS += upnpd
