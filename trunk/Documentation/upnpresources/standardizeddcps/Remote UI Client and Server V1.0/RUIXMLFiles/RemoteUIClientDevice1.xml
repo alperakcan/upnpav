@@ -1,0 +1,13 @@
+﻿
+	<device>
+		<deviceType>urn:schemas-upnp-org:device:RemoteUIClientDevice:1</deviceType>
+		<serviceList>
+			<service>
+				<serviceType>urn:schemas-upnp-org:service:RemoteUIClient:1</serviceType>
+				<serviceId>RemoteUIClient1</serviceId>
+			</service>
+		</serviceList>
+	</device>
+
+ 
+

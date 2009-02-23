@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<scpd xmlns="urn:schemas-upnp-org:service-1-0">
+   <specVersion>
+      <major>1</major>
+      <minor>0</minor>
+   </specVersion>
+   <actionList>
+      <action>
+         <Optional />
+         <name>AddUIListing</name>
+         <argumentList>
+            <argument>
+               <name>InputUIList</name>
+               <direction>in</direction>
+               <relatedStateVariable>A_ARG_TYPE_CompatibleUIs</relatedStateVariable>
+            </argument>
+            <argument>
+               <name>TimeToLive</name>
+               <direction>out</direction>
+               <relatedStateVariable>A_ARG_TYPE_Int</relatedStateVariable>
+            </argument>
+         </argumentList>
+      </action>
+      <action>
+         <name>Connect</name>
+         <argumentList>
+            <argument>
+               <name>RequestedConnections</name>
+               <direction>in</direction>
+               <relatedStateVariable>CurrentConnections</relatedStateVariable>
+            </argument>
+            <argument>
+               <name>CurrentConnectionsList</name>
+               <direction>out</direction>
+               <relatedStateVariable>CurrentConnections</relatedStateVariable>
+            </argument>
+         </argumentList>
+      </action>
+      <action>
+         <name>Disconnect</name>
+         <argumentList>
+            <argument>
+               <name>RequestedDisconnects</name>
+               <direction>in</direction>
+               <relatedStateVariable>CurrentConnections</relatedStateVariable>
+            </argument>
+            <argument>
+               <name>CurrentConnectionsList</name>
+               <direction>out</direction>
+               <relatedStateVariable>CurrentConnections</relatedStateVariable>
+            </argument>
+         </argumentList>
+      </action>
+      <action>
+         <Optional />
+         <name>DisplayMessage</name>
+         <argumentList>
+            <argument>
+               <name>MessageType</name>
+               <direction>in</direction>
+               <relatedStateVariable>A_ARG_TYPE_DisplayMessageType</relatedStateVariable>
+            </argument>
+            <argument>
+               <name>Message</name>
+               <direction>in</direction>
+               <relatedStateVariable>A_ARG_TYPE_String</relatedStateVariable>
+            </argument>
+         </argumentList>
+      </action>
+      <action>
+         <name>GetCurrentConnections</name>
+         <argumentList>
+            <argument>
+               <name>CurrentConnectionsList</name>
+               <direction>out</direction>
+               <relatedStateVariable>CurrentConnections</relatedStateVariable>
+            </argument>
+         </argumentList>
+      </action>
+      <action>
+         <name>GetDeviceProfile</name>
+         <argumentList>
+            <argument>
+               <name>StaticDeviceInfo</name>
+               <direction>out</direction>
+               <relatedStateVariable>DeviceProfile</relatedStateVariable>
+            </argument>
+         </argumentList>
+      </action>
+      <action>
+         <Optional />
+         <name>GetUIListing</name>
+         <argumentList>
+            <argument>
+               <name>CompatibleUIList</name>
+               <direction>out</direction>
+               <relatedStateVariable>A_ARG_TYPE_CompatibleUIs</relatedStateVariable>
+            </argument>
+         </argumentList>
+      </action>
+      <action>
+         <Optional />
+         <name>ProcessInput</name>
+         <argumentList>
+            <argument>
+               <name>InputDataType</name>
+               <direction>in</direction>
+               <relatedStateVariable>A_ARG_TYPE_InputDataType</relatedStateVariable>
+            </argument>
+            <argument>
+               <name>InputData</name>
+               <direction>in</direction>
+               <relatedStateVariable>A_ARG_TYPE_String</relatedStateVariable>
+            </argument>
+         </argumentList>
+      </action>
+      <action>
+         <Optional />
+         <name>RemoveUIListing</name>
+         <argumentList>
+            <argument>
+               <name>RemoveUIList</name>
+               <direction>in</direction>
+               <relatedStateVariable>A_ARG_TYPE_String</relatedStateVariable>
+            </argument>
+         </argumentList>
+      </action>
+   </actionList>
+   <serviceStateTable>
+      <stateVariable sendEvents="no">
+         <Optional/><name>A_ARG_TYPE_CompatibleUIs</name>
+         <dataType>string</dataType>
+      </stateVariable>
+      <stateVariable sendEvents="no">
+         <Optional/><name>A_ARG_TYPE_DisplayMessageType</name>
+         <dataType>string</dataType>
+         <allowedValueList>
+            <allowedValue>text/plain</allowedValue>
+         </allowedValueList>
+      </stateVariable>
+      <stateVariable sendEvents="no">
+         <Optional/><name>A_ARG_TYPE_Int</name>
+         <dataType>i4</dataType>
+      </stateVariable>
+      <stateVariable sendEvents="no">
+         <Optional/><name>A_ARG_TYPE_InputDataType</name>
+         <dataType>string</dataType>
+         <allowedValueList>
+            <allowedValue>ASCII</allowedValue>
+            <allowedValue>UNICODE</allowedValue>
+            <allowedValue>ISO10646</allowedValue>
+            <allowedValue>ISO8859</allowedValue>
+         </allowedValueList>
+      </stateVariable>
+      <stateVariable sendEvents="yes">
+         <Optional/><name>CurrentConnectionsEvent</name>
+         <dataType>string</dataType>
+      </stateVariable>
+      <stateVariable sendEvents="no">
+         <name>CurrentConnections</name>
+         <dataType>string</dataType>
+      </stateVariable>
+      <stateVariable sendEvents="no">
+         <name>DeviceProfile</name>
+         <dataType>string</dataType>
+      </stateVariable>
+      <stateVariable sendEvents="yes">
+         <Optional/><name>CompatibleUIsUpdateIDEvent</name>
+         <dataType>i4</dataType>
+      </stateVariable>
+      <stateVariable sendEvents="no">
+         <Optional/><name>A_ARG_TYPE_String</name>
+         <dataType>string</dataType>
+      </stateVariable>
+   </serviceStateTable>
+</scpd>
