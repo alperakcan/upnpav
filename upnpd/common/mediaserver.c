@@ -24,14 +24,6 @@
 #include <upnp/ithread.h>
 
 #include "common.h"
-#include "mediaserver_icon.h"
-
-static icon_t *mediaserver_icons[] = {
-	& (icon_t) {64, 64, 24, "/upnpd/mediaserver_icon_64.jpg", mediaserver_icon_64_type, mediaserver_icon_64_size, mediaserver_icon_64_buf},
-	& (icon_t) {128, 128, 24, "/upnpd/mediaserver_icon_128.jpg", mediaserver_icon_128_type, mediaserver_icon_128_size, mediaserver_icon_128_buf},
-	NULL,
-};
-
 
 typedef enum {
 	OPT_INTERFACE    = 0,
@@ -167,7 +159,7 @@ device_t * mediaserver_init (char *options)
 	device->serialnumber = "1";
 	device->upc = "";
 	device->presentationurl = "";
-	device->icons = mediaserver_icons;
+	device->icons = NULL;
 	device->daemonize = daemonize;
 
 	service = contentdirectory_init(directory, cached);
