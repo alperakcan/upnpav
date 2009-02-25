@@ -431,6 +431,7 @@ CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 CC="$PTHREAD_CC"
 
 # - libmagic
+
 AC_CHECK_HEADERS([magic.h], [AC_SUBST([MAGIC_CFLAGS], [-DHAVE_MAGIC=1])], [])
 AC_CHECK_LIB([magic], [magic_open], [AC_SUBST([MAGIC_LIBS], [-lmagic])], [], [-lz])
 LIBS="$LIBS $MAGIC_LIBS"
