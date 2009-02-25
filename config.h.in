@@ -1,8 +1,5 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define to 1 if you want 'cairo' support. */
-#undef ENABLE_CAIRO
-
 /* Define to 1 if you want 'controller' support. */
 #undef ENABLE_CONTROLLER
 
@@ -39,9 +36,6 @@
 /* Define to 1 if you want 'test_render' support. */
 #undef ENABLE_TESTRENDER
 
-/* Define to 1 if you want 'xynth' support. */
-#undef ENABLE_XYNTH
-
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
 #undef HAVE_DIRENT_H
@@ -76,9 +70,6 @@
 
 /* Define to 1 if you have the `printf' function. */
 #undef HAVE_PRINTF
-
-/* Define if you have POSIX threads libraries and header files. */
-#undef HAVE_PTHREAD
 
 /* Define to 1 if you have the <readline.h> header file. */
 #undef HAVE_READLINE_H
@@ -152,10 +143,6 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
-
-/* Define to necessary symbol if this constant uses a non-standard name on
-   your system. */
-#undef PTHREAD_CREATE_JOINABLE
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
