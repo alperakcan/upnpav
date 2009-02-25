@@ -77,6 +77,10 @@ typedef struct VideoPicture {
 	int allocated;
 } VideoPicture;
 
+#if !defined(DECLARE_ALIGNED)
+#define DECLARE_ALIGNED(n,t,v)      t v __attribute__ ((aligned (n)))
+#endif
+
 typedef struct ffmpeg_stream_s {
 	char *uri;
 	
@@ -1238,9 +1242,9 @@ static int ffmpeg_stream_component_open (ffmpeg_stream_t *ffmpeg_stream, int str
 	enc->idct_algo = FF_IDCT_AUTO;
 	enc->skip_frame = AVDISCARD_DEFAULT;
 	enc->skip_idct = AVDISCARD_DEFAULT;
-	enc->skip_loop_filter= AVDISCARD_DEFAULT;
-	enc->error_resilience= FF_ER_CAREFUL;
-	enc->error_concealment= 3;
+	enc->skip_loop_filter = AVDISCARD_DEFAULT;
+	enc->error_recognition = FF_ER_CAREFUL;
+	enc->error_concealment = 3;
 	if (!codec || avcodec_open(enc, codec) < 0) {
 	        return -1;
 	}
