@@ -21,15 +21,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <fnmatch.h>
 #if defined(ENABLE_LIBDLNA)
 #endif
 #if defined(HAVE_MAGIC)
 #include <magic.h>
-#else
-#include <fnmatch.h>
-typedef struct magic_s {
-	int foo;
-} magic_t;
 #endif
 
 #include <upnp/upnp.h>
@@ -272,13 +268,11 @@ static char * entryid_parentid_from_path (const char *path)
 	return parentid;
 }
 
-entry_t * entry_didl (unsigned int magic, const char *path)
+entry_t * entry_didl (const unsigned int magic, const char *path)
 {
-	int magic_init;
 	entry_t *entry;
 	const char *mime;
 	struct stat stbuf;
-	magic_init = 0;
 	entry = (entry_t *) malloc(sizeof(entry_t));
 	if (entry == NULL) {
 		return NULL;
@@ -303,47 +297,22 @@ entry_t * entry_didl (unsigned int magic, const char *path)
 		entry->didl.upnp.storagefolder.storageused = 0;
 		return entry;
 	} else if (S_ISREG(stbuf.st_mode)) {
-#if defined(HAVE_MAGIC)
 		if (magic == 0) {
-			magic_init = 1;
-			magic = (unsigned int) magic_open(MAGIC_SYMLINK | MAGIC_MIME | MAGIC_ERROR);
-			if (magic == 0) {
-				debugf("magic_open() failed");
-				return entry;
+			if (fnmatch("*.mp3", path, FNM_CASEFOLD) == 0) {
+				mime = "audio/mpeg";
+			} else if (fnmatch("*.mpg", path, FNM_CASEFOLD) == 0) {
+				mime = "video/mpeg";
+			} else if (fnmatch("*.avi", path, FNM_CASEFOLD) == 0) {
+				mime = "video/x-msvideo";
+			} else {
+				mime = "unknown";
 			}
-			if (magic_load((magic_t) magic, NULL) != 0) {
-				debugf("magic_load() failed");
-				magic_close((magic_t) magic);
-				return entry;
-			}
-		}
-		mime = magic_file((magic_t) magic, path);
-		if (mime == NULL) {
-			debugf("magic_file(%s) failed", path);
-			if (magic_init == 1) {
-				magic_close((magic_t) magic);
-			}
-			return entry;
-		}
-#else
-		if (fnmatch("*.mp3", path, FNM_CASEFOLD) == 0) {
-			mime = "audio/mpeg";
-		} else if (fnmatch("*.mpg", path, FNM_CASEFOLD) == 0) {
-			mime = "video/mpeg";
-		} else if (fnmatch("*.avi", path, FNM_CASEFOLD) == 0) {
-			mime = "video/x-msvideo";
 		} else {
-			mime = "unknown";
+			mime = magic_file((magic_t) magic, path);
 		}
-#endif
 		if (strncmp(mime, "audio/", 6) == 0) {
 			entry->didl.entryid = entryid_init_value(path);
 			if (entry->didl.entryid == NULL) {
-#if defined(HAVE_MAGIC)
-				if (magic_init == 1) {
-					magic_close((magic_t) magic);
-				}
-#endif
 				goto error;
 			}
 			entry->didl.parentid = entryid_parentid_from_path(path);
@@ -374,20 +343,10 @@ entry_t * entry_didl (unsigned int magic, const char *path)
 			entry->didl.upnp.musictrack.audioitem.longdescription = strdup("");
 			asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
 			entry->didl.res.size = stbuf.st_size;
-#if defined(HAVE_MAGIC)
-			if (magic_init == 1) {
-				magic_close((magic_t) magic);
-			}
-#endif
 			return entry;
 		} else if (strncmp(mime, "video/", 6) == 0) {
 			entry->didl.entryid = entryid_init_value(path);
 			if (entry->didl.entryid == NULL) {
-#if defined(HAVE_MAGIC)
-				if (magic_init == 1) {
-					magic_close((magic_t) magic);
-				}
-#endif
 				goto error;
 			}
 			entry->didl.parentid = entryid_parentid_from_path(path);
@@ -414,20 +373,10 @@ entry_t * entry_didl (unsigned int magic, const char *path)
 			entry->didl.upnp.movie.videoitem.rating = strdup("");
 			asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
 			entry->didl.res.size = stbuf.st_size;
-#if defined(HAVE_MAGIC)
-			if (magic_init == 1) {
-				magic_close((magic_t) magic);
-			}
-#endif
 			return entry;
 		} else if (strncmp(mime, "image/", 6) == 0) {
 			entry->didl.entryid = entryid_init_value(path);
 			if (entry->didl.entryid == NULL) {
-#if defined(HAVE_MAGIC)
-				if (magic_init == 1) {
-					magic_close((magic_t) magic);
-				}
-#endif
 				goto error;
 			}
 			entry->didl.parentid = entryid_parentid_from_path(path);
@@ -452,11 +401,6 @@ entry_t * entry_didl (unsigned int magic, const char *path)
 			entry->didl.upnp.photo.album = strdup("");
 			asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
 			entry->didl.res.size = stbuf.st_size;
-#if defined(HAVE_MAGIC)
-			if (magic_init == 1) {
-				magic_close((magic_t) magic);
-			}
-#endif
 			return entry;
 		}
 	}
