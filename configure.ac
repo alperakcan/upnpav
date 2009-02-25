@@ -430,13 +430,6 @@ LIBS="$PTHREAD_LIBS $LIBS"
 CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 CC="$PTHREAD_CC"
 
-# - libmagic
-
-AC_CHECK_HEADERS([magic.h], [AC_SUBST([MAGIC_CFLAGS], [-DHAVE_MAGIC=1])], [])
-AC_CHECK_LIB([magic], [magic_open], [AC_SUBST([MAGIC_LIBS], [-lmagic])], [], [-lz])
-LIBS="$LIBS $MAGIC_LIBS"
-CFLAGS="$CFLAGS $MAGIC_CFLAGS"
-
 #
 # Check extra parameters
 #
@@ -576,6 +569,10 @@ echo "Enabling mediarender application by default"
 AC_DEFINE(ENABLE_MEDIARENDER, 1, [Define to 1 if you want 'mediarender' support.])
 )
 
+#
+# dependencies
+#
+
 # - libpupnp
 
 PKG_CHECK_MODULES(LIBUPNP, libupnp, HAVE_LINUPNP=yes, HAVE_LINUPNP=no)
@@ -691,6 +688,26 @@ else
 fi
 )
 
+# - libmagic
+
+AC_CHECK_HEADERS([magic.h], [AC_SUBST([MAGIC_CFLAGS], [-DHAVE_MAGIC=1])], [])
+AC_CHECK_LIB([magic], [magic_open], [AC_SUBST([MAGIC_LIBS], [-lmagic])], [], [-lz])
+LIBS="$LIBS $MAGIC_LIBS"
+CFLAGS="$CFLAGS $MAGIC_CFLAGS"
+
+# - libdlna
+
+PKG_CHECK_MODULES(LIBDLNA, libdlna, HAVE_LIBDLNA=yes, HAVE_LIBDLNA=no)
+if test "$HAVE_LIBDLNA" = "yes"
+then
+	enable_libdlna=yes
+	AC_DEFINE(ENABLE_LIBDLNA, 1, [Define to 1 if you want 'libdlna' support.])
+	echo "Enabling LibDLNA support"
+else
+	enable_xynth=no
+	echo "Disabling LibDLNA support"
+fi
+
 AC_ARG_WITH(pkgconfigdir,
             [  --with-pkgconfigdir=DIR pkgconfig file in DIR @<:@LIBDIR/pkgconfig@:>@],
             [pkgconfigdir=$withval],
@@ -705,6 +722,7 @@ AM_CONDITIONAL(LINUX, test "$arch" = linux)
 AM_CONDITIONAL(DARWIN, test "$arch" = darwin)
 AM_CONDITIONAL(ENABLE_CAIRO, test "$enable_cairo" = "yes")
 AM_CONDITIONAL(ENABLE_XYNTH, test "$enable_xynth" = "yes")
+AM_CONDITIONAL(ENABLE_LIBDLNA, test "$enable_libdlna" = "yes")
 AM_CONDITIONAL(ENABLE_RENDER_GSTREAMER, test "$enable_render_gstreamer" = "yes")
 AM_CONDITIONAL(ENABLE_RENDER_FFMPEG, test "$enable_render_ffmpeg" = "yes")
 AM_CONDITIONAL(ENABLE_TESTRENDER, test "$enable_test_render" = "yes")

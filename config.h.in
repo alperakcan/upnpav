@@ -6,6 +6,9 @@
 /* Define to 1 if you want 'controller' support. */
 #undef ENABLE_CONTROLLER
 
+/* Define to 1 if you want 'libdlna' support. */
+#undef ENABLE_LIBDLNA
+
 /* Define to 1 if you want 'libupnp' support. */
 #undef ENABLE_LINUPNP
 

@@ -21,6 +21,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
+#if defined(ENABLE_LIBDLNA)
+#endif
 #if defined(HAVE_MAGIC)
 #include <magic.h>
 #else
