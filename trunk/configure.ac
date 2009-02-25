@@ -655,7 +655,7 @@ fi
 
 # - ffmpeg
 
-PKG_CHECK_MODULES(FFMPEG, libavdevice libavcodec libavformat libswscale libavutil sdl, HAVE_FFMPEG=yes, HAVE_FFMPEG=no)
+PKG_CHECK_MODULES(FFMPEG, libavdevice libavcodec libavformat libswscale libavutil sdl alsa, HAVE_FFMPEG=yes, HAVE_FFMPEG=no)
 AC_SUBST(FFMPEG_CFLAGS)
 AC_SUBST(FFMPEG_LIBS)
 

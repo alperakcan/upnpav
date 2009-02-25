@@ -23021,12 +23021,12 @@ if test -n "$FFMPEG_CFLAGS"; then
     pkg_cv_FFMPEG_CFLAGS="$FFMPEG_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libavdevice libavcodec libavformat libswscale libavutil sdl\"") >&5
-  ($PKG_CONFIG --exists --print-errors "libavdevice libavcodec libavformat libswscale libavutil sdl") 2>&5
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libavdevice libavcodec libavformat libswscale libavutil sdl alsa\"") >&5
+  ($PKG_CONFIG --exists --print-errors "libavdevice libavcodec libavformat libswscale libavutil sdl alsa") 2>&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; then
-  pkg_cv_FFMPEG_CFLAGS=`$PKG_CONFIG --cflags "libavdevice libavcodec libavformat libswscale libavutil sdl" 2>/dev/null`
+  pkg_cv_FFMPEG_CFLAGS=`$PKG_CONFIG --cflags "libavdevice libavcodec libavformat libswscale libavutil sdl alsa" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -23037,12 +23037,12 @@ if test -n "$FFMPEG_LIBS"; then
     pkg_cv_FFMPEG_LIBS="$FFMPEG_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libavdevice libavcodec libavformat libswscale libavutil sdl\"") >&5
-  ($PKG_CONFIG --exists --print-errors "libavdevice libavcodec libavformat libswscale libavutil sdl") 2>&5
+    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libavdevice libavcodec libavformat libswscale libavutil sdl alsa\"") >&5
+  ($PKG_CONFIG --exists --print-errors "libavdevice libavcodec libavformat libswscale libavutil sdl alsa") 2>&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; then
-  pkg_cv_FFMPEG_LIBS=`$PKG_CONFIG --libs "libavdevice libavcodec libavformat libswscale libavutil sdl" 2>/dev/null`
+  pkg_cv_FFMPEG_LIBS=`$PKG_CONFIG --libs "libavdevice libavcodec libavformat libswscale libavutil sdl alsa" 2>/dev/null`
 else
   pkg_failed=yes
 fi
@@ -23060,9 +23060,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        FFMPEG_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libavdevice libavcodec libavformat libswscale libavutil sdl" 2>&1`
+	        FFMPEG_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libavdevice libavcodec libavformat libswscale libavutil sdl alsa" 2>&1`
         else
-	        FFMPEG_PKG_ERRORS=`$PKG_CONFIG --print-errors "libavdevice libavcodec libavformat libswscale libavutil sdl" 2>&1`
+	        FFMPEG_PKG_ERRORS=`$PKG_CONFIG --print-errors "libavdevice libavcodec libavformat libswscale libavutil sdl alsa" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$FFMPEG_PKG_ERRORS" >&5
