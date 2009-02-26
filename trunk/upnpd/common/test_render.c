@@ -27,38 +27,21 @@
 
 #include "common.h"
 
+extern unsigned char upnpd_debug;
+
 int main (int argc, char *argv[])
 {
 	render_t *render;
+	upnpd_debug = 1;
 	render = render_init("ffmpeg", NULL);
 	if (render == NULL) {
 		debugf("render_init() failed");
 	}
 	sleep(1);
-	if (render_play(render, "/home/self/mp3/test.avi")) {
+	if (render_play(render, "/home/mp3/mp3/Alanis Morisette/01-AudioTrack 01.mp31")) {
 		debugf("render_play() failed");
 	}
-	sleep(15);
-	if (render_stop(render)) {
-		debugf("render_stop() failed");
-	}
-	sleep(5);
-	if (render_play(render, "/home/self/mp3/test.mp3")) {
-		debugf("render_play() failed");
-	}
-	sleep(15);
-	if (render_stop(render)) {
-		debugf("render_stop() failed");
-	}
-	sleep(5);
-	if (render_play(render, "/home/self/mp3/test.avi")) {
-		debugf("render_play() failed");
-	}
-	sleep(15);
-	if (render_stop(render)) {
-		debugf("render_stop() failed");
-	}
-	sleep(5);
+	sleep(10);
 	if (render_uninit(render)) {
 		debugf("render_uninit() failed");
 	}
