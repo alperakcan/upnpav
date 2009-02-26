@@ -27,9 +27,9 @@ uint32_t strtouint32 (const char *in)
 {
 	uint32_t r;
 	if (in != NULL) {
-		if (strcmp(in, "true") == 0) {
+		if (strcasecmp(in, "true") == 0) {
 			return 1;
-		} else if (strcmp(in, "false") == 0) {
+		} else if (strcasecmp(in, "false") == 0) {
 			return 0;
 		} else if (sscanf(in, "%u", &r) == 1) {
 			return r;
@@ -42,9 +42,9 @@ int32_t strtoint32 (const char *in)
 {
 	int32_t r;
 	if (in != NULL) {
-		if (strcmp(in, "true") == 0) {
+		if (strcasecmp(in, "true") == 0) {
 			return 1;
-		} else if (strcmp(in, "false") == 0) {
+		} else if (strcasecmp(in, "false") == 0) {
 			return 0;
 		} else if (sscanf(in, "%d", &r) == 1) {
 			return r;
