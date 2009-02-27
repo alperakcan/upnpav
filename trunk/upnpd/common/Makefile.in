@@ -64,13 +64,13 @@ LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 libcommon_a_AR = $(AR) $(ARFLAGS)
 libcommon_a_LIBADD =
-am__libcommon_a_SOURCES_DIST = uuid/clear.c uuid/compare.c uuid/copy.c \
-	uuid/gen_uuid.c uuid/isnull.c uuid/pack.c uuid/parse.c \
-	uuid/unpack.c uuid/unparse.c uuid/uuid_time.c uuid/uuid.h \
-	uuid/uuidP.h client.c entry.c debug.c device.c upnp.c \
-	connection.c contentdir.c transport.c rendering.c service.c \
-	inttool.c xml.c uri.c webserver.c render.c interface.c \
-	common.h mediaserver.c mediarender.c controller.c \
+am__libcommon_a_SOURCES_DIST = upnp/ssdp.c uuid/clear.c uuid/compare.c \
+	uuid/copy.c uuid/gen_uuid.c uuid/isnull.c uuid/pack.c \
+	uuid/parse.c uuid/unpack.c uuid/unparse.c uuid/uuid_time.c \
+	uuid/uuid.h uuid/uuidP.h client.c entry.c debug.c device.c \
+	upnp.c connection.c contentdir.c transport.c rendering.c \
+	service.c inttool.c xml.c uri.c webserver.c render.c \
+	interface.c common.h mediaserver.c mediarender.c controller.c \
 	render_gstreamer.c render_ffmpeg.c
 @ENABLE_MEDIASERVER_TRUE@am__objects_1 =  \
 @ENABLE_MEDIASERVER_TRUE@	libcommon_a-mediaserver.$(OBJEXT)
@@ -80,15 +80,15 @@ am__libcommon_a_SOURCES_DIST = uuid/clear.c uuid/compare.c uuid/copy.c \
 @ENABLE_CONTROLLER_TRUE@	libcommon_a-controller.$(OBJEXT)
 @ENABLE_RENDER_GSTREAMER_TRUE@am__objects_4 = libcommon_a-render_gstreamer.$(OBJEXT)
 @ENABLE_RENDER_FFMPEG_TRUE@am__objects_5 = libcommon_a-render_ffmpeg.$(OBJEXT)
-am_libcommon_a_OBJECTS = libcommon_a-clear.$(OBJEXT) \
-	libcommon_a-compare.$(OBJEXT) libcommon_a-copy.$(OBJEXT) \
-	libcommon_a-gen_uuid.$(OBJEXT) libcommon_a-isnull.$(OBJEXT) \
-	libcommon_a-pack.$(OBJEXT) libcommon_a-parse.$(OBJEXT) \
-	libcommon_a-unpack.$(OBJEXT) libcommon_a-unparse.$(OBJEXT) \
-	libcommon_a-uuid_time.$(OBJEXT) libcommon_a-client.$(OBJEXT) \
-	libcommon_a-entry.$(OBJEXT) libcommon_a-debug.$(OBJEXT) \
-	libcommon_a-device.$(OBJEXT) libcommon_a-upnp.$(OBJEXT) \
-	libcommon_a-connection.$(OBJEXT) \
+am_libcommon_a_OBJECTS = libcommon_a-ssdp.$(OBJEXT) \
+	libcommon_a-clear.$(OBJEXT) libcommon_a-compare.$(OBJEXT) \
+	libcommon_a-copy.$(OBJEXT) libcommon_a-gen_uuid.$(OBJEXT) \
+	libcommon_a-isnull.$(OBJEXT) libcommon_a-pack.$(OBJEXT) \
+	libcommon_a-parse.$(OBJEXT) libcommon_a-unpack.$(OBJEXT) \
+	libcommon_a-unparse.$(OBJEXT) libcommon_a-uuid_time.$(OBJEXT) \
+	libcommon_a-client.$(OBJEXT) libcommon_a-entry.$(OBJEXT) \
+	libcommon_a-debug.$(OBJEXT) libcommon_a-device.$(OBJEXT) \
+	libcommon_a-upnp.$(OBJEXT) libcommon_a-connection.$(OBJEXT) \
 	libcommon_a-contentdir.$(OBJEXT) \
 	libcommon_a-transport.$(OBJEXT) \
 	libcommon_a-rendering.$(OBJEXT) libcommon_a-service.$(OBJEXT) \
@@ -301,14 +301,14 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 noinst_LIBRARIES = libcommon.a
-libcommon_a_SOURCES = uuid/clear.c uuid/compare.c uuid/copy.c \
-	uuid/gen_uuid.c uuid/isnull.c uuid/pack.c uuid/parse.c \
-	uuid/unpack.c uuid/unparse.c uuid/uuid_time.c uuid/uuid.h \
-	uuid/uuidP.h client.c entry.c debug.c device.c upnp.c \
-	connection.c contentdir.c transport.c rendering.c service.c \
-	inttool.c xml.c uri.c webserver.c render.c interface.c \
-	common.h $(am__append_1) $(am__append_2) $(am__append_3) \
-	$(am__append_4) $(am__append_6)
+libcommon_a_SOURCES = upnp/ssdp.c uuid/clear.c uuid/compare.c \
+	uuid/copy.c uuid/gen_uuid.c uuid/isnull.c uuid/pack.c \
+	uuid/parse.c uuid/unpack.c uuid/unparse.c uuid/uuid_time.c \
+	uuid/uuid.h uuid/uuidP.h client.c entry.c debug.c device.c \
+	upnp.c connection.c contentdir.c transport.c rendering.c \
+	service.c inttool.c xml.c uri.c webserver.c render.c \
+	interface.c common.h $(am__append_1) $(am__append_2) \
+	$(am__append_3) $(am__append_4) $(am__append_6)
 libcommon_a_CFLAGS = -Wall $(LIBUPNP_CFLAGS) $(am__append_5) \
 	$(am__append_7)
 @ENABLE_TESTCLIENT_TRUE@test_client_SOURCES = test_client.c
@@ -412,6 +412,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-render_gstreamer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-rendering.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-service.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-ssdp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-transport.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-unpack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-unparse.Po@am__quote@
@@ -445,6 +446,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+libcommon_a-ssdp.o: upnp/ssdp.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-ssdp.o -MD -MP -MF "$(DEPDIR)/libcommon_a-ssdp.Tpo" -c -o libcommon_a-ssdp.o `test -f 'upnp/ssdp.c' || echo '$(srcdir)/'`upnp/ssdp.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-ssdp.Tpo" "$(DEPDIR)/libcommon_a-ssdp.Po"; else rm -f "$(DEPDIR)/libcommon_a-ssdp.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='upnp/ssdp.c' object='libcommon_a-ssdp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-ssdp.o `test -f 'upnp/ssdp.c' || echo '$(srcdir)/'`upnp/ssdp.c
+
+libcommon_a-ssdp.obj: upnp/ssdp.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-ssdp.obj -MD -MP -MF "$(DEPDIR)/libcommon_a-ssdp.Tpo" -c -o libcommon_a-ssdp.obj `if test -f 'upnp/ssdp.c'; then $(CYGPATH_W) 'upnp/ssdp.c'; else $(CYGPATH_W) '$(srcdir)/upnp/ssdp.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-ssdp.Tpo" "$(DEPDIR)/libcommon_a-ssdp.Po"; else rm -f "$(DEPDIR)/libcommon_a-ssdp.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='upnp/ssdp.c' object='libcommon_a-ssdp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-ssdp.obj `if test -f 'upnp/ssdp.c'; then $(CYGPATH_W) 'upnp/ssdp.c'; else $(CYGPATH_W) '$(srcdir)/upnp/ssdp.c'; fi`
 
 libcommon_a-clear.o: uuid/clear.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-clear.o -MD -MP -MF "$(DEPDIR)/libcommon_a-clear.Tpo" -c -o libcommon_a-clear.o `test -f 'uuid/clear.c' || echo '$(srcdir)/'`uuid/clear.c; \

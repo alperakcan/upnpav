@@ -489,14 +489,12 @@ static void * webserver_thread_loop (void *arg)
 		fileinfo.filerange.size = fileinfo.filerange.stop - fileinfo.filerange.start + 1;
 	}
 
-
 	/* send header */
 	webserver_sendfileheader(webserver_thread->fd, &fileinfo);
 	if (strcasecmp(header, request_head) == 0) {
 		debugf("only header is requested");
 		goto close_out;
 	}
-
 
 	/* seek if requested */
 	if (webserver_thread->callbacks->seek(webserver_thread->callbacks->cookie, filehandle, fileinfo.filerange.start, WEBSERVER_SEEK_SET) != fileinfo.filerange.start) {
