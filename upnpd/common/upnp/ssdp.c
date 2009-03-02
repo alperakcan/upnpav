@@ -39,10 +39,19 @@ struct ssdp_s {
 
 static const char *ssdp_ip = "239.255.255.250";
 static const unsigned short ssdp_port = 1900;
+static const unsigned int ssdp_buffer_length = 2500;
+static const unsigned int ssdp_recv_timeout = 1000;
 
 static void * ssdp_thread_loop (void *arg)
 {
+	int ret;
+	int received;
+	char *buffer;
 	ssdp_t *ssdp;
+	struct pollfd pfd;
+	struct sockaddr_in sender;
+	socklen_t sender_length;
+
 	ssdp = (ssdp_t *) arg;
 
 	pthread_mutex_lock(&ssdp->mutex);
@@ -51,18 +60,44 @@ static void * ssdp_thread_loop (void *arg)
 	pthread_cond_signal(&ssdp->cond);
 	pthread_mutex_unlock(&ssdp->mutex);
 
+	buffer = (char *) malloc(sizeof(char) * (ssdp_buffer_length + 1));
+	if (buffer == NULL) {
+		goto out;
+	}
+
 	while (1) {
 		pthread_mutex_lock(&ssdp->mutex);
-		if (ssdp->running == 0) {
+		if (ssdp->running == 0 || ssdp->socket < 0) {
 			pthread_mutex_unlock(&ssdp->mutex);
 			break;
 		}
+		memset(&pfd, 0, sizeof(struct pollfd));
+		pfd.fd = ssdp->socket;
+		pfd.events = POLLIN;
+		pfd.revents = 0;
 		pthread_mutex_unlock(&ssdp->mutex);
+		ret = poll(&pfd, 1, ssdp_recv_timeout);
+		if (!ret) {
+			continue;
+		} else {
+			if (pfd.revents != POLLIN) {
+				break;
+			}
+		}
+		sender_length = sizeof(struct sockaddr_in);
+		received = recvfrom(pfd.fd, buffer, ssdp_buffer_length, 0, (struct sockaddr *) &sender, &sender_length);
+		if (received <= 0) {
+			continue;
+		}
+		buffer[received] = '\0';
 	}
-
+out:
 	pthread_mutex_lock(&ssdp->mutex);
 	ssdp->stopped = 1;
 	ssdp->running = 0;
+	if (buffer != NULL) {
+		free(buffer);
+	}
 	pthread_cond_signal(&ssdp->cond);
 	pthread_mutex_unlock(&ssdp->mutex);
 
