@@ -513,7 +513,7 @@ int device_init (device_t *device)
 		debugf("pthread_mutex_init(&device->mutex, NULL) failed");
 		goto out;
 	}
-	debugf("initilizing upnp stack");
+	debugf("initializing upnp stack");
 	if ((rc = UpnpInit(device->interface, 0)) != UPNP_E_SUCCESS) {
 		debugf("UpnpInit(NULL, 0) failed (%d:%s)", rc, UpnpGetErrorMessage(rc));
 		pthread_mutex_destroy(&device->mutex);

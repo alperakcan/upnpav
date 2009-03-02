@@ -22609,7 +22609,7 @@ fi
 # Create files
 #
 
-ac_config_files="$ac_config_files Makefile Documentation/Makefile upnpd/Makefile upnpd/common/Makefile upnpd/controller/Makefile upnpd/mediaserver/Makefile upnpd/mediarender/Makefile"
+ac_config_files="$ac_config_files Makefile Documentation/Makefile upnpd/Makefile upnpd/common/Makefile upnpd/common/upnp/Makefile upnpd/controller/Makefile upnpd/mediaserver/Makefile upnpd/mediarender/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -23292,6 +23292,7 @@ do
     "Documentation/Makefile") CONFIG_FILES="$CONFIG_FILES Documentation/Makefile" ;;
     "upnpd/Makefile") CONFIG_FILES="$CONFIG_FILES upnpd/Makefile" ;;
     "upnpd/common/Makefile") CONFIG_FILES="$CONFIG_FILES upnpd/common/Makefile" ;;
+    "upnpd/common/upnp/Makefile") CONFIG_FILES="$CONFIG_FILES upnpd/common/upnp/Makefile" ;;
     "upnpd/controller/Makefile") CONFIG_FILES="$CONFIG_FILES upnpd/controller/Makefile" ;;
     "upnpd/mediaserver/Makefile") CONFIG_FILES="$CONFIG_FILES upnpd/mediaserver/Makefile" ;;
     "upnpd/mediarender/Makefile") CONFIG_FILES="$CONFIG_FILES upnpd/mediarender/Makefile" ;;

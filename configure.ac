@@ -414,6 +414,7 @@ AC_CONFIG_FILES([
 	Documentation/Makefile
 	upnpd/Makefile
 	upnpd/common/Makefile
+	upnpd/common/upnp/Makefile
 	upnpd/controller/Makefile
 	upnpd/mediaserver/Makefile
 	upnpd/mediarender/Makefile

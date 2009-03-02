@@ -1,9 +1,10 @@
 
+SUBDIRS = upnp
+
 noinst_PROGRAMS  =
 noinst_LIBRARIES = libcommon.a
 
 libcommon_a_SOURCES = \
-	upnp/ssdp.c \
 	uuid/clear.c \
 	uuid/compare.c \
 	uuid/copy.c \
