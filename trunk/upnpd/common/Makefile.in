@@ -64,13 +64,13 @@ LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 libcommon_a_AR = $(AR) $(ARFLAGS)
 libcommon_a_LIBADD =
-am__libcommon_a_SOURCES_DIST = upnp/ssdp.c uuid/clear.c uuid/compare.c \
-	uuid/copy.c uuid/gen_uuid.c uuid/isnull.c uuid/pack.c \
-	uuid/parse.c uuid/unpack.c uuid/unparse.c uuid/uuid_time.c \
-	uuid/uuid.h uuid/uuidP.h client.c entry.c debug.c device.c \
-	upnp.c connection.c contentdir.c transport.c rendering.c \
-	service.c inttool.c xml.c uri.c webserver.c render.c \
-	interface.c common.h mediaserver.c mediarender.c controller.c \
+am__libcommon_a_SOURCES_DIST = uuid/clear.c uuid/compare.c uuid/copy.c \
+	uuid/gen_uuid.c uuid/isnull.c uuid/pack.c uuid/parse.c \
+	uuid/unpack.c uuid/unparse.c uuid/uuid_time.c uuid/uuid.h \
+	uuid/uuidP.h client.c entry.c debug.c device.c upnp.c \
+	connection.c contentdir.c transport.c rendering.c service.c \
+	inttool.c xml.c uri.c webserver.c render.c interface.c \
+	common.h mediaserver.c mediarender.c controller.c \
 	render_gstreamer.c render_ffmpeg.c
 @ENABLE_MEDIASERVER_TRUE@am__objects_1 =  \
 @ENABLE_MEDIASERVER_TRUE@	libcommon_a-mediaserver.$(OBJEXT)
@@ -80,15 +80,15 @@ am__libcommon_a_SOURCES_DIST = upnp/ssdp.c uuid/clear.c uuid/compare.c \
 @ENABLE_CONTROLLER_TRUE@	libcommon_a-controller.$(OBJEXT)
 @ENABLE_RENDER_GSTREAMER_TRUE@am__objects_4 = libcommon_a-render_gstreamer.$(OBJEXT)
 @ENABLE_RENDER_FFMPEG_TRUE@am__objects_5 = libcommon_a-render_ffmpeg.$(OBJEXT)
-am_libcommon_a_OBJECTS = libcommon_a-ssdp.$(OBJEXT) \
-	libcommon_a-clear.$(OBJEXT) libcommon_a-compare.$(OBJEXT) \
-	libcommon_a-copy.$(OBJEXT) libcommon_a-gen_uuid.$(OBJEXT) \
-	libcommon_a-isnull.$(OBJEXT) libcommon_a-pack.$(OBJEXT) \
-	libcommon_a-parse.$(OBJEXT) libcommon_a-unpack.$(OBJEXT) \
-	libcommon_a-unparse.$(OBJEXT) libcommon_a-uuid_time.$(OBJEXT) \
-	libcommon_a-client.$(OBJEXT) libcommon_a-entry.$(OBJEXT) \
-	libcommon_a-debug.$(OBJEXT) libcommon_a-device.$(OBJEXT) \
-	libcommon_a-upnp.$(OBJEXT) libcommon_a-connection.$(OBJEXT) \
+am_libcommon_a_OBJECTS = libcommon_a-clear.$(OBJEXT) \
+	libcommon_a-compare.$(OBJEXT) libcommon_a-copy.$(OBJEXT) \
+	libcommon_a-gen_uuid.$(OBJEXT) libcommon_a-isnull.$(OBJEXT) \
+	libcommon_a-pack.$(OBJEXT) libcommon_a-parse.$(OBJEXT) \
+	libcommon_a-unpack.$(OBJEXT) libcommon_a-unparse.$(OBJEXT) \
+	libcommon_a-uuid_time.$(OBJEXT) libcommon_a-client.$(OBJEXT) \
+	libcommon_a-entry.$(OBJEXT) libcommon_a-debug.$(OBJEXT) \
+	libcommon_a-device.$(OBJEXT) libcommon_a-upnp.$(OBJEXT) \
+	libcommon_a-connection.$(OBJEXT) \
 	libcommon_a-contentdir.$(OBJEXT) \
 	libcommon_a-transport.$(OBJEXT) \
 	libcommon_a-rendering.$(OBJEXT) libcommon_a-service.$(OBJEXT) \
@@ -152,8 +152,15 @@ DIST_SOURCES = $(am__libcommon_a_SOURCES_DIST) \
 	$(am__test_client_SOURCES_DIST) \
 	$(am__test_device_SOURCES_DIST) \
 	$(am__test_render_SOURCES_DIST)
+RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
+	html-recursive info-recursive install-data-recursive \
+	install-exec-recursive install-info-recursive \
+	install-recursive installcheck-recursive installdirs-recursive \
+	pdf-recursive ps-recursive uninstall-info-recursive \
+	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
+DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -300,15 +307,16 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+SUBDIRS = upnp
 noinst_LIBRARIES = libcommon.a
-libcommon_a_SOURCES = upnp/ssdp.c uuid/clear.c uuid/compare.c \
-	uuid/copy.c uuid/gen_uuid.c uuid/isnull.c uuid/pack.c \
-	uuid/parse.c uuid/unpack.c uuid/unparse.c uuid/uuid_time.c \
-	uuid/uuid.h uuid/uuidP.h client.c entry.c debug.c device.c \
-	upnp.c connection.c contentdir.c transport.c rendering.c \
-	service.c inttool.c xml.c uri.c webserver.c render.c \
-	interface.c common.h $(am__append_1) $(am__append_2) \
-	$(am__append_3) $(am__append_4) $(am__append_6)
+libcommon_a_SOURCES = uuid/clear.c uuid/compare.c uuid/copy.c \
+	uuid/gen_uuid.c uuid/isnull.c uuid/pack.c uuid/parse.c \
+	uuid/unpack.c uuid/unparse.c uuid/uuid_time.c uuid/uuid.h \
+	uuid/uuidP.h client.c entry.c debug.c device.c upnp.c \
+	connection.c contentdir.c transport.c rendering.c service.c \
+	inttool.c xml.c uri.c webserver.c render.c interface.c \
+	common.h $(am__append_1) $(am__append_2) $(am__append_3) \
+	$(am__append_4) $(am__append_6)
 libcommon_a_CFLAGS = -Wall $(LIBUPNP_CFLAGS) $(am__append_5) \
 	$(am__append_7)
 @ENABLE_TESTCLIENT_TRUE@test_client_SOURCES = test_client.c
@@ -323,7 +331,7 @@ libcommon_a_CFLAGS = -Wall $(LIBUPNP_CFLAGS) $(am__append_5) \
 @ENABLE_TESTRENDER_TRUE@test_render_SOURCES = test_render.c
 @ENABLE_TESTRENDER_TRUE@test_render_CFLAGS = -Wall $(LIBUPNP_CFLAGS)
 @ENABLE_TESTRENDER_TRUE@test_render_LDADD = $(top_builddir)/upnpd/common/libcommon.a $(LIBUPNP_LIBS) $(LIB_MAGIC) $(GST_LIBS) $(FFMPEG_LIBS) -lbz2
-all: all-am
+all: all-recursive
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
@@ -412,7 +420,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-render_gstreamer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-rendering.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-service.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-ssdp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-transport.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-unpack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-unparse.Po@am__quote@
@@ -446,20 +453,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
-
-libcommon_a-ssdp.o: upnp/ssdp.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-ssdp.o -MD -MP -MF "$(DEPDIR)/libcommon_a-ssdp.Tpo" -c -o libcommon_a-ssdp.o `test -f 'upnp/ssdp.c' || echo '$(srcdir)/'`upnp/ssdp.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-ssdp.Tpo" "$(DEPDIR)/libcommon_a-ssdp.Po"; else rm -f "$(DEPDIR)/libcommon_a-ssdp.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='upnp/ssdp.c' object='libcommon_a-ssdp.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-ssdp.o `test -f 'upnp/ssdp.c' || echo '$(srcdir)/'`upnp/ssdp.c
-
-libcommon_a-ssdp.obj: upnp/ssdp.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-ssdp.obj -MD -MP -MF "$(DEPDIR)/libcommon_a-ssdp.Tpo" -c -o libcommon_a-ssdp.obj `if test -f 'upnp/ssdp.c'; then $(CYGPATH_W) 'upnp/ssdp.c'; else $(CYGPATH_W) '$(srcdir)/upnp/ssdp.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-ssdp.Tpo" "$(DEPDIR)/libcommon_a-ssdp.Po"; else rm -f "$(DEPDIR)/libcommon_a-ssdp.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='upnp/ssdp.c' object='libcommon_a-ssdp.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-ssdp.obj `if test -f 'upnp/ssdp.c'; then $(CYGPATH_W) 'upnp/ssdp.c'; else $(CYGPATH_W) '$(srcdir)/upnp/ssdp.c'; fi`
 
 libcommon_a-clear.o: uuid/clear.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-clear.o -MD -MP -MF "$(DEPDIR)/libcommon_a-clear.Tpo" -c -o libcommon_a-clear.o `test -f 'uuid/clear.c' || echo '$(srcdir)/'`uuid/clear.c; \
@@ -961,6 +954,77 @@ distclean-libtool:
 	-rm -f libtool
 uninstall-info-am:
 
+# This directory's subdirectories are mostly independent; you can cd
+# into them and run `make' without going through this Makefile.
+# To change the values of `make' variables: instead of editing Makefiles,
+# (1) if the variable is set in `config.status', edit `config.status'
+#     (which will cause the Makefiles to be regenerated when you run `make');
+# (2) otherwise, pass the desired values on the `make' command line.
+$(RECURSIVE_TARGETS):
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	dot_seen=no; \
+	target=`echo $@ | sed s/-recursive//`; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    dot_seen=yes; \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	  || eval $$failcom; \
+	done; \
+	if test "$$dot_seen" = "no"; then \
+	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
+	fi; test -z "$$fail"
+
+mostlyclean-recursive clean-recursive distclean-recursive \
+maintainer-clean-recursive:
+	@failcom='exit 1'; \
+	for f in x $$MAKEFLAGS; do \
+	  case $$f in \
+	    *=* | --[!k]*);; \
+	    *k*) failcom='fail=yes';; \
+	  esac; \
+	done; \
+	dot_seen=no; \
+	case "$@" in \
+	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
+	  *) list='$(SUBDIRS)' ;; \
+	esac; \
+	rev=''; for subdir in $$list; do \
+	  if test "$$subdir" = "."; then :; else \
+	    rev="$$subdir $$rev"; \
+	  fi; \
+	done; \
+	rev="$$rev ."; \
+	target=`echo $@ | sed s/-recursive//`; \
+	for subdir in $$rev; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	  || eval $$failcom; \
+	done && test -z "$$fail"
+tags-recursive:
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
+	done
+ctags-recursive:
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) ctags); \
+	done
+
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
@@ -971,10 +1035,23 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	mkid -fID $$unique
 tags: TAGS
 
-TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
+	if ($(ETAGS) --etags-include --version) >/dev/null 2>&1; then \
+	  include_option=--etags-include; \
+	  empty_fix=.; \
+	else \
+	  include_option=--include; \
+	  empty_fix=; \
+	fi; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    test ! -f $$subdir/TAGS || \
+	      tags="$$tags $$include_option=$$here/$$subdir/TAGS"; \
+	  fi; \
+	done; \
 	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
@@ -987,7 +1064,7 @@ TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	    $$tags $$unique; \
 	fi
 ctags: CTAGS
-CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+CTAGS: ctags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
@@ -1036,19 +1113,35 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
+	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    test -d "$(distdir)/$$subdir" \
+	    || $(mkdir_p) "$(distdir)/$$subdir" \
+	    || exit 1; \
+	    distdir=`$(am__cd) $(distdir) && pwd`; \
+	    top_distdir=`$(am__cd) $(top_distdir) && pwd`; \
+	    (cd $$subdir && \
+	      $(MAKE) $(AM_MAKEFLAGS) \
+	        top_distdir="$$top_distdir" \
+	        distdir="$$distdir/$$subdir" \
+	        distdir) \
+	      || exit 1; \
+	  fi; \
+	done
 check-am: all-am
-check: check-am
+check: check-recursive
 all-am: Makefile $(LIBRARIES) $(PROGRAMS)
-installdirs:
-install: install-am
-install-exec: install-exec-am
-install-data: install-data-am
-uninstall: uninstall-am
+installdirs: installdirs-recursive
+installdirs-am:
+install: install-recursive
+install-exec: install-exec-recursive
+install-data: install-data-recursive
+uninstall: uninstall-recursive
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-am
+installcheck: installcheck-recursive
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
 	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
@@ -1064,24 +1157,24 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean: clean-am
+clean: clean-recursive
 
 clean-am: clean-generic clean-libtool clean-noinstLIBRARIES \
 	clean-noinstPROGRAMS mostlyclean-am
 
-distclean: distclean-am
+distclean: distclean-recursive
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-libtool distclean-tags
 
-dvi: dvi-am
+dvi: dvi-recursive
 
 dvi-am:
 
-html: html-am
+html: html-recursive
 
-info: info-am
+info: info-recursive
 
 info-am:
 
@@ -1089,43 +1182,48 @@ install-data-am:
 
 install-exec-am:
 
-install-info: install-info-am
+install-info: install-info-recursive
 
 install-man:
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-am
+maintainer-clean: maintainer-clean-recursive
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-am
+mostlyclean: mostlyclean-recursive
 
 mostlyclean-am: mostlyclean-compile mostlyclean-generic \
 	mostlyclean-libtool
 
-pdf: pdf-am
+pdf: pdf-recursive
 
 pdf-am:
 
-ps: ps-am
+ps: ps-recursive
 
 ps-am:
 
 uninstall-am: uninstall-info-am
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-noinstLIBRARIES clean-noinstPROGRAMS ctags \
+uninstall-info: uninstall-info-recursive
+
+.PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am check check-am \
+	clean clean-generic clean-libtool clean-noinstLIBRARIES \
+	clean-noinstPROGRAMS clean-recursive ctags ctags-recursive \
 	distclean distclean-compile distclean-generic \
-	distclean-libtool distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-man install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-info-am
+	distclean-libtool distclean-recursive distclean-tags distdir \
+	dvi dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-exec install-exec-am \
+	install-info install-info-am install-man install-strip \
+	installcheck installcheck-am installdirs installdirs-am \
+	maintainer-clean maintainer-clean-generic \
+	maintainer-clean-recursive mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool mostlyclean-recursive \
+	pdf pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
+	uninstall-info-am
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
