@@ -75,14 +75,17 @@ static int ssdp_init_server (ssdp_t *ssdp)
 	struct ip_mreq mreq;
 	struct in_addr mcastip;
 	struct sockaddr_in addr;
+
 	h = gethostbyname(ssdp_ip);
 	if (h == NULL) {
 		return -1;
 	}
+
 	ssdp->socket = socket(AF_INET, SOCK_DGRAM, 0);
 	if (ssdp->socket < 0) {
 		return -2;
 	}
+
 	addr.sin_family = AF_INET;
 	inet_aton(ssdp_ip, &addr.sin_addr);
 	addr.sin_port = htons(ssdp_port);
@@ -90,6 +93,7 @@ static int ssdp_init_server (ssdp_t *ssdp)
 		close(ssdp->socket);
 		return -1;
 	}
+
 	memcpy(&mcastip, h->h_addr_list[0], h->h_length);
 	mreq.imr_multiaddr.s_addr = mcastip.s_addr;
 	mreq.imr_interface.s_addr = htonl(INADDR_ANY);
@@ -103,6 +107,7 @@ static int ssdp_init_server (ssdp_t *ssdp)
 		pthread_cond_wait(&ssdp->cond, &ssdp->mutex);
 	}
 	pthread_mutex_unlock(&ssdp->mutex);
+
 	return 0;
 }
 
@@ -116,15 +121,18 @@ int ssdp_advertise (ssdp_t *ssdp)
 ssdp_t * ssdp_init (const char *description, const unsigned int length)
 {
 	ssdp_t *ssdp;
+
 	ssdp = (ssdp_t *) malloc(sizeof(ssdp_t));
 	if (ssdp == NULL) {
 		return NULL;
 	}
+
 	memset(ssdp, 0, sizeof(ssdp_t));
 	if (ssdp_init_server(ssdp) != 0) {
 		free(ssdp);
 		return NULL;
 	}
+
 	return ssdp;
 }
 
@@ -140,7 +148,9 @@ int ssdp_uninit (ssdp_t *ssdp)
 	pthread_mutex_destroy(&ssdp->mutex);
 	pthread_cond_destroy(&ssdp->cond);
 	pthread_join(ssdp->thread, NULL);
+
 	close(ssdp->socket);
 	free(ssdp);
+
 	return 0;
 }
