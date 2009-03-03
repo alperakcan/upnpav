@@ -685,7 +685,7 @@ struct render_module_s {
 	/** */
 	char *description;
 	/** */
-	int (*init) (render_module_t *, char *options);
+	int (*init) (render_module_t *, int argc, char *argv[]);
 	/** */
 	int (*uninit) (render_module_t *);
 	/** */

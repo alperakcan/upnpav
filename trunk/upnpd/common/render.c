@@ -67,7 +67,7 @@ found:
 	r->module = (*m);
 	r->module->render = r;
 	list_init(&r->mimetypes);
-	if (r->module->init(r->module, options) != 0) {
+	if (r->module->init(r->module, 0, 0) != 0) {
 		debugf("r->module->init() failed for '%s'", r->module->name);
 		free(r);
 		return NULL;

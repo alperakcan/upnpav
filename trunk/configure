@@ -21155,6 +21155,8 @@ done
 
 
 
+CFLAGS="$CFLAGS -Wall -Werror"
+
 #
 # Check extra parameters
 #

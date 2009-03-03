@@ -171,6 +171,8 @@ AC_DEFUN([VL_LIB_READLINE], [
 
 ])dnl
 
+CFLAGS="$CFLAGS -Wall -Werror"
+
 #
 # Check extra parameters
 #

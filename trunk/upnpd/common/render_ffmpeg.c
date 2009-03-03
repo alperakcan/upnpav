@@ -83,7 +83,7 @@ typedef struct VideoPicture {
 
 typedef struct ffmpeg_stream_s {
 	char *uri;
-	
+
 	int audio_stream;
 	int video_stream;
 	int subtitle_stream;
@@ -103,9 +103,9 @@ typedef struct ffmpeg_stream_s {
 	AVPacket flush_packet;
 	AVInputFormat *iformat;
 	AVFormatContext *ic;
-	
+
 	int64_t audio_callback_time;
-	
+
 	double audio_clock;
 	double audio_diff_cum; /* used for AV difference average computation */
 	double audio_diff_avg_coef;
@@ -120,7 +120,7 @@ typedef struct ffmpeg_stream_s {
 	AVPacket audio_pkt;
 	uint8_t *audio_pkt_data;
 	int audio_pkt_size;
-	
+
 	double frame_timer;
 	double frame_last_pts;
 	double frame_last_delay;
@@ -147,18 +147,18 @@ typedef struct ffmpeg_stream_s {
 
 	list_t event_list;
 	pthread_mutex_t event_mutex;
-	
+
 	list_t timer_list;
 	pthread_mutex_t timer_mutex;
 
 	int loop_running;
 	int loop_stopped;
-	pthread_t loop_thread;	
+	pthread_t loop_thread;
 	pthread_cond_t loop_cond;
 	pthread_mutex_t loop_mutex;
 
 	int decode_running;
-	int decode_stopped;	
+	int decode_stopped;
 	pthread_t decode_thread;
 	pthread_cond_t decode_cond;
 	pthread_mutex_t decode_mutex;
@@ -396,7 +396,7 @@ static void alloc_picture (ffmpeg_stream_t *ffmpeg_stream)
 			screen);
 	vp->width = ffmpeg_stream->video_st->codec->width;
 	vp->height = ffmpeg_stream->video_st->codec->height;
-	
+
 	pthread_mutex_lock(&ffmpeg_stream->pictq_mutex);
 	vp->allocated = 1;
 	pthread_cond_signal(&ffmpeg_stream->pictq_cond);
@@ -431,11 +431,9 @@ static int video_open (ffmpeg_stream_t *ffmpeg_stream)
 static void video_image_display (ffmpeg_stream_t *ffmpeg_stream)
 {
 	VideoPicture *vp;
-	AVPicture pict;
 	float aspect_ratio;
 	int width, height, x, y;
 	SDL_Rect rect;
-	int i;
 
 	vp = &ffmpeg_stream->pictq[ffmpeg_stream->pictq_rindex];
 	if (vp->bmp) {
@@ -482,7 +480,7 @@ static void video_refresh (ffmpeg_stream_t *ffmpeg_stream)
 {
 	VideoPicture *vp;
 	double actual_delay, delay, sync_threshold, ref_clock, diff;
-	
+
 	if (ffmpeg_stream->video_st) {
 		if (ffmpeg_stream->pictq_size == 0) {
 			/* if no picture, need to wait */
@@ -511,7 +509,7 @@ static void video_refresh (ffmpeg_stream_t *ffmpeg_stream)
                    	duplicating or deleting a frame */
 				ref_clock = get_master_clock(ffmpeg_stream);
 				diff = vp->pts - ref_clock;
-				
+
 				/* skip or repeat frame. We take into account the
                    	delay to compute the threshold. I still don't know
                    	if it is the best guess */
@@ -536,7 +534,7 @@ static void video_refresh (ffmpeg_stream_t *ffmpeg_stream)
 			}
 			/* launch timer for next picture */
 			schedule_refresh(ffmpeg_stream, (int)(actual_delay * 1000 + 0.5));
-			
+
 #if defined(DEBUG_SYNC)
 			printf("video: delay=%0.3f actual_delay=%0.3f pts=%0.3f A-V=%f\n",
 					delay, actual_delay, vp->pts, -diff);
@@ -557,12 +555,12 @@ static void video_refresh (ffmpeg_stream_t *ffmpeg_stream)
 		}
 	} else if (ffmpeg_stream->audio_st) {
 		/* draw the next audio frame */
-		
+
 		schedule_refresh(ffmpeg_stream, 40);
-		
+
 		/* if only audio stream, then display the audio bars (better
            	than nothing, just to test the implementation */
-		
+
 		/* display picture */
 		video_display(ffmpeg_stream);
 	} else {
@@ -662,7 +660,7 @@ static void * ffmpeg_loop (void *arg)
 	ffmpeg_stream_t *ffmpeg_stream;
 
 	ffmpeg_stream = (ffmpeg_stream_t *) arg;
-	
+
 	pthread_mutex_lock(&ffmpeg_stream->loop_mutex);
 	__debugf("started loop");
 	ffmpeg_stream->loop_running = 1;
@@ -680,13 +678,13 @@ static void * ffmpeg_loop (void *arg)
 		timedel = tv[1] - tv[0];
 		ffmpeg_handle_timer(ffmpeg_stream, timedel);
 	} while (1);
-	
+
 	pthread_mutex_lock(&ffmpeg_stream->loop_mutex);
 	ffmpeg_stream->loop_stopped = 1;
 	pthread_cond_signal(&ffmpeg_stream->loop_cond);
 	__debugf("stopped loop");
 	pthread_mutex_unlock(&ffmpeg_stream->loop_mutex);
-		
+
 	return NULL;
 }
 
@@ -717,7 +715,7 @@ static void packet_queue_flush (PacketQueue *q)
 {
 	AVPacketList *pkt;
 	AVPacketList *pkt1;
-	
+
 	pthread_mutex_lock(&q->mutex);
 	for (pkt = q->first_pkt; pkt != NULL; pkt = pkt1) {
 		pkt1 = pkt->next;
@@ -763,7 +761,7 @@ static int packet_queue_put (PacketQueue *q, AVPacket *pkt)
 	q->last_pkt = pkt1;
 	q->nb_packets++;
 	q->size += pkt1->pkt.size;
-	
+
 	pthread_cond_signal(&q->cond);
 	pthread_mutex_unlock(&q->mutex);
 	return 0;
@@ -782,7 +780,7 @@ static int packet_queue_get (PacketQueue *q, AVPacket *pkt, int block)
 {
 	AVPacketList *pkt1;
 	int ret;
-	
+
 	pthread_mutex_lock(&q->mutex);
 	for(;;) {
 		if (q->abort_request) {
@@ -845,7 +843,7 @@ static int synchronize_audio (ffmpeg_stream_t *ffmpeg_stream, short *samples, in
 						wanted_size = min_size;
 					else if (wanted_size > max_size)
 						wanted_size = max_size;
-					
+
 					/* add or remove samples to correction the synchro */
 					if (wanted_size < samples_size) {
 						/* remove samples */
@@ -853,7 +851,7 @@ static int synchronize_audio (ffmpeg_stream_t *ffmpeg_stream, short *samples, in
 					} else if (wanted_size > samples_size) {
 						uint8_t *samples_end, *q;
 						int nb;
-						
+
 						/* add samples */
 						nb = (samples_size - wanted_size);
 						samples_end = (uint8_t *)samples + samples_size - n;
@@ -956,9 +954,9 @@ static void sdl_audio_callback (void *opaque, Uint8 *stream, int len)
 	ffmpeg_stream_t *ffmpeg_stream;
 	int audio_size, len1;
 	double pts;
-	
+
 	ffmpeg_stream = (ffmpeg_stream_t *) opaque;
-	
+
 	ffmpeg_stream->audio_callback_time = av_gettime();
 	while (len > 0) {
 		if (ffmpeg_stream->audio_buf_index >= ffmpeg_stream->audio_buf_size) {
@@ -1120,7 +1118,7 @@ static void * video_thread (void *arg)
 	int len1, got_picture;
 	AVFrame *frame= avcodec_alloc_frame();
 	double pts;
-	
+
 	ffmpeg_stream = (ffmpeg_stream_t *) arg;
 
 	for(;;) {
@@ -1222,7 +1220,7 @@ static int ffmpeg_stream_component_open (ffmpeg_stream_t *ffmpeg_stream, int str
 		return -1;
 	}
 	enc = ic->streams[stream_index]->codec;
-	
+
 	if (enc->codec_type == CODEC_TYPE_AUDIO) {
 		if (enc->channels > 0) {
 			enc->request_channels = FFMIN(2, enc->channels);
@@ -1230,7 +1228,7 @@ static int ffmpeg_stream_component_open (ffmpeg_stream_t *ffmpeg_stream, int str
 			enc->channels = 2;
 		}
 	}
-	
+
 	codec = avcodec_find_decoder(enc->codec_id);
 	enc->debug_mv = 0;
 	enc->debug = 0;
@@ -1315,39 +1313,39 @@ static void * ffmpeg_decode (void *arg)
 	AVFormatContext *ic;
 	AVPacket pkt1, *pkt = &pkt1;
 	AVFormatParameters params, *ap = &params;
-	
+
 	ffmpeg_stream = (ffmpeg_stream_t *) arg;
-	
+
 	pthread_mutex_lock(&ffmpeg_stream->decode_mutex);
 	ffmpeg_stream->decode_running = 1;
 	ffmpeg_stream_global = ffmpeg_stream;
 	url_set_interrupt_cb(ffmpeg_decode_interrupt_callback);
 	pthread_cond_signal(&ffmpeg_stream->decode_cond);
 	pthread_mutex_unlock(&ffmpeg_stream->decode_mutex);
-	
+
 	memset(ap, 0, sizeof(AVFormatParameters));
 	ap->width = ffmpeg_stream->video_frame_width;
 	ap->height = ffmpeg_stream->video_frame_height;
 	ap->time_base = (AVRational) {1, 25};
 	ap->pix_fmt = ffmpeg_stream->video_pixel_format;
-	
+
 	error = av_open_input_file(&ic, ffmpeg_stream->uri, ffmpeg_stream->iformat, 0, ap);
 	if (error < 0) {
 		__debugf("av_open_input_file(%s) failed", ffmpeg_stream->uri);
 		goto out;
 	}
-	
+
 	ffmpeg_stream->ic = ic;
 	if (ffmpeg_stream->generatepts == 1) {
 		ic->flags |= AVFMT_FLAG_GENPTS;
 	}
-	
+
 	error = av_find_stream_info(ic);
 	if (error < 0) {
 		__debugf("av_find_stream_info() failed");
 		goto out;
 	}
-	
+
 	audio_index = -1;
 	video_index = -1;
 	for (i = 0; i < ic->nb_streams; i++) {
@@ -1370,7 +1368,7 @@ static void * ffmpeg_decode (void *arg)
 		}
 	}
 	__debugf("selected video (%d), audio (%d)", video_index, audio_index);
-	
+
 	if (audio_index >= 0) {
 		ffmpeg_stream_component_open(ffmpeg_stream, audio_index);
 	}
@@ -1437,7 +1435,7 @@ out:
 	pthread_cond_signal(&ffmpeg_stream->decode_cond);
 	__debugf("stopped decode");
 	pthread_mutex_unlock(&ffmpeg_stream->decode_mutex);
-	
+
 	return NULL;
 }
 
@@ -1460,20 +1458,20 @@ static int ffmpeg_init (void)
 static ffmpeg_stream_t * ffmpeg_stream_open (char *uri)
 {
 	ffmpeg_stream_t *ffmpeg_stream;
-	
+
 	ffmpeg_stream = (ffmpeg_stream_t *) malloc(sizeof(ffmpeg_stream_t));
 	if (ffmpeg_stream == NULL) {
 		return NULL;
 	}
 	memset(ffmpeg_stream, 0, sizeof(ffmpeg_stream_t));
-	
+
 	ffmpeg_stream->uri = strdup(uri);
 	if (ffmpeg_stream->uri == NULL) {
 		__debugf("strdup(%s) failed", uri);
 		free(ffmpeg_stream);
 		return NULL;
 	}
-	
+
 	__debugf("setting decode_parameters");
 	ffmpeg_stream->audio_stream = -1;
 	ffmpeg_stream->video_stream = -1;
@@ -1493,19 +1491,19 @@ static ffmpeg_stream_t * ffmpeg_stream_open (char *uri)
 
 	pthread_mutex_init(&ffmpeg_stream->pictq_mutex, NULL);
 	pthread_cond_init(&ffmpeg_stream->pictq_cond, NULL);
-	
+
 	list_init(&ffmpeg_stream->timer_list);
 	pthread_mutex_init(&ffmpeg_stream->timer_mutex, NULL);
-	
+
 	list_init(&ffmpeg_stream->event_list);
 	pthread_mutex_init(&ffmpeg_stream->event_mutex, NULL);
-	
+
 	pthread_cond_init(&ffmpeg_stream->loop_cond, NULL);
 	pthread_mutex_init(&ffmpeg_stream->loop_mutex, NULL);
-	
+
 	pthread_cond_init(&ffmpeg_stream->decode_cond, NULL);
 	pthread_mutex_init(&ffmpeg_stream->decode_mutex, NULL);
-	
+
 	av_init_packet(&ffmpeg_stream->flush_packet);
 	ffmpeg_stream->flush_packet.data = (unsigned char *) "FLUSH";
 	ffmpeg_stream->flush_packet.size = strlen((char *) ffmpeg_stream->flush_packet.data);
@@ -1516,16 +1514,16 @@ static ffmpeg_stream_t * ffmpeg_stream_open (char *uri)
 		pthread_cond_wait(&ffmpeg_stream->loop_cond, &ffmpeg_stream->loop_mutex);
 	}
 	pthread_mutex_unlock(&ffmpeg_stream->loop_mutex);
-	
+
 	pthread_mutex_lock(&ffmpeg_stream->decode_mutex);
 	pthread_create(&ffmpeg_stream->decode_thread, NULL, ffmpeg_decode, ffmpeg_stream);
 	while (ffmpeg_stream->decode_running != 1) {
 		pthread_cond_wait(&ffmpeg_stream->decode_cond, &ffmpeg_stream->decode_mutex);
 	}
 	pthread_mutex_unlock(&ffmpeg_stream->decode_mutex);
-	
+
 	schedule_refresh(ffmpeg_stream, 40);
-	
+
 	return ffmpeg_stream;
 }
 

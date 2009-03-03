@@ -57,7 +57,7 @@ static void scan_pad_templates_info (render_module_t *gstreamer, GstElement *ele
 	GstPadTemplate *padtemplate;
 	GstPad *pad;
 	GstElementClass *class;
-	
+
 	class = GST_ELEMENT_GET_CLASS(element);
 
 	if (!class->numpadtemplates) {
@@ -84,9 +84,9 @@ static void render_gstreamer_scan_mime_list (render_module_t *gstreamer)
 {
 	GList *plugins;
 	GstRegistry *registry;
-	
+
 	debugf("scanning mime list");
-	
+
 	registry = gst_registry_get_default();
 	plugins = gst_default_registry_get_plugin_list();
 
@@ -119,7 +119,7 @@ static void render_gstreamer_scan_mime_list (render_module_t *gstreamer)
 			features = g_list_next(features);
 		}
 	}
-	
+
 	debugf("done scanning");
 }
 
@@ -173,7 +173,7 @@ static GstBusSyncReply mediarender_gstreamer_callback (GstBus *bus, GstMessage *
 	msgType = GST_MESSAGE_TYPE(msg);
 	msgSrc = GST_MESSAGE_SRC(msg);
 	msgSrcName = GST_OBJECT_NAME(msgSrc);
-	
+
 	if (strcmp((char *) msgSrcName, "play") != 0) {
 		return GST_BUS_PASS;
 	}
@@ -197,18 +197,18 @@ static GstBusSyncReply mediarender_gstreamer_callback (GstBus *bus, GstMessage *
 			//debugf("GStreamer: %s: unhandled message type %d (%s)", msgSrcName, msgType, gst_message_type_get_name(msgType));
 			break;
 	}
-	
+
 	return GST_BUS_PASS;
 }
 
 static int render_gstreamer_init (render_module_t *gstreamer, int argc, char *argv[])
 {
 	GstBus *bus;
-	
+
 	debugf("initializing gstreamer");
 
 	gst_init(&argc, &argv);
-	
+
 	render_gstreamer_scan_mime_list(gstreamer);
 
 	debugf("creating playbin factory");
@@ -234,7 +234,7 @@ static int render_gstreamer_init (render_module_t *gstreamer, int argc, char *ar
 	if (gst_element_set_state(play, GST_STATE_READY) == GST_STATE_CHANGE_FAILURE) {
 		debugf("pipeline doesn't want to get ready");
 	}
-	
+
 	debugf("initialized gstreamer factory");
 
 	return 0;
@@ -263,7 +263,7 @@ static int render_gstreamer_seturi (char *uri)
 static int render_gstreamer_play (render_module_t *gstreamer, char *uri)
 {
 	int result = -1;
-	
+
 	debugf("mediarender play '%s'", uri);
 	if (render_gstreamer_seturi(uri)) {
 		return -1;
