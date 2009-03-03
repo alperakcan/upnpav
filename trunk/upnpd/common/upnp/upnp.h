@@ -25,6 +25,8 @@ int ssdp_uninit (ssdp_t *ssdp);
 
 int upnp_advertise (upnp_t *upnp);
 int upnp_register_device (upnp_t *upnp, const char *description, const unsigned int length);
+char * upnp_server_address (upnp_t *upnp);
+unsigned short upnp_server_port (upnp_t *upnp);
 upnp_t * upnp_init (const char *host, const unsigned short port);
 int upnp_uninit (upnp_t *upnp);
 
