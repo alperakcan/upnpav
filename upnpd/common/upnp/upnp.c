@@ -47,6 +47,16 @@ int upnp_register_device (upnp_t *upnp, const char *description, const unsigned 
 	return 0;
 }
 
+char * upnp_server_address (upnp_t *upnp)
+{
+	return upnp->host;
+}
+
+unsigned short upnp_server_port (upnp_t *upnp)
+{
+	return upnp->port;
+}
+
 upnp_t * upnp_init (const char *host, const unsigned short port)
 {
 	upnp_t *upnp;
