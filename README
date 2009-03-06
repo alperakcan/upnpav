@@ -11,3 +11,8 @@ Alper Akcan.
 --host=mips-linux-uclibc --disable-mediarender --disable-controller \
 --disable-test_render  --disable-test_browse --disable-test_client \
 --disable-test_device --disable-shared && make
+
+- simple run
+
+# upnpd -d mediaserver -i eth0 -o directory=/path/to/share -v
+# upnpd -d controller -i eth0 -v

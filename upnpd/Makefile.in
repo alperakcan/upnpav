@@ -45,8 +45,7 @@ bin_PROGRAMS = upnpd$(EXEEXT)
 @ENABLE_MEDIARENDER_TRUE@am__append_5 = mediarender
 @ENABLE_MEDIARENDER_TRUE@am__append_6 = \
 @ENABLE_MEDIARENDER_TRUE@	$(top_builddir)/upnpd/mediarender/libmediarender.a \
-@ENABLE_MEDIARENDER_TRUE@	-lbz2 \
-@ENABLE_MEDIARENDER_TRUE@	-lrt
+@ENABLE_MEDIARENDER_TRUE@	-lbz2
 
 
 #
@@ -250,7 +249,7 @@ target_vendor = @target_vendor@
 SUBDIRS = $(am__append_1) $(am__append_3) $(am__append_5) common
 upnpd_LDADD = $(am__append_2) $(am__append_4) $(am__append_6) \
 	$(top_builddir)/upnpd/common/libcommon.a $(LIBUPNP_LIBS) \
-	$(READLINE_LIBS) $(am__append_7) $(am__append_8)
+	$(READLINE_LIBS) -lrt $(am__append_7) $(am__append_8)
 upnpd_SOURCES = \
 	upnpd.c		\
 	upnpd.h

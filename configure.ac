@@ -178,7 +178,7 @@ CFLAGS="$CFLAGS -Wall -Werror"
 #
 
 AC_ARG_ENABLE([test_render],
-[  --disable-test_render   disable test_render application [[default=yes]]],
+[  --enable-test_render   disable test_render application [[default=no]]],
 if test "$enableval" = "no"
 then
 	enable_test_render=no
@@ -187,8 +187,7 @@ else
 	AC_DEFINE(ENABLE_TESTRENDER, 1, [Define to 1 if you want 'test_render' support.])
 fi
 ,
-enable_test_render=yes
-AC_DEFINE(ENABLE_TESTRENDER, 1, [Define to 1 if you want 'test_render' support.])
+enable_test_render=no
 )
 
 AC_ARG_ENABLE([test_browse],
@@ -262,7 +261,7 @@ AC_DEFINE(ENABLE_MEDIASERVER, 1, [Define to 1 if you want 'mediaserver' support.
 )
 
 AC_ARG_ENABLE([mediarender],
-[  --disable-mediarender   disable mediarender application [[default=yes]]],
+[  --enable-mediarender   disable mediarender application [[default=no]]],
 if test "$enableval" = "no"
 then
 	enable_mediarender=no
@@ -271,8 +270,7 @@ else
 	AC_DEFINE(ENABLE_MEDIARENDER, 1, [Define to 1 if you want 'mediarender' support.])
 fi
 ,
-enable_mediarender=yes
-AC_DEFINE(ENABLE_MEDIARENDER, 1, [Define to 1 if you want 'mediarender' support.])
+enable_mediarender=no
 )
 
 AC_ARG_ENABLE([optional],

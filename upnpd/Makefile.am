@@ -28,15 +28,15 @@ if ENABLE_MEDIARENDER
 SUBDIRS     += mediarender
 upnpd_LDADD += \
 	$(top_builddir)/upnpd/mediarender/libmediarender.a \
-	-lbz2 \
-	-lrt
+	-lbz2
 endif
 
 SUBDIRS     += common
 upnpd_LDADD += \
 	$(top_builddir)/upnpd/common/libcommon.a \
 	$(LIBUPNP_LIBS) \
-	$(READLINE_LIBS)
+	$(READLINE_LIBS) \
+	-lrt
 
 #
 # external stuff must be after all, not to confuse ld library path

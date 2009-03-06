@@ -1526,13 +1526,13 @@ Optional Features:
   --enable-fast-install[=PKGS]
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
-  --disable-test_render   disable test_render application [default=yes]
+  --enable-test_render   disable test_render application [default=no]
   --disable-test_browse   disable test_browse application [default=yes]
   --disable-test_client   disable test_client application [default=yes]
   --disable-test_device   disable test_device application [default=yes]
   --disable-controller    disable controller application [default=yes]
   --disable-mediaserver   disable mediaserver application [default=yes]
-  --disable-mediarender   disable mediarender application [default=yes]
+  --enable-mediarender   disable mediarender application [default=no]
   --enable-optional       enable optional upnp av functions [default=no]
   --disable-gstreamer     disable gstreamer render support [default=yes]
   --disable-ffmpeg        disable ffmpeg render support [default=yes]
@@ -21176,12 +21176,7 @@ _ACEOF
 fi
 
 else
-  enable_test_render=yes
-
-cat >>confdefs.h <<\_ACEOF
-#define ENABLE_TESTRENDER 1
-_ACEOF
-
+  enable_test_render=no
 
 fi
 
@@ -21326,12 +21321,7 @@ _ACEOF
 fi
 
 else
-  enable_mediarender=yes
-
-cat >>confdefs.h <<\_ACEOF
-#define ENABLE_MEDIARENDER 1
-_ACEOF
-
+  enable_mediarender=no
 
 fi
 
