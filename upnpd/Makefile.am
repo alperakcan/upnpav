@@ -34,6 +34,7 @@ endif
 SUBDIRS     += common
 upnpd_LDADD += \
 	$(top_builddir)/upnpd/common/libcommon.a \
+	$(top_builddir)/upnpd/common/upnp/libupnp.a \
 	$(LIBUPNP_LIBS) \
 	$(READLINE_LIBS) \
 	-lrt

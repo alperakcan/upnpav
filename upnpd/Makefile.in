@@ -76,6 +76,7 @@ am__DEPENDENCIES_4 =
 @ENABLE_RENDER_FFMPEG_TRUE@am__DEPENDENCIES_6 = $(am__DEPENDENCIES_4)
 upnpd_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_3) $(top_builddir)/upnpd/common/libcommon.a \
+	$(top_builddir)/upnpd/common/upnp/libupnp.a \
 	$(am__DEPENDENCIES_4) $(am__DEPENDENCIES_4) \
 	$(am__DEPENDENCIES_5) $(am__DEPENDENCIES_6)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
@@ -248,7 +249,8 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 SUBDIRS = $(am__append_1) $(am__append_3) $(am__append_5) common
 upnpd_LDADD = $(am__append_2) $(am__append_4) $(am__append_6) \
-	$(top_builddir)/upnpd/common/libcommon.a $(LIBUPNP_LIBS) \
+	$(top_builddir)/upnpd/common/libcommon.a \
+	$(top_builddir)/upnpd/common/upnp/libupnp.a $(LIBUPNP_LIBS) \
 	$(READLINE_LIBS) -lrt $(am__append_7) $(am__append_8)
 upnpd_SOURCES = \
 	upnpd.c		\
