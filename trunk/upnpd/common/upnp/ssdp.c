@@ -26,6 +26,8 @@
 #include <netdb.h>
 #include <sys/poll.h>
 
+#include <upnp/ixml.h>
+
 #include "upnp.h"
 
 struct ssdp_s {
@@ -314,28 +316,45 @@ static int ssdp_init_server (ssdp_t *ssdp)
 	return 0;
 }
 
-int ssdp_advertise (ssdp_t *ssdp)
+int ssdp_advertise (ssdp_t *ssdp, char *upnp_description)
 {
+	int rc;
+	IXML_NodeList *devicelist;
+	IXML_NodeList *servicelist;
+	IXML_Document *description;
 	pthread_mutex_lock(&ssdp->mutex);
+	rc = ixmlParseBufferEx(upnp_description, &description);
+	if (rc != IXML_SUCCESS) {
+		pthread_mutex_unlock(&ssdp->mutex);
+		return -1;
+	}
+	devicelist = ixmlDocument_getElementsByTagName(description, "device");
+	if (devicelist != NULL) {
+		ixmlDocument_free(description);
+		pthread_mutex_unlock(&ssdp->mutex);
+		return -2;
+	}
+	servicelist = ixmlDocument_getElementsByTagName(description, "serviceList");
+	rc = 0;
+	ixmlNodeList_free(servicelist);
+	ixmlNodeList_free(devicelist);
+	ixmlDocument_free(description);
 	pthread_mutex_unlock(&ssdp->mutex);
-	return 0;
+	return rc;
 }
 
-ssdp_t * ssdp_init (const char *description, const unsigned int length)
+ssdp_t * ssdp_init (void)
 {
 	ssdp_t *ssdp;
-
 	ssdp = (ssdp_t *) malloc(sizeof(ssdp_t));
 	if (ssdp == NULL) {
 		return NULL;
 	}
-
 	memset(ssdp, 0, sizeof(ssdp_t));
 	if (ssdp_init_server(ssdp) != 0) {
 		free(ssdp);
 		return NULL;
 	}
-
 	return ssdp;
 }
 
@@ -351,9 +370,7 @@ int ssdp_uninit (ssdp_t *ssdp)
 	pthread_mutex_destroy(&ssdp->mutex);
 	pthread_cond_destroy(&ssdp->cond);
 	pthread_join(ssdp->thread, NULL);
-
 	close(ssdp->socket);
 	free(ssdp);
-
 	return 0;
 }

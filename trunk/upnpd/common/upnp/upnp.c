@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <pthread.h>
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -31,19 +32,29 @@ struct upnp_s {
 	char *host;
 	unsigned short port;
 	ssdp_t *ssdp;
+	char *description;
+	pthread_cond_t cond;
+	pthread_mutex_t mutex;
 };
 
 int upnp_advertise (upnp_t *upnp)
 {
-	return ssdp_advertise(upnp->ssdp);
+	int rc;
+	pthread_mutex_lock(&upnp->mutex);
+	rc = ssdp_advertise(upnp->ssdp, upnp->description);
+	pthread_mutex_unlock(&upnp->mutex);
+	return rc;
 }
 
-int upnp_register_device (upnp_t *upnp, const char *description, const unsigned int length)
+int upnp_register_device (upnp_t *upnp, const char *description)
 {
-	upnp->ssdp = ssdp_init(description, length);
-	if (upnp->ssdp == NULL) {
+	pthread_mutex_lock(&upnp->mutex);
+	upnp->description = strdup(description);
+	if (upnp->description == NULL) {
+		pthread_mutex_unlock(&upnp->mutex);
 		return -1;
 	}
+	pthread_mutex_unlock(&upnp->mutex);
 	return 0;
 }
 
@@ -71,14 +82,20 @@ upnp_t * upnp_init (const char *host, const unsigned short port)
 		return NULL;
 	}
 	upnp->port = port;
+	upnp->ssdp = ssdp_init();
+	if (upnp->ssdp == NULL) {
+		free(upnp->host);
+		free(upnp);
+		return NULL;
+	}
+	pthread_mutex_init(&upnp->mutex, NULL);
+	pthread_cond_init(&upnp->cond, NULL);
 	return upnp;
 }
 
 int upnp_uninit (upnp_t *upnp)
 {
-	if (upnp->ssdp != NULL) {
-		ssdp_uninit(upnp->ssdp);
-	}
+	ssdp_uninit(upnp->ssdp);
 	free(upnp->host);
 	free(upnp);
 	return 0;
