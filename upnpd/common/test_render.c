@@ -38,10 +38,10 @@ int main (int argc, char *argv[])
 		debugf("render_init() failed");
 	}
 	sleep(1);
-	if (render_play(render, "/home/mp3/mp3/Alanis Morisette/01-AudioTrack 01.mp31")) {
+	if (render_play(render, "udp://224.0.22.2:1234")) {
 		debugf("render_play() failed");
 	}
-	sleep(10);
+	sleep(100);
 	if (render_uninit(render)) {
 		debugf("render_uninit() failed");
 	}
