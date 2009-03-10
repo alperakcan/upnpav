@@ -53,7 +53,9 @@ typedef struct ssdp_request_notify_s {
 	char *nts;
 	char *usn;
 	char *al;
-	char *cache;
+	char *location;
+	char *server;
+	char *cachecontrol;
 } ssdp_request_notify_t;
 
 typedef struct ssdp_request_search_s {
@@ -116,7 +118,9 @@ static int ssdp_request_uninit (ssdp_request_t *r)
 			break;
 		case SSDP_TYPE_NOTIFY:
 			free(r->notify.al);
-			free(r->notify.cache);
+			free(r->notify.location);
+			free(r->notify.server);
+			free(r->notify.cachecontrol);
 			free(r->notify.host);
 			free(r->notify.nt);
 			free(r->notify.nts);
@@ -173,8 +177,12 @@ static ssdp_request_t * ssdp_parse (ssdp_t *ssdp, char *buffer, int length)
 				request->notify.usn = strdup(ssdp_trim(line + 4));
 			} else if (strncasecmp(line, "AL:", 3) == 0) {
 				request->notify.al = strdup(ssdp_trim(line + 3));
+			} else if (strncasecmp(line, "LOCATION:", 9) == 0) {
+				request->notify.location = strdup(ssdp_trim(line + 9));
 			} else if (strncasecmp(line, "Cache-Control:", 14) == 0) {
-				request->notify.cache = strdup(ssdp_trim(line + 14));
+				request->notify.cachecontrol = strdup(ssdp_trim(line + 14));
+			} else if (strncasecmp(line, "Server:", 7) == 0) {
+				request->notify.server = strdup(ssdp_trim(line + 7));
 			}
 		} else if (request->request == SSDP_TYPE_MSEARCH) {
 			if (strncasecmp(line, "S:", 2) == 0) {
@@ -318,29 +326,46 @@ static int ssdp_init_server (ssdp_t *ssdp)
 
 int ssdp_advertise (ssdp_t *ssdp, char *upnp_description)
 {
+	int i;
 	int rc;
+	IXML_Node *node;
 	IXML_NodeList *devicelist;
 	IXML_NodeList *servicelist;
 	IXML_Document *description;
+
 	pthread_mutex_lock(&ssdp->mutex);
 	rc = ixmlParseBufferEx(upnp_description, &description);
 	if (rc != IXML_SUCCESS) {
 		pthread_mutex_unlock(&ssdp->mutex);
 		return -1;
 	}
+
 	devicelist = ixmlDocument_getElementsByTagName(description, "device");
 	if (devicelist != NULL) {
-		ixmlDocument_free(description);
-		pthread_mutex_unlock(&ssdp->mutex);
-		return -2;
+		for (i = 0; ; i++) {
+			node = ixmlNodeList_item(devicelist, i);
+			if (node == NULL) {
+				break;
+			}
+		}
 	}
+
 	servicelist = ixmlDocument_getElementsByTagName(description, "serviceList");
-	rc = 0;
+	if (servicelist != NULL) {
+		for (i = 0; ; i++) {
+			node = ixmlNodeList_item(servicelist, i);
+			if (node == NULL) {
+				break;
+			}
+		}
+	}
+
 	ixmlNodeList_free(servicelist);
 	ixmlNodeList_free(devicelist);
 	ixmlDocument_free(description);
+
 	pthread_mutex_unlock(&ssdp->mutex);
-	return rc;
+	return 0;
 }
 
 ssdp_t * ssdp_init (void)
