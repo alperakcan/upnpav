@@ -38,7 +38,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS =
+noinst_PROGRAMS = test_ssdp$(EXEEXT)
 subdir = upnpd/common/upnp
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -55,6 +55,11 @@ libupnp_a_LIBADD =
 am_libupnp_a_OBJECTS = ssdp.$(OBJEXT) upnp.$(OBJEXT)
 libupnp_a_OBJECTS = $(am_libupnp_a_OBJECTS)
 PROGRAMS = $(noinst_PROGRAMS)
+am_test_ssdp_OBJECTS = test_ssdp.$(OBJEXT)
+test_ssdp_OBJECTS = $(am_test_ssdp_OBJECTS)
+am__DEPENDENCIES_1 =
+test_ssdp_DEPENDENCIES = $(top_builddir)/upnpd/common/upnp/libupnp.a \
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -66,8 +71,8 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libupnp_a_SOURCES)
-DIST_SOURCES = $(libupnp_a_SOURCES)
+SOURCES = $(libupnp_a_SOURCES) $(test_ssdp_SOURCES)
+DIST_SOURCES = $(libupnp_a_SOURCES) $(test_ssdp_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -222,6 +227,12 @@ libupnp_a_SOURCES = \
 	ssdp.c \
 	upnp.c
 
+test_ssdp_SOURCES = \
+	test_ssdp.c
+
+test_ssdp_LDADD = \
+	$(top_builddir)/upnpd/common/upnp/libupnp.a $(LIBUPNP_LIBS)
+
 all: all-am
 
 .SUFFIXES:
@@ -269,6 +280,9 @@ clean-noinstPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
+test_ssdp$(EXEEXT): $(test_ssdp_OBJECTS) $(test_ssdp_DEPENDENCIES) 
+	@rm -f test_ssdp$(EXEEXT)
+	$(LINK) $(test_ssdp_LDFLAGS) $(test_ssdp_OBJECTS) $(test_ssdp_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -277,6 +291,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssdp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_ssdp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/upnp.Po@am__quote@
 
 .c.o:
