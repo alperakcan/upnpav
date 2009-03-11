@@ -246,7 +246,7 @@ static ssdp_request_t * ssdp_parse (ssdp_t *ssdp, char *buffer, int length)
 	return request;
 }
 
-static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request)
+static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, struct sockaddr_in *sender)
 {
 	switch (request->request) {
 		case SSDP_TYPE_MSEARCH:
@@ -339,7 +339,7 @@ static void * ssdp_thread_loop (void *arg)
 		buffer[received] = '\0';
 		request = ssdp_parse(ssdp, buffer, received);
 		if (request != NULL) {
-			ssdp_request_handler(ssdp, request);
+			ssdp_request_handler(ssdp, request, &sender);
 			ssdp_request_uninit(request);
 		}
 	}
