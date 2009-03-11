@@ -91,6 +91,15 @@ static char * ssdp_trim (char *buffer)
 			break;
 		}
 	}
+	for (; *out && (*out == '"' || *out == '\''); out++) {
+	}
+	for (l = strlen(buffer); l >= 0; l--) {
+		if (buffer[l] == '"' || buffer[l] == '\'') {
+			buffer[l] = '\0';
+		} else {
+			break;
+		}
+	}
 	return out;
 }
 
@@ -147,11 +156,12 @@ static ssdp_request_t * ssdp_parse (ssdp_t *ssdp, char *buffer, int length)
 		line = ptr;
 		while (ptr < buffer + length) {
 			if (*ptr == '\r') {
-				*ptr++ = '\0';
+				*ptr = '\0';
 			} else if (*ptr == '\n') {
 				*ptr++ = '\0';
 				break;
 			}
+			ptr++;
 		}
 		if (strncasecmp(line, "M-SEARCH", 8) == 0) {
 			if (request->request != SSDP_TYPE_UNKNOWN) {
@@ -205,10 +215,39 @@ static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request)
 {
 	switch (request->request) {
 		case SSDP_TYPE_MSEARCH:
+			printf("msearch:\n"
+				"  s   : '%s'\n"
+				"  host: '%s'\n"
+				"  man : '%s'\n"
+				"  st  : '%s'\n"
+				"  mx  : '%s'\n",
+				request->search.s,
+				request->search.host,
+				request->search.man,
+				request->search.st,
+				request->search.mx);
 			break;
 		case SSDP_TYPE_NOTIFY:
-			break;
+			printf("notify\n"
+				"  host        : '%s'\n"
+				"  nt          : '%s'\n"
+				"  nts         : '%s'\n"
+				"  usn         : '%s'\n"
+				"  al          : '%s'\n"
+				"  location    : '%s'\n"
+				"  server      : '%s'\n"
+				"  cachecontrol: '%s'\n",
+				request->notify.host,
+				request->notify.nt,
+				request->notify.nts,
+				request->notify.usn,
+				request->notify.al,
+				request->notify.location,
+				request->notify.server,
+				request->notify.cachecontrol);
+				break;
 		case SSDP_TYPE_UNKNOWN:
+		default:
 			break;
 	}
 	return 0;
