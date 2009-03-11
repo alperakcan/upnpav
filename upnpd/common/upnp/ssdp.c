@@ -84,18 +84,18 @@ static char * ssdp_trim (char *buffer)
 	char *out;
 	for (out = buffer; *out && (*out == ' ' || *out == '\t'); out++) {
 	}
-	for (l = strlen(buffer); l >= 0; l--) {
-		if (buffer[l] == ' ' || buffer[l] == '\t') {
-			buffer[l] = '\0';
+	for (l = strlen(out) - 1; l >= 0; l--) {
+		if (out[l] == ' ' || out[l] == '\t') {
+			out[l] = '\0';
 		} else {
 			break;
 		}
 	}
 	for (; *out && (*out == '"' || *out == '\''); out++) {
 	}
-	for (l = strlen(buffer); l >= 0; l--) {
-		if (buffer[l] == '"' || buffer[l] == '\'') {
-			buffer[l] = '\0';
+	for (l = strlen(out) - 1; l >= 0; l--) {
+		if (out[l] == '"' || out[l] == '\'') {
+			out[l] = '\0';
 		} else {
 			break;
 		}
@@ -140,6 +140,37 @@ static int ssdp_request_uninit (ssdp_request_t *r)
 	}
 	free(r);
 	return 0;
+}
+
+static int ssdp_request_valid (ssdp_request_t *request)
+{
+	switch (request->request) {
+		case SSDP_TYPE_MSEARCH:
+			if (request->search.st == NULL ||
+			    request->search.man == NULL) {
+				return -1;
+			}
+			if (strcasecmp(request->search.man, "ssdp:discover") == 0) {
+				return 0;
+			}
+			break;
+		case SSDP_TYPE_NOTIFY:
+			if (request->notify.nt == NULL ||
+			    request->notify.nts == NULL ||
+			    request->notify.usn == NULL ||
+			    (request->notify.al == NULL && request->notify.location == NULL)) {
+				return -1;
+			}
+			if (strcasecmp(request->notify.nts, "ssdp:alive") == 0) {
+				return 0;
+			} else if (strcasecmp(request->notify.nts, "ssdp:byebye") == 0) {
+				return 0;
+			}
+			break;
+		default:
+			break;
+	}
+	return -1;
 }
 
 static ssdp_request_t * ssdp_parse (ssdp_t *ssdp, char *buffer, int length)
@@ -208,6 +239,10 @@ static ssdp_request_t * ssdp_parse (ssdp_t *ssdp, char *buffer, int length)
 			}
 		}
 	}
+	if (ssdp_request_valid(request) != 0) {
+		ssdp_request_uninit(request);
+		request = NULL;
+	}
 	return request;
 }
 
@@ -245,7 +280,7 @@ static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request)
 				request->notify.location,
 				request->notify.server,
 				request->notify.cachecontrol);
-				break;
+			break;
 		case SSDP_TYPE_UNKNOWN:
 		default:
 			break;

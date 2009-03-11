@@ -16,6 +16,7 @@
 #include <config.h>
 
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "upnp.h"
 
@@ -26,8 +27,9 @@ int main (int argc, char *argv[])
 	if (ssdp == NULL) {
 		return -1;
 	}
+
 	while (1)
-		;
+		sleep(100);
 
 	ssdp_uninit(ssdp);
 	return 0;
