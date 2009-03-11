@@ -358,6 +358,7 @@ out:
 
 static int ssdp_init_server (ssdp_t *ssdp)
 {
+	int on;
 	struct hostent *h;
 	struct ip_mreq mreq;
 	struct in_addr mcastip;
@@ -371,6 +372,12 @@ static int ssdp_init_server (ssdp_t *ssdp)
 	ssdp->socket = socket(AF_INET, SOCK_DGRAM, 0);
 	if (ssdp->socket < 0) {
 		return -2;
+	}
+
+	on = 1;
+	if (setsockopt(ssdp->socket, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on)) < 0) {
+		close(ssdp->socket);
+		return -1;
 	}
 
 	addr.sin_family = AF_INET;

@@ -29,7 +29,7 @@ int main (int argc, char *argv[])
 	}
 
 	while (1)
-		sleep(100);
+		sleep(1);
 
 	ssdp_uninit(ssdp);
 	return 0;
