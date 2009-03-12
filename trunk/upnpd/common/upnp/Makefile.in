@@ -52,7 +52,7 @@ LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 libupnp_a_AR = $(AR) $(ARFLAGS)
 libupnp_a_LIBADD =
-am_libupnp_a_OBJECTS = ssdp.$(OBJEXT) upnp.$(OBJEXT)
+am_libupnp_a_OBJECTS = gena.$(OBJEXT) ssdp.$(OBJEXT) upnp.$(OBJEXT)
 libupnp_a_OBJECTS = $(am_libupnp_a_OBJECTS)
 PROGRAMS = $(noinst_PROGRAMS)
 am_test_ssdp_OBJECTS = test_ssdp.$(OBJEXT)
@@ -224,6 +224,7 @@ target_vendor = @target_vendor@
 noinst_LIBRARIES = libupnp.a
 libupnp_a_SOURCES = \
 	upnp.h \
+	gena.c \
 	ssdp.c \
 	upnp.c
 
@@ -290,6 +291,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gena.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssdp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_ssdp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/upnp.Po@am__quote@

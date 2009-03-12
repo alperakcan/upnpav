@@ -32,6 +32,7 @@ struct upnp_s {
 	char *host;
 	unsigned short port;
 	ssdp_t *ssdp;
+	gena_t *gena;
 	char *description;
 	pthread_cond_t cond;
 	pthread_mutex_t mutex;
@@ -58,12 +59,12 @@ int upnp_register_device (upnp_t *upnp, const char *description)
 	return 0;
 }
 
-char * upnp_server_address (upnp_t *upnp)
+char * upnp_getaddress (upnp_t *upnp)
 {
 	return upnp->host;
 }
 
-unsigned short upnp_server_port (upnp_t *upnp)
+unsigned short upnp_getport (upnp_t *upnp)
 {
 	return upnp->port;
 }
@@ -88,6 +89,14 @@ upnp_t * upnp_init (const char *host, const unsigned short port)
 		free(upnp);
 		return NULL;
 	}
+	upnp->gena = gena_init(upnp->host, upnp->port);
+	if (upnp->gena == NULL) {
+		ssdp_uninit(upnp->ssdp);
+		free(upnp->host);
+		free(upnp);
+		return NULL;
+	}
+	upnp->port = gena_getport(upnp->gena);
 	pthread_mutex_init(&upnp->mutex, NULL);
 	pthread_cond_init(&upnp->cond, NULL);
 	return upnp;
@@ -95,6 +104,7 @@ upnp_t * upnp_init (const char *host, const unsigned short port)
 
 int upnp_uninit (upnp_t *upnp)
 {
+	gena_uninit(upnp->gena);
 	ssdp_uninit(upnp->ssdp);
 	free(upnp->host);
 	free(upnp);
