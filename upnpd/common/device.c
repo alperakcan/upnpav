@@ -31,7 +31,10 @@
 //#define UPNP_INTERNAL 1
 
 static device_t *__device;
+
+#if defined(UPNP_INTERNAL)
 static upnp_t *upnp;
+#endif
 
 static int device_vfsgetinfo (void *cookie, char *path, webserver_fileinfo_t *info)
 {
