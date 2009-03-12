@@ -28,7 +28,10 @@
 #include "common.h"
 #include "uuid/uuid.h"
 
+//#define UPNP_INTERNAL 1
+
 static device_t *__device;
+static upnp_t *upnp;
 
 static int device_vfsgetinfo (void *cookie, char *path, webserver_fileinfo_t *info)
 {
@@ -322,6 +325,8 @@ struct UpnpVirtualDirCallbacks virtual_dir_callbacks = {
 	webserver_close
 };
 
+#if defined(UPNP_INTERNAL)
+#else
 static int device_event_get_var_request (device_t *device, struct Upnp_State_Var_Request *event)
 {
 	debugf("received get var request:\n"
@@ -501,12 +506,16 @@ static int device_event_handler (Upnp_EventType eventtype, void *event, void *co
 	pthread_mutex_unlock(&device->mutex);
 	return 0;
 }
+#endif
 
 int device_init (device_t *device)
 {
-	int rc;
 	int ret;
 	uuid_t uuid;
+#if defined(UPNP_INTERNAL)
+#else
+	int rc;
+#endif
 	ret = -1;
 	debugf("initializing device '%s'", device->name);
 	if (pthread_mutex_init(&device->mutex, NULL) != 0) {
@@ -514,6 +523,15 @@ int device_init (device_t *device)
 		goto out;
 	}
 	debugf("initializing upnp stack");
+#if defined(UPNP_INTERNAL)
+	upnp = upnp_init(device->interface, 0);
+	if (upnp == NULL) {
+		pthread_mutex_destroy(&device->mutex);
+		goto out;
+	}
+	device->port = upnp_getport(upnp);
+	device->ipaddress = upnp_getaddress(upnp);
+#else
 	if ((rc = UpnpInit(device->interface, 0)) != UPNP_E_SUCCESS) {
 		debugf("UpnpInit(NULL, 0) failed (%d:%s)", rc, UpnpGetErrorMessage(rc));
 		pthread_mutex_destroy(&device->mutex);
@@ -523,6 +541,7 @@ int device_init (device_t *device)
 	device->port = UpnpGetServerPort();
 	device->ipaddress = UpnpGetServerIpAddress();
 	device_vfscallbacks.cookie = device;
+#endif
 	debugf("enabling internal web server");
 	device->webserver = webserver_init(device->ipaddress, device->port, &device_vfscallbacks);
 	uuid_generate(uuid);
@@ -539,6 +558,14 @@ int device_init (device_t *device)
 		debugf("description_generate_from_device(device) failed");
 		goto out;
 	}
+#if defined(UPNP_INTERNAL)
+	if (upnp_register_device(upnp, device->description) != 0) {
+		goto out;
+	}
+	if (upnp_advertise(upnp) != 0) {
+		goto out;
+	}
+#else
 	debugf("enabling upnp webserver");
 	if ((rc = UpnpEnableWebserver(TRUE)) != UPNP_E_SUCCESS) {
 		debugf("UpnpenableWebserver() failed");
@@ -563,6 +590,7 @@ int device_init (device_t *device)
 		debugf("UpnpSendAdvertisement() failed (%d:%s)", rc, UpnpGetErrorMessage(rc));
 		goto out;
 	}
+#endif
 	debugf("listening for control point connections");
 	debugf("started device '%s'\n"
 	       "  ipaddress  : %s\n"
@@ -598,8 +626,12 @@ int device_uninit (device_t *device)
 		service_uninit(service);
 	}
 	debugf("unregistering device '%s'", device->name);
+#if defined(UPNP_INTERNAL)
+	upnp_uninit(upnp);
+#else
 	UpnpUnRegisterRootDevice(device->handle);
 	UpnpFinish();
+#endif
 	pthread_mutex_unlock(&device->mutex);
 	pthread_mutex_destroy(&device->mutex);
 	free(device->services);
