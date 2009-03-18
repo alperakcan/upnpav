@@ -26,9 +26,8 @@
 #include <netdb.h>
 #include <sys/poll.h>
 
-#include <upnp/ixml.h>
-
 #include "upnp.h"
+#include "list.h"
 
 struct ssdp_s {
 	int socket;
@@ -67,7 +66,7 @@ typedef struct ssdp_request_search_s {
 	char *mx;
 } ssdp_request_search_t;
 
-typedef union ssdp_request_s {
+typedef union ssdp_request_u {
 	ssdp_type_t request;
 	ssdp_request_notify_t notify;
 	ssdp_request_search_t search;
@@ -115,6 +114,19 @@ static ssdp_request_t * ssdp_request_init (void)
 	return r;
 }
 
+static int ssdp_request_uninit_notify (ssdp_request_notify_t *n)
+{
+	free(n->al);
+	free(n->location);
+	free(n->server);
+	free(n->cachecontrol);
+	free(n->host);
+	free(n->nt);
+	free(n->nts);
+	free(n->usn);
+	return 0;
+}
+
 static int ssdp_request_uninit (ssdp_request_t *r)
 {
 	switch (r->request) {
@@ -126,14 +138,7 @@ static int ssdp_request_uninit (ssdp_request_t *r)
 			free(r->search.st);
 			break;
 		case SSDP_TYPE_NOTIFY:
-			free(r->notify.al);
-			free(r->notify.location);
-			free(r->notify.server);
-			free(r->notify.cachecontrol);
-			free(r->notify.host);
-			free(r->notify.nt);
-			free(r->notify.nts);
-			free(r->notify.usn);
+			ssdp_request_uninit_notify(&r->notify);
 			break;
 		case SSDP_TYPE_UNKNOWN:
 			break;
@@ -405,46 +410,25 @@ static int ssdp_init_server (ssdp_t *ssdp)
 	return 0;
 }
 
-int ssdp_advertise (ssdp_t *ssdp, char *upnp_description)
+int ssdp_advertise (ssdp_t *ssdp, char *upnp_description, char *location)
 {
-	int i;
-	int rc;
-	IXML_Node *node;
-	IXML_NodeList *devicelist;
-	IXML_NodeList *servicelist;
-	IXML_Document *description;
+	return 0;
+}
 
+int ssdp_register (ssdp_t *ssdp, char *nt, char *usn, char *location, char *server, int age)
+{
 	pthread_mutex_lock(&ssdp->mutex);
-	rc = ixmlParseBufferEx(upnp_description, &description);
-	if (rc != IXML_SUCCESS) {
-		pthread_mutex_unlock(&ssdp->mutex);
-		return -1;
-	}
-
-	devicelist = ixmlDocument_getElementsByTagName(description, "device");
-	if (devicelist != NULL) {
-		for (i = 0; ; i++) {
-			node = ixmlNodeList_item(devicelist, i);
-			if (node == NULL) {
-				break;
-			}
-		}
-	}
-
-	servicelist = ixmlDocument_getElementsByTagName(description, "serviceList");
-	if (servicelist != NULL) {
-		for (i = 0; ; i++) {
-			node = ixmlNodeList_item(servicelist, i);
-			if (node == NULL) {
-				break;
-			}
-		}
-	}
-
-	ixmlNodeList_free(servicelist);
-	ixmlNodeList_free(devicelist);
-	ixmlDocument_free(description);
-
+	printf("registering\n"
+		"  nt      : %s\n"
+		"  usn     : %s\n"
+		"  location: %s\n"
+		"  server  : %s\n"
+		"  age     : %d\n",
+		nt,
+		usn,
+		location,
+		server,
+		age);
 	pthread_mutex_unlock(&ssdp->mutex);
 	return 0;
 }
@@ -472,10 +456,10 @@ int ssdp_uninit (ssdp_t *ssdp)
 	while (ssdp->stopped == 0) {
 		pthread_cond_wait(&ssdp->cond, &ssdp->mutex);
 	}
+	pthread_join(ssdp->thread, NULL);
 	pthread_mutex_unlock(&ssdp->mutex);
 	pthread_mutex_destroy(&ssdp->mutex);
 	pthread_cond_destroy(&ssdp->cond);
-	pthread_join(ssdp->thread, NULL);
 	close(ssdp->socket);
 	free(ssdp);
 	return 0;
