@@ -17,11 +17,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
+#include <string.h>
 #include <pthread.h>
-#include <assert.h>
-#include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <poll.h>
@@ -29,106 +27,17 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <ctype.h>
+#include <assert.h>
 
-typedef struct list_s list_t;
-
-struct list_s {
-	struct list_s *next;
-	struct list_s *prev;
-};
-
-#define offsetof_(type, member) ((size_t) &((type *) 0)->member)
-
-#define containerof_(ptr, type, member) ({			\
-	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
-	(type *)( (char *)__mptr - offsetof_(type,member) );})
-
-#define list_entry(ptr, type, member) \
-	containerof_(ptr, type, member)
-
-#define list_first_entry(ptr, type, member) \
-	list_entry((ptr)->next, type, member)
-
-#define list_for_each(pos, head) \
-	for (pos = (head)->next; pos != (head); pos = pos->next)
-
-#define list_for_each_safe(pos, n, head) \
-	for (pos = (head)->next, n = pos->next; pos != (head); pos = n, n = pos->next)
-
-#define list_for_each_entry(pos, head, member)				\
-	for (pos = list_entry((head)->next, typeof(*pos), member);	\
-	     &pos->member != (head);					\
-	     pos = list_entry(pos->member.next, typeof(*pos), member))
-
-#define list_for_each_entry_safe(pos, n, head, member)			\
-	for (pos = list_entry((head)->next, typeof(*pos), member),	\
-	     n = list_entry(pos->member.next, typeof(*pos), member);	\
-	     &pos->member != (head); 					\
-	     pos = n, n = list_entry(n->member.next, typeof(*n), member))
-
-static inline int list_count (list_t *head)
-{
-	int count;
-	list_t *entry;
-	count = 0;
-	list_for_each(entry, head) {
-		count++;
-	}
-	return count;
-}
-
-static inline void list_add_actual (list_t *new, list_t *prev, list_t *next)
-{
-	next->prev = new;
-	new->next = next;
-	new->prev = prev;
-	prev->next = new;
-}
-
-static inline void list_del_actual (list_t *prev, list_t *next)
-{
-	next->prev = prev;
-	prev->next = next;
-}
-
-static inline void list_add_tail (list_t *new, list_t *head)
-{
-	list_add_actual(new, head->prev, head);
-}
-
-static inline void list_add (list_t *new, list_t *head)
-{
-	list_add_actual(new, head, head->next);
-}
-
-static inline void list_del (list_t *entry)
-{
-	list_del_actual(entry->prev, entry->next);
-	entry->next = NULL;
-	entry->prev = NULL;
-}
-
-static inline int list_is_first (list_t *list, list_t *head)
-{
-	return head->next == list;
-}
-
-static inline int list_is_last (list_t *list, list_t *head)
-{
-	return list->next == head;
-}
-
-static inline void list_init (list_t *head)
-{
-	head->next = head;
-	head->prev = head;
-}
+#include "upnp.h"
+#include "list.h"
 
 #define debugf(a...) { \
 	printf(a); \
 	printf(" [%s (%s:%d)]\n", __FUNCTION__, __FILE__, __LINE__); \
 }
 
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define ARRAY_SIZE(a)		(sizeof(a) / sizeof((a)[0]))
 #define GENA_LISTEN_PORT	10000
 #define GENA_LISTEN_MAX	100
@@ -137,17 +46,16 @@ static inline void list_init (list_t *head)
 #define GENA_READ_TIMEOUT	1000
 #define GENA_SEND_TIMEOUT	-1
 
-typedef struct gena_s {
-	int running;
-	int stopped;
-	int fd;
-	char *address;
-	unsigned short port;
-	pthread_t thread;
-	pthread_cond_t cond;
-	pthread_mutex_t mutex;
-	list_t threads;
-} gena_t;
+typedef struct gena_filerange_s {
+	unsigned long start;
+	unsigned long stop;
+	unsigned long size;
+} gena_filerange_t;
+
+typedef struct gena_fileino_internal_s {
+	gena_fileinfo_t fileinfo;
+	gena_filerange_t filerange;
+} gena_fileinfo_internal_t;
 
 typedef struct gena_thread_s {
 	list_t head;
@@ -157,6 +65,7 @@ typedef struct gena_thread_s {
 	pthread_t thread;
 	pthread_cond_t cond;
 	pthread_mutex_t mutex;
+	gena_callbacks_t *callbacks;
 } gena_thread_t;
 
 typedef enum {
@@ -175,6 +84,19 @@ typedef struct gena_response_s {
 	char *name;
 	char *info;
 } gena_response_t;
+
+struct gena_s {
+	int running;
+	int stopped;
+	int fd;
+	char *address;
+	unsigned short port;
+	gena_callbacks_t *callbacks;
+	pthread_t thread;
+	pthread_cond_t cond;
+	pthread_mutex_t mutex;
+	list_t threads;
+};
 
 static const gena_response_t gena_responses[] = {
 	{GENA_RESPONSE_TYPE_OK, 200, "OK", NULL},
@@ -357,6 +279,89 @@ static void gena_senderrorheader (int fd, gena_response_type_t type)
 	free(header);
 }
 
+static void gena_sendfileheader (int fd, gena_fileinfo_internal_t *fileinfo)
+{
+	static const char RFC1123FMT[] = "%a, %d %b %Y %H:%M:%S GMT";
+
+	int len;
+	time_t t;
+	char *header;
+	time_t timer;
+	unsigned int i;
+	char tmpstr[80];
+	int responseNum = 0;
+	const char *infoString = NULL;
+	const char *responseString = "";
+
+	gena_response_type_t type;
+
+	timer = time(0);
+	header = (char *) malloc(GENA_HEADER_SIZE);
+	if (header == NULL) {
+		return;
+	}
+
+	if (fileinfo->filerange.start == 0 && fileinfo->filerange.stop == 0) {
+		type = GENA_RESPONSE_TYPE_OK;
+	} else {
+		type = GENA_RESPONSE_TYPE_PARTIAL_CONTENT;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(gena_responses); i++) {
+		if (gena_responses[i].type == type) {
+			responseNum = gena_responses[i].code;
+			responseString = gena_responses[i].name;
+			infoString = gena_responses[i].info;
+			break;
+		}
+	}
+
+	strftime(tmpstr, sizeof(tmpstr), RFC1123FMT, gmtime(&timer));
+	len = sprintf(header, "HTTP/1.0 %d %s\r\nContent-type: %s\r\n"
+			      "Date: %s\r\nConnection: close\r\n",
+			      responseNum, responseString, fileinfo->fileinfo.mimetype, tmpstr);
+
+	t = fileinfo->fileinfo.mtime;
+	strftime(tmpstr, sizeof(tmpstr), RFC1123FMT, gmtime(&t));
+	if (type == GENA_RESPONSE_TYPE_PARTIAL_CONTENT) {
+		len += sprintf(header + len,
+			"Accept-Ranges: bytes\r\n"
+			"Last-Modified: %s\r\n%s %lu\r\n",
+			tmpstr,
+			"Content-length:",
+			fileinfo->filerange.size);
+		len += sprintf(header + len,
+				"Content-Range: bytes %lu-%lu/%lu\r\n",
+				fileinfo->filerange.start,
+				fileinfo->filerange.stop,
+				fileinfo->fileinfo.size);
+	} else {
+		len += sprintf(header + len,
+			"Accept-Ranges: bytes\r\n"
+			"Last-Modified: %s\r\n%s %lu\r\n",
+			tmpstr,
+			"Content-length:",
+			fileinfo->fileinfo.size);
+	}
+
+	header[len++] = '\r';
+	header[len++] = '\n';
+	if (infoString) {
+		len += sprintf(header + len,
+				"<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n"
+				"<BODY><H1>%d %s</H1>\n%s\n</BODY></HTML>\n",
+				responseNum, responseString,
+				responseNum, responseString, infoString);
+	}
+	header[len] = '\0';
+
+	debugf("header: %s", header);
+	if (gena_send(fd, GENA_SEND_TIMEOUT, header, len) != len) {
+		debugf("send() failed");
+	}
+	free(header);
+}
+
 static void * gena_thread_loop (void *arg)
 {
 	int running;
@@ -372,6 +377,11 @@ static void * gena_thread_loop (void *arg)
 	static const char request_get[] = "GET";
 	static const char request_head[] = "HEAD";
 
+	int rlen;
+	int readlen;
+	void *filehandle;
+	gena_fileinfo_internal_t fileinfo;
+
 	gena_thread = (gena_thread_t *) arg;
 
 	pthread_mutex_lock(&gena_thread->mutex);
@@ -385,6 +395,7 @@ static void * gena_thread_loop (void *arg)
 	header = NULL;
 	pathptr = NULL;
 	rangerequest = 0;
+	memset(&fileinfo, 0, sizeof(gena_fileinfo_internal_t));
 	data = (char *) malloc(GENA_DATA_SIZE);
 	if (data == NULL) {
 		goto out;
@@ -405,7 +416,6 @@ static void * gena_thread_loop (void *arg)
 		goto out;
 	}
 	*urlptr++ = '\0';
-	debugf("header request: %s", header);
 	if (strcasecmp(header, request_get) != 0 &&
 	    strcasecmp(header, request_head) != 0) {
 		debugf("support get/head request only (%s)", header);
@@ -438,10 +448,113 @@ static void * gena_thread_loop (void *arg)
 		if (gena_getline(gena_thread->fd, GENA_READ_TIMEOUT, header, GENA_HEADER_SIZE) <= 0) {
 			break;
 		}
+		if (strncasecmp(header, "Range:", strlen("Range:")) == 0) {
+			tmpptr = header + strlen("Range:");
+			while (*tmpptr && *tmpptr == ' ') {
+				tmpptr++;
+			}
+			if (strncmp(tmpptr, "bytes=", strlen("bytes=")) == 0) {
+				rangerequest = 1;
+				tmpptr += strlen("bytes=");
+				fileinfo.filerange.start = strtoul(tmpptr, &tmpptr, 10);
+				if (tmpptr[0] != '-' || fileinfo.filerange.start < 0) {
+					fileinfo.filerange.start = 0;
+					fileinfo.filerange.stop = 0;
+					fileinfo.filerange.size = 0;
+				} else if (tmpptr[1] != '\0') {
+					fileinfo.filerange.stop = strtoul(tmpptr + 1, NULL, 10);
+					if (fileinfo.filerange.stop < 0 || fileinfo.filerange.stop < fileinfo.filerange.start) {
+						fileinfo.filerange.start = 0;
+						fileinfo.filerange.stop = 0;
+						fileinfo.filerange.size = 0;
+					}
+				}
+			}
+			debugf("range requested %lu-%lu", fileinfo.filerange.start, fileinfo.filerange.stop);
+		}
 	}
 
+	/* do real job */
+	if (gena_thread->callbacks == NULL ||
+	    gena_thread->callbacks->info == NULL ||
+	    gena_thread->callbacks->open == NULL ||
+	    gena_thread->callbacks->read == NULL ||
+	    gena_thread->callbacks->seek == NULL ||
+	    gena_thread->callbacks->close == NULL) {
+		debugf("no callbacks installed");
+		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
+		goto out;
+	}
+
+	if (gena_thread->callbacks->info(gena_thread->callbacks->cookie, pathptr, &fileinfo.fileinfo) < 0) {
+		debugf("info failed");
+		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_NOT_FOUND);
+		goto out;
+	}
+	filehandle = gena_thread->callbacks->open(gena_thread->callbacks->cookie, pathptr, GENA_FILEMODE_READ);
+	if (filehandle == NULL) {
+		debugf("open failed");
+		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
+		goto out;
+	}
+
+	/* calculate actual size */
+	if (fileinfo.filerange.stop == 0 && rangerequest == 1) {
+		/* we do support range as requested */
+		fileinfo.filerange.stop = fileinfo.fileinfo.size - 1;
+	}
+	fileinfo.filerange.stop = MIN(fileinfo.filerange.stop, fileinfo.fileinfo.size - 1);
+	if (fileinfo.filerange.start == 0 && fileinfo.filerange.stop == 0) {
+		fileinfo.filerange.size = fileinfo.fileinfo.size;
+	} else {
+		fileinfo.filerange.size = fileinfo.filerange.stop - fileinfo.filerange.start + 1;
+	}
+
+	/* send header */
+	gena_sendfileheader(gena_thread->fd, &fileinfo);
+	if (strcasecmp(header, request_head) == 0) {
+		debugf("only header is requested");
+		goto close_out;
+	}
+
+	/* seek if requested */
+	if (gena_thread->callbacks->seek(gena_thread->callbacks->cookie, filehandle, fileinfo.filerange.start, GENA_SEEK_SET) != fileinfo.filerange.start) {
+		debugf("seek failed");
+		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
+		goto close_out;
+	}
+
+	/* send file */
+	readlen = 0;
+	while (readlen < fileinfo.filerange.size) {
+		rlen = MIN(fileinfo.filerange.size - readlen, GENA_DATA_SIZE);
+		rlen = gena_thread->callbacks->read(gena_thread->callbacks->cookie, filehandle, data, rlen);
+		if (rlen < 0) {
+			debugf("read failed");
+			break;
+		}
+		if (gena_send(gena_thread->fd, GENA_SEND_TIMEOUT, data, rlen) != rlen) {
+			debugf("send() failed");
+			break;
+		}
+		pthread_mutex_lock(&gena_thread->mutex);
+		if (gena_thread->running == 0) {
+			pthread_mutex_unlock(&gena_thread->mutex);
+			break;
+		}
+		pthread_mutex_unlock(&gena_thread->mutex);
+		readlen += rlen;
+	}
+
+	if (readlen != fileinfo.filerange.size) {
+		debugf("file send failed");
+	}
+
+close_out:
+	gena_thread->callbacks->close(gena_thread->callbacks->cookie, filehandle);
 out:
 	free(pathptr);
+	free(fileinfo.fileinfo.mimetype);
 	free(data);
 	free(header);
 	pthread_mutex_lock(&gena_thread->mutex);
@@ -546,6 +659,7 @@ static void * gena_loop (void *arg)
 			}
 			memset(gena_thread, 0, sizeof(gena_thread_t));
 			gena_thread->fd = fd;
+			gena_thread->callbacks = gena->callbacks;
 			pthread_mutex_init(&gena_thread->mutex, NULL);
 			pthread_cond_init(&gena_thread->cond, NULL);
 			pthread_mutex_lock(&gena_thread->mutex);
@@ -626,7 +740,7 @@ const char * gena_getaddress (gena_t *gena)
 	return gena->address;
 }
 
-gena_t * gena_init (char *address, unsigned short port)
+gena_t * gena_init (char *address, unsigned short port, gena_callbacks_t *callbacks)
 {
 	gena_t *gena;
 	gena = (gena_t *) malloc(sizeof(gena_t));
@@ -637,6 +751,7 @@ gena_t * gena_init (char *address, unsigned short port)
 	memset(gena, 0, sizeof(gena_t));
 	gena->address = (address != NULL) ? strdup(address) : NULL;
 	gena->port = port;
+	gena->callbacks = callbacks;
 	list_init(&gena->threads);
 	gena_init_server(gena);
 
