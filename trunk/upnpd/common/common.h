@@ -757,6 +757,7 @@ int webserver_uninit (webserver_t *webserver);
 webserver_t * webserver_init (char *address, unsigned short port, webserver_callbacks_t *callbacks);
 
 /* interface.c */
+
 int interface_printall (void);
 char * interface_getaddr (char *ifname);
 
