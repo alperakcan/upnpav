@@ -37,6 +37,7 @@ struct ssdp_s {
 	pthread_t thread;
 	pthread_cond_t cond;
 	pthread_mutex_t mutex;
+	list_t devices;
 };
 
 typedef enum {
@@ -72,6 +73,15 @@ typedef union ssdp_request_u {
 	ssdp_request_search_t search;
 } ssdp_request_t;
 
+struct ssdp_device_s {
+	list_t head;
+	char *nt;
+	char *usn;
+	char *location;
+	char *server;
+	int age;
+};
+
 static const char *ssdp_ip = "239.255.255.250";
 static const unsigned short ssdp_port = 1900;
 static const unsigned int ssdp_buffer_length = 2500;
@@ -100,6 +110,43 @@ static char * ssdp_trim (char *buffer)
 		}
 	}
 	return out;
+}
+
+static ssdp_device_t * ssdp_device_init (char *nt, char *usn, char *location, char *server, int age)
+{
+	ssdp_device_t *d;
+	d = (ssdp_device_t *) malloc(sizeof(ssdp_device_t));
+	if (d == NULL) {
+		return NULL;
+	}
+	memset(d, 0, sizeof(ssdp_device_t));
+	d->nt = strdup(nt);
+	d->usn = strdup(usn);
+	d->location = strdup(location);
+	d->server = strdup(server);
+	d->age = (age < ssdp_recv_timeout) ? ssdp_recv_timeout : age;
+	if (d->nt == NULL ||
+	    d->usn == NULL ||
+	    d->location == NULL ||
+	    d->server == NULL) {
+		free(d->nt);
+		free(d->usn);
+		free(d->location);
+		free(d->server);
+		free(d);
+		return NULL;
+	}
+	return d;
+}
+
+static int ssdp_device_uninit (ssdp_device_t *device)
+{
+	free(device->nt);
+	free(device->usn);
+	free(device->location);
+	free(device->server);
+	free(device);
+	return 0;
 }
 
 static ssdp_request_t * ssdp_request_init (void)
@@ -178,7 +225,7 @@ static int ssdp_request_valid (ssdp_request_t *request)
 	return -1;
 }
 
-static ssdp_request_t * ssdp_parse (ssdp_t *ssdp, char *buffer, int length)
+static ssdp_request_t * ssdp_parse (char *buffer, int length)
 {
 	char *ptr;
 	char *line;
@@ -342,7 +389,7 @@ static void * ssdp_thread_loop (void *arg)
 			continue;
 		}
 		buffer[received] = '\0';
-		request = ssdp_parse(ssdp, buffer, received);
+		request = ssdp_parse(buffer, received);
 		if (request != NULL) {
 			ssdp_request_handler(ssdp, request, &sender);
 			ssdp_request_uninit(request);
@@ -417,6 +464,7 @@ int ssdp_advertise (ssdp_t *ssdp, char *upnp_description, char *location)
 
 int ssdp_register (ssdp_t *ssdp, char *nt, char *usn, char *location, char *server, int age)
 {
+	ssdp_device_t *d;
 	pthread_mutex_lock(&ssdp->mutex);
 	printf("registering\n"
 		"  nt      : %s\n"
@@ -429,6 +477,10 @@ int ssdp_register (ssdp_t *ssdp, char *nt, char *usn, char *location, char *serv
 		location,
 		server,
 		age);
+	d = ssdp_device_init(nt, usn, location, server, age);
+	if (d != NULL) {
+		list_add(&d->head, &ssdp->devices);
+	}
 	pthread_mutex_unlock(&ssdp->mutex);
 	return 0;
 }
@@ -445,11 +497,13 @@ ssdp_t * ssdp_init (void)
 		free(ssdp);
 		return NULL;
 	}
+	list_init(&ssdp->devices);
 	return ssdp;
 }
 
 int ssdp_uninit (ssdp_t *ssdp)
 {
+	ssdp_device_t *d, *dn;
 	pthread_mutex_lock(&ssdp->mutex);
 	ssdp->running = 0;
 	pthread_cond_signal(&ssdp->cond);
@@ -457,6 +511,10 @@ int ssdp_uninit (ssdp_t *ssdp)
 		pthread_cond_wait(&ssdp->cond, &ssdp->mutex);
 	}
 	pthread_join(ssdp->thread, NULL);
+	list_for_each_entry_safe(d, dn, &ssdp->devices, head) {
+		list_del(&d->head);
+		ssdp_device_uninit(d);
+	}
 	pthread_mutex_unlock(&ssdp->mutex);
 	pthread_mutex_destroy(&ssdp->mutex);
 	pthread_cond_destroy(&ssdp->cond);
