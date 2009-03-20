@@ -30,6 +30,9 @@
 
 #include "upnp.h"
 
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+
 struct upnp_s {
 	char *host;
 	unsigned short port;
@@ -39,7 +42,112 @@ struct upnp_s {
 	char *location;
 	pthread_cond_t cond;
 	pthread_mutex_t mutex;
+	gena_callbacks_t gena_callbacks;
 };
+
+static int gena_callback_info (void *cookie, char *path, gena_fileinfo_t *info)
+{
+	upnp_t *upnp;
+	upnp = (upnp_t *) cookie;
+	pthread_mutex_lock(&upnp->mutex);
+	if (strcmp(path, "/description.xml") == 0) {
+		info->size = strlen(upnp->description);
+		info->mtime = 0;
+		info->mimetype = strdup("text/xml");
+		pthread_mutex_unlock(&upnp->mutex);
+		return 0;
+	}
+	pthread_mutex_unlock(&upnp->mutex);
+	return -1;
+}
+
+static void * gena_callback_open (void *cookie, char *path, gena_filemode_t mode)
+{
+	gena_file_t *file;
+	upnp_t *upnp;
+	upnp = (upnp_t *) cookie;
+	pthread_mutex_lock(&upnp->mutex);
+	if (strcmp(path, "/description.xml") == 0) {
+		file = (gena_file_t *) malloc(sizeof(gena_file_t));
+		if (file == NULL) {
+			pthread_mutex_unlock(&upnp->mutex);
+			return file;
+		}
+		memset(file, 0, sizeof(gena_file_t));
+		file->virtual = 1;
+		file->size = strlen(upnp->description);
+		file->buf = strdup(upnp->description);
+		if (file->buf == NULL) {
+			free(file);
+			file = NULL;
+		}
+		pthread_mutex_unlock(&upnp->mutex);
+		return file;
+	}
+	pthread_mutex_unlock(&upnp->mutex);
+	return NULL;
+}
+
+static int gena_callback_read (void *cookie, void *handle, char *buffer, unsigned int length)
+{
+	size_t len;
+	gena_file_t *file;
+	file = (gena_file_t *) handle;
+	if (file == NULL) {
+		return -1;
+	}
+	/* is fake file */
+	if (file->virtual == 1) {
+		if (file->offset >= file->size) {
+			return -1;
+		}
+		len = ((file->size - file->offset) < length) ? (file->size - file->offset) : length;
+		memcpy(buffer, file->buf + file->offset, len);
+		file->offset += len;
+		return len;
+	}
+	return -1;
+}
+
+static int gena_callback_write (void *cookie, void *handle, char *buffer, unsigned int length)
+{
+	return 0;
+}
+
+static unsigned long gena_callback_seek (void *cookie, void *handle, long offset, gena_seek_t whence)
+{
+	gena_file_t *file;
+	file = (gena_file_t *) handle;
+	if (file == NULL) {
+		return -1;
+	}
+	if (file->virtual == 1) {
+		switch (whence) {
+			case GENA_SEEK_SET: file->offset = offset; break;
+			case GENA_SEEK_CUR: file->offset += offset; break;
+			case GENA_SEEK_END: file->offset = file->size + offset; break;
+		}
+		file->offset = MAX(0, file->offset);
+		file->offset = MIN(file->offset, file->size);
+		return file->offset;
+	}
+	return -1;
+}
+
+static int gena_callback_close (void *cookie, void *handle)
+{
+	gena_file_t *file;
+	file = (gena_file_t *) handle;
+	if (file == NULL) {
+		return -1;
+	}
+	if (file->virtual == 1) {
+		free(file->buf);
+		free(file);
+		return 0;
+	}
+	return 0;
+}
 
 int upnp_advertise (upnp_t *upnp)
 {
@@ -50,7 +158,7 @@ int upnp_advertise (upnp_t *upnp)
 		pthread_mutex_unlock(&upnp->mutex);
 		return -1;
 	}
-	rc = ssdp_advertise(upnp->ssdp, upnp->description, location);
+	rc = ssdp_advertise(upnp->ssdp);
 	free(location);
 	pthread_mutex_unlock(&upnp->mutex);
 	return rc;
@@ -148,7 +256,7 @@ int upnp_register_device (upnp_t *upnp, const char *description)
 				ssdp_register(upnp->ssdp, "upnp:rootdevice", deviceusn, upnp->location, "mini upnp stack 1.0", 100);
 				free(deviceusn);
 			}
-			ssdp_register(upnp->ssdp, deviceudn, deviceudn, upnp->location, "mini upnp stack 1.0", 100);
+			ssdp_register(upnp->ssdp, deviceudn, deviceudn, upnp->location, "mini upnp stack 1.0", 1000);
 			if (asprintf(&deviceusn, "%s::%s", deviceudn, devicetype) > 0) {
 				ssdp_register(upnp->ssdp, devicetype, deviceusn, upnp->location, "mini upnp stack 1.0", 100);
 				free(deviceusn);
@@ -170,7 +278,7 @@ int upnp_register_device (upnp_t *upnp, const char *description)
 					goto __continue;
 				}
 				if (asprintf(&deviceusn, "%s::%s", deviceudn, servicetype) > 0) {
-					ssdp_register(upnp->ssdp, devicetype, deviceusn, upnp->location, "mini upnp stack 1.0", 100);
+					ssdp_register(upnp->ssdp, servicetype, deviceusn, upnp->location, "mini upnp stack 1.0", 1000);
 					free(deviceusn);
 				}
 __continue:
@@ -239,7 +347,16 @@ upnp_t * upnp_init (const char *host, const unsigned short port)
 		free(upnp);
 		return NULL;
 	}
-	upnp->gena = gena_init(upnp->host, upnp->port, NULL);
+
+	upnp->gena_callbacks.info = gena_callback_info,
+	upnp->gena_callbacks.open = gena_callback_open,
+	upnp->gena_callbacks.read = gena_callback_read,
+	upnp->gena_callbacks.write = gena_callback_write,
+	upnp->gena_callbacks.seek = gena_callback_seek,
+	upnp->gena_callbacks.close = gena_callback_close,
+	upnp->gena_callbacks.cookie = upnp;
+
+	upnp->gena = gena_init(upnp->host, upnp->port, &upnp->gena_callbacks);
 	if (upnp->gena == NULL) {
 		ssdp_uninit(upnp->ssdp);
 		free(upnp->host);
@@ -247,6 +364,7 @@ upnp_t * upnp_init (const char *host, const unsigned short port)
 		return NULL;
 	}
 	upnp->port = gena_getport(upnp->gena);
+
 	pthread_mutex_init(&upnp->mutex, NULL);
 	pthread_cond_init(&upnp->cond, NULL);
 	return upnp;
