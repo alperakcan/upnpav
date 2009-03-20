@@ -32,6 +32,14 @@ typedef enum {
 	GENA_SEEK_END = 0x03,
 } gena_seek_t;
 
+typedef struct gena_file_s {
+	int virtual;
+	int fd;
+	unsigned int size;
+	unsigned int offset;
+	char *buf;
+} gena_file_t;
+
 typedef struct gena_fileinfo_s {
 	unsigned long size;
 	char *mimetype;
@@ -48,7 +56,7 @@ typedef struct gena_callbacks_s {
 	void *cookie;
 } gena_callbacks_t;
 
-int ssdp_advertise (ssdp_t *ssdp, char *description, char *location);
+int ssdp_advertise (ssdp_t *ssdp);
 int ssdp_register (ssdp_t *ssdp, char *nt, char *usn, char *location, char *server, int age);
 ssdp_t * ssdp_init (void);
 int ssdp_uninit (ssdp_t *ssdp);

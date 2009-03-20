@@ -86,6 +86,11 @@ static const char *ssdp_ip = "239.255.255.250";
 static const unsigned short ssdp_port = 1900;
 static const unsigned int ssdp_buffer_length = 2500;
 static const unsigned int ssdp_recv_timeout = 1000;
+static const unsigned int ssdp_ttl = 4;
+static const unsigned int ssdp_pause = 100;
+
+static int ssdp_advertise_send (const char *buffer, struct sockaddr_in *dest);
+static char * ssdp_advertise_buffer (ssdp_device_t *device);
 
 static char * ssdp_trim (char *buffer)
 {
@@ -300,43 +305,28 @@ static ssdp_request_t * ssdp_parse (char *buffer, int length)
 
 static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, struct sockaddr_in *sender)
 {
+	char *buffer;
+	ssdp_device_t *d;
+	pthread_mutex_lock(&ssdp->mutex);
 	switch (request->request) {
 		case SSDP_TYPE_MSEARCH:
-			printf("msearch:\n"
-				"  s   : '%s'\n"
-				"  host: '%s'\n"
-				"  man : '%s'\n"
-				"  st  : '%s'\n"
-				"  mx  : '%s'\n",
-				request->search.s,
-				request->search.host,
-				request->search.man,
-				request->search.st,
-				request->search.mx);
+			list_for_each_entry(d, &ssdp->devices, head) {
+				if (strcasecmp(d->nt, request->search.st) == 0) {
+					buffer = ssdp_advertise_buffer(d);
+					if (buffer != NULL) {
+						ssdp_advertise_send(buffer, sender);
+						free(buffer);
+					}
+				}
+			}
 			break;
 		case SSDP_TYPE_NOTIFY:
-			printf("notify\n"
-				"  host        : '%s'\n"
-				"  nt          : '%s'\n"
-				"  nts         : '%s'\n"
-				"  usn         : '%s'\n"
-				"  al          : '%s'\n"
-				"  location    : '%s'\n"
-				"  server      : '%s'\n"
-				"  cachecontrol: '%s'\n",
-				request->notify.host,
-				request->notify.nt,
-				request->notify.nts,
-				request->notify.usn,
-				request->notify.al,
-				request->notify.location,
-				request->notify.server,
-				request->notify.cachecontrol);
 			break;
 		case SSDP_TYPE_UNKNOWN:
 		default:
 			break;
 	}
+	pthread_mutex_unlock(&ssdp->mutex);
 	return 0;
 }
 
@@ -457,8 +447,73 @@ static int ssdp_init_server (ssdp_t *ssdp)
 	return 0;
 }
 
-int ssdp_advertise (ssdp_t *ssdp, char *upnp_description, char *location)
+static int ssdp_advertise_send (const char *buffer, struct sockaddr_in *dest)
 {
+	int c;
+	int rc;
+	int ttl;
+	int sock;
+	int socklen;
+	sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock < 0) {
+		return -1;
+	}
+	ttl = ssdp_ttl;
+	setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, (char *) &ttl, sizeof(int));
+	socklen = sizeof(struct sockaddr_in);
+	for (c = 0; c < 2; c++) {
+		rc = sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *) dest, socklen);
+		usleep(ssdp_pause * 1000);
+	}
+	close(sock);
+	return 0;
+}
+
+static char * ssdp_advertise_buffer (ssdp_device_t *device)
+{
+	int ret;
+	char *buffer;
+	const char *format =
+		"NOTIFY * HTTP/1.1\r\n"
+		"HOST: %s:%d\r\n"
+		"CACHE-CONTROL: max-age:%d\r\n"
+		"LOCATION: %s\r\n"
+		"NT: %s\r\n"
+		"NTS: ssdp:alive\r\n"
+		"SERVER: %s\r\n"
+		"USN: %s\r\n";
+	ret = asprintf(
+		&buffer,
+		format,
+		ssdp_ip,
+		ssdp_port,
+		device->age / 1000,
+		device->location,
+		device->nt,
+		device->server,
+		device->usn);
+	if (ret < 0) {
+		return NULL;
+	}
+	return buffer;
+}
+
+int ssdp_advertise (ssdp_t *ssdp)
+{
+	char *buffer;
+	ssdp_device_t *d;
+	struct sockaddr_in dest;
+	memset(&dest, 0, sizeof(dest));
+	dest.sin_family = AF_INET;
+	dest.sin_addr.s_addr = inet_addr(ssdp_ip);
+	dest.sin_port = htons(ssdp_port);
+	pthread_mutex_lock(&ssdp->mutex);
+	list_for_each_entry(d, &ssdp->devices, head) {
+		buffer = ssdp_advertise_buffer(d);
+		ssdp_advertise_send(buffer, &dest);
+		free(buffer);
+	}
+	pthread_mutex_unlock(&ssdp->mutex);
 	return 0;
 }
 
