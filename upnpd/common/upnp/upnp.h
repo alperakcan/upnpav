@@ -32,6 +32,11 @@ typedef enum {
 	GENA_SEEK_END = 0x03,
 } gena_seek_t;
 
+typedef enum {
+	GENA_EVENT_TYPE_UNKNOWN   = 0x00,
+	GENA_EVENT_TYPE_SUBSCRIBE = 0x01,
+} gena_event_type_t;
+
 typedef struct gena_file_s {
 	int virtual;
 	int fd;
@@ -46,7 +51,7 @@ typedef struct gena_fileinfo_s {
 	unsigned long mtime;
 } gena_fileinfo_t;
 
-typedef struct gena_callbacks_s {
+typedef struct gena_callback_vfs_s {
 	int (*info) (void *cookie, char *path, gena_fileinfo_t *info);
 	void * (*open) (void *cookie, char *path, gena_filemode_t mode);
 	int (*read) (void *cookie, void *handle, char *buffer, unsigned int length);
@@ -54,6 +59,33 @@ typedef struct gena_callbacks_s {
 	unsigned long (*seek)  (void *cookie, void *handle, long offset, gena_seek_t whence);
 	int (*close) (void *cookie, void *handle);
 	void *cookie;
+} gena_callback_vfs_t;
+
+typedef struct gena_event_subscribe_s {
+	char *path;
+	char *host;
+	char *nt;
+	char *callback;
+	char *scope;
+	char *timeout;
+	char *sid;
+} gena_event_subscribe_t;
+
+typedef struct gena_event_s {
+	gena_event_type_t type;
+	union {
+		gena_event_subscribe_t subscribe;
+	} event;
+} gena_event_t;
+
+typedef struct gena_callback_gena_s {
+	int (*event) (void *cookie, gena_event_t *);
+	void *cookie;
+} gena_callback_gena_t;
+
+typedef struct gena_callbacks_s {
+	gena_callback_vfs_t vfs;
+	gena_callback_gena_t gena;
 } gena_callbacks_t;
 
 int ssdp_advertise (ssdp_t *ssdp);

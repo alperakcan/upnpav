@@ -541,6 +541,7 @@ int ssdp_advertise (ssdp_t *ssdp)
 
 int ssdp_register (ssdp_t *ssdp, char *nt, char *usn, char *location, char *server, int age)
 {
+	int ret;
 	ssdp_device_t *d;
 	pthread_mutex_lock(&ssdp->mutex);
 	printf("registering\n"
@@ -554,12 +555,14 @@ int ssdp_register (ssdp_t *ssdp, char *nt, char *usn, char *location, char *serv
 		location,
 		server,
 		age);
+	ret = -1;
 	d = ssdp_device_init(nt, usn, location, server, age);
 	if (d != NULL) {
+		ret = 0;
 		list_add(&d->head, &ssdp->devices);
 	}
 	pthread_mutex_unlock(&ssdp->mutex);
-	return 0;
+	return ret;
 }
 
 ssdp_t * ssdp_init (void)

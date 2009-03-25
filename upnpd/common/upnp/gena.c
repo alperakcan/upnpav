@@ -391,62 +391,88 @@ static void gena_sendfileheader (int fd, gena_fileinfo_internal_t *fileinfo)
 
 static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, const char *path)
 {
-	struct gena_subscribe_s {
-		char *host;
-		char *nt;
-		char *callback;
-		char *scope;
-		char *timeout;
-		char *sid;
-	} gena_subscribe;
+	const char *fmt =
+		"HTTP/1.1 200 OK\r\n"
+		"Subscription-ID: %s\r\n"
+		"Timeout: Second-%d\r\n"
+		"Connection: close\r\n"
+		"Content-Type: text/xml\r\n"
+		"Content-Length: 0\r\n"
+		"\r\n";
+	gena_event_t event;
 
-	memset(&gena_subscribe, 0, sizeof(struct gena_subscribe_s));
+	memset(&event, 0, sizeof(gena_event_t));
+
+	event.event.subscribe.path = strdup(path);
 
 	while (1) {
 		if (gena_getline(gena_thread->fd, GENA_READ_TIMEOUT, header, GENA_HEADER_SIZE) <= 0) {
 			break;
 		}
 		if (strncasecmp(header, "HOST:", strlen("HOST:")) == 0) {
-			gena_subscribe.host = strdup(gena_trim(header + strlen("HOST:")));
+			event.event.subscribe.host = strdup(gena_trim(header + strlen("HOST:")));
 		} else if (strncasecmp(header, "NT:", strlen("NT:")) == 0) {
-			gena_subscribe.nt = strdup(gena_trim(header + strlen("NT:")));
+			event.event.subscribe.nt = strdup(gena_trim(header + strlen("NT:")));
 		} else if (strncasecmp(header, "CALLBACK:", strlen("CALLBACK:")) == 0) {
-			gena_subscribe.callback = strdup(gena_trim(header + strlen("CALLBACK:")));
+			event.event.subscribe.callback = strdup(gena_trim(header + strlen("CALLBACK:")));
 		} else if (strncasecmp(header, "SCOPE:", strlen("SCOPE:")) == 0) {
-			gena_subscribe.scope = strdup(gena_trim(header + strlen("SCOPE:")));
+			event.event.subscribe.scope = strdup(gena_trim(header + strlen("SCOPE:")));
 		} else if (strncasecmp(header, "TIMEOUT:", strlen("TIMEOUT:")) == 0) {
-			gena_subscribe.timeout = strdup(gena_trim(header + strlen("TIMEOUT:")));
+			event.event.subscribe.timeout = strdup(gena_trim(header + strlen("TIMEOUT:")));
 		} else if (strncasecmp(header, "Subscription-ID:", strlen("Subscription-ID:")) == 0) {
-			gena_subscribe.sid = strdup(gena_trim(header + strlen("Subscription-ID")));
+			event.event.subscribe.sid = strdup(gena_trim(header + strlen("Subscription-ID")));
 		}
 	}
 
 	debugf("subscribe event;\n"
+	       "  path    : '%s'\n"
 	       "  host    : '%s'\n"
 	       "  nt      : '%s'\n"
 	       "  callback: '%s'\n"
 	       "  scope   : '%s'\n"
 	       "  timeout : '%s'\n"
 	       "  sid     : '%s'\n",
-	       gena_subscribe.host,
-	       gena_subscribe.nt,
-	       gena_subscribe.callback,
-	       gena_subscribe.scope,
-	       gena_subscribe.timeout,
-	       gena_subscribe.sid);
+	       event.event.subscribe.path,
+	       event.event.subscribe.host,
+	       event.event.subscribe.nt,
+	       event.event.subscribe.callback,
+	       event.event.subscribe.scope,
+	       event.event.subscribe.timeout,
+	       event.event.subscribe.sid);
 
-	if (gena_subscribe.nt != NULL) {
+	if (event.event.subscribe.path == NULL) {
+		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
+		goto out;
+	}
+	if (event.event.subscribe.nt != NULL) {
 		/* Subscription */
-		if (strcasecmp(gena_subscribe.nt, "upnp:event") != 0) {
+		if (strcasecmp(event.event.subscribe.nt, "upnp:event") != 0) {
 			gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_PRECONDITION_FAILED);
 			goto out;
 		}
-		if (gena_subscribe.sid != NULL) {
+		if (event.event.subscribe.sid != NULL) {
 			gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_BAD_REQUEST);
 			goto out;
 		}
-		if (gena_subscribe.callback == NULL) {
+		if (event.event.subscribe.callback == NULL) {
 			gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_PRECONDITION_FAILED);
+			goto out;
+		}
+		event.type = GENA_EVENT_TYPE_SUBSCRIBE;
+		if (gena_thread->callbacks == NULL ||
+		    gena_thread->callbacks->gena.event == NULL) {
+			gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_NOT_IMPLEMENTED);
+			goto out;
+		}
+		if (gena_thread->callbacks->gena.event(gena_thread->callbacks->gena.cookie, &event) == 0) {
+			sprintf(header, fmt, event.event.subscribe.sid, 1800);
+			debugf("header:\n%s", header);
+			if (gena_send(gena_thread->fd, GENA_SEND_TIMEOUT, header, strlen(header)) != strlen(header)) {
+				debugf("send() failed");
+			}
+			goto out;
+		} else {
+			gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
 			goto out;
 		}
 	} else {
@@ -455,12 +481,13 @@ static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, co
 
 	gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_NOT_IMPLEMENTED);
 out:
-	free(gena_subscribe.host);
-	free(gena_subscribe.nt);
-	free(gena_subscribe.callback);
-	free(gena_subscribe.scope);
-	free(gena_subscribe.timeout);
-	free(gena_subscribe.sid);
+	free(event.event.subscribe.path);
+	free(event.event.subscribe.host);
+	free(event.event.subscribe.nt);
+	free(event.event.subscribe.callback);
+	free(event.event.subscribe.scope);
+	free(event.event.subscribe.timeout);
+	free(event.event.subscribe.sid);
 }
 
 static void * gena_thread_loop (void *arg)
@@ -585,22 +612,22 @@ static void * gena_thread_loop (void *arg)
 
 	/* do real job */
 	if (gena_thread->callbacks == NULL ||
-	    gena_thread->callbacks->info == NULL ||
-	    gena_thread->callbacks->open == NULL ||
-	    gena_thread->callbacks->read == NULL ||
-	    gena_thread->callbacks->seek == NULL ||
-	    gena_thread->callbacks->close == NULL) {
+	    gena_thread->callbacks->vfs.info == NULL ||
+	    gena_thread->callbacks->vfs.open == NULL ||
+	    gena_thread->callbacks->vfs.read == NULL ||
+	    gena_thread->callbacks->vfs.seek == NULL ||
+	    gena_thread->callbacks->vfs.close == NULL) {
 		debugf("no callbacks installed");
 		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
 		goto out;
 	}
 
-	if (gena_thread->callbacks->info(gena_thread->callbacks->cookie, pathptr, &fileinfo.fileinfo) < 0) {
+	if (gena_thread->callbacks->vfs.info(gena_thread->callbacks->vfs.cookie, pathptr, &fileinfo.fileinfo) < 0) {
 		debugf("info failed");
 		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_NOT_FOUND);
 		goto out;
 	}
-	filehandle = gena_thread->callbacks->open(gena_thread->callbacks->cookie, pathptr, GENA_FILEMODE_READ);
+	filehandle = gena_thread->callbacks->vfs.open(gena_thread->callbacks->vfs.cookie, pathptr, GENA_FILEMODE_READ);
 	if (filehandle == NULL) {
 		debugf("open failed");
 		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
@@ -627,7 +654,7 @@ static void * gena_thread_loop (void *arg)
 	}
 
 	/* seek if requested */
-	if (gena_thread->callbacks->seek(gena_thread->callbacks->cookie, filehandle, fileinfo.filerange.start, GENA_SEEK_SET) != fileinfo.filerange.start) {
+	if (gena_thread->callbacks->vfs.seek(gena_thread->callbacks->vfs.cookie, filehandle, fileinfo.filerange.start, GENA_SEEK_SET) != fileinfo.filerange.start) {
 		debugf("seek failed");
 		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
 		goto close_out;
@@ -637,7 +664,7 @@ static void * gena_thread_loop (void *arg)
 	readlen = 0;
 	while (readlen < fileinfo.filerange.size) {
 		rlen = MIN(fileinfo.filerange.size - readlen, GENA_DATA_SIZE);
-		rlen = gena_thread->callbacks->read(gena_thread->callbacks->cookie, filehandle, data, rlen);
+		rlen = gena_thread->callbacks->vfs.read(gena_thread->callbacks->vfs.cookie, filehandle, data, rlen);
 		if (rlen < 0) {
 			debugf("read failed");
 			break;
@@ -660,7 +687,7 @@ static void * gena_thread_loop (void *arg)
 	}
 
 close_out:
-	gena_thread->callbacks->close(gena_thread->callbacks->cookie, filehandle);
+	gena_thread->callbacks->vfs.close(gena_thread->callbacks->vfs.cookie, filehandle);
 out:
 	free(pathptr);
 	free(fileinfo.fileinfo.mimetype);
