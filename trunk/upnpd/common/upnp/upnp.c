@@ -253,12 +253,12 @@ int upnp_register_device (upnp_t *upnp, const char *description)
 
 			/* ssdp entries for device */
 			if (asprintf(&deviceusn, "%s::%s", deviceudn, "upnp:rootdevice") > 0) {
-				ssdp_register(upnp->ssdp, "upnp:rootdevice", deviceusn, upnp->location, "mini upnp stack 1.0", 100);
+				ssdp_register(upnp->ssdp, "upnp:rootdevice", deviceusn, upnp->location, "mini upnp stack 1.0", 100000);
 				free(deviceusn);
 			}
-			ssdp_register(upnp->ssdp, deviceudn, deviceudn, upnp->location, "mini upnp stack 1.0", 1000);
+			ssdp_register(upnp->ssdp, deviceudn, deviceudn, upnp->location, "mini upnp stack 1.0", 100000);
 			if (asprintf(&deviceusn, "%s::%s", deviceudn, devicetype) > 0) {
-				ssdp_register(upnp->ssdp, devicetype, deviceusn, upnp->location, "mini upnp stack 1.0", 100);
+				ssdp_register(upnp->ssdp, devicetype, deviceusn, upnp->location, "mini upnp stack 1.0", 100000);
 				free(deviceusn);
 			}
 
@@ -278,7 +278,7 @@ int upnp_register_device (upnp_t *upnp, const char *description)
 					goto __continue;
 				}
 				if (asprintf(&deviceusn, "%s::%s", deviceudn, servicetype) > 0) {
-					ssdp_register(upnp->ssdp, servicetype, deviceusn, upnp->location, "mini upnp stack 1.0", 1000);
+					ssdp_register(upnp->ssdp, servicetype, deviceusn, upnp->location, "mini upnp stack 1.0", 100000);
 					free(deviceusn);
 				}
 __continue:

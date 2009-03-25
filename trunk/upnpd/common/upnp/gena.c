@@ -74,6 +74,7 @@ typedef enum {
 	GENA_RESPONSE_TYPE_BAD_REQUEST,
 	GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR,
 	GENA_RESPONSE_TYPE_NOT_FOUND,
+	GENA_RESPONSE_TYPE_PRECONDITION_FAILED,
 	GENA_RESPONSE_TYPE_NOT_IMPLEMENTED,
 	GENA_RESPONSE_TYPES,
 } gena_response_type_t;
@@ -104,8 +105,34 @@ static const gena_response_t gena_responses[] = {
 	{GENA_RESPONSE_TYPE_BAD_REQUEST, 400, "Bad Request", "Unsupported method"},
 	{GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR, 500, "Internal Server Error", "Internal Server Error"},
 	{GENA_RESPONSE_TYPE_NOT_FOUND, 404, "Not Found", "The requested URL was not found"},
+	{GENA_RESPONSE_TYPE_PRECONDITION_FAILED, 412, "Precondition Failed", "Precondition Failed"},
 	{GENA_RESPONSE_TYPE_NOT_IMPLEMENTED, 501, "Not implemented", "Not implemented"},
 };
+
+static char * gena_trim (char *buffer)
+{
+	int l;
+	char *out;
+	for (out = buffer; *out && (*out == ' ' || *out == '\t'); out++) {
+	}
+	for (l = strlen(out) - 1; l >= 0; l--) {
+		if (out[l] == ' ' || out[l] == '\t') {
+			out[l] = '\0';
+		} else {
+			break;
+		}
+	}
+	for (; *out && (*out == '"' || *out == '\''); out++) {
+	}
+	for (l = strlen(out) - 1; l >= 0; l--) {
+		if (out[l] == '"' || out[l] == '\'') {
+			out[l] = '\0';
+		} else {
+			break;
+		}
+	}
+	return out;
+}
 
 static int gena_send (int fd, int timeout, const void *buf, unsigned int len)
 {
@@ -362,6 +389,80 @@ static void gena_sendfileheader (int fd, gena_fileinfo_internal_t *fileinfo)
 	free(header);
 }
 
+static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, const char *path)
+{
+	struct gena_subscribe_s {
+		char *host;
+		char *nt;
+		char *callback;
+		char *scope;
+		char *timeout;
+		char *sid;
+	} gena_subscribe;
+
+	memset(&gena_subscribe, 0, sizeof(struct gena_subscribe_s));
+
+	while (1) {
+		if (gena_getline(gena_thread->fd, GENA_READ_TIMEOUT, header, GENA_HEADER_SIZE) <= 0) {
+			break;
+		}
+		if (strncasecmp(header, "HOST:", strlen("HOST:")) == 0) {
+			gena_subscribe.host = strdup(gena_trim(header + strlen("HOST:")));
+		} else if (strncasecmp(header, "NT:", strlen("NT:")) == 0) {
+			gena_subscribe.nt = strdup(gena_trim(header + strlen("NT:")));
+		} else if (strncasecmp(header, "CALLBACK:", strlen("CALLBACK:")) == 0) {
+			gena_subscribe.callback = strdup(gena_trim(header + strlen("CALLBACK:")));
+		} else if (strncasecmp(header, "SCOPE:", strlen("SCOPE:")) == 0) {
+			gena_subscribe.scope = strdup(gena_trim(header + strlen("SCOPE:")));
+		} else if (strncasecmp(header, "TIMEOUT:", strlen("TIMEOUT:")) == 0) {
+			gena_subscribe.timeout = strdup(gena_trim(header + strlen("TIMEOUT:")));
+		} else if (strncasecmp(header, "Subscription-ID:", strlen("Subscription-ID:")) == 0) {
+			gena_subscribe.sid = strdup(gena_trim(header + strlen("Subscription-ID")));
+		}
+	}
+
+	debugf("subscribe event;\n"
+	       "  host    : '%s'\n"
+	       "  nt      : '%s'\n"
+	       "  callback: '%s'\n"
+	       "  scope   : '%s'\n"
+	       "  timeout : '%s'\n"
+	       "  sid     : '%s'\n",
+	       gena_subscribe.host,
+	       gena_subscribe.nt,
+	       gena_subscribe.callback,
+	       gena_subscribe.scope,
+	       gena_subscribe.timeout,
+	       gena_subscribe.sid);
+
+	if (gena_subscribe.nt != NULL) {
+		/* Subscription */
+		if (strcasecmp(gena_subscribe.nt, "upnp:event") != 0) {
+			gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_PRECONDITION_FAILED);
+			goto out;
+		}
+		if (gena_subscribe.sid != NULL) {
+			gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_BAD_REQUEST);
+			goto out;
+		}
+		if (gena_subscribe.callback == NULL) {
+			gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_PRECONDITION_FAILED);
+			goto out;
+		}
+	} else {
+		/* Renewal */
+	}
+
+	gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_NOT_IMPLEMENTED);
+out:
+	free(gena_subscribe.host);
+	free(gena_subscribe.nt);
+	free(gena_subscribe.callback);
+	free(gena_subscribe.scope);
+	free(gena_subscribe.timeout);
+	free(gena_subscribe.sid);
+}
+
 static void * gena_thread_loop (void *arg)
 {
 	int running;
@@ -376,6 +477,7 @@ static void * gena_thread_loop (void *arg)
 	char *pathptr;
 	static const char request_get[] = "GET";
 	static const char request_head[] = "HEAD";
+	static const char request_subscribe[] = "SUBSCRIBE";
 
 	int rlen;
 	int readlen;
@@ -417,12 +519,13 @@ static void * gena_thread_loop (void *arg)
 	}
 	*urlptr++ = '\0';
 	if (strcasecmp(header, request_get) != 0 &&
-	    strcasecmp(header, request_head) != 0) {
+	    strcasecmp(header, request_head) != 0 &&
+	    strcasecmp(header, request_subscribe) != 0) {
 		debugf("support get/head request only (%s)", header);
 		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_NOT_IMPLEMENTED);
 		goto out;
 	}
-	while (*urlptr && *urlptr == ' ') {
+	while (*urlptr && (*urlptr == ' ' || *urlptr == '\t')) {
 		urlptr++;
 	}
 	if (urlptr[0] != '/') {
@@ -430,7 +533,7 @@ static void * gena_thread_loop (void *arg)
 		goto out;
 	}
 	tmpptr = urlptr;
-	while (*tmpptr && *tmpptr != ' ') {
+	while (*tmpptr && (*tmpptr != ' ' && *tmpptr != '\t')) {
 		tmpptr++;
 	}
 	*tmpptr = '\0';
@@ -442,6 +545,12 @@ static void * gena_thread_loop (void *arg)
 	}
 	gena_remove_escaped_chars(pathptr);
 	debugf("requested url is: %s", pathptr);
+
+	if (strcasecmp(header, request_subscribe) == 0) {
+		debugf("gena event");
+		gena_handler_subscribe(gena_thread, header, pathptr);
+		goto out;
+	}
 
 	/* eat rest of headers */
 	while (1) {
