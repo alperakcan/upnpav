@@ -90,7 +90,7 @@ static const unsigned int ssdp_ttl = 4;
 static const unsigned int ssdp_pause = 100;
 
 static int ssdp_advertise_send (const char *buffer, struct sockaddr_in *dest);
-static char * ssdp_advertise_buffer (ssdp_device_t *device);
+static char * ssdp_advertise_buffer (ssdp_device_t *device, int answer);
 
 static char * ssdp_trim (char *buffer)
 {
@@ -312,7 +312,7 @@ static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, struct s
 		case SSDP_TYPE_MSEARCH:
 			list_for_each_entry(d, &ssdp->devices, head) {
 				if (strcasecmp(d->nt, request->search.st) == 0) {
-					buffer = ssdp_advertise_buffer(d);
+					buffer = ssdp_advertise_buffer(d, 1);
 					if (buffer != NULL) {
 						ssdp_advertise_send(buffer, sender);
 						free(buffer);
@@ -469,29 +469,51 @@ static int ssdp_advertise_send (const char *buffer, struct sockaddr_in *dest)
 	return 0;
 }
 
-static char * ssdp_advertise_buffer (ssdp_device_t *device)
+static char * ssdp_advertise_buffer (ssdp_device_t *device, int answer)
 {
 	int ret;
 	char *buffer;
-	const char *format =
+	const char *format_advertise =
 		"NOTIFY * HTTP/1.1\r\n"
 		"HOST: %s:%d\r\n"
-		"CACHE-CONTROL: max-age:%d\r\n"
+		"CACHE-CONTROL: max-age=%d\r\n"
 		"LOCATION: %s\r\n"
 		"NT: %s\r\n"
 		"NTS: ssdp:alive\r\n"
 		"SERVER: %s\r\n"
-		"USN: %s\r\n";
-	ret = asprintf(
-		&buffer,
-		format,
-		ssdp_ip,
-		ssdp_port,
-		device->age / 1000,
-		device->location,
-		device->nt,
-		device->server,
-		device->usn);
+		"USN: %s\r\n"
+		"\r\n";
+	const char *format_answer =
+		"HTTP/1.1 200 OK\r\n"
+		"EXT:\r\n"
+		"CACHE-CONTROL: max-age=%d\r\n"
+		"LOCATION: %s\r\n"
+		"ST: %s\r\n"
+		"SERVER: %s\r\n"
+		"USN: %s\r\n"
+		"CONTENT-LENGTH: 0\r\n"
+		"\r\n";
+	if (answer == 1) {
+		ret = asprintf(
+			&buffer,
+			format_answer,
+			device->age / 1000,
+			device->location,
+			device->nt,
+			device->server,
+			device->usn);
+	} else {
+		ret = asprintf(
+			&buffer,
+			format_advertise,
+			ssdp_ip,
+			ssdp_port,
+			device->age / 1000,
+			device->location,
+			device->nt,
+			device->server,
+			device->usn);
+	}
 	if (ret < 0) {
 		return NULL;
 	}
@@ -509,7 +531,7 @@ int ssdp_advertise (ssdp_t *ssdp)
 	dest.sin_port = htons(ssdp_port);
 	pthread_mutex_lock(&ssdp->mutex);
 	list_for_each_entry(d, &ssdp->devices, head) {
-		buffer = ssdp_advertise_buffer(d);
+		buffer = ssdp_advertise_buffer(d, 0);
 		ssdp_advertise_send(buffer, &dest);
 		free(buffer);
 	}
