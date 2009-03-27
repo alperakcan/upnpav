@@ -393,7 +393,7 @@ static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, co
 {
 	const char *fmt =
 		"HTTP/1.1 200 OK\r\n"
-		"Subscription-ID: %s\r\n"
+		"SID: %s\r\n"
 		"Timeout: Second-%d\r\n"
 		"Connection: close\r\n"
 		"Content-Type: text/xml\r\n"
@@ -458,17 +458,20 @@ static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, co
 			gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_PRECONDITION_FAILED);
 			goto out;
 		}
-		event.type = GENA_EVENT_TYPE_SUBSCRIBE;
 		if (gena_thread->callbacks == NULL ||
 		    gena_thread->callbacks->gena.event == NULL) {
 			gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_NOT_IMPLEMENTED);
 			goto out;
 		}
+		event.type = GENA_EVENT_TYPE_SUBSCRIBE_REQUEST;
 		if (gena_thread->callbacks->gena.event(gena_thread->callbacks->gena.cookie, &event) == 0) {
 			sprintf(header, fmt, event.event.subscribe.sid, 1800);
 			debugf("header:\n%s", header);
 			if (gena_send(gena_thread->fd, GENA_SEND_TIMEOUT, header, strlen(header)) != strlen(header)) {
 				debugf("send() failed");
+			} else {
+				event.type = GENA_EVENT_TYPE_SUBSCRIBE_ACCEPT;
+				gena_thread->callbacks->gena.event(gena_thread->callbacks->gena.cookie, &event);
 			}
 			goto out;
 		} else {
@@ -863,6 +866,60 @@ static int gena_init_server (gena_t *gena)
 	gena->port = ntohs(soc.sin_port);
 	debugf("gena started on port: %s:%u", inet_ntoa(soc.sin_addr), gena->port);
 
+	return 0;
+}
+
+static int gena_send_data (int s, const void *write_buf, int total_size)
+{
+	int ret;
+	int sent = 0;
+	while (total_size > 0) {
+		ret = send(s, write_buf + sent, total_size, 0);
+		if (ret < 0) {
+			goto err;
+		}
+		sent += ret;
+		total_size -= ret;
+	}
+	return sent;
+err:	return -1;
+}
+
+int gena_send_recv (gena_t *gena, const char *host, const unsigned short port, const char *header, const char *data)
+{
+        int fd;
+	struct sockaddr_in server;
+	server.sin_family = AF_INET;
+	server.sin_addr.s_addr = inet_addr(host);
+	server.sin_port = htons(port);
+
+        fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (fd < 0) {
+        	return -1;
+	}
+	if (connect(fd, (struct sockaddr *) &server, sizeof(server)) == -1) {
+		close(fd);
+		return -1;
+	}
+	if (gena_send_data(fd, header, strlen(header)) < 0) {
+		close(fd);
+		return -1;
+	}
+	if (gena_send_data(fd, data, strlen(data)) < 0) {
+		close(fd);
+		return -1;
+	}
+
+	char *buffer;
+	buffer = malloc(GENA_HEADER_SIZE);
+	while (1) {
+		if (gena_getline(fd, GENA_READ_TIMEOUT, buffer, GENA_HEADER_SIZE) <= 0) {
+			break;
+		}
+	}
+	free(buffer);
+
+	close(fd);
 	return 0;
 }
 
