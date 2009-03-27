@@ -33,8 +33,9 @@ typedef enum {
 } gena_seek_t;
 
 typedef enum {
-	GENA_EVENT_TYPE_UNKNOWN   = 0x00,
-	GENA_EVENT_TYPE_SUBSCRIBE = 0x01,
+	GENA_EVENT_TYPE_UNKNOWN           = 0x00,
+	GENA_EVENT_TYPE_SUBSCRIBE_REQUEST = 0x01,
+	GENA_EVENT_TYPE_SUBSCRIBE_ACCEPT  = 0x02,
 } gena_event_type_t;
 
 typedef struct gena_file_s {
@@ -93,16 +94,36 @@ int ssdp_register (ssdp_t *ssdp, char *nt, char *usn, char *location, char *serv
 ssdp_t * ssdp_init (void);
 int ssdp_uninit (ssdp_t *ssdp);
 
+int gena_send_recv (gena_t *gena, const char *host, const unsigned short port, const char *header, const char *data);
 unsigned short gena_getport (gena_t *gena);
 const char * gena_getaddress (gena_t *gena);
 gena_t * gena_init (char *address, unsigned short port, gena_callbacks_t *callbacks);
 int gena_uninit (gena_t *gena);
 
+typedef enum {
+	UPNP_EVENT_TYPE_UNKNOWN           = 0x00,
+	UPNP_EVENT_TYPE_SUBSCRIBE_REQUEST = 0x01,
+} upnp_event_type_t;
+
+typedef struct upnp_event_subscribe_s {
+	char *udn;
+	char *serviceid;
+	char *sid;
+} upnp_event_subscribe_t;
+
+typedef struct upnp_event_s {
+	upnp_event_type_t type;
+	union {
+		upnp_event_subscribe_t subscribe;
+	} event;
+} upnp_event_t;
+
 int upnp_advertise (upnp_t *upnp);
-int upnp_register_device (upnp_t *upnp, const char *description);
+int upnp_register_device (upnp_t *upnp, const char *description, int (*callback) (void *cookie, upnp_event_t *), void *cookie);
 char * upnp_getaddress (upnp_t *upnp);
 unsigned short upnp_getport (upnp_t *upnp);
 upnp_t * upnp_init (const char *host, const unsigned short port);
 int upnp_uninit (upnp_t *upnp);
+int upnp_accept_subscription (upnp_t *upnp, const char *udn, const char *serviceid, const char **variable_names, const char **variable_values, const unsigned int variables_count, const char *sid);
 
 #endif /* UPNP_H_ */
