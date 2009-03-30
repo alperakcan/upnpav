@@ -36,6 +36,7 @@ typedef enum {
 	GENA_EVENT_TYPE_UNKNOWN           = 0x00,
 	GENA_EVENT_TYPE_SUBSCRIBE_REQUEST = 0x01,
 	GENA_EVENT_TYPE_SUBSCRIBE_ACCEPT  = 0x02,
+	GENA_EVENT_TYPE_SUBSCRIBE_RENEW   = 0x03,
 } gena_event_type_t;
 
 typedef struct gena_file_s {

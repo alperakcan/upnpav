@@ -59,7 +59,8 @@ typedef struct upnp_service_s {
 	list_t head;
 	char *udn;
 	char *serviceid;
-	char *event;
+	char *eventurl;
+	char *controlurl;
 	list_t subscribers;
 } upnp_service_t;
 
@@ -261,7 +262,7 @@ found:
 		goto out;
 	}
 	if (asprintf(&header, format,
-			s->event,
+			s->eventurl,
 			c->url.host, c->url.port,
 			strlen(propset),
 			c->sid,
@@ -303,8 +304,8 @@ static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subsc
 	pthread_mutex_lock(&upnp->mutex);
 	debugf("enter");
 	list_for_each_entry(s, &upnp->device.services, head) {
-		debugf("%s", s->event);
-		if (strcmp(subscribe->path, s->event) == 0) {
+		debugf("%s", s->eventurl);
+		if (strcmp(subscribe->path, s->eventurl) == 0) {
 			c = (upnp_subscribe_t *) malloc(sizeof(upnp_subscribe_t));
 			if (c == NULL) {
 				ret = -1;
@@ -355,7 +356,7 @@ static int gena_callback_event_subscribe_accept (upnp_t *upnp, gena_event_subscr
 	pthread_mutex_lock(&upnp->mutex);
 	debugf("enter");
 	list_for_each_entry(s, &upnp->device.services, head) {
-		if (strcmp(subscribe->path, s->event) == 0) {
+		if (strcmp(subscribe->path, s->eventurl) == 0) {
 			e = (_upnp_event_t *) malloc(sizeof(_upnp_event_t));
 			if (e == NULL) {
 				return -1;
@@ -383,6 +384,22 @@ out:	pthread_mutex_unlock(&upnp->mutex);
 	return ret;
 }
 
+static int gena_callback_event_subscribe_renew (upnp_t *upnp, gena_event_subscribe_t *subscribe)
+{
+	upnp_service_t *s;
+	upnp_subscribe_t *c;
+	list_for_each_entry(s, &upnp->device.services, head) {
+		if (strcmp(subscribe->path, s->eventurl) == 0) {
+			list_for_each_entry(c, &s->subscribers, head) {
+				if (strcmp(c->sid, subscribe->sid) == 0) {
+					return 0;
+				}
+			}
+		}
+	}
+	return -1;
+}
+
 static int gena_callback_event (void *cookie, gena_event_t *event)
 {
 	upnp_t *upnp;
@@ -392,6 +409,8 @@ static int gena_callback_event (void *cookie, gena_event_t *event)
 			return gena_callback_event_subscribe_request(upnp, &event->event.subscribe);
 		case GENA_EVENT_TYPE_SUBSCRIBE_ACCEPT:
 			return gena_callback_event_subscribe_accept(upnp, &event->event.subscribe);
+		case GENA_EVENT_TYPE_SUBSCRIBE_RENEW:
+			return gena_callback_event_subscribe_renew(upnp, &event->event.subscribe);
 		default:
 			break;
 	}
@@ -401,14 +420,8 @@ static int gena_callback_event (void *cookie, gena_event_t *event)
 int upnp_advertise (upnp_t *upnp)
 {
 	int rc;
-	char *location;
 	pthread_mutex_lock(&upnp->mutex);
-	if (asprintf(&location, "http://%s:%d/description.xml", upnp->host, upnp->port) < 0) {
-		pthread_mutex_unlock(&upnp->mutex);
-		return -1;
-	}
 	rc = ssdp_advertise(upnp->ssdp);
-	free(location);
 	pthread_mutex_unlock(&upnp->mutex);
 	return rc;
 }
@@ -461,6 +474,7 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 	char *servicetype;
 	char *serviceid;
 	char *eventurl;
+	char *controlurl;
 
 	char *deviceusn;
 
@@ -532,7 +546,8 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 				servicetype = upnp_ixml_getfirstelementitem((IXML_Element *) servicenode, "serviceType");
 				serviceid = upnp_ixml_getfirstelementitem((IXML_Element *) servicenode, "serviceId");
 				eventurl = upnp_ixml_getfirstelementitem((IXML_Element *) servicenode, "eventSubURL");
-				if (servicetype == NULL || eventurl == NULL || serviceid == NULL) {
+				controlurl = upnp_ixml_getfirstelementitem((IXML_Element *) servicenode, "controlSubURL");
+				if (servicetype == NULL || eventurl == NULL || controlurl == NULL || serviceid == NULL) {
 					goto __continue;
 				}
 				if (asprintf(&deviceusn, "%s::%s", deviceudn, servicetype) > 0) {
@@ -546,9 +561,10 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 							if (service->udn == NULL) {
 								free(service);
 							} else {
-								service->event = eventurl;
+								service->eventurl = eventurl;
+								service->controlurl = controlurl;
 								service->serviceid = serviceid;
-								debugf("adding service: %s\n", serviceid);
+								debugf("adding service: %s", serviceid);
 								list_add(&service->head, &upnp->device.services);
 								eventurl = NULL;
 								serviceid = NULL;
@@ -558,6 +574,7 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 					free(deviceusn);
 				}
 __continue:
+				free(controlurl);
 				free(eventurl);
 				free(serviceid);
 				free(servicetype);
@@ -726,7 +743,8 @@ int upnp_uninit (upnp_t *upnp)
 		}
 		list_del(&s->head);
 		free(s->udn);
-		free(s->event);
+		free(s->eventurl);
+		free(s->controlurl);
 		free(s->serviceid);
 		free(s);
 	}
