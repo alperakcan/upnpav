@@ -310,12 +310,22 @@ static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, struct s
 	pthread_mutex_lock(&ssdp->mutex);
 	switch (request->request) {
 		case SSDP_TYPE_MSEARCH:
-			list_for_each_entry(d, &ssdp->devices, head) {
-				if (strcasecmp(d->nt, request->search.st) == 0) {
+			if (strcasecmp(request->search.st, "upnp:rootdevice") == 0) {
+				list_for_each_entry(d, &ssdp->devices, head) {
 					buffer = ssdp_advertise_buffer(d, 1);
 					if (buffer != NULL) {
 						ssdp_advertise_send(buffer, sender);
 						free(buffer);
+					}
+				}
+			} else {
+				list_for_each_entry(d, &ssdp->devices, head) {
+					if (strncasecmp(d->nt, request->search.st, strlen(request->search.st)) == 0) {
+						buffer = ssdp_advertise_buffer(d, 1);
+						if (buffer != NULL) {
+							ssdp_advertise_send(buffer, sender);
+							free(buffer);
+						}
 					}
 				}
 			}

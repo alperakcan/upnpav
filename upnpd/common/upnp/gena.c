@@ -419,7 +419,7 @@ static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, co
 			event.event.subscribe.scope = strdup(gena_trim(header + strlen("SCOPE:")));
 		} else if (strncasecmp(header, "TIMEOUT:", strlen("TIMEOUT:")) == 0) {
 			event.event.subscribe.timeout = strdup(gena_trim(header + strlen("TIMEOUT:")));
-		} else if (strncasecmp(header, "Subscription-ID:", strlen("Subscription-ID:")) == 0) {
+		} else if (strncasecmp(header, "SID:", strlen("Subscription-ID:")) == 0) {
 			event.event.subscribe.sid = strdup(gena_trim(header + strlen("Subscription-ID")));
 		}
 	}
@@ -444,6 +444,11 @@ static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, co
 		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
 		goto out;
 	}
+	if (gena_thread->callbacks == NULL ||
+	    gena_thread->callbacks->gena.event == NULL) {
+		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_NOT_IMPLEMENTED);
+		goto out;
+	}
 	if (event.event.subscribe.nt != NULL) {
 		/* Subscription */
 		if (strcasecmp(event.event.subscribe.nt, "upnp:event") != 0) {
@@ -456,11 +461,6 @@ static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, co
 		}
 		if (event.event.subscribe.callback == NULL) {
 			gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_PRECONDITION_FAILED);
-			goto out;
-		}
-		if (gena_thread->callbacks == NULL ||
-		    gena_thread->callbacks->gena.event == NULL) {
-			gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_NOT_IMPLEMENTED);
 			goto out;
 		}
 		event.type = GENA_EVENT_TYPE_SUBSCRIBE_REQUEST;
@@ -480,6 +480,21 @@ static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, co
 		}
 	} else {
 		/* Renewal */
+		event.type = GENA_EVENT_TYPE_SUBSCRIBE_RENEW;
+		if (gena_thread->callbacks->gena.event(gena_thread->callbacks->gena.cookie, &event) == 0) {
+			sprintf(header, fmt, event.event.subscribe.sid, 1800);
+			debugf("header:\n%s", header);
+			if (gena_send(gena_thread->fd, GENA_SEND_TIMEOUT, header, strlen(header)) != strlen(header)) {
+				debugf("send() failed");
+			} else {
+				event.type = GENA_EVENT_TYPE_SUBSCRIBE_ACCEPT;
+				gena_thread->callbacks->gena.event(gena_thread->callbacks->gena.cookie, &event);
+			}
+			goto out;
+		} else {
+			gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
+			goto out;
+		}
 	}
 
 	gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_NOT_IMPLEMENTED);
@@ -507,6 +522,7 @@ static void * gena_thread_loop (void *arg)
 	char *pathptr;
 	static const char request_get[] = "GET";
 	static const char request_head[] = "HEAD";
+	static const char request_post[] = "POST";
 	static const char request_subscribe[] = "SUBSCRIBE";
 
 	int rlen;
@@ -550,6 +566,7 @@ static void * gena_thread_loop (void *arg)
 	*urlptr++ = '\0';
 	if (strcasecmp(header, request_get) != 0 &&
 	    strcasecmp(header, request_head) != 0 &&
+	    strcasecmp(header, request_post) != 0 &&
 	    strcasecmp(header, request_subscribe) != 0) {
 		debugf("support get/head request only (%s)", header);
 		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_NOT_IMPLEMENTED);
@@ -577,7 +594,7 @@ static void * gena_thread_loop (void *arg)
 	debugf("requested url is: %s", pathptr);
 
 	if (strcasecmp(header, request_subscribe) == 0) {
-		debugf("gena event");
+		debugf("gena subscribe event");
 		gena_handler_subscribe(gena_thread, header, pathptr);
 		goto out;
 	}
