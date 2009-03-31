@@ -151,6 +151,34 @@ static int gena_send (int fd, int timeout, const void *buf, unsigned int len)
 	return send(pfd.fd, buf, len, 0);
 }
 
+static int gena_getcontent (int fd, int timeout, char *buf, int buflen)
+{
+	int rc;
+	struct pollfd pfd;
+	int count = 0;
+	char c;
+
+	memset(&pfd, 0, sizeof(struct pollfd));
+	pfd.fd = fd;
+	pfd.events = POLLIN;
+
+	rc = poll(&pfd, 1, timeout);
+	if (rc <= 0 || pfd.revents != POLLIN) {
+		return 0;
+	}
+
+	while (1) {
+		if (recv(pfd.fd, &c, 1, MSG_DONTWAIT) <= 0) {
+			break;
+		}
+		buf[count++] = c;
+		if (count >= buflen) {
+			break;
+		}
+	}
+	return count;
+}
+
 static int gena_getline (int fd, int timeout, char *buf, int buflen)
 {
 	int rc;
@@ -508,6 +536,75 @@ out:
 	free(event.event.subscribe.sid);
 }
 
+static void gena_handler_post (gena_thread_t *gena_thread, char *header, const char *path)
+{
+	gena_event_t event;
+
+	memset(&event, 0, sizeof(gena_event_t));
+
+	event.event.action.path = strdup(path);
+
+	while (1) {
+		if (gena_getline(gena_thread->fd, GENA_READ_TIMEOUT, header, GENA_HEADER_SIZE) <= 0) {
+			break;
+		}
+		if (strncasecmp(header, "HOST:", strlen("HOST:")) == 0) {
+			event.event.action.host = strdup(gena_trim(header + strlen("HOST:")));
+		} else if (strncasecmp(header, "CONTENT-LENGTH:", strlen("CONTENT-LENGTH:")) == 0) {
+			event.event.action.length = atol(gena_trim(header + strlen("CONTENT-LENGTH:")));
+		} else if (strncasecmp(header, "SOAPACTION:", strlen("SOAPACTION:")) == 0) {
+			event.event.action.action = strdup(gena_trim(header + strlen("SOAPACTION:")));
+		}
+	}
+	if (event.event.action.length == 0 ||
+	    event.event.action.host == NULL ||
+	    event.event.action.action == NULL) {
+		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_PRECONDITION_FAILED);
+		goto out;
+	}
+	event.event.action.content = (char *) malloc(sizeof(char) * (event.event.action.length + 1));
+	if (event.event.action.content == NULL) {
+		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
+		goto out;
+	}
+	if (gena_getcontent(gena_thread->fd, GENA_READ_TIMEOUT, event.event.action.content, event.event.action.length) != event.event.action.length) {
+		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_BAD_REQUEST);
+		goto out;
+	}
+	event.event.action.content[event.event.action.length] = '\0';
+	debugf("post event;\n"
+	       "  path: '%s'\n"
+	       "  host: '%s'\n"
+	       "  action: '%s'\n"
+	       "  length: '%u'\n"
+	       "  content: '%s'\n",
+	       event.event.action.path,
+	       event.event.action.host,
+	       event.event.action.action,
+	       event.event.action.length,
+	       event.event.action.content);
+
+	if (event.event.subscribe.path == NULL) {
+		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
+		goto out;
+	}
+	if (gena_thread->callbacks == NULL ||
+	    gena_thread->callbacks->gena.event == NULL) {
+		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_NOT_IMPLEMENTED);
+		goto out;
+	}
+	if (gena_thread->callbacks->gena.event(gena_thread->callbacks->gena.cookie, &event) == 0) {
+	} else {
+		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
+	}
+
+out:
+	free(event.event.action.action);
+	free(event.event.action.content);
+	free(event.event.action.host);
+	free(event.event.action.path);
+}
+
 static void * gena_thread_loop (void *arg)
 {
 	int running;
@@ -596,6 +693,16 @@ static void * gena_thread_loop (void *arg)
 	if (strcasecmp(header, request_subscribe) == 0) {
 		debugf("gena subscribe event");
 		gena_handler_subscribe(gena_thread, header, pathptr);
+		goto out;
+	}
+	if (strcasecmp(header, request_subscribe) == 0) {
+		debugf("gena subscribe event");
+		gena_handler_subscribe(gena_thread, header, pathptr);
+		goto out;
+	}
+	if (strcasecmp(header, request_post) == 0) {
+		debugf("gena post event");
+		gena_handler_post(gena_thread, header, pathptr);
 		goto out;
 	}
 

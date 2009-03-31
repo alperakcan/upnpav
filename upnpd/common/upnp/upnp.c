@@ -400,6 +400,13 @@ static int gena_callback_event_subscribe_renew (upnp_t *upnp, gena_event_subscri
 	return -1;
 }
 
+static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action)
+{
+	pthread_mutex_lock(&upnp->mutex);
+	pthread_mutex_unlock(&upnp->mutex);
+	return 0;
+}
+
 static int gena_callback_event (void *cookie, gena_event_t *event)
 {
 	upnp_t *upnp;
@@ -411,6 +418,8 @@ static int gena_callback_event (void *cookie, gena_event_t *event)
 			return gena_callback_event_subscribe_accept(upnp, &event->event.subscribe);
 		case GENA_EVENT_TYPE_SUBSCRIBE_RENEW:
 			return gena_callback_event_subscribe_renew(upnp, &event->event.subscribe);
+		case GENA_EVENT_TYPE_ACTION:
+			return gena_callback_event_action(upnp, &event->event.action);
 		default:
 			break;
 	}
@@ -546,7 +555,7 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 				servicetype = upnp_ixml_getfirstelementitem((IXML_Element *) servicenode, "serviceType");
 				serviceid = upnp_ixml_getfirstelementitem((IXML_Element *) servicenode, "serviceId");
 				eventurl = upnp_ixml_getfirstelementitem((IXML_Element *) servicenode, "eventSubURL");
-				controlurl = upnp_ixml_getfirstelementitem((IXML_Element *) servicenode, "controlSubURL");
+				controlurl = upnp_ixml_getfirstelementitem((IXML_Element *) servicenode, "controlURL");
 				if (servicetype == NULL || eventurl == NULL || controlurl == NULL || serviceid == NULL) {
 					goto __continue;
 				}
@@ -566,6 +575,7 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 								service->serviceid = serviceid;
 								debugf("adding service: %s", serviceid);
 								list_add(&service->head, &upnp->device.services);
+								controlurl = NULL;
 								eventurl = NULL;
 								serviceid = NULL;
 							}
