@@ -37,6 +37,7 @@ typedef enum {
 	GENA_EVENT_TYPE_SUBSCRIBE_REQUEST = 0x01,
 	GENA_EVENT_TYPE_SUBSCRIBE_ACCEPT  = 0x02,
 	GENA_EVENT_TYPE_SUBSCRIBE_RENEW   = 0x03,
+	GENA_EVENT_TYPE_ACTION            = 0x04,
 } gena_event_type_t;
 
 typedef struct gena_file_s {
@@ -73,10 +74,19 @@ typedef struct gena_event_subscribe_s {
 	char *sid;
 } gena_event_subscribe_t;
 
+typedef struct gena_event_action_s {
+	char *path;
+	char *host;
+	char *action;
+	char *content;
+	unsigned int length;
+} gena_event_action_t;
+
 typedef struct gena_event_s {
 	gena_event_type_t type;
 	union {
 		gena_event_subscribe_t subscribe;
+		gena_event_action_t action;
 	} event;
 } gena_event_t;
 
