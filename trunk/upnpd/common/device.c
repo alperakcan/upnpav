@@ -28,7 +28,7 @@
 #include "common.h"
 #include "uuid/uuid.h"
 
-//#define UPNP_INTERNAL 1
+#define UPNP_INTERNAL 1
 
 static device_t *__device;
 
@@ -329,6 +329,146 @@ struct UpnpVirtualDirCallbacks virtual_dir_callbacks = {
 };
 
 #if defined(UPNP_INTERNAL)
+static void device_event_action_request (device_t *device, upnp_event_action_t *event)
+{
+	int rc;
+	device_service_t *service;
+	service_action_t *action;
+
+	debugf("received action request:\n"
+	       "  errcode     : %d\n"
+	       "  errstr      : %s\n"
+	       "  actionname  : %s\n"
+	       "  udn         : %s\n"
+	       "  serviceid   : %s\n",
+	       event->ErrCode,
+	       event->ErrStr,
+	       event->ActionName,
+	       event->DevUDN,
+	       event->ServiceID);
+
+	if (strcmp(event->DevUDN, device->uuid) != 0) {
+		debugf("discarding event - udn '%s' not recognized", event->DevUDN);
+		event->ActionResult = NULL;
+		event->ErrCode = UPNP_SOAP_E_INVALID_ACTION;
+		strcpy(event->ErrStr, "unrecognized device");
+		return;
+	}
+	service = device_service_find(device, event->ServiceID);
+	if (service == NULL) {
+		debugf("discarding event - serviceid '%s' not recognized", event->ServiceID);
+		return;
+	}
+	pthread_mutex_lock(&service->mutex);
+	action = service_action_find(service, event->ActionName);
+	if (action == NULL) {
+		debugf("unknown action '%s' for service '%s'", event->ActionName, event->ServiceID);
+		event->ActionResult = NULL;
+		event->ErrCode = UPNP_SOAP_E_INVALID_ACTION;
+		strcpy(event->ErrStr, "invalid action");
+		pthread_mutex_unlock(&service->mutex);
+		return;
+	}
+	if (action->function != NULL) {
+		rc = action->function(service, event);
+		if (rc == 0) {
+			event->ErrCode = UPNP_E_SUCCESS;
+			debugf("successfull action '%s'", action->name);
+		}
+		if (event->ActionResult == NULL) {
+			event->ActionResult = UpnpMakeActionResponse(event->ActionName, event->ServiceID, 0, NULL);
+		}
+	} else {
+		debugf("got valid action '%s', but no handler defined", action->name);
+	}
+	pthread_mutex_unlock(&service->mutex);
+}
+
+static void device_event_subscription_request (device_t *device, upnp_event_subscribe_t *event)
+{
+	int i;
+	device_service_t *service;
+	service_variable_t *variable;
+
+	int variable_count;
+	char **variable_names;
+	char **variable_values;
+
+	debugf("received subscription request:\n"
+	       "  serviceid   : %s\n"
+	       "  udn         : %s\n"
+	       "  sid         : %s\n",
+	       event->serviceid,
+	       event->udn,
+	       event->sid);
+
+	if (strcmp(event->udn, device->uuid) != 0) {
+		debugf("discarding event - udn '%s' not recognized", event->udn);
+		return;
+	}
+	service = device_service_find(device, event->serviceid);
+	if (service == NULL) {
+		debugf("discarding event - serviceid '%s' not recognized", event->serviceid);
+		return;
+	}
+	pthread_mutex_lock(&service->mutex);
+	variable_count = 0;
+	for (i = 0; (variable = service->variables[i]) != NULL; i++) {
+		if (variable->sendevent == VARIABLE_SENDEVENT_YES) {
+			variable_count++;
+		}
+	}
+	debugf("evented variables count: %d", variable_count);
+	variable_names = (char **) malloc(sizeof(char *) * (variable_count + 1));
+	if (variable_names == NULL) {
+		debugf("malloc(sizeof(char *) * (variable_count + 1)) failed");
+		pthread_mutex_unlock(&service->mutex);
+		return;
+	}
+	variable_values = (char **) malloc(sizeof(char *) * (variable_count + 1));
+	if (variable_values == NULL) {
+		debugf("malloc(sizeof(char *) * (variable_count + 1)) failed");
+		pthread_mutex_unlock(&service->mutex);
+		return;
+	}
+	memset(variable_names, 0, sizeof(char *) * (variable_count + 1));
+	memset(variable_values, 0, sizeof(char *) * (variable_count + 1));
+	variable_count = 0;
+	for (i = 0; (variable = service->variables[i]) != NULL; i++) {
+		if (variable->sendevent == VARIABLE_SENDEVENT_YES) {
+			variable_names[variable_count] = variable->name;
+			variable_values[variable_count] = xml_escape(variable->value, 0);
+			debugf("evented '%s' : '%s'", variable_names[variable_count], variable_values[variable_count]);
+			variable_count++;
+		}
+	}
+	upnp_accept_subscription(upnp, event->udn, event->serviceid, (const char **) variable_names, (const char **) variable_values, variable_count, event->sid);
+	for (i = 0; i < variable_count; i++) {
+		free(variable_values[i]);
+	}
+	free(variable_names);
+	free(variable_values);
+	pthread_mutex_unlock(&service->mutex);
+}
+
+static int device_event_handler (void *cookie, upnp_event_t *event)
+{
+	device_t *device;
+	device = (device_t *) cookie;
+	pthread_mutex_lock(&device->mutex);
+	switch (event->type) {
+		case UPNP_EVENT_TYPE_SUBSCRIBE_REQUEST:
+			device_event_subscription_request(device, &event->event.subscribe);
+			break;
+		case UPNP_EVENT_TYPE_ACTION:
+			device_event_action_request(device, &event->event.action);
+			break;
+		default:
+			break;
+	}
+	pthread_mutex_unlock(&device->mutex);
+	return 0;
+}
 #else
 static int device_event_get_var_request (device_t *device, struct Upnp_State_Var_Request *event)
 {
@@ -562,7 +702,7 @@ int device_init (device_t *device)
 		goto out;
 	}
 #if defined(UPNP_INTERNAL)
-	if (upnp_register_device(upnp, device->description) != 0) {
+	if (upnp_register_device(upnp, device->description, device_event_handler, device) != 0) {
 		goto out;
 	}
 	if (upnp_advertise(upnp) != 0) {

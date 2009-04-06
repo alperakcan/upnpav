@@ -275,6 +275,7 @@ static int client_service_subscribe (client_t *client, client_service_t *service
 	t = 1801;
 	rc = UpnpSubscribe(client->handle, service->eventurl, &t, sid);
 	if (rc != UPNP_E_SUCCESS) {
+		debugf("upnpsubscribe() failed");
 		return -1;
 	}
 	service->sid = strdup(sid);
