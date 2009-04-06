@@ -16,6 +16,8 @@
 #ifndef UPNP_H_
 #define UPNP_H_
 
+#include <upnp/ixml.h>
+
 typedef struct ssdp_s ssdp_t;
 typedef struct ssdp_device_s ssdp_device_t;
 typedef struct gena_s gena_t;
@@ -78,7 +80,9 @@ typedef struct gena_event_action_s {
 	char *path;
 	char *host;
 	char *action;
-	char *content;
+	char *serviceid;
+	char *request;
+	char *response;
 	unsigned int length;
 } gena_event_action_t;
 
@@ -114,6 +118,7 @@ int gena_uninit (gena_t *gena);
 typedef enum {
 	UPNP_EVENT_TYPE_UNKNOWN           = 0x00,
 	UPNP_EVENT_TYPE_SUBSCRIBE_REQUEST = 0x01,
+	UPNP_EVENT_TYPE_ACTION            = 0x02,
 } upnp_event_type_t;
 
 typedef struct upnp_event_subscribe_s {
@@ -122,10 +127,19 @@ typedef struct upnp_event_subscribe_s {
 	char *sid;
 } upnp_event_subscribe_t;
 
+typedef struct upnp_event_action_s {
+	char *udn;
+	char *serviceid;
+	char *action;
+	IXML_Document *request;
+	IXML_Document *response;
+} upnp_event_action_t;
+
 typedef struct upnp_event_s {
 	upnp_event_type_t type;
 	union {
 		upnp_event_subscribe_t subscribe;
+		upnp_event_action_t action;
 	} event;
 } upnp_event_t;
 

@@ -72,23 +72,12 @@ typedef struct upnp_device_s {
 	void *cookie;
 } upnp_device_t;
 
-typedef struct _upnp_event_s {
-	list_t head;
-	upnp_event_t event;
-} _upnp_event_t;
-
 struct upnp_s {
 	char *host;
 	unsigned short port;
 	ssdp_t *ssdp;
 	gena_t *gena;
 	upnp_device_t device;
-	list_t events;
-	int started;
-	int stopped;
-	int running;
-	pthread_t thread;
-	pthread_cond_t cond;
 	pthread_mutex_t mutex;
 	gena_callbacks_t gena_callbacks;
 };
@@ -301,8 +290,8 @@ static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subsc
 	upnp_service_t *s;
 	upnp_subscribe_t *c;
 	ret = -1;
-	pthread_mutex_lock(&upnp->mutex);
 	debugf("enter");
+	pthread_mutex_lock(&upnp->mutex);
 	list_for_each_entry(s, &upnp->device.services, head) {
 		debugf("%s", s->eventurl);
 		if (strcmp(subscribe->path, s->eventurl) == 0) {
@@ -332,49 +321,26 @@ out:	pthread_mutex_unlock(&upnp->mutex);
 	return ret;
 }
 
-static int upnp_event_uninit (_upnp_event_t *event)
-{
-	switch (event->event.type) {
-		case UPNP_EVENT_TYPE_SUBSCRIBE_REQUEST:
-			free(event->event.event.subscribe.serviceid);
-			free(event->event.event.subscribe.sid);
-			free(event->event.event.subscribe.udn);
-			break;
-		default:
-			break;
-	}
-	free(event);
-	return 0;
-}
-
 static int gena_callback_event_subscribe_accept (upnp_t *upnp, gena_event_subscribe_t *subscribe)
 {
 	int ret;
-	_upnp_event_t *e;
+	upnp_event_t e;
 	upnp_service_t *s;
 	ret = -1;
-	pthread_mutex_lock(&upnp->mutex);
 	debugf("enter");
+	pthread_mutex_lock(&upnp->mutex);
 	list_for_each_entry(s, &upnp->device.services, head) {
 		if (strcmp(subscribe->path, s->eventurl) == 0) {
-			e = (_upnp_event_t *) malloc(sizeof(_upnp_event_t));
-			if (e == NULL) {
-				return -1;
+			memset(&e, 0, sizeof(upnp_event_t));
+			e.type = UPNP_EVENT_TYPE_SUBSCRIBE_REQUEST;
+			e.event.subscribe.serviceid = s->serviceid;
+			e.event.subscribe.udn = s->udn;
+			e.event.subscribe.sid = subscribe->sid;
+			pthread_mutex_unlock(&upnp->mutex);
+			if (upnp->device.callback != NULL) {
+				upnp->device.callback(upnp->device.cookie, &e);
 			}
-			memset(e, 0, sizeof(_upnp_event_t));
-			e->event.type = UPNP_EVENT_TYPE_SUBSCRIBE_REQUEST;
-			e->event.event.subscribe.serviceid = strdup(s->serviceid);
-			e->event.event.subscribe.udn = strdup(s->udn);
-			e->event.event.subscribe.sid = strdup(subscribe->sid);
-			if (e->event.event.subscribe.serviceid == NULL ||
-			    e->event.event.subscribe.sid == NULL ||
-			    e->event.event.subscribe.udn == NULL) {
-				upnp_event_uninit(e);
-				ret = -1;
-				goto out;
-			}
-			list_add(&e->head, &upnp->events);
-			pthread_cond_signal(&upnp->cond);
+			pthread_mutex_lock(&upnp->mutex);
 			ret = 0;
 			goto out;
 		}
@@ -386,25 +352,55 @@ out:	pthread_mutex_unlock(&upnp->mutex);
 
 static int gena_callback_event_subscribe_renew (upnp_t *upnp, gena_event_subscribe_t *subscribe)
 {
+	int ret;
 	upnp_service_t *s;
 	upnp_subscribe_t *c;
+	ret = -1;
+	pthread_mutex_lock(&upnp->mutex);
 	list_for_each_entry(s, &upnp->device.services, head) {
 		if (strcmp(subscribe->path, s->eventurl) == 0) {
 			list_for_each_entry(c, &s->subscribers, head) {
 				if (strcmp(c->sid, subscribe->sid) == 0) {
-					return 0;
+					ret = 0;
+					goto out;
 				}
 			}
 		}
 	}
+out:	pthread_mutex_unlock(&upnp->mutex);
 	return -1;
 }
 
 static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action)
 {
+	int ret;
+	upnp_event_t e;
+	upnp_service_t *s;
+	ret = -1;
 	pthread_mutex_lock(&upnp->mutex);
-	pthread_mutex_unlock(&upnp->mutex);
-	return 0;
+	list_for_each_entry(s, &upnp->device.services, head) {
+		if (strcmp(action->path, s->controlurl) == 0) {
+			memset(&e, 0, sizeof(upnp_event_t));
+			e.type = UPNP_EVENT_TYPE_ACTION;
+			e.event.action.action = action->action;
+			ret = ixmlParseBufferEx(action->request, &e.event.action.request);
+			if (ret != IXML_SUCCESS) {
+				ret = -1;
+				goto out;
+			}
+			e.event.action.serviceid = action->serviceid;
+			e.event.action.udn = s->udn;
+			pthread_mutex_unlock(&upnp->mutex);
+			if (upnp->device.callback != NULL) {
+				upnp->device.callback(upnp->device.cookie, &e);
+			}
+			pthread_mutex_lock(&upnp->mutex);
+			ret = 0;
+			goto out;
+		}
+	}
+out:	pthread_mutex_unlock(&upnp->mutex);
+	return -1;
 }
 
 static int gena_callback_event (void *cookie, gena_event_t *event)
@@ -630,48 +626,6 @@ unsigned short upnp_getport (upnp_t *upnp)
 	return upnp->port;
 }
 
-void * upnp_event_thread (void *arg)
-{
-	upnp_t *upnp;
-	_upnp_event_t *e;
-	_upnp_event_t *en;
-	upnp = (upnp_t *) arg;
-
-	pthread_mutex_lock(&upnp->mutex);
-	upnp->started = 1;
-	upnp->running = 1;
-	pthread_cond_signal(&upnp->cond);
-	pthread_mutex_unlock(&upnp->mutex);
-
-	while (1) {
-		pthread_mutex_lock(&upnp->mutex);
-		while (list_count(&upnp->events) == 0 && upnp->running == 1) {
-			pthread_cond_wait(&upnp->cond, &upnp->mutex);
-		}
-		if (upnp->running == 0) {
-			pthread_mutex_unlock(&upnp->mutex);
-			break;
-		}
-		list_for_each_entry_safe(e, en, &upnp->events, head) {
-			list_del(&e->head);
-			pthread_mutex_unlock(&upnp->mutex);
-			if (upnp->device.callback != NULL) {
-				upnp->device.callback(upnp->device.cookie, &e->event);
-			}
-			upnp_event_uninit(e);
-			pthread_mutex_lock(&upnp->mutex);
-		}
-		pthread_mutex_unlock(&upnp->mutex);
-	}
-
-	pthread_mutex_lock(&upnp->mutex);
-	upnp->stopped = 1;
-	upnp->running = 0;
-	pthread_cond_signal(&upnp->cond);
-	pthread_mutex_unlock(&upnp->mutex);
-	return NULL;
-}
-
 upnp_t * upnp_init (const char *host, const unsigned short port)
 {
 	upnp_t *upnp;
@@ -713,37 +667,17 @@ upnp_t * upnp_init (const char *host, const unsigned short port)
 	}
 	upnp->port = gena_getport(upnp->gena);
 
-	list_init(&upnp->events);
-
 	pthread_mutex_init(&upnp->mutex, NULL);
-	pthread_cond_init(&upnp->cond, NULL);
-
-	pthread_mutex_lock(&upnp->mutex);
-	pthread_create(&upnp->thread, NULL, upnp_event_thread, upnp);
-	while (upnp->started == 0) {
-		pthread_cond_wait(&upnp->cond, &upnp->mutex);
-	}
-	pthread_mutex_unlock(&upnp->mutex);
 
 	return upnp;
 }
 
 int upnp_uninit (upnp_t *upnp)
 {
-	_upnp_event_t *e;
-	_upnp_event_t *en;
 	upnp_service_t *s;
 	upnp_service_t *sn;
 	upnp_subscribe_t *c;
 	upnp_subscribe_t *cn;
-	pthread_mutex_lock(&upnp->mutex);
-	upnp->running = 0;
-	pthread_cond_signal(&upnp->cond);
-	while (upnp->stopped == 0) {
-		pthread_cond_wait(&upnp->cond, &upnp->mutex);
-	}
-	pthread_join(upnp->thread, NULL);
-	pthread_mutex_unlock(&upnp->mutex);
 	list_for_each_entry_safe(s, sn, &upnp->device.services, head) {
 		list_for_each_entry_safe(c, cn, &s->subscribers, head) {
 			list_del(&c->head);
@@ -758,14 +692,9 @@ int upnp_uninit (upnp_t *upnp)
 		free(s->serviceid);
 		free(s);
 	}
-	list_for_each_entry_safe(e, en, &upnp->events, head) {
-		list_del(&e->head);
-		upnp_event_uninit(e);
-	}
 	gena_uninit(upnp->gena);
 	ssdp_uninit(upnp->ssdp);
 	pthread_mutex_destroy(&upnp->mutex);
-	pthread_cond_destroy(&upnp->cond);
 	free(upnp->device.description);
 	free(upnp->device.location);
 	free(upnp->host);
