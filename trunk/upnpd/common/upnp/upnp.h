@@ -132,6 +132,7 @@ typedef struct upnp_event_action_s {
 	char *serviceid;
 	char *action;
 	IXML_Document *request;
+	int errcode;
 	IXML_Document *response;
 } upnp_event_action_t;
 
@@ -150,5 +151,6 @@ unsigned short upnp_getport (upnp_t *upnp);
 upnp_t * upnp_init (const char *host, const unsigned short port);
 int upnp_uninit (upnp_t *upnp);
 int upnp_accept_subscription (upnp_t *upnp, const char *udn, const char *serviceid, const char **variable_names, const char **variable_values, const unsigned int variables_count, const char *sid);
+int upnp_addtoactionresponse (upnp_event_action_t *response, const char *service, const char *variable, const char *value);
 
 #endif /* UPNP_H_ */

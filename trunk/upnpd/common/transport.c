@@ -45,17 +45,17 @@ static int instance_ids[TRANSPORT_INSTANCE_MAX];
 static list_t instance_list;
 
 static int transport_notify_lastchange (device_t *device, uint32_t instanceid);
-static int avtransport_set_avtransport_uri (device_service_t *service, struct Upnp_Action_Request *request);
-static int avtransport_get_media_info (device_service_t *service, struct Upnp_Action_Request *request);
-static int avtransport_get_transport_info (device_service_t *service, struct Upnp_Action_Request *request);
-static int avtransport_get_position_info (device_service_t *service, struct Upnp_Action_Request *request);
-static int avtransport_get_device_capabilities (device_service_t *service, struct Upnp_Action_Request *request);
-static int avtransport_get_transport_settings (device_service_t *service, struct Upnp_Action_Request *request);
-static int avtransport_stop (device_service_t *service, struct Upnp_Action_Request *request);
-static int avtransport_play (device_service_t *service, struct Upnp_Action_Request *request);
-static int avtransport_seek (device_service_t *service, struct Upnp_Action_Request *request);
-static int avtransport_next (device_service_t *service, struct Upnp_Action_Request *request);
-static int avtransport_previous (device_service_t *service, struct Upnp_Action_Request *request);
+static int avtransport_set_avtransport_uri (device_service_t *service, upnp_event_action_t *request);
+static int avtransport_get_media_info (device_service_t *service, upnp_event_action_t *request);
+static int avtransport_get_transport_info (device_service_t *service, upnp_event_action_t *request);
+static int avtransport_get_position_info (device_service_t *service, upnp_event_action_t *request);
+static int avtransport_get_device_capabilities (device_service_t *service, upnp_event_action_t *request);
+static int avtransport_get_transport_settings (device_service_t *service, upnp_event_action_t *request);
+static int avtransport_stop (device_service_t *service, upnp_event_action_t *request);
+static int avtransport_play (device_service_t *service, upnp_event_action_t *request);
+static int avtransport_seek (device_service_t *service, upnp_event_action_t *request);
+static int avtransport_next (device_service_t *service, upnp_event_action_t *request);
+static int avtransport_previous (device_service_t *service, upnp_event_action_t *request);
 
 static char *allowed_values_storagemedium[] = {
 	/* optional */
@@ -423,7 +423,7 @@ int transport_instance_delete (device_t *device, uint32_t instanceid)
 
 	transport = (transport_t *) device_service_find(device, TRANSPORT_SERVICE_ID);
 	render_stop(transport->render);
-	
+
 	transport_notify_lastchange(device, instanceid);
 	transport_instance_uninit(inst);
 	return 0;
@@ -522,17 +522,17 @@ static int transport_notify_lastchange (device_t *device, uint32_t instanceid)
 	return 0;
 }
 
-static int avtransport_set_avtransport_uri (device_service_t *service, struct Upnp_Action_Request *request)
+static int avtransport_set_avtransport_uri (device_service_t *service, upnp_event_action_t *request)
 {
 	char *currenturi;
 	char *currenturimetadata;
 	uint32_t instanceid;
 	transport_instance_t *tinstance;
-	
-	instanceid = xml_get_ui4(request->ActionRequest, "InstanceID");
-	currenturi = xml_get_string(request->ActionRequest, "CurrentURI");
-	currenturimetadata = xml_get_string(request->ActionRequest, "CurrentURIMetaData");
-	
+
+	instanceid = xml_get_ui4(request->request, "InstanceID");
+	currenturi = xml_get_string(request->request, "CurrentURI");
+	currenturimetadata = xml_get_string(request->request, "CurrentURIMetaData");
+
 	debugf("avtransport_set_avtransport_uri;\n"
 	       "  instanceid        : %u\n"
 	       "  currenturi        : %s\n"
@@ -542,9 +542,7 @@ static int avtransport_set_avtransport_uri (device_service_t *service, struct Up
 	       currenturimetadata);
 	tinstance = transport_instance_get(instanceid);
 	if (tinstance == NULL) {
-		request->ActionResult = NULL;
-		request->ErrCode = 718;
-		strcpy(request->ErrStr, "invalid instance id");
+		request->errcode = 718;
 		return -1;
 	}
 	if (tinstance->currenturi != NULL) {
@@ -554,9 +552,7 @@ static int avtransport_set_avtransport_uri (device_service_t *service, struct Up
 	tinstance->currenturi = strdup(currenturi);
 	if (tinstance->currenturi == NULL) {
 		debugf("strdup(currenturi) failed");
-		request->ActionResult = NULL;
-		request->ErrCode = 718;
-		strcpy(request->ErrStr, "invalid instance id");
+		request->errcode = 718;
 		return -1;
 	}
 	tinstance->currenturimetadata = (currenturimetadata) ? strdup(currenturimetadata) : NULL;
@@ -564,37 +560,36 @@ static int avtransport_set_avtransport_uri (device_service_t *service, struct Up
 	return 0;
 }
 
-static int avtransport_get_media_info (device_service_t *service, struct Upnp_Action_Request *request)
+static int avtransport_get_media_info (device_service_t *service, upnp_event_action_t *request)
 {
 	debugf("avtransport_get_media_info");
 	assert(0);
 	return 0;
 }
 
-static int avtransport_get_transport_info (device_service_t *service, struct Upnp_Action_Request *request)
+static int avtransport_get_transport_info (device_service_t *service, upnp_event_action_t *request)
 {
 	uint32_t instanceid;
 	transport_instance_t *tinstance;
 
-	instanceid = xml_get_ui4(request->ActionRequest, "InstanceID");
+	instanceid = xml_get_ui4(request->request, "InstanceID");
 	tinstance = transport_instance_get(instanceid);
 	debugf("avtransport_get_transport_info;\n"
 	       "instanceid: %u\n",
 	       instanceid);
 	if (tinstance == NULL) {
-		request->ErrCode = 718;
-		sprintf(request->ErrStr, "Invalid InstanceID");
+		request->errcode = 718;
 		return -1;
 	}
-	
+
 	upnp_add_response(request, service->type, "CurrentTransportState", allowed_values_transportstate[tinstance->transport_state]);
 	upnp_add_response(request, service->type, "CurrentTransportStatus", allowed_values_transportstatus[tinstance->transport_status]);
 	upnp_add_response(request, service->type, "CurrentSpeed", tinstance->playspeed);
-	
+
 	return 0;
 }
 
-static int avtransport_get_position_info (device_service_t *service, struct Upnp_Action_Request *request)
+static int avtransport_get_position_info (device_service_t *service, upnp_event_action_t *request)
 {
 	char *position;
 	char *duration;
@@ -603,18 +598,17 @@ static int avtransport_get_position_info (device_service_t *service, struct Upnp
 	render_info_t renderinfo;
 	transport_instance_t *tinstance;
 
-	instanceid = xml_get_ui4(request->ActionRequest, "InstanceID");
+	instanceid = xml_get_ui4(request->request, "InstanceID");
 	debugf("avtransport_get_position_info;\n"
 		"instanceid: %u\n",
 		instanceid);
-	
+
 	tinstance = transport_instance_get(instanceid);
 	if (tinstance == NULL) {
-		request->ErrCode = 718;
-		sprintf(request->ErrStr, "Invalid InstanceID");
+		request->errcode = 718;
 		return -1;
 	}
-	
+
 	transport = (transport_t *) service;
 	position = NULL;
 	duration = NULL;
@@ -628,9 +622,9 @@ static int avtransport_get_position_info (device_service_t *service, struct Upnp
 				(renderinfo.duration != (unsigned long) -1) ? ((renderinfo.duration / 60) % 60) : 99,
 				(renderinfo.duration != (unsigned long) -1) ? (renderinfo.duration % 60) : 99);
 	}
-	
+
 	debugf("render state: %u, position: %s / %s", renderinfo.state, position, duration);
-	
+
 	upnp_add_response(request, service->type, "Track", "0");
 	upnp_add_response(request, service->type, "TrackDuration", (duration) ? duration : "NOT_IMPLEMENTED");
 	upnp_add_response(request, service->type, "TrackMetaData", tinstance->currenturimetadata);
@@ -639,7 +633,7 @@ static int avtransport_get_position_info (device_service_t *service, struct Upnp
 	upnp_add_response(request, service->type, "AbsTime", "NOT_IMPLEMENTED");
 	upnp_add_response(request, service->type, "RelCount", "0");
 	upnp_add_response(request, service->type, "AbsCount", "0");
-	
+
 	free(position);
 	free(duration);
 
@@ -653,78 +647,76 @@ static int avtransport_get_position_info (device_service_t *service, struct Upnp
 	return 0;
 }
 
-static int avtransport_get_device_capabilities (device_service_t *service, struct Upnp_Action_Request *request)
+static int avtransport_get_device_capabilities (device_service_t *service, upnp_event_action_t *request)
 {
 	debugf("avtransport_get_device_capabilities");
 	assert(0);
 	return 0;
 }
 
-static int avtransport_get_transport_settings (device_service_t *service, struct Upnp_Action_Request *request)
+static int avtransport_get_transport_settings (device_service_t *service, upnp_event_action_t *request)
 {
 	debugf("avtransport_get_transport_settings");
 	assert(0);
 	return 0;
 }
 
-static int avtransport_stop (device_service_t *service, struct Upnp_Action_Request *request)
+static int avtransport_stop (device_service_t *service, upnp_event_action_t *request)
 {
 	char *playspeed;
 	uint32_t instanceid;
 	transport_t *transport;
 	transport_instance_t *tinstance;
-	
-	instanceid = xml_get_ui4(request->ActionRequest, "InstanceID");
-	playspeed = xml_get_string(request->ActionRequest, "Speed");
-	
+
+	instanceid = xml_get_ui4(request->request, "InstanceID");
+	playspeed = xml_get_string(request->request, "Speed");
+
 	debugf("avtransport_stop;\n"
 	       "  instanceid: %u\n",
 	       instanceid)
-	
+
 	tinstance = transport_instance_get(instanceid);
 	if (tinstance == NULL) {
-		request->ErrCode = 718;
-		sprintf(request->ErrStr, "Invalid InstanceID");
+		request->errcode = 718;
 		return 0;
 	}
 	tinstance->transport_state = TRANSPORT_STATE_STOPPED;
 	tinstance->transport_status = TRANSPORT_STATUS_OK;
-	
+
 	transport = (transport_t *) service;
 	render_stop(transport->render);
-	
+
 	transport_notify_lastchange(service->device, instanceid);
 
 	return 0;
 }
 
-static int avtransport_play (device_service_t *service, struct Upnp_Action_Request *request)
+static int avtransport_play (device_service_t *service, upnp_event_action_t *request)
 {
 	char *playspeed;
 	uint32_t instanceid;
 	transport_t *transport;
 	transport_instance_t *tinstance;
-	
-	instanceid = xml_get_ui4(request->ActionRequest, "InstanceID");
-	playspeed = xml_get_string(request->ActionRequest, "Speed");
-	
+
+	instanceid = xml_get_ui4(request->request, "InstanceID");
+	playspeed = xml_get_string(request->request, "Speed");
+
 	debugf("avtransport_play;\n"
 	       "  instanceid: %u\n"
 	       "  playspeed: %s\n",
 	       instanceid,
 	       playspeed);
-	
+
 	tinstance = transport_instance_get(instanceid);
 	if (tinstance == NULL) {
 		return 0;
 	}
-	
+
 	if (tinstance->currenturi == NULL) {
-		request->ErrCode = 718;
-		sprintf(request->ErrStr, "Invalid InstanceID");
+		request->errcode = 718;
 		return -1;
 	}
-	
+
 	if (tinstance->playspeed != NULL) {
 		free(tinstance->playspeed);
 	}
@@ -746,21 +738,21 @@ static int avtransport_play (device_service_t *service, struct Upnp_Action_Reque
 	return 0;
 }
 
-static int avtransport_seek (device_service_t *service, struct Upnp_Action_Request *request)
+static int avtransport_seek (device_service_t *service, upnp_event_action_t *request)
 {
 	debugf("avtransport_seek");
 	assert(0);
 	return 0;
 }
 
-static int avtransport_next (device_service_t *service, struct Upnp_Action_Request *request)
+static int avtransport_next (device_service_t *service, upnp_event_action_t *request)
 {
 	debugf("avtransport_next");
 	assert(0);
 	return 0;
 }
 
-static int avtransport_previous (device_service_t *service, struct Upnp_Action_Request *request)
+static int avtransport_previous (device_service_t *service, upnp_event_action_t *request)
 {
 	debugf("avtransport_previous");
 	assert(0);
@@ -806,7 +798,7 @@ device_service_t * avtransport_init (render_t *render)
 	transport->service.actions = avtransport_actions;
 	transport->service.variables = avtransport_variables;
 	transport->service.uninit = avtransport_uninit;
-	
+
 	debugf("initializing av transport service");
 	if (service_init(&transport->service) != 0) {
 		debugf("service_init(&transport->service) failed");
@@ -831,14 +823,14 @@ device_service_t * avtransport_init (render_t *render)
 	if (variable != NULL) {
 		variable->value = xml_escape("<Event xmlns=\"urn:schemas-upnp-org:metadata-1-0/AVT/\"/>", 0);
 	}
-	
+
 	debugf("initializing ac transport instances");
 	for (i = 0; i < TRANSPORT_INSTANCE_MAX; i++) {
 		instance_ids[i] = 0;
 	}
 	debugf("initializing instance list");
 	list_init(&instance_list);
-	
+
 	transport->render = render;
 
 #if defined(ENABLE_OPTIONAL)

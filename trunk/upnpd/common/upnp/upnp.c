@@ -186,6 +186,43 @@ static int gena_callback_close (void *cookie, void *handle)
 	return 0;
 }
 
+int upnp_addtoactionresponse (upnp_event_action_t *response, const char *service, const char *variable, const char *value)
+{
+	int rc;
+	char *buf;
+	const char *fmt =
+		"<u:%sResponse xmlns:u=\"%s\">\r\n"
+		"</u:%sResponse>";
+
+	IXML_Node *node = NULL;
+	IXML_Node *text = NULL;
+	IXML_Element *elem = NULL;
+
+	if (service == NULL) {
+		return -1;
+	}
+	if (response->response == NULL) {
+		if (asprintf(&buf, fmt, response->action, service, response->action) < 0) {
+			return -1;
+		}
+	        rc = ixmlParseBufferEx(buf, &response->response);
+	        free(buf);
+	        if (rc != IXML_SUCCESS) {
+	        	return -1;
+	        }
+	}
+	if (variable != NULL) {
+		node = ixmlNode_getFirstChild((IXML_Node *) response->response);
+		elem = ixmlDocument_createElement(response->response, variable);
+	        if (value != NULL) {
+	        	text = ixmlDocument_createTextNode(response->response, value);
+	        	ixmlNode_appendChild((IXML_Node *) elem, text);
+	        }
+	        ixmlNode_appendChild(node, (IXML_Node *) elem);
+	}
+	return 0;
+}
+
 static char * upnp_propertyset (const char **names, const char **values, unsigned int count)
 {
 	char *buffer;
@@ -222,7 +259,7 @@ int upnp_accept_subscription (upnp_t *upnp, const char *udn, const char *service
 	upnp_service_t *s;
 	upnp_subscribe_t *c;
 	const char *format =
-		"NOTIFY %s HTTP/1.1\t\n"
+		"NOTIFY %s HTTP/1.1\r\n"
 		"HOST: %s:%d\r\n"
 		"CONTENT-TYPE: text/xml\r\n"
 		"CONTENT-LENGTH: %u\r\n"
@@ -376,6 +413,15 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 	int ret;
 	upnp_event_t e;
 	upnp_service_t *s;
+	char *response;
+	const char *envelope =
+	        "<s:Envelope "
+	        "xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" "
+	        "s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\r\n"
+	        "<s:Body>\r\n"
+		"%s"
+		"</s:Body>\r\n"
+		"</s:Envelope>\r\n\r\n";
 	ret = -1;
 	pthread_mutex_lock(&upnp->mutex);
 	list_for_each_entry(s, &upnp->device.services, head) {
@@ -388,11 +434,21 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 				ret = -1;
 				goto out;
 			}
-			e.event.action.serviceid = action->serviceid;
+			e.event.action.serviceid = s->serviceid;
 			e.event.action.udn = s->udn;
 			pthread_mutex_unlock(&upnp->mutex);
 			if (upnp->device.callback != NULL) {
 				upnp->device.callback(upnp->device.cookie, &e);
+			}
+			if (e.event.action.errcode == 0) {
+				response = ixmlPrintNode((IXML_Node *) e.event.action.response);
+				if (response == NULL) {
+				}
+				if (asprintf(&action->response,
+						envelope,
+						response) < 0) {
+				}
+				printf("%s\n", action->response);
 			}
 			pthread_mutex_lock(&upnp->mutex);
 			ret = 0;
@@ -400,7 +456,7 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 		}
 	}
 out:	pthread_mutex_unlock(&upnp->mutex);
-	return -1;
+	return ret;
 }
 
 static int gena_callback_event (void *cookie, gena_event_t *event)

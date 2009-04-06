@@ -124,7 +124,7 @@ connection_instance_t * connection_instance_get (uint32_t id)
 	return NULL;
 }
 
-static int connectionmanager_get_protocol_info (device_service_t *service, struct Upnp_Action_Request *request)
+static int connectionmanager_get_protocol_info (device_service_t *service, upnp_event_action_t *request)
 {
 	service_variable_t *variable;
 	debugf("connectionmanager get protocol info");
@@ -139,7 +139,7 @@ static int connectionmanager_get_protocol_info (device_service_t *service, struc
 	return 0;
 }
 
-static int connectionmanager_get_current_connection_ids (device_service_t *service, struct Upnp_Action_Request *request)
+static int connectionmanager_get_current_connection_ids (device_service_t *service, upnp_event_action_t *request)
 {
 	service_variable_t *variable;
 	debugf("connectionmanager get current connection ids");
@@ -150,7 +150,7 @@ static int connectionmanager_get_current_connection_ids (device_service_t *servi
 	return 0;
 }
 
-static int connectionmanager_get_current_connection_info (device_service_t *service, struct Upnp_Action_Request *request)
+static int connectionmanager_get_current_connection_info (device_service_t *service, upnp_event_action_t *request)
 {
 	uint32_t connectionid;
 	connection_instance_t *cinstance;
@@ -162,11 +162,10 @@ static int connectionmanager_get_current_connection_info (device_service_t *serv
 	char *status;
 
 	debugf("connectionmanager get current connection info");
-	connectionid = xml_get_ui4(request->ActionRequest, "ConnectionID");
+	connectionid = xml_get_ui4(request->request, "ConnectionID");
 	cinstance = connection_instance_get(connectionid);
 	if (cinstance == NULL) {
-		request->ErrCode = 718;
-		sprintf(request->ErrStr, "Invalid InstanceID");
+		request->errcode = 718;
 		return 0;
 	}
 
@@ -174,7 +173,7 @@ static int connectionmanager_get_current_connection_info (device_service_t *serv
 	peerconnectionmanager = xml_escape(cinstance->peerconnectionmanager, 0);
 	direction = xml_escape(cinstance->direction, 0);
 	status = "Unknown";
-	
+
 	upnp_add_response(request, service->type, "RcsID", uint32tostr(str, cinstance->rcsid));
 	upnp_add_response(request, service->type, "AVTransportID", uint32tostr(str, cinstance->transportid));
 	upnp_add_response(request, service->type, "ProtocolInfo", protocolinfo);
@@ -182,7 +181,7 @@ static int connectionmanager_get_current_connection_info (device_service_t *serv
 	upnp_add_response(request, service->type, "PeerConnectionID", uint32tostr(str, cinstance->peerconnectionid));
 	upnp_add_response(request, service->type, "Direction", direction);
 	upnp_add_response(request, service->type, "Status", status);
-	
+
 	free(protocolinfo);
 	free(peerconnectionmanager);
 	free(direction);
@@ -248,25 +247,25 @@ static int connectionmanager_prepare_for_connection (device_service_t *service, 
 {
 	int ret;
 	char str[23];
-	
+
 	connection_t *connection;
 	connection_instance_t *cinstance;
-	
+
 	char *remoteprotocolinfo;
 	char *peerconnectionmanager;
 	uint32_t peerconnectionid;
 	char *direction;
-	
+
 
 	connection = (connection_t *) service;
-	
+
 	ret = 0;
 
 	remoteprotocolinfo = xml_get_string(request->ActionRequest, "RemoteProtocolInfo");
 	peerconnectionmanager = xml_get_string(request->ActionRequest, "PeerConnectionManager");
 	peerconnectionid = xml_get_ui4(request->ActionRequest, "PeerConnectionID");
 	direction = xml_get_string(request->ActionRequest, "Direction");
-	
+
 	debugf("connectionmanager prepare for connection;"
 	       "  remoteprotocolinfo   : %s\n"
 	       "  peerconnectionmanager: %s\n"
@@ -276,7 +275,7 @@ static int connectionmanager_prepare_for_connection (device_service_t *service, 
 	       peerconnectionmanager,
 	       peerconnectionid,
 	       direction);
-	
+
 	cinstance = connection_instance_get(connection_instance_new());
 	if (cinstance == NULL) {
 		debugf("connection_instance_get() failed");
@@ -289,7 +288,7 @@ static int connectionmanager_prepare_for_connection (device_service_t *service, 
 	cinstance->direction = (direction) ? strdup(direction) : NULL;
 	cinstance->transportid = transport_instance_new(service->device);
 	cinstance->rcsid = 0;
-	
+
 	debugf("cinstance\n"
 		"  remoteprotocolinfo   : %s\n"
 		"  peerconnectionid     : %u\n"
@@ -305,13 +304,13 @@ static int connectionmanager_prepare_for_connection (device_service_t *service, 
 		cinstance->connectionid,
 		cinstance->transportid,
 		cinstance->rcsid);
-	
+
 	upnp_add_response(request, service->type, "ConnectionID", uint32tostr(str, cinstance->connectionid));
 	upnp_add_response(request, service->type, "AVTransportID", uint32tostr(str, cinstance->transportid));
 	upnp_add_response(request, service->type, "RcsID", uint32tostr(str, cinstance->rcsid));
-	
+
 	connectionmanager_notify_currentids(service);
-	
+
 out:	free(remoteprotocolinfo);
 	free(peerconnectionmanager);
 	free(direction);
@@ -331,7 +330,7 @@ static int connectionmanager_connection_complete (device_service_t *service, str
 		sprintf(request->ErrStr, "Invalid InstanceID");
 		return 0;
 	}
-	
+
 	transport_instance_delete(service->device, cinstance->transportid);
 	connection_instance_uninit(cinstance);
 	connectionmanager_notify_currentids(service);
@@ -429,7 +428,7 @@ static int connectionmanager_register_mimetype_actual (device_service_t *service
 	char *tmp;
 	connection_mimetype_t *mt;
 	service_variable_t *variable;
-	
+
 	list_for_each_entry(mt, &mimetype_list, head) {
 		if (strcmp(mt->mimetype, mime) == 0) {
 			return 0;
@@ -441,12 +440,12 @@ static int connectionmanager_register_mimetype_actual (device_service_t *service
 		debugf("malloc() failed");
 		return -1;
 	}
-	
+
 	debugf("registering mime type '%s'", mime);
 	memset(mt, 0, sizeof(connection_mimetype_t));
 	list_add(&mt->head, &mimetype_list);
 	mt->mimetype = strdup(mime);
-	
+
 	debugf("changing source protocol info variable");
 	variable = service_variable_find(service, "SourceProtocolInfo");
 	if (variable != NULL) {
@@ -541,7 +540,7 @@ device_service_t * connectionmanager_init (void)
 	connection->service.actions = connectionmanager_actions;
 	connection->service.variables = connectionmanager_variables;
 	connection->service.uninit = connectionmanager_uninit;
-	
+
 	debugf("initializing connection manager service");
 	if (service_init(&connection->service) != 0) {
 		debugf("service_init(&connection->service) failed");
@@ -549,7 +548,7 @@ device_service_t * connectionmanager_init (void)
 		connection = NULL;
 		goto out;
 	}
-	
+
 	list_init(&mimetype_list);
 
 	debugf("initializing ac transport instances");
