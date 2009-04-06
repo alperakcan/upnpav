@@ -347,27 +347,27 @@ static void device_event_action_request (device_t *device, upnp_event_action_t *
 
 	if (strcmp(event->udn, device->uuid) != 0) {
 		debugf("discarding event - udn '%s' not recognized", event->udn);
-		event->errcode = UPNP_SOAP_E_INVALID_ACTION;
+		event->errcode = 401;
 		return;
 	}
 	service = device_service_find(device, event->serviceid);
 	if (service == NULL) {
 		debugf("discarding event - serviceid '%s' not recognized", event->serviceid);
-		event->errcode = UPNP_SOAP_E_INVALID_ACTION;
+		event->errcode = 401;
 		return;
 	}
 	pthread_mutex_lock(&service->mutex);
 	action = service_action_find(service, event->action);
 	if (action == NULL) {
 		debugf("unknown action '%s' for service '%s'", event->action, event->serviceid);
-		event->errcode = UPNP_SOAP_E_INVALID_ACTION;
+		event->errcode = 401;
 		pthread_mutex_unlock(&service->mutex);
 		return;
 	}
 	if (action->function != NULL) {
 		rc = action->function(service, event);
 		if (rc == 0) {
-			event->errcode = UPNP_E_SUCCESS;
+			event->errcode = 0;
 			debugf("successful action '%s'", action->name);
 		}
 		if (event->response == NULL) {
