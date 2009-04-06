@@ -337,46 +337,41 @@ static void device_event_action_request (device_t *device, upnp_event_action_t *
 
 	debugf("received action request:\n"
 	       "  errcode     : %d\n"
-	       "  errstr      : %s\n"
 	       "  actionname  : %s\n"
 	       "  udn         : %s\n"
 	       "  serviceid   : %s\n",
-	       event->ErrCode,
-	       event->ErrStr,
-	       event->ActionName,
-	       event->DevUDN,
-	       event->ServiceID);
+	       event->errcode,
+	       event->action,
+	       event->udn,
+	       event->serviceid);
 
-	if (strcmp(event->DevUDN, device->uuid) != 0) {
-		debugf("discarding event - udn '%s' not recognized", event->DevUDN);
-		event->ActionResult = NULL;
-		event->ErrCode = UPNP_SOAP_E_INVALID_ACTION;
-		strcpy(event->ErrStr, "unrecognized device");
+	if (strcmp(event->udn, device->uuid) != 0) {
+		debugf("discarding event - udn '%s' not recognized", event->udn);
+		event->errcode = UPNP_SOAP_E_INVALID_ACTION;
 		return;
 	}
-	service = device_service_find(device, event->ServiceID);
+	service = device_service_find(device, event->serviceid);
 	if (service == NULL) {
-		debugf("discarding event - serviceid '%s' not recognized", event->ServiceID);
+		debugf("discarding event - serviceid '%s' not recognized", event->serviceid);
+		event->errcode = UPNP_SOAP_E_INVALID_ACTION;
 		return;
 	}
 	pthread_mutex_lock(&service->mutex);
-	action = service_action_find(service, event->ActionName);
+	action = service_action_find(service, event->action);
 	if (action == NULL) {
-		debugf("unknown action '%s' for service '%s'", event->ActionName, event->ServiceID);
-		event->ActionResult = NULL;
-		event->ErrCode = UPNP_SOAP_E_INVALID_ACTION;
-		strcpy(event->ErrStr, "invalid action");
+		debugf("unknown action '%s' for service '%s'", event->action, event->serviceid);
+		event->errcode = UPNP_SOAP_E_INVALID_ACTION;
 		pthread_mutex_unlock(&service->mutex);
 		return;
 	}
 	if (action->function != NULL) {
 		rc = action->function(service, event);
 		if (rc == 0) {
-			event->ErrCode = UPNP_E_SUCCESS;
-			debugf("successfull action '%s'", action->name);
+			event->errcode = UPNP_E_SUCCESS;
+			debugf("successful action '%s'", action->name);
 		}
-		if (event->ActionResult == NULL) {
-			event->ActionResult = UpnpMakeActionResponse(event->ActionName, event->ServiceID, 0, NULL);
+		if (event->response == NULL) {
+			event->response = UpnpMakeActionResponse(event->action, event->serviceid, 0, NULL);
 		}
 	} else {
 		debugf("got valid action '%s', but no handler defined", action->name);

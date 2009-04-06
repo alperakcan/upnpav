@@ -31,14 +31,14 @@ typedef struct rendering_s {
 	device_service_t service;
 } rendering_t;
 
-static int renderingcontrol_list_presets (device_service_t *service, struct Upnp_Action_Request *request)
+static int renderingcontrol_list_presets (device_service_t *service, upnp_event_action_t *request)
 {
 	debugf("renderingcontrol_list_presets");
 	assert(0);
 	return 0;
 }
 
-static int renderingcontrol_set_preset (device_service_t *service, struct Upnp_Action_Request *request)
+static int renderingcontrol_set_preset (device_service_t *service, upnp_event_action_t *request)
 {
 	debugf("renderingcontrol_set_preset");
 	assert(0);
@@ -108,7 +108,7 @@ device_service_t * renderingcontrol_init (void)
 	rendering->service.actions = renderingcontrol_actions;
 	rendering->service.variables = renderingcontrol_variables;
 	rendering->service.uninit = renderingcontrol_uninit;
-	
+
 	debugf("initializing av rendering service");
 	if (service_init(&rendering->service) != 0) {
 		debugf("service_init(&rendering->service) failed");

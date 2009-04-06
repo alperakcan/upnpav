@@ -261,7 +261,7 @@ entry_t * controller_browse_children (client_t *controller, char *device, char *
 			goto out;
 		}
 
-#if 0
+#if 1
 		{
 			char *tmp;
 			tmp = ixmlDocumenttoString(response);

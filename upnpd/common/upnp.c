@@ -488,16 +488,14 @@ char * description_generate_from_device (device_t *device)
 	return result;
 }
 
-int upnp_add_response (struct Upnp_Action_Request *request, char *servicetype, char *key, const char *value)
+int upnp_add_response (upnp_event_action_t *request, char *servicetype, char *key, const char *value)
 {
 	int rc;
 	debugf("adding '%s'='%s' to response", key, value);
-	rc = UpnpAddToActionResponse(&request->ActionResult, request->ActionName, servicetype, key, value);
+	rc = upnp_addtoactionresponse(request, servicetype, key, value);
 	if (rc != UPNP_E_SUCCESS) {
 		debugf("UpnpAddToActionResponse() failed");
-		request->ActionResult = NULL;
-		request->ErrCode = UPNP_SOAP_E_ACTION_FAILED;
-		strcpy(request->ErrStr, UpnpGetErrorMessage(rc));
+		request->errcode = UPNP_SOAP_E_ACTION_FAILED;
 		return -1;
 	}
 	return 0;

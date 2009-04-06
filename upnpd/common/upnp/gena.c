@@ -540,6 +540,11 @@ static void gena_handler_post (gena_thread_t *gena_thread, char *header, const c
 {
 	char *ptr;
 	gena_event_t event;
+	const char *format =
+		"HTTP/1.1 200 OK\r\n"
+		"CONTENT-LENGTH: %u\r\n"
+		"CONTENT-TYPE: text/xml\r\n"
+		"\r\n";
 
 	memset(&event, 0, sizeof(gena_event_t));
 
@@ -582,6 +587,8 @@ static void gena_handler_post (gena_thread_t *gena_thread, char *header, const c
 	*ptr++ = '\0';
 	event.event.action.action = ptr;
 
+	event.type = GENA_EVENT_TYPE_ACTION;
+
 	debugf("post event;\n"
 	       "  path: '%s'\n"
 	       "  host: '%s'\n"
@@ -606,9 +613,15 @@ static void gena_handler_post (gena_thread_t *gena_thread, char *header, const c
 		goto out;
 	}
 	if (gena_thread->callbacks->gena.event(gena_thread->callbacks->gena.cookie, &event) == 0) {
-	} else {
-		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
+		sprintf(header, format, strlen(event.event.action.response));
+		if (gena_send(gena_thread->fd, GENA_SEND_TIMEOUT, header, strlen(header)) != strlen(header)) {
+			debugf("send() failed");
+		} else if (gena_send(gena_thread->fd, GENA_SEND_TIMEOUT, event.event.action.response, strlen(event.event.action.response)) != strlen(event.event.action.response)) {
+			debugf("send() failed");
+		}
+		goto out;
 	}
+	gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
 
 out:
 	free(event.event.action.serviceid);

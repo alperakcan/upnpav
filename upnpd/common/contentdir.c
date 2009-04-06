@@ -43,7 +43,7 @@ typedef struct contentdir_s {
 	int cached;
 } contentdir_t;
 
-static int contentdirectory_get_search_capabilities (device_service_t *service, struct Upnp_Action_Request *request)
+static int contentdirectory_get_search_capabilities (device_service_t *service, upnp_event_action_t *request)
 {
 	int rc;
 	debugf("contentdir get search capabilities");
@@ -51,7 +51,7 @@ static int contentdirectory_get_search_capabilities (device_service_t *service, 
 	return rc;
 }
 
-static int contentdirectory_get_sort_capabilities (device_service_t *service, struct Upnp_Action_Request *request)
+static int contentdirectory_get_sort_capabilities (device_service_t *service, upnp_event_action_t *request)
 {
 	int rc;
 	debugf("contentdirectory get sort capabilities");
@@ -59,7 +59,7 @@ static int contentdirectory_get_sort_capabilities (device_service_t *service, st
 	return rc;
 }
 
-static int contentdirectory_get_system_update_id (device_service_t *service, struct Upnp_Action_Request *request)
+static int contentdirectory_get_system_update_id (device_service_t *service, upnp_event_action_t *request)
 {
 	int rc;
 	char str[23];
@@ -68,7 +68,7 @@ static int contentdirectory_get_system_update_id (device_service_t *service, str
 	return rc;
 }
 
-static int contentdirectory_browse (device_service_t *service, struct Upnp_Action_Request *request)
+static int contentdirectory_browse (device_service_t *service, upnp_event_action_t *request)
 {
 	char str[23];
 	entry_t *entry;
@@ -89,12 +89,12 @@ static int contentdirectory_browse (device_service_t *service, struct Upnp_Actio
 
 	contentdir = (contentdir_t *) service;
 
-	objectid = xml_get_string(request->ActionRequest, "ObjectID");
-	browseflag = xml_get_string(request->ActionRequest, "BrowseFlag");
-	filter = xml_get_string(request->ActionRequest, "Filter");
-	startingindex = xml_get_ui4(request->ActionRequest, "StartingIndex");
-	requestedcount = xml_get_ui4(request->ActionRequest, "RequestedCount");
-	sortcriteria = xml_get_string(request->ActionRequest, "SortCriteria");
+	objectid = xml_get_string(request->request, "ObjectID");
+	browseflag = xml_get_string(request->request, "BrowseFlag");
+	filter = xml_get_string(request->request, "Filter");
+	startingindex = xml_get_ui4(request->request, "StartingIndex");
+	requestedcount = xml_get_ui4(request->request, "RequestedCount");
+	sortcriteria = xml_get_string(request->request, "SortCriteria");
 
 	debugf("contentdirectory browse:\n"
 		"  objectid      : %s\n"
@@ -130,9 +130,7 @@ static int contentdirectory_browse (device_service_t *service, struct Upnp_Actio
 			free(id);
 		}
 		if (entry == NULL) {
-			request->ActionResult = NULL;
-			request->ErrCode = 701;
-			strcpy(request->ErrStr, "no such object");
+			request->errcode = 701;
 			free(objectid);
 			free(browseflag);
 			free(filter);
@@ -147,9 +145,7 @@ static int contentdirectory_browse (device_service_t *service, struct Upnp_Actio
 		updateid = contentdir->updateid;
 		result = entry_to_result(service, entry, 1, startingindex, requestedcount, &numberreturned);
 		if (result == NULL) {
-			request->ActionResult = NULL;
-			request->ErrCode = 720;
-			strcpy(request->ErrStr, "cannot process request");
+			request->errcode = 720;
 			free(objectid);
 			free(browseflag);
 			free(filter);
@@ -187,9 +183,7 @@ static int contentdirectory_browse (device_service_t *service, struct Upnp_Actio
 			}
 		}
 		if (entry == NULL) {
-			request->ActionResult = NULL;
-			request->ErrCode = 701;
-			strcpy(request->ErrStr, "no such object");
+			request->errcode = 701;
 			free(objectid);
 			free(browseflag);
 			free(filter);
@@ -215,9 +209,7 @@ static int contentdirectory_browse (device_service_t *service, struct Upnp_Actio
 		updateid = contentdir->updateid;
 		result = entry_to_result(service, entry, 0, startingindex, requestedcount, &numberreturned);
 		if (result == NULL) {
-			request->ActionResult = NULL;
-			request->ErrCode = 720;
-			strcpy(request->ErrStr, "cannot process request");
+			request->errcode = 720;
 			free(objectid);
 			free(browseflag);
 			free(filter);
@@ -241,9 +233,7 @@ static int contentdirectory_browse (device_service_t *service, struct Upnp_Actio
 		}
 		return 0;
 	} else {
-		request->ActionResult = NULL;
-		request->ErrCode = 402;
-		strcpy(request->ErrStr, "invalid arguments");
+		request->errcode = 402;
 		free(objectid);
 		free(browseflag);
 		free(filter);

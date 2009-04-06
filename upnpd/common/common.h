@@ -360,7 +360,7 @@ struct service_action_s {
 	/** */
 	action_argument_t **arguments;
         /** */
-	int (*function) (device_service_t *service, struct Upnp_Action_Request *request);
+	int (*function) (device_service_t *service, upnp_event_action_t *request);
 };
 
 typedef enum {
@@ -732,7 +732,7 @@ void upnp_print_event_type (Upnp_EventType e);
 int upnp_print_event (Upnp_EventType eventtype, void *event);
 char * description_generate_from_device (device_t *device);
 char * description_generate_from_service (device_service_t *service);
-int upnp_add_response (struct Upnp_Action_Request *request, char *servicetype, char *key, const char *value);
+int upnp_add_response (upnp_event_action_t *request, char *servicetype, char *key, const char *value);
 int upnp_notify (device_service_t *service, service_variable_t *variable);
 
 /* xml.c */
