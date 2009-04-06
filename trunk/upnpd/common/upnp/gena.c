@@ -538,6 +538,7 @@ out:
 
 static void gena_handler_post (gena_thread_t *gena_thread, char *header, const char *path)
 {
+	char *ptr;
 	gena_event_t event;
 
 	memset(&event, 0, sizeof(gena_event_t));
@@ -553,36 +554,47 @@ static void gena_handler_post (gena_thread_t *gena_thread, char *header, const c
 		} else if (strncasecmp(header, "CONTENT-LENGTH:", strlen("CONTENT-LENGTH:")) == 0) {
 			event.event.action.length = atol(gena_trim(header + strlen("CONTENT-LENGTH:")));
 		} else if (strncasecmp(header, "SOAPACTION:", strlen("SOAPACTION:")) == 0) {
-			event.event.action.action = strdup(gena_trim(header + strlen("SOAPACTION:")));
+			event.event.action.serviceid = strdup(gena_trim(header + strlen("SOAPACTION:")));
 		}
 	}
 	if (event.event.action.length == 0 ||
 	    event.event.action.host == NULL ||
-	    event.event.action.action == NULL) {
+	    event.event.action.serviceid == NULL) {
 		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_PRECONDITION_FAILED);
 		goto out;
 	}
-	event.event.action.content = (char *) malloc(sizeof(char) * (event.event.action.length + 1));
-	if (event.event.action.content == NULL) {
+	event.event.action.request = (char *) malloc(sizeof(char) * (event.event.action.length + 1));
+	if (event.event.action.request == NULL) {
 		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
 		goto out;
 	}
-	if (gena_getcontent(gena_thread->fd, GENA_READ_TIMEOUT, event.event.action.content, event.event.action.length) != event.event.action.length) {
+	if (gena_getcontent(gena_thread->fd, GENA_READ_TIMEOUT, event.event.action.request, event.event.action.length) != event.event.action.length) {
 		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_BAD_REQUEST);
 		goto out;
 	}
-	event.event.action.content[event.event.action.length] = '\0';
+	event.event.action.request[event.event.action.length] = '\0';
+
+	ptr = strchr(event.event.action.serviceid, '#');
+	if (ptr == NULL) {
+		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_PRECONDITION_FAILED);
+		goto out;
+	}
+	*ptr++ = '\0';
+	event.event.action.action = ptr;
+
 	debugf("post event;\n"
 	       "  path: '%s'\n"
 	       "  host: '%s'\n"
 	       "  action: '%s'\n"
+	       "  service: '%s'\n"
 	       "  length: '%u'\n"
 	       "  content: '%s'\n",
 	       event.event.action.path,
 	       event.event.action.host,
 	       event.event.action.action,
+	       event.event.action.serviceid,
 	       event.event.action.length,
-	       event.event.action.content);
+	       event.event.action.request);
 
 	if (event.event.subscribe.path == NULL) {
 		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
@@ -599,8 +611,9 @@ static void gena_handler_post (gena_thread_t *gena_thread, char *header, const c
 	}
 
 out:
-	free(event.event.action.action);
-	free(event.event.action.content);
+	free(event.event.action.serviceid);
+	free(event.event.action.request);
+	free(event.event.action.response);
 	free(event.event.action.host);
 	free(event.event.action.path);
 }
