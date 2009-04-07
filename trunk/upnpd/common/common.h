@@ -480,7 +480,7 @@ struct client_s {
 	/** */
 	client_device_t *devices;
 	/** */
-	UpnpDevice_Handle handle;
+	int handle;
 };
 
 /** device service struct
@@ -565,8 +565,6 @@ struct device_s {
 	int expiretime;
 	/** */
 	char *description;
-	/** */
-	UpnpDevice_Handle handle;
 	/** */
 	int daemonize;
 };
@@ -728,12 +726,9 @@ int render_info (render_t *render, render_info_t *info);
 
 /* upnp.c */
 
-void upnp_print_event_type (Upnp_EventType e);
-int upnp_print_event (Upnp_EventType eventtype, void *event);
 char * description_generate_from_device (device_t *device);
 char * description_generate_from_service (device_service_t *service);
 int upnp_add_response (upnp_event_action_t *request, char *servicetype, char *key, const char *value);
-int upnp_notify (device_service_t *service, service_variable_t *variable);
 
 /* xml.c */
 

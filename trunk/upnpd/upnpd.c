@@ -37,9 +37,6 @@ extern upnpd_application_t controller;
 #if defined(ENABLE_MEDIASERVER)
 extern upnpd_application_t mediaserver;
 #endif
-#if defined(ENABLE_MEDIARENDER)
-extern upnpd_application_t mediarender;
-#endif
 
 static upnpd_application_t *upnpd_applications[] = {
 #if defined(ENABLE_CONTROLLER)
@@ -47,9 +44,6 @@ static upnpd_application_t *upnpd_applications[] = {
 #endif
 #if defined(ENABLE_MEDIASERVER)
 	&mediaserver,
-#endif
-#if defined(ENABLE_MEDIARENDER)
-	&mediarender,
 #endif
 	NULL,
 };

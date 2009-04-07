@@ -42,6 +42,38 @@
 
 #define UPNP_SUBSCRIPTION_MAX 100
 
+typedef struct upnp_error_s {
+	int code;
+	char *str;
+} upnp_error_t;
+
+static upnp_error_t upnp_errors[] = {
+	[UPNP_ERROR_INVALID_ACTION]             = {401, "Invalid Action"},
+	[UPNP_ERROR_INVALIG_ARGS]               = {402, "Invalid Args"},
+	[UPNP_ERROR_INVALID_VAR]                = {404, "Invalid Var"},
+	[UPNP_ERROR_ACTION_FAILED]              = {501, "Action Failed"},
+	[UPNP_ERROR_NOSUCH_OBJECT]              = {701, "No Such Object"},
+	[UPNP_ERROR_INVALID_CURRENTTAG]         = {702, "Invalid CurrentTag Value"},
+	[UPNP_ERROR_INVALID_NEWTAG]             = {703, "Invalid NewTag Value"},
+	[UPNP_ERROR_REQUIRED_TAG]               = {704, "Required Tag"},
+	[UPNP_ERROR_READONLY_TAG]               = {705, "Read only Tag"},
+	[UPNP_ERROR_PARAMETER_MISMATCH]         = {706, "Parameter Mismatch"},
+	[UPNP_ERROR_INVALID_SEARCH_CRITERIA]    = {708, "Unsupported or Invalid Search Criteria"},
+	[UPNP_ERROR_INVALID_SORT_CRITERIA]      = {709, "Unsupported or Invalid Sort Criteria"},
+	[UPNP_ERROR_NOSUCH_CONTAINER]           = {710, "No Such Container"},
+	[UPNP_ERROR_RESTRICTED_OBJECT]          = {711, "Restricted Object"},
+	[UPNP_ERROR_BAD_METADATA]               = {712, "Bad Metadata"},
+	[UPNP_ERROR_RESTRICTED_PARENT_OBJECT]   = {713, "Restricted Parent Object"},
+	[UPNP_ERROR_NOSUCH_RESOURCE]            = {714, "No Such Source Resouce"},
+	[UPNP_ERROR_RESOURCE_ACCESS_DENIED]     = {715, "Source Resource Access Denied"},
+	[UPNP_ERROR_TRANSFER_BUSY]              = {716, "Transfer Busy"},
+	[UPNP_ERROR_NOSUCH_TRANSFER]            = {717, "No Such File Transfer"},
+	[UPNP_ERROR_NOSUCH_DESTRESOURCE]        = {718, "No Such Destination Resource"},
+	[UPNP_ERROR_INVALID_INSTANCEID]         = {718, "Invalid InstanceID"},
+	[UPNP_ERROR_DESTRESOURCE_ACCESS_DENIED] = {719, "Destination Resource Access Denied"},
+	[UPNP_ERROR_CANNOT_PROCESS]             = {720, "Cannot Process The Request"},
+};
+
 typedef struct upnp_subscribe_url_s {
 	char *url;
 	char *host;
@@ -417,11 +449,29 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 	const char *envelope =
 	        "<s:Envelope "
 	        "xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" "
-	        "s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\r\n"
-	        "<s:Body>\r\n"
+	        "s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
+	        "<s:Body>\n"
 		"%s"
-		"</s:Body>\r\n"
-		"</s:Envelope>\r\n\r\n";
+		"</s:Body>\n"
+		"</s:Envelope>\n";
+	const char *fault =
+		"<s:Envelope "
+		"xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" "
+		"s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
+		"<s:Body>\n"
+		"<s:Fault>\n"
+		"<faultcode>s:Client</faultcode>\n"
+		"<faultstring>UPnPError</faultstring>\n"
+		"<detail>\n"
+		"<UPnPError xmlns=\"urn:schemas-upnp-org:control-1-0\">\n"
+		"<errorCode>%d</errorCode>\n"
+		"<errorDescription>%s</errorDescription>\n"
+		"</UPnPError>\n"
+		"</detail>\n"
+		"</s:Fault>\n"
+		"</s:Body>\n"
+		"</s:Envelope>\n";
+
 	ret = -1;
 	pthread_mutex_lock(&upnp->mutex);
 	list_for_each_entry(s, &upnp->device.services, head) {
@@ -442,14 +492,21 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 			}
 			if (e.event.action.errcode == 0) {
 				response = ixmlPrintNode((IXML_Node *) e.event.action.response);
-				if (response == NULL) {
+				if (response != NULL) {
+					if (asprintf(&action->response,
+							envelope,
+							response) < 0) {
+						action->response = NULL;
+					}
+					free(response);
 				}
-				if (asprintf(&action->response,
-						envelope,
-						response) < 0) {
+			} else {
+				if (asprintf(&action->response, fault, upnp_errors[e.event.action.errcode].code, upnp_errors[e.event.action.errcode].str) < 0) {
+					action->response = NULL;
 				}
-				printf("%s\n", action->response);
 			}
+			ixmlDocument_free(e.event.action.request);
+			ixmlDocument_free(e.event.action.response);
 			pthread_mutex_lock(&upnp->mutex);
 			ret = 0;
 			goto out;
