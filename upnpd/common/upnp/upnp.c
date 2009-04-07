@@ -346,9 +346,43 @@ out:
 
 static int uri_parse (const char *uri, upnp_subscribe_url_t *url)
 {
-	url->url = strdup("172.16.9.146:49152");
-	url->host = strdup("172.16.9.146");
-	url->port = 49152;
+	char *i;
+	char *p;
+	char *e;
+	url->url = strdup(uri + 1);
+	if (url->url == NULL) {
+		return -1;
+	}
+	if (strncasecmp(url->url, "http://", 7) == 0) {
+		i = url->url + 7;
+	} else {
+		i = url->url;
+	}
+
+	p = strchr(i, ':');
+	e = strchr(i, '/');
+	if (p == NULL) {
+		url->port = 80;
+		if (e == NULL) {
+			url->host = strdup(i);
+		} else {
+			url->host = strndup(i, e - i);
+		}
+	} else {
+		if (e != NULL) {
+			*e = '\0';
+		}
+		url->port = atoi(p + 1);
+		url->host = strndup(i, p - i);
+	}
+	if (url->host == NULL || url->port == 0) {
+		free(url->host);
+		free(url->url);
+		url->host = NULL;
+		url->url = NULL;
+		url->port = 0;
+		return -1;
+	}
 	return 0;
 }
 
@@ -362,7 +396,7 @@ static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subsc
 	debugf("enter");
 	pthread_mutex_lock(&upnp->mutex);
 	list_for_each_entry(s, &upnp->device.services, head) {
-		debugf("%s", s->eventurl);
+		debugf("eventurl: %s", s->eventurl);
 		if (strcmp(subscribe->path, s->eventurl) == 0) {
 			c = (upnp_subscribe_t *) malloc(sizeof(upnp_subscribe_t));
 			if (c == NULL) {
@@ -379,8 +413,12 @@ static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subsc
 				ret = -1;
 				goto out;
 			}
-			uri_parse(subscribe->callback, &c->url);
-			list_add(&c->head, &s->subscribers);
+			if (uri_parse(subscribe->callback, &c->url) != 0) {
+				free(c);
+				ret = -1;
+				goto out;
+			}
+			list_add_tail(&c->head, &s->subscribers);
 			ret = 0;
 			goto out;
 		}
@@ -647,6 +685,7 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 			ssdp_register(upnp->ssdp, deviceudn, deviceudn, upnp->device.location, "mini upnp stack 1.0", 100000);
 			if (asprintf(&deviceusn, "%s::%s", deviceudn, devicetype) > 0) {
 				ssdp_register(upnp->ssdp, devicetype, deviceusn, upnp->device.location, "mini upnp stack 1.0", 100000);
+				ssdp_register(upnp->ssdp, deviceudn, deviceusn, upnp->device.location, "mini upnp stack 1.0", 100000);
 				free(deviceusn);
 			}
 

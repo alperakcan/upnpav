@@ -51,11 +51,6 @@ static int metadata_device (client_t *client, char *device, char *object)
 	return 0;
 }
 
-static int play_object (client_t *client, char *object, char *server, char *renderer)
-{
-	return controller_play_object(client, object, server, renderer);
-}
-
 static int refresh_devices (client_t *client)
 {
 	return client_refresh(client, 1);
@@ -212,8 +207,6 @@ static int controller_rline_process (client_t *device, char *command)
 		browse_device(device, argv[1], argv[2]);
 	} else if (argc == 3 && strcmp(argv[0], "metadata") == 0) {
 		metadata_device(device, argv[1], argv[2]);
-	} else if (argc == 4 && strcmp(argv[0], "play") == 0) {
-		play_object(device, argv[1], argv[2], argv[3]);
 	}
 
 out:	free(argv);

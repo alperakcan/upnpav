@@ -25,6 +25,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/poll.h>
+#include <sys/time.h>
 
 #include "upnp.h"
 #include "list.h"
@@ -80,12 +81,13 @@ struct ssdp_device_s {
 	char *location;
 	char *server;
 	int age;
+	int interval;
 };
 
 static const char *ssdp_ip = "239.255.255.250";
 static const unsigned short ssdp_port = 1900;
 static const unsigned int ssdp_buffer_length = 2500;
-static const unsigned int ssdp_recv_timeout = 1000;
+static const unsigned int ssdp_recv_timeout = 10000;
 static const unsigned int ssdp_ttl = 4;
 static const unsigned int ssdp_pause = 100;
 
@@ -130,6 +132,7 @@ static ssdp_device_t * ssdp_device_init (char *nt, char *usn, char *location, ch
 	d->location = strdup(location);
 	d->server = strdup(server);
 	d->age = (age < ssdp_recv_timeout) ? ssdp_recv_timeout : age;
+	d->interval = d->age;
 	if (d->nt == NULL ||
 	    d->usn == NULL ||
 	    d->location == NULL ||
@@ -340,16 +343,38 @@ static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, struct s
 	return 0;
 }
 
+static unsigned long long __gettimeofday (void)
+{
+	unsigned long long tsec;
+	unsigned long long tusec;
+	struct timeval tv;
+	if (gettimeofday(&tv, NULL) < 0) {
+		return -1;
+	}
+	tsec = ((unsigned long long) tv.tv_sec) * 1000;
+	tusec = ((unsigned long long) tv.tv_usec) / 1000;
+	return tsec + tusec;
+}
+
 static void * ssdp_thread_loop (void *arg)
 {
 	int ret;
 	int received;
+	char *buf;
 	char *buffer;
 	ssdp_t *ssdp;
+	ssdp_device_t *d;
 	struct pollfd pfd;
 	socklen_t sender_length;
 	ssdp_request_t *request;
 	struct sockaddr_in sender;
+	unsigned long long times[2];
+
+	struct sockaddr_in dest;
+	memset(&dest, 0, sizeof(dest));
+	dest.sin_family = AF_INET;
+	dest.sin_addr.s_addr = inet_addr(ssdp_ip);
+	dest.sin_port = htons(ssdp_port);
 
 	ssdp = (ssdp_t *) arg;
 
@@ -364,7 +389,20 @@ static void * ssdp_thread_loop (void *arg)
 		goto out;
 	}
 
+	times[0] = __gettimeofday();
+
 	while (1) {
+		times[1] = __gettimeofday();
+		list_for_each_entry(d, &ssdp->devices, head) {
+			d->interval -= (times[1] - times[0]);
+			if (d->interval < (d->age / 2) || d->interval > d->age) {
+				buf = ssdp_advertise_buffer(d, 0);
+				ssdp_advertise_send(buf, &dest);
+				free(buf);
+				d->interval = d->age;
+			}
+		}
+		times[0] = __gettimeofday();
 		pthread_mutex_lock(&ssdp->mutex);
 		if (ssdp->running == 0 || ssdp->socket < 0) {
 			pthread_mutex_unlock(&ssdp->mutex);
@@ -464,6 +502,9 @@ static int ssdp_advertise_send (const char *buffer, struct sockaddr_in *dest)
 	int ttl;
 	int sock;
 	int socklen;
+	if (buffer == NULL) {
+		return -1;
+	}
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock < 0) {
 		return -1;
@@ -530,6 +571,32 @@ static char * ssdp_advertise_buffer (ssdp_device_t *device, int answer)
 	return buffer;
 }
 
+static char * ssdp_byebye_buffer (ssdp_device_t *device)
+{
+	int ret;
+	char *buffer;
+	const char *format_advertise =
+		"NOTIFY * HTTP/1.1\r\n"
+		"HOST: %s:%d\r\n"
+		"NT: %s\r\n"
+		"NTS: ssdp:byebye\r\n"
+		"SERVER: %s\r\n"
+		"USN: %s\r\n"
+		"\r\n";
+	ret = asprintf(
+		&buffer,
+		format_advertise,
+		ssdp_ip,
+		ssdp_port,
+		device->nt,
+		device->server,
+		device->usn);
+	if (ret < 0) {
+		return NULL;
+	}
+	return buffer;
+}
+
 int ssdp_advertise (ssdp_t *ssdp)
 {
 	char *buffer;
@@ -542,6 +609,25 @@ int ssdp_advertise (ssdp_t *ssdp)
 	pthread_mutex_lock(&ssdp->mutex);
 	list_for_each_entry(d, &ssdp->devices, head) {
 		buffer = ssdp_advertise_buffer(d, 0);
+		ssdp_advertise_send(buffer, &dest);
+		free(buffer);
+	}
+	pthread_mutex_unlock(&ssdp->mutex);
+	return 0;
+}
+
+int ssdp_byebye (ssdp_t *ssdp)
+{
+	char *buffer;
+	ssdp_device_t *d;
+	struct sockaddr_in dest;
+	memset(&dest, 0, sizeof(dest));
+	dest.sin_family = AF_INET;
+	dest.sin_addr.s_addr = inet_addr(ssdp_ip);
+	dest.sin_port = htons(ssdp_port);
+	pthread_mutex_lock(&ssdp->mutex);
+	list_for_each_entry(d, &ssdp->devices, head) {
+		buffer = ssdp_byebye_buffer(d);
 		ssdp_advertise_send(buffer, &dest);
 		free(buffer);
 	}
@@ -583,17 +669,18 @@ ssdp_t * ssdp_init (void)
 		return NULL;
 	}
 	memset(ssdp, 0, sizeof(ssdp_t));
+	list_init(&ssdp->devices);
 	if (ssdp_init_server(ssdp) != 0) {
 		free(ssdp);
 		return NULL;
 	}
-	list_init(&ssdp->devices);
 	return ssdp;
 }
 
 int ssdp_uninit (ssdp_t *ssdp)
 {
 	ssdp_device_t *d, *dn;
+	ssdp_byebye(ssdp);
 	pthread_mutex_lock(&ssdp->mutex);
 	ssdp->running = 0;
 	pthread_cond_signal(&ssdp->cond);

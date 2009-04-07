@@ -447,8 +447,8 @@ static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, co
 			event.event.subscribe.scope = strdup(gena_trim(header + strlen("SCOPE:")));
 		} else if (strncasecmp(header, "TIMEOUT:", strlen("TIMEOUT:")) == 0) {
 			event.event.subscribe.timeout = strdup(gena_trim(header + strlen("TIMEOUT:")));
-		} else if (strncasecmp(header, "SID:", strlen("Subscription-ID:")) == 0) {
-			event.event.subscribe.sid = strdup(gena_trim(header + strlen("Subscription-ID")));
+		} else if (strncasecmp(header, "SID:", strlen("SID:")) == 0) {
+			event.event.subscribe.sid = strdup(gena_trim(header + strlen("SID:")));
 		}
 	}
 

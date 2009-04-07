@@ -585,7 +585,6 @@ IXML_Document * client_action (client_t *client, char *devicename, char *service
 
 client_t * controller_init (char *options);
 int controller_uninit (client_t *controller);
-int controller_play_object (client_t *controller, char *object, char *server, char *render);
 entry_t * controller_browse_children (client_t *controller, char *device, char *object);
 entry_t * controller_browse_metadata (client_t *controller, char *device, char *object);
 
