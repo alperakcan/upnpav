@@ -177,19 +177,6 @@ CFLAGS="$CFLAGS -Wall -Werror"
 # Check extra parameters
 #
 
-AC_ARG_ENABLE([test_render],
-[  --enable-test_render   disable test_render application [[default=no]]],
-if test "$enableval" = "no"
-then
-	enable_test_render=no
-else
-	enable_test_render=yes
-	AC_DEFINE(ENABLE_TESTRENDER, 1, [Define to 1 if you want 'test_render' support.])
-fi
-,
-enable_test_render=no
-)
-
 AC_ARG_ENABLE([test_browse],
 [  --disable-test_browse   disable test_browse application [[default=yes]]],
 if test "$enableval" = "no"
@@ -260,19 +247,6 @@ enable_mediaserver=yes
 AC_DEFINE(ENABLE_MEDIASERVER, 1, [Define to 1 if you want 'mediaserver' support.])
 )
 
-AC_ARG_ENABLE([mediarender],
-[  --enable-mediarender   disable mediarender application [[default=no]]],
-if test "$enableval" = "no"
-then
-	enable_mediarender=no
-else
-	enable_mediarender=yes
-	AC_DEFINE(ENABLE_MEDIARENDER, 1, [Define to 1 if you want 'mediarender' support.])
-fi
-,
-enable_mediarender=no
-)
-
 AC_ARG_ENABLE([optional],
 [  --enable-optional       enable optional upnp av functions [[default=no]]],
 if test "$enableval" = "no"
@@ -306,71 +280,6 @@ else
 	AC_MSG_ERROR(Can't find libupnp)
 fi
 
-# - gstreamer
-
-GST_REQS=0.10.1
-GSTPLUG_REQS=0.10.1
-GST_MAJORMINOR=0.10
-PKG_CHECK_MODULES(GST, gstreamer-$GST_MAJORMINOR >= $GST_REQS, HAVE_GSTREAMER=yes, HAVE_GSTREAMER=no)
-
-enable_render_gstreamer=no
-
-AC_ARG_ENABLE([gstreamer],
-[  --disable-gstreamer     disable gstreamer render support [[default=yes]]],
-if test "$enableval" = "no"
-then
-	enable_render_gstreamer=no
-else
-	if test "$HAVE_GSTREAMER" = "yes"
-	then
-		enable_render_gstreamer=yes
-		AC_DEFINE(ENABLE_RENDER_GSTREAMER, 1, [Define to 1 if you want 'gstreamer rendering' support.])
-	else
-		enable_render_gstreamer=no
-	fi
-fi
-,
-if test "$HAVE_GSTREAMER" = "yes" -a "$enable_mediarender" = "yes"
-then
-	enable_render_gstreamer=yes
-	AC_DEFINE(ENABLE_RENDER_GSTREAMER, 1, [Define to 1 if you want 'gstreamer rendering' support.])
-else
-	enable_render_gstreamer=no
-fi
-)
-
-# - ffmpeg
-
-PKG_CHECK_MODULES(FFMPEG, libavdevice libavcodec libavformat libswscale libavutil sdl alsa, HAVE_FFMPEG=yes, HAVE_FFMPEG=no)
-AC_SUBST(FFMPEG_CFLAGS)
-AC_SUBST(FFMPEG_LIBS)
-
-enable_render_ffmpeg=no
-
-AC_ARG_ENABLE([ffmpeg],
-[  --disable-ffmpeg        disable ffmpeg render support [[default=yes]]],
-if test "$enableval" = "no"
-then
-	enable_render_ffmpeg=no
-else
-	if test "$HAVE_FFMPEG" = "yes"
-	then
-		enable_render_ffmpeg=yes
-		AC_DEFINE(ENABLE_RENDER_FFMPEG, 1, [Define to 1 if you want 'ffmpeg rendering' support.])
-	else
-		enable_render_ffmpeg=no
-	fi
-fi
-,
-if test "$HAVE_FFMPEG" = "yes" -a "$enable_mediarender" = "yes"
-then
-	enable_render_ffmpeg=yes
-	AC_DEFINE(ENABLE_RENDER_FFMPEG, 1, [Define to 1 if you want 'ffmpeg rendering' support.])
-else
-	enable_render_ffmpeg=no
-fi
-)
-
 # - libmagic
 
 AC_CHECK_HEADERS([magic.h], [AC_SUBST([MAGIC_CFLAGS], [-DHAVE_MAGIC=1])], [])
@@ -391,17 +300,12 @@ AC_SUBST(pkgconfigdir)
 AM_CONDITIONAL(LINUX, test "$arch" = linux)
 AM_CONDITIONAL(DARWIN, test "$arch" = darwin)
 
-AM_CONDITIONAL(ENABLE_RENDER_GSTREAMER, test "$enable_render_gstreamer" = "yes")
-AM_CONDITIONAL(ENABLE_RENDER_FFMPEG, test "$enable_render_ffmpeg" = "yes")
-
-AM_CONDITIONAL(ENABLE_TESTRENDER, test "$enable_test_render" = "yes")
 AM_CONDITIONAL(ENABLE_TESTBROWSE, test "$enable_test_browse" = "yes")
 AM_CONDITIONAL(ENABLE_TESTCLIENT, test "$enable_test_client" = "yes")
 AM_CONDITIONAL(ENABLE_TESTDEVICE, test "$enable_test_device" = "yes")
 
 AM_CONDITIONAL(ENABLE_CONTROLLER, test "$enable_controller" = "yes")
 AM_CONDITIONAL(ENABLE_MEDIASERVER, test "$enable_mediaserver" = "yes")
-AM_CONDITIONAL(ENABLE_MEDIARENDER, test "$enable_mediarender" = "yes")
 
 AM_CONDITIONAL(ENABLE_OPTIONAL, test "$enable_optional" = "yes")
 
@@ -417,7 +321,6 @@ AC_CONFIG_FILES([
 	upnpd/common/upnp/Makefile
 	upnpd/controller/Makefile
 	upnpd/mediaserver/Makefile
-	upnpd/mediarender/Makefile
 ])
 
 AC_OUTPUT

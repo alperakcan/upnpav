@@ -20,21 +20,18 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdint.h>
+#include <pthread.h>
 
-#include <upnp/upnp.h>
-#include <upnp/upnptools.h>
-#include <upnp/ithread.h>
+#include "upnp/upnp.h"
 
 #include "common.h"
 #include "uuid/uuid.h"
 
-#define UPNP_INTERNAL 1
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-static device_t *__device;
-
-#if defined(UPNP_INTERNAL)
 static upnp_t *upnp;
-#endif
 
 static int device_vfsgetinfo (void *cookie, char *path, webserver_fileinfo_t *info)
 {
@@ -212,123 +209,6 @@ static webserver_callbacks_t device_vfscallbacks = {
 	device_vfsclose,
 };
 
-static int webserver_get_info (const char *filename, struct File_Info *info)
-{
-	int i;
-	icon_t *icon;
-	device_t *device;
-	debugf("filename: %s", filename);
-	if (strncmp("/upnpd/", filename, 7) != 0) {
-		return -1;
-	}
-	device = (device_t *) __device;
-	for (i = 0; (icon = device->icons[i]) != NULL; i++) {
-		if (strcmp(filename, icon->url) == 0) {
-			debugf("found file");
-			info->file_length = icon->size;
-			info->last_modified = 0;
-			info->is_directory = 0;
-			info->is_readable = 1;
-			info->content_type = strdup(icon->mimetype);
-			return 0;
-		}
-	}
-	debugf("could not find file");
-	return -1;
-}
-
-static UpnpWebFileHandle webserver_open (const char *filename, enum UpnpOpenFileMode mode)
-{
-	int i;
-	file_t *file;
-	icon_t *icon;
-	device_t *device;
-	debugf("filename: %s", filename);
-	if (strncmp("/upnpd/", filename, 7) != 0) {
-		return NULL;
-	}
-	device = (device_t *) __device;
-	for (i = 0; (icon = device->icons[i]) != NULL; i++) {
-		if (strcmp(filename, icon->url) == 0) {
-			debugf("found file");
-			file = (file_t *) malloc(sizeof(file_t));
-			if (file == NULL) {
-				return NULL;
-			}
-			memset(file, 0, sizeof(file_t));
-			file->buf = (char *) icon->buffer;
-			file->fd = 0;
-			file->offset = 0;
-			file->service = NULL;
-			file->size = icon->size;
-			file->virtual = 1;
-			return file;
-		}
-	}
-	debugf("could not find file");
-	return NULL;
-}
-
-static int webserver_read (UpnpWebFileHandle fh, char *buf, size_t buflen)
-{
-	int len;
-	file_t *file;
-	file = (file_t *) fh;
-	len = (buflen < file->size - file->offset) ? buflen : file->size - file->offset;
-	if (len >= 0) {
-		memcpy(buf, file->buf + file->offset, len);
-		file->offset += len;
-	}
-	return len;
-}
-
-static int webserver_write (UpnpWebFileHandle fh, char *buf, size_t buflen)
-{
-	return -1;
-}
-
-static int webserver_seek (UpnpWebFileHandle fh, off_t offset, int origin)
-{
-	int pos;
-	file_t *file;
-	file = (file_t *) fh;
-	pos = -1;
-	switch (origin) {
-		case SEEK_SET:
-			pos = offset;
-			break;
-		case SEEK_CUR:
-			pos = file->offset + offset;
-			break;
-		case SEEK_END:
-			pos = file->size + offset;
-			break;
-	}
-	if (pos < 0 || pos > file->size) {
-		return -1;
-	}
-	file->offset = pos;
-	return 0;
-}
-
-static int webserver_close (UpnpWebFileHandle fh)
-{
-	file_t *file;
-	file = (file_t *) fh;
-	free(file);
-	return 0;
-}
-
-struct UpnpVirtualDirCallbacks virtual_dir_callbacks = {
-	webserver_get_info,
-	webserver_open,
-	webserver_read,
-	webserver_write,
-	webserver_seek,
-	webserver_close
-};
-
-#if defined(UPNP_INTERNAL)
 static void device_event_action_request (device_t *device, upnp_event_action_t *event)
 {
 	int rc;
@@ -347,31 +227,29 @@ static void device_event_action_request (device_t *device, upnp_event_action_t *
 
 	if (strcmp(event->udn, device->uuid) != 0) {
 		debugf("discarding event - udn '%s' not recognized", event->udn);
-		event->errcode = 401;
+		event->errcode = UPNP_ERROR_INVALID_ACTION;
 		return;
 	}
 	service = device_service_find(device, event->serviceid);
 	if (service == NULL) {
 		debugf("discarding event - serviceid '%s' not recognized", event->serviceid);
-		event->errcode = 401;
+		event->errcode = UPNP_ERROR_INVALID_ACTION;
 		return;
 	}
 	pthread_mutex_lock(&service->mutex);
 	action = service_action_find(service, event->action);
 	if (action == NULL) {
 		debugf("unknown action '%s' for service '%s'", event->action, event->serviceid);
-		event->errcode = 401;
+		event->errcode = UPNP_ERROR_INVALID_ACTION;
 		pthread_mutex_unlock(&service->mutex);
 		return;
 	}
 	if (action->function != NULL) {
+		event->errcode = UPNP_ERROR_ACTION_FAILED;
 		rc = action->function(service, event);
 		if (rc == 0) {
 			event->errcode = 0;
 			debugf("successful action '%s'", action->name);
-		}
-		if (event->response == NULL) {
-			event->response = UpnpMakeActionResponse(event->action, event->serviceid, 0, NULL);
 		}
 	} else {
 		debugf("got valid action '%s', but no handler defined", action->name);
@@ -464,196 +342,11 @@ static int device_event_handler (void *cookie, upnp_event_t *event)
 	pthread_mutex_unlock(&device->mutex);
 	return 0;
 }
-#else
-static int device_event_get_var_request (device_t *device, struct Upnp_State_Var_Request *event)
-{
-	debugf("received get var request:\n"
-	       "  errcode     : %d\n"
-	       "  errstr      : %s\n"
-	       "  udn         : %s\n"
-	       "  serviceid   : %s\n"
-	       "  statevarname: %s\n"
-	       "  currentval  : %s\n",
-	       event->ErrCode,
-	       event->ErrStr,
-	       event->DevUDN,
-	       event->ServiceID,
-	       event->StateVarName,
-	       event->CurrentVal);
-	assert(0);
-	return 0;
-}
-
-static void device_event_action_request (device_t *device, struct Upnp_Action_Request *event)
-{
-	int rc;
-	device_service_t *service;
-	service_action_t *action;
-
-	debugf("received action request:\n"
-	       "  errcode     : %d\n"
-	       "  errstr      : %s\n"
-	       "  actionname  : %s\n"
-	       "  udn         : %s\n"
-	       "  serviceid   : %s\n",
-	       event->ErrCode,
-	       event->ErrStr,
-	       event->ActionName,
-	       event->DevUDN,
-	       event->ServiceID);
-
-	if (strcmp(event->DevUDN, device->uuid) != 0) {
-		debugf("discarding event - udn '%s' not recognized", event->DevUDN);
-		event->ActionResult = NULL;
-		event->ErrCode = UPNP_SOAP_E_INVALID_ACTION;
-		strcpy(event->ErrStr, "unrecognized device");
-		return;
-	}
-	service = device_service_find(device, event->ServiceID);
-	if (service == NULL) {
-		debugf("discarding event - serviceid '%s' not recognized", event->ServiceID);
-		return;
-	}
-	pthread_mutex_lock(&service->mutex);
-	action = service_action_find(service, event->ActionName);
-	if (action == NULL) {
-		debugf("unknown action '%s' for service '%s'", event->ActionName, event->ServiceID);
-		event->ActionResult = NULL;
-		event->ErrCode = UPNP_SOAP_E_INVALID_ACTION;
-		strcpy(event->ErrStr, "invalid action");
-		pthread_mutex_unlock(&service->mutex);
-		return;
-	}
-	if (action->function != NULL) {
-		rc = action->function(service, event);
-		if (rc == 0) {
-			event->ErrCode = UPNP_E_SUCCESS;
-			debugf("successfull action '%s'", action->name);
-		}
-		if (event->ActionResult == NULL) {
-			event->ActionResult = UpnpMakeActionResponse(event->ActionName, event->ServiceID, 0, NULL);
-		}
-	} else {
-		debugf("got valid action '%s', but no handler defined", action->name);
-	}
-	pthread_mutex_unlock(&service->mutex);
-}
-
-static void device_event_subscription_request (device_t *device, struct Upnp_Subscription_Request *event)
-{
-	int i;
-	int rc;
-	device_service_t *service;
-	service_variable_t *variable;
-
-	int variable_count;
-	char **variable_names;
-	char **variable_values;
-
-	debugf("received subscription request:\n"
-	       "  serviceid   : %s\n"
-	       "  udn         : %s\n"
-	       "  sid         : %s\n",
-	       event->ServiceId,
-	       event->UDN,
-	       event->Sid);
-
-	if (strcmp(event->UDN, device->uuid) != 0) {
-		debugf("discarding event - udn '%s' not recognized", event->UDN);
-		return;
-	}
-	service = device_service_find(device, event->ServiceId);
-	if (service == NULL) {
-		debugf("discarding event - serviceid '%s' not recognized", event->ServiceId);
-		return;
-	}
-	pthread_mutex_lock(&service->mutex);
-	variable_count = 0;
-	for (i = 0; (variable = service->variables[i]) != NULL; i++) {
-		if (variable->sendevent == VARIABLE_SENDEVENT_YES) {
-			variable_count++;
-		}
-	}
-	debugf("evented variables count: %d", variable_count);
-	variable_names = (char **) malloc(sizeof(char *) * (variable_count + 1));
-	if (variable_names == NULL) {
-		debugf("malloc(sizeof(char *) * (variable_count + 1)) failed");
-		pthread_mutex_unlock(&service->mutex);
-		return;
-	}
-	variable_values = (char **) malloc(sizeof(char *) * (variable_count + 1));
-	if (variable_values == NULL) {
-		debugf("malloc(sizeof(char *) * (variable_count + 1)) failed");
-		pthread_mutex_unlock(&service->mutex);
-		return;
-	}
-	memset(variable_names, 0, sizeof(char *) * (variable_count + 1));
-	memset(variable_values, 0, sizeof(char *) * (variable_count + 1));
-	variable_count = 0;
-	for (i = 0; (variable = service->variables[i]) != NULL; i++) {
-		if (variable->sendevent == VARIABLE_SENDEVENT_YES) {
-			variable_names[variable_count] = variable->name;
-			variable_values[variable_count] = xml_escape(variable->value, 0);
-			debugf("evented '%s' : '%s'", variable_names[variable_count], variable_values[variable_count]);
-			variable_count++;
-		}
-	}
-	rc = UpnpAcceptSubscription(device->handle, event->UDN, event->ServiceId, (const char **) variable_names, (const char **) variable_values, variable_count, event->Sid);
-	if (rc != UPNP_E_SUCCESS) {
-		debugf("UpnpAcceptSubscription() failed (%d:%s)", rc, UpnpGetErrorMessage(rc));
-	}
-	for (i = 0; i < variable_count; i++) {
-		free(variable_values[i]);
-	}
-	free(variable_names);
-	free(variable_values);
-	pthread_mutex_unlock(&service->mutex);
-}
-
-static int device_event_handler (Upnp_EventType eventtype, void *event, void *cookie)
-{
-	device_t *device;
-	device = (device_t *) cookie;
-	pthread_mutex_lock(&device->mutex);
-	switch (eventtype) {
-		case UPNP_CONTROL_ACTION_REQUEST:
-			device_event_action_request(device, (struct Upnp_Action_Request *) event);
-			break;
-		case UPNP_CONTROL_GET_VAR_REQUEST:
-			device_event_get_var_request(device, (struct Upnp_State_Var_Request *) event);
-			break;
-		case UPNP_EVENT_SUBSCRIPTION_REQUEST:
-			device_event_subscription_request(device, (struct Upnp_Subscription_Request *) event);
-			break;
-	        /* ignore below */
-		case UPNP_DISCOVERY_ADVERTISEMENT_ALIVE:
-	        case UPNP_DISCOVERY_SEARCH_RESULT:
-	        case UPNP_DISCOVERY_SEARCH_TIMEOUT:
-	        case UPNP_DISCOVERY_ADVERTISEMENT_BYEBYE:
-	        case UPNP_CONTROL_ACTION_COMPLETE:
-	        case UPNP_CONTROL_GET_VAR_COMPLETE:
-	        case UPNP_EVENT_RECEIVED:
-	        case UPNP_EVENT_SUBSCRIBE_COMPLETE:
-	        case UPNP_EVENT_UNSUBSCRIBE_COMPLETE:
-	        case UPNP_EVENT_RENEWAL_COMPLETE:
-	        case UPNP_EVENT_AUTORENEWAL_FAILED:
-	        case UPNP_EVENT_SUBSCRIPTION_EXPIRED:
-	        	assert(0);
-	        	break;
-	}
-	pthread_mutex_unlock(&device->mutex);
-	return 0;
-}
-#endif
 
 int device_init (device_t *device)
 {
 	int ret;
 	uuid_t uuid;
-#if defined(UPNP_INTERNAL)
-#else
-	int rc;
-#endif
 	ret = -1;
 	debugf("initializing device '%s'", device->name);
 	if (pthread_mutex_init(&device->mutex, NULL) != 0) {
@@ -661,7 +354,6 @@ int device_init (device_t *device)
 		goto out;
 	}
 	debugf("initializing upnp stack");
-#if defined(UPNP_INTERNAL)
 	upnp = upnp_init(device->interface, 0);
 	if (upnp == NULL) {
 		pthread_mutex_destroy(&device->mutex);
@@ -669,17 +361,6 @@ int device_init (device_t *device)
 	}
 	device->port = upnp_getport(upnp);
 	device->ipaddress = upnp_getaddress(upnp);
-#else
-	if ((rc = UpnpInit(device->interface, 0)) != UPNP_E_SUCCESS) {
-		debugf("UpnpInit(NULL, 0) failed (%d:%s)", rc, UpnpGetErrorMessage(rc));
-		pthread_mutex_destroy(&device->mutex);
-		UpnpFinish();
-		goto out;
-	}
-	device->port = UpnpGetServerPort();
-	device->ipaddress = UpnpGetServerIpAddress();
-	device_vfscallbacks.cookie = device;
-#endif
 	debugf("enabling internal web server");
 	device->webserver = webserver_init(device->ipaddress, device->port, &device_vfscallbacks);
 	uuid_generate(uuid);
@@ -696,39 +377,12 @@ int device_init (device_t *device)
 		debugf("description_generate_from_device(device) failed");
 		goto out;
 	}
-#if defined(UPNP_INTERNAL)
 	if (upnp_register_device(upnp, device->description, device_event_handler, device) != 0) {
 		goto out;
 	}
 	if (upnp_advertise(upnp) != 0) {
 		goto out;
 	}
-#else
-	debugf("enabling upnp webserver");
-	if ((rc = UpnpEnableWebserver(TRUE)) != UPNP_E_SUCCESS) {
-		debugf("UpnpenableWebserver() failed");
-		goto out;
-	}
-	__device = device;
-	if ((rc = UpnpSetVirtualDirCallbacks(&virtual_dir_callbacks)) != UPNP_E_SUCCESS) {
-		debugf("UpnpSetVirtualDirCallbacks() failed");
-		goto out;
-	}
-	if ((rc = UpnpAddVirtualDir("/upnpd")) != UPNP_E_SUCCESS) {
-		debugf("UpnpAddVirtualDir() failed");
-		goto out;
-	}
-	debugf("registering root device '%s'", device->name);
-	if ((rc = UpnpRegisterRootDevice2(UPNPREG_BUF_DESC, device->description, strlen(device->description), 1, device_event_handler, device, &device->handle)) != UPNP_E_SUCCESS) {
-		debugf("UpnpRegisterRootDevice2() failed (%d:%s)", rc, UpnpGetErrorMessage(rc));
-		goto out;
-	}
-	debugf("sending advertisement for device '%s' (expiretime:%d seconds)", device->name, device->expiretime);
-	if ((rc = UpnpSendAdvertisement(device->handle, device->expiretime)) != UPNP_E_SUCCESS) {
-		debugf("UpnpSendAdvertisement() failed (%d:%s)", rc, UpnpGetErrorMessage(rc));
-		goto out;
-	}
-#endif
 	debugf("listening for control point connections");
 	debugf("started device '%s'\n"
 	       "  ipaddress  : %s\n"
@@ -764,12 +418,7 @@ int device_uninit (device_t *device)
 		service_uninit(service);
 	}
 	debugf("unregistering device '%s'", device->name);
-#if defined(UPNP_INTERNAL)
 	upnp_uninit(upnp);
-#else
-	UpnpUnRegisterRootDevice(device->handle);
-	UpnpFinish();
-#endif
 	pthread_mutex_unlock(&device->mutex);
 	pthread_mutex_destroy(&device->mutex);
 	free(device->services);

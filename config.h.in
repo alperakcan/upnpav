@@ -6,20 +6,11 @@
 /* Define to 1 if you want 'libupnp' support. */
 #undef ENABLE_LINUPNP
 
-/* Define to 1 if you want 'mediarender' support. */
-#undef ENABLE_MEDIARENDER
-
 /* Define to 1 if you want 'mediaserver' support. */
 #undef ENABLE_MEDIASERVER
 
 /* Define to 1 if you want 'optional' support. */
 #undef ENABLE_OPTIONAL
-
-/* Define to 1 if you want 'ffmpeg rendering' support. */
-#undef ENABLE_RENDER_FFMPEG
-
-/* Define to 1 if you want 'gstreamer rendering' support. */
-#undef ENABLE_RENDER_GSTREAMER
 
 /* Define to 1 if you want 'test_browse' support. */
 #undef ENABLE_TESTBROWSE
@@ -29,9 +20,6 @@
 
 /* Define to 1 if you want 'test_device' support. */
 #undef ENABLE_TESTDEVICE
-
-/* Define to 1 if you want 'test_render' support. */
-#undef ENABLE_TESTRENDER
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */

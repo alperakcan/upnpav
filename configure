@@ -882,10 +882,6 @@ READLINE_LIBS
 PKG_CONFIG
 LIBUPNP_CFLAGS
 LIBUPNP_LIBS
-GST_CFLAGS
-GST_LIBS
-FFMPEG_CFLAGS
-FFMPEG_LIBS
 MAGIC_CFLAGS
 MAGIC_LIBS
 pkgconfigdir
@@ -893,12 +889,6 @@ LINUX_TRUE
 LINUX_FALSE
 DARWIN_TRUE
 DARWIN_FALSE
-ENABLE_RENDER_GSTREAMER_TRUE
-ENABLE_RENDER_GSTREAMER_FALSE
-ENABLE_RENDER_FFMPEG_TRUE
-ENABLE_RENDER_FFMPEG_FALSE
-ENABLE_TESTRENDER_TRUE
-ENABLE_TESTRENDER_FALSE
 ENABLE_TESTBROWSE_TRUE
 ENABLE_TESTBROWSE_FALSE
 ENABLE_TESTCLIENT_TRUE
@@ -909,8 +899,6 @@ ENABLE_CONTROLLER_TRUE
 ENABLE_CONTROLLER_FALSE
 ENABLE_MEDIASERVER_TRUE
 ENABLE_MEDIASERVER_FALSE
-ENABLE_MEDIARENDER_TRUE
-ENABLE_MEDIARENDER_FALSE
 ENABLE_OPTIONAL_TRUE
 ENABLE_OPTIONAL_FALSE
 LTLIBOBJS'
@@ -932,11 +920,7 @@ F77
 FFLAGS
 PKG_CONFIG
 LIBUPNP_CFLAGS
-LIBUPNP_LIBS
-GST_CFLAGS
-GST_LIBS
-FFMPEG_CFLAGS
-FFMPEG_LIBS'
+LIBUPNP_LIBS'
 
 
 # Initialize some variables set by options.
@@ -1526,16 +1510,12 @@ Optional Features:
   --enable-fast-install[=PKGS]
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
-  --enable-test_render   disable test_render application [default=no]
   --disable-test_browse   disable test_browse application [default=yes]
   --disable-test_client   disable test_client application [default=yes]
   --disable-test_device   disable test_device application [default=yes]
   --disable-controller    disable controller application [default=yes]
   --disable-mediaserver   disable mediaserver application [default=yes]
-  --enable-mediarender   disable mediarender application [default=no]
   --enable-optional       enable optional upnp av functions [default=no]
-  --disable-gstreamer     disable gstreamer render support [default=yes]
-  --disable-ffmpeg        disable ffmpeg render support [default=yes]
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1565,11 +1545,6 @@ Some influential environment variables:
               C compiler flags for LIBUPNP, overriding pkg-config
   LIBUPNP_LIBS
               linker flags for LIBUPNP, overriding pkg-config
-  GST_CFLAGS  C compiler flags for GST, overriding pkg-config
-  GST_LIBS    linker flags for GST, overriding pkg-config
-  FFMPEG_CFLAGS
-              C compiler flags for FFMPEG, overriding pkg-config
-  FFMPEG_LIBS linker flags for FFMPEG, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -5049,7 +5024,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 5052 "configure"' > conftest.$ac_ext
+  echo '#line 5027 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7319,11 +7294,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7322: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7297: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7326: \$? = $ac_status" >&5
+   echo "$as_me:7301: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7609,11 +7584,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7612: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7587: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7616: \$? = $ac_status" >&5
+   echo "$as_me:7591: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7713,11 +7688,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7716: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7691: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7720: \$? = $ac_status" >&5
+   echo "$as_me:7695: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -10062,7 +10037,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 10065 "configure"
+#line 10040 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10162,7 +10137,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 10165 "configure"
+#line 10140 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12582,11 +12557,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12585: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12560: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:12589: \$? = $ac_status" >&5
+   echo "$as_me:12564: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -12686,11 +12661,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12689: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12664: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:12693: \$? = $ac_status" >&5
+   echo "$as_me:12668: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -14248,11 +14223,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14251: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14226: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14255: \$? = $ac_status" >&5
+   echo "$as_me:14230: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14352,11 +14327,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14355: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14330: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14359: \$? = $ac_status" >&5
+   echo "$as_me:14334: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -16539,11 +16514,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16542: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16517: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16546: \$? = $ac_status" >&5
+   echo "$as_me:16521: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16829,11 +16804,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16832: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16807: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16836: \$? = $ac_status" >&5
+   echo "$as_me:16811: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16933,11 +16908,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16936: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16911: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16940: \$? = $ac_status" >&5
+   echo "$as_me:16915: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -21161,26 +21136,6 @@ CFLAGS="$CFLAGS -Wall -Werror"
 # Check extra parameters
 #
 
-# Check whether --enable-test_render was given.
-if test "${enable_test_render+set}" = set; then
-  enableval=$enable_test_render; if test "$enableval" = "no"
-then
-	enable_test_render=no
-else
-	enable_test_render=yes
-
-cat >>confdefs.h <<\_ACEOF
-#define ENABLE_TESTRENDER 1
-_ACEOF
-
-fi
-
-else
-  enable_test_render=no
-
-fi
-
-
 # Check whether --enable-test_browse was given.
 if test "${enable_test_browse+set}" = set; then
   enableval=$enable_test_browse; if test "$enableval" = "no"
@@ -21302,26 +21257,6 @@ cat >>confdefs.h <<\_ACEOF
 #define ENABLE_MEDIASERVER 1
 _ACEOF
 
-
-fi
-
-
-# Check whether --enable-mediarender was given.
-if test "${enable_mediarender+set}" = set; then
-  enableval=$enable_mediarender; if test "$enableval" = "no"
-then
-	enable_mediarender=no
-else
-	enable_mediarender=yes
-
-cat >>confdefs.h <<\_ACEOF
-#define ENABLE_MEDIARENDER 1
-_ACEOF
-
-fi
-
-else
-  enable_mediarender=no
 
 fi
 
@@ -22022,225 +21957,6 @@ echo "$as_me: error: Can't find libupnp" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
-# - gstreamer
-
-GST_REQS=0.10.1
-GSTPLUG_REQS=0.10.1
-GST_MAJORMINOR=0.10
-
-pkg_failed=no
-{ echo "$as_me:$LINENO: checking for GST" >&5
-echo $ECHO_N "checking for GST... $ECHO_C" >&6; }
-
-if test -n "$GST_CFLAGS"; then
-    pkg_cv_GST_CFLAGS="$GST_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"gstreamer-\$GST_MAJORMINOR >= \$GST_REQS\"") >&5
-  ($PKG_CONFIG --exists --print-errors "gstreamer-$GST_MAJORMINOR >= $GST_REQS") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; then
-  pkg_cv_GST_CFLAGS=`$PKG_CONFIG --cflags "gstreamer-$GST_MAJORMINOR >= $GST_REQS" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$GST_LIBS"; then
-    pkg_cv_GST_LIBS="$GST_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"gstreamer-\$GST_MAJORMINOR >= \$GST_REQS\"") >&5
-  ($PKG_CONFIG --exists --print-errors "gstreamer-$GST_MAJORMINOR >= $GST_REQS") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; then
-  pkg_cv_GST_LIBS=`$PKG_CONFIG --libs "gstreamer-$GST_MAJORMINOR >= $GST_REQS" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        GST_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "gstreamer-$GST_MAJORMINOR >= $GST_REQS" 2>&1`
-        else
-	        GST_PKG_ERRORS=`$PKG_CONFIG --print-errors "gstreamer-$GST_MAJORMINOR >= $GST_REQS" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$GST_PKG_ERRORS" >&5
-
-	{ echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-                HAVE_GSTREAMER=no
-elif test $pkg_failed = untried; then
-	HAVE_GSTREAMER=no
-else
-	GST_CFLAGS=$pkg_cv_GST_CFLAGS
-	GST_LIBS=$pkg_cv_GST_LIBS
-        { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-	HAVE_GSTREAMER=yes
-fi
-
-enable_render_gstreamer=no
-
-# Check whether --enable-gstreamer was given.
-if test "${enable_gstreamer+set}" = set; then
-  enableval=$enable_gstreamer; if test "$enableval" = "no"
-then
-	enable_render_gstreamer=no
-else
-	if test "$HAVE_GSTREAMER" = "yes"
-	then
-		enable_render_gstreamer=yes
-
-cat >>confdefs.h <<\_ACEOF
-#define ENABLE_RENDER_GSTREAMER 1
-_ACEOF
-
-	else
-		enable_render_gstreamer=no
-	fi
-fi
-
-else
-  if test "$HAVE_GSTREAMER" = "yes" -a "$enable_mediarender" = "yes"
-then
-	enable_render_gstreamer=yes
-
-cat >>confdefs.h <<\_ACEOF
-#define ENABLE_RENDER_GSTREAMER 1
-_ACEOF
-
-else
-	enable_render_gstreamer=no
-fi
-
-fi
-
-
-# - ffmpeg
-
-
-pkg_failed=no
-{ echo "$as_me:$LINENO: checking for FFMPEG" >&5
-echo $ECHO_N "checking for FFMPEG... $ECHO_C" >&6; }
-
-if test -n "$FFMPEG_CFLAGS"; then
-    pkg_cv_FFMPEG_CFLAGS="$FFMPEG_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libavdevice libavcodec libavformat libswscale libavutil sdl alsa\"") >&5
-  ($PKG_CONFIG --exists --print-errors "libavdevice libavcodec libavformat libswscale libavutil sdl alsa") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; then
-  pkg_cv_FFMPEG_CFLAGS=`$PKG_CONFIG --cflags "libavdevice libavcodec libavformat libswscale libavutil sdl alsa" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$FFMPEG_LIBS"; then
-    pkg_cv_FFMPEG_LIBS="$FFMPEG_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { (echo "$as_me:$LINENO: \$PKG_CONFIG --exists --print-errors \"libavdevice libavcodec libavformat libswscale libavutil sdl alsa\"") >&5
-  ($PKG_CONFIG --exists --print-errors "libavdevice libavcodec libavformat libswscale libavutil sdl alsa") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; then
-  pkg_cv_FFMPEG_LIBS=`$PKG_CONFIG --libs "libavdevice libavcodec libavformat libswscale libavutil sdl alsa" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        FFMPEG_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libavdevice libavcodec libavformat libswscale libavutil sdl alsa" 2>&1`
-        else
-	        FFMPEG_PKG_ERRORS=`$PKG_CONFIG --print-errors "libavdevice libavcodec libavformat libswscale libavutil sdl alsa" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$FFMPEG_PKG_ERRORS" >&5
-
-	{ echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-                HAVE_FFMPEG=no
-elif test $pkg_failed = untried; then
-	HAVE_FFMPEG=no
-else
-	FFMPEG_CFLAGS=$pkg_cv_FFMPEG_CFLAGS
-	FFMPEG_LIBS=$pkg_cv_FFMPEG_LIBS
-        { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-	HAVE_FFMPEG=yes
-fi
-
-
-
-enable_render_ffmpeg=no
-
-# Check whether --enable-ffmpeg was given.
-if test "${enable_ffmpeg+set}" = set; then
-  enableval=$enable_ffmpeg; if test "$enableval" = "no"
-then
-	enable_render_ffmpeg=no
-else
-	if test "$HAVE_FFMPEG" = "yes"
-	then
-		enable_render_ffmpeg=yes
-
-cat >>confdefs.h <<\_ACEOF
-#define ENABLE_RENDER_FFMPEG 1
-_ACEOF
-
-	else
-		enable_render_ffmpeg=no
-	fi
-fi
-
-else
-  if test "$HAVE_FFMPEG" = "yes" -a "$enable_mediarender" = "yes"
-then
-	enable_render_ffmpeg=yes
-
-cat >>confdefs.h <<\_ACEOF
-#define ENABLE_RENDER_FFMPEG 1
-_ACEOF
-
-else
-	enable_render_ffmpeg=no
-fi
-
-fi
-
-
 # - libmagic
 
 
@@ -22495,37 +22211,6 @@ fi
 
 
 
-if test "$enable_render_gstreamer" = "yes"; then
-  ENABLE_RENDER_GSTREAMER_TRUE=
-  ENABLE_RENDER_GSTREAMER_FALSE='#'
-else
-  ENABLE_RENDER_GSTREAMER_TRUE='#'
-  ENABLE_RENDER_GSTREAMER_FALSE=
-fi
-
-
-
-if test "$enable_render_ffmpeg" = "yes"; then
-  ENABLE_RENDER_FFMPEG_TRUE=
-  ENABLE_RENDER_FFMPEG_FALSE='#'
-else
-  ENABLE_RENDER_FFMPEG_TRUE='#'
-  ENABLE_RENDER_FFMPEG_FALSE=
-fi
-
-
-
-
-if test "$enable_test_render" = "yes"; then
-  ENABLE_TESTRENDER_TRUE=
-  ENABLE_TESTRENDER_FALSE='#'
-else
-  ENABLE_TESTRENDER_TRUE='#'
-  ENABLE_TESTRENDER_FALSE=
-fi
-
-
-
 if test "$enable_test_browse" = "yes"; then
   ENABLE_TESTBROWSE_TRUE=
   ENABLE_TESTBROWSE_FALSE='#'
@@ -22577,16 +22262,6 @@ fi
 
 
 
-if test "$enable_mediarender" = "yes"; then
-  ENABLE_MEDIARENDER_TRUE=
-  ENABLE_MEDIARENDER_FALSE='#'
-else
-  ENABLE_MEDIARENDER_TRUE='#'
-  ENABLE_MEDIARENDER_FALSE=
-fi
-
-
-
 
 if test "$enable_optional" = "yes"; then
   ENABLE_OPTIONAL_TRUE=
@@ -22601,7 +22276,7 @@ fi
 # Create files
 #
 
-ac_config_files="$ac_config_files Makefile Documentation/Makefile upnpd/Makefile upnpd/common/Makefile upnpd/common/upnp/Makefile upnpd/controller/Makefile upnpd/mediaserver/Makefile upnpd/mediarender/Makefile"
+ac_config_files="$ac_config_files Makefile Documentation/Makefile upnpd/Makefile upnpd/common/Makefile upnpd/common/upnp/Makefile upnpd/controller/Makefile upnpd/mediaserver/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -22742,27 +22417,6 @@ echo "$as_me: error: conditional \"DARWIN\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${ENABLE_RENDER_GSTREAMER_TRUE}" && test -z "${ENABLE_RENDER_GSTREAMER_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_RENDER_GSTREAMER\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"ENABLE_RENDER_GSTREAMER\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${ENABLE_RENDER_FFMPEG_TRUE}" && test -z "${ENABLE_RENDER_FFMPEG_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_RENDER_FFMPEG\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"ENABLE_RENDER_FFMPEG\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${ENABLE_TESTRENDER_TRUE}" && test -z "${ENABLE_TESTRENDER_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_TESTRENDER\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"ENABLE_TESTRENDER\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
 if test -z "${ENABLE_TESTBROWSE_TRUE}" && test -z "${ENABLE_TESTBROWSE_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"ENABLE_TESTBROWSE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -22795,13 +22449,6 @@ if test -z "${ENABLE_MEDIASERVER_TRUE}" && test -z "${ENABLE_MEDIASERVER_FALSE}"
   { { echo "$as_me:$LINENO: error: conditional \"ENABLE_MEDIASERVER\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"ENABLE_MEDIASERVER\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${ENABLE_MEDIARENDER_TRUE}" && test -z "${ENABLE_MEDIARENDER_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_MEDIARENDER\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"ENABLE_MEDIARENDER\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -23287,7 +22934,6 @@ do
     "upnpd/common/upnp/Makefile") CONFIG_FILES="$CONFIG_FILES upnpd/common/upnp/Makefile" ;;
     "upnpd/controller/Makefile") CONFIG_FILES="$CONFIG_FILES upnpd/controller/Makefile" ;;
     "upnpd/mediaserver/Makefile") CONFIG_FILES="$CONFIG_FILES upnpd/mediaserver/Makefile" ;;
-    "upnpd/mediarender/Makefile") CONFIG_FILES="$CONFIG_FILES upnpd/mediarender/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -23505,10 +23151,6 @@ READLINE_LIBS!$READLINE_LIBS$ac_delim
 PKG_CONFIG!$PKG_CONFIG$ac_delim
 LIBUPNP_CFLAGS!$LIBUPNP_CFLAGS$ac_delim
 LIBUPNP_LIBS!$LIBUPNP_LIBS$ac_delim
-GST_CFLAGS!$GST_CFLAGS$ac_delim
-GST_LIBS!$GST_LIBS$ac_delim
-FFMPEG_CFLAGS!$FFMPEG_CFLAGS$ac_delim
-FFMPEG_LIBS!$FFMPEG_LIBS$ac_delim
 MAGIC_CFLAGS!$MAGIC_CFLAGS$ac_delim
 MAGIC_LIBS!$MAGIC_LIBS$ac_delim
 pkgconfigdir!$pkgconfigdir$ac_delim
@@ -23516,12 +23158,6 @@ LINUX_TRUE!$LINUX_TRUE$ac_delim
 LINUX_FALSE!$LINUX_FALSE$ac_delim
 DARWIN_TRUE!$DARWIN_TRUE$ac_delim
 DARWIN_FALSE!$DARWIN_FALSE$ac_delim
-ENABLE_RENDER_GSTREAMER_TRUE!$ENABLE_RENDER_GSTREAMER_TRUE$ac_delim
-ENABLE_RENDER_GSTREAMER_FALSE!$ENABLE_RENDER_GSTREAMER_FALSE$ac_delim
-ENABLE_RENDER_FFMPEG_TRUE!$ENABLE_RENDER_FFMPEG_TRUE$ac_delim
-ENABLE_RENDER_FFMPEG_FALSE!$ENABLE_RENDER_FFMPEG_FALSE$ac_delim
-ENABLE_TESTRENDER_TRUE!$ENABLE_TESTRENDER_TRUE$ac_delim
-ENABLE_TESTRENDER_FALSE!$ENABLE_TESTRENDER_FALSE$ac_delim
 ENABLE_TESTBROWSE_TRUE!$ENABLE_TESTBROWSE_TRUE$ac_delim
 ENABLE_TESTBROWSE_FALSE!$ENABLE_TESTBROWSE_FALSE$ac_delim
 ENABLE_TESTCLIENT_TRUE!$ENABLE_TESTCLIENT_TRUE$ac_delim
@@ -23532,14 +23168,12 @@ ENABLE_CONTROLLER_TRUE!$ENABLE_CONTROLLER_TRUE$ac_delim
 ENABLE_CONTROLLER_FALSE!$ENABLE_CONTROLLER_FALSE$ac_delim
 ENABLE_MEDIASERVER_TRUE!$ENABLE_MEDIASERVER_TRUE$ac_delim
 ENABLE_MEDIASERVER_FALSE!$ENABLE_MEDIASERVER_FALSE$ac_delim
-ENABLE_MEDIARENDER_TRUE!$ENABLE_MEDIARENDER_TRUE$ac_delim
-ENABLE_MEDIARENDER_FALSE!$ENABLE_MEDIARENDER_FALSE$ac_delim
 ENABLE_OPTIONAL_TRUE!$ENABLE_OPTIONAL_TRUE$ac_delim
 ENABLE_OPTIONAL_FALSE!$ENABLE_OPTIONAL_FALSE$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 49; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 37; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

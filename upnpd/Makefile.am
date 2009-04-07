@@ -24,13 +24,6 @@ SUBDIRS     += mediaserver
 upnpd_LDADD += $(top_builddir)/upnpd/mediaserver/libmediaserver.a
 endif
 
-if ENABLE_MEDIARENDER
-SUBDIRS     += mediarender
-upnpd_LDADD += \
-	$(top_builddir)/upnpd/mediarender/libmediarender.a \
-	-lbz2
-endif
-
 SUBDIRS     += common
 upnpd_LDADD += \
 	$(top_builddir)/upnpd/common/libcommon.a \
@@ -38,15 +31,3 @@ upnpd_LDADD += \
 	$(LIBUPNP_LIBS) \
 	$(READLINE_LIBS) \
 	-lrt
-
-#
-# external stuff must be after all, not to confuse ld library path
-#
-
-if ENABLE_RENDER_GSTREAMER
-upnpd_LDADD += $(GST_LIBS)
-endif
-
-if ENABLE_RENDER_FFMPEG
-upnpd_LDADD += $(FFMPEG_LIBS)
-endif

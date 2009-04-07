@@ -42,17 +42,6 @@ bin_PROGRAMS = upnpd$(EXEEXT)
 @ENABLE_CONTROLLER_TRUE@am__append_2 = $(top_builddir)/upnpd/controller/libcontroller.a
 @ENABLE_MEDIASERVER_TRUE@am__append_3 = mediaserver
 @ENABLE_MEDIASERVER_TRUE@am__append_4 = $(top_builddir)/upnpd/mediaserver/libmediaserver.a
-@ENABLE_MEDIARENDER_TRUE@am__append_5 = mediarender
-@ENABLE_MEDIARENDER_TRUE@am__append_6 = \
-@ENABLE_MEDIARENDER_TRUE@	$(top_builddir)/upnpd/mediarender/libmediarender.a \
-@ENABLE_MEDIARENDER_TRUE@	-lbz2
-
-
-#
-# external stuff must be after all, not to confuse ld library path
-#
-@ENABLE_RENDER_GSTREAMER_TRUE@am__append_7 = $(GST_LIBS)
-@ENABLE_RENDER_FFMPEG_TRUE@am__append_8 = $(FFMPEG_LIBS)
 subdir = upnpd
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -69,16 +58,11 @@ am_upnpd_OBJECTS = upnpd-upnpd.$(OBJEXT)
 upnpd_OBJECTS = $(am_upnpd_OBJECTS)
 @ENABLE_CONTROLLER_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/upnpd/controller/libcontroller.a
 @ENABLE_MEDIASERVER_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/upnpd/mediaserver/libmediaserver.a
-@ENABLE_MEDIARENDER_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/upnpd/mediarender/libmediarender.a
-am__DEPENDENCIES_4 =
-@ENABLE_RENDER_GSTREAMER_TRUE@am__DEPENDENCIES_5 =  \
-@ENABLE_RENDER_GSTREAMER_TRUE@	$(am__DEPENDENCIES_4)
-@ENABLE_RENDER_FFMPEG_TRUE@am__DEPENDENCIES_6 = $(am__DEPENDENCIES_4)
+am__DEPENDENCIES_3 =
 upnpd_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3) $(top_builddir)/upnpd/common/libcommon.a \
+	$(top_builddir)/upnpd/common/libcommon.a \
 	$(top_builddir)/upnpd/common/upnp/libupnp.a \
-	$(am__DEPENDENCIES_4) $(am__DEPENDENCIES_4) \
-	$(am__DEPENDENCIES_5) $(am__DEPENDENCIES_6)
+	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_3)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -100,7 +84,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = controller mediaserver mediarender common
+DIST_SUBDIRS = controller mediaserver common
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -133,32 +117,20 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 ENABLE_CONTROLLER_FALSE = @ENABLE_CONTROLLER_FALSE@
 ENABLE_CONTROLLER_TRUE = @ENABLE_CONTROLLER_TRUE@
-ENABLE_MEDIARENDER_FALSE = @ENABLE_MEDIARENDER_FALSE@
-ENABLE_MEDIARENDER_TRUE = @ENABLE_MEDIARENDER_TRUE@
 ENABLE_MEDIASERVER_FALSE = @ENABLE_MEDIASERVER_FALSE@
 ENABLE_MEDIASERVER_TRUE = @ENABLE_MEDIASERVER_TRUE@
 ENABLE_OPTIONAL_FALSE = @ENABLE_OPTIONAL_FALSE@
 ENABLE_OPTIONAL_TRUE = @ENABLE_OPTIONAL_TRUE@
-ENABLE_RENDER_FFMPEG_FALSE = @ENABLE_RENDER_FFMPEG_FALSE@
-ENABLE_RENDER_FFMPEG_TRUE = @ENABLE_RENDER_FFMPEG_TRUE@
-ENABLE_RENDER_GSTREAMER_FALSE = @ENABLE_RENDER_GSTREAMER_FALSE@
-ENABLE_RENDER_GSTREAMER_TRUE = @ENABLE_RENDER_GSTREAMER_TRUE@
 ENABLE_TESTBROWSE_FALSE = @ENABLE_TESTBROWSE_FALSE@
 ENABLE_TESTBROWSE_TRUE = @ENABLE_TESTBROWSE_TRUE@
 ENABLE_TESTCLIENT_FALSE = @ENABLE_TESTCLIENT_FALSE@
 ENABLE_TESTCLIENT_TRUE = @ENABLE_TESTCLIENT_TRUE@
 ENABLE_TESTDEVICE_FALSE = @ENABLE_TESTDEVICE_FALSE@
 ENABLE_TESTDEVICE_TRUE = @ENABLE_TESTDEVICE_TRUE@
-ENABLE_TESTRENDER_FALSE = @ENABLE_TESTRENDER_FALSE@
-ENABLE_TESTRENDER_TRUE = @ENABLE_TESTRENDER_TRUE@
 EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
-FFMPEG_CFLAGS = @FFMPEG_CFLAGS@
-FFMPEG_LIBS = @FFMPEG_LIBS@
 GREP = @GREP@
-GST_CFLAGS = @GST_CFLAGS@
-GST_LIBS = @GST_LIBS@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -247,11 +219,11 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = $(am__append_1) $(am__append_3) $(am__append_5) common
-upnpd_LDADD = $(am__append_2) $(am__append_4) $(am__append_6) \
+SUBDIRS = $(am__append_1) $(am__append_3) common
+upnpd_LDADD = $(am__append_2) $(am__append_4) \
 	$(top_builddir)/upnpd/common/libcommon.a \
 	$(top_builddir)/upnpd/common/upnp/libupnp.a $(LIBUPNP_LIBS) \
-	$(READLINE_LIBS) -lrt $(am__append_7) $(am__append_8)
+	$(READLINE_LIBS) -lrt
 upnpd_SOURCES = \
 	upnpd.c		\
 	upnpd.h

@@ -165,7 +165,7 @@ static int connectionmanager_get_current_connection_info (device_service_t *serv
 	connectionid = xml_get_ui4(request->request, "ConnectionID");
 	cinstance = connection_instance_get(connectionid);
 	if (cinstance == NULL) {
-		request->errcode = 718;
+		request->errcode = UPNP_ERROR_PARAMETER_MISMATCH;
 		return 0;
 	}
 

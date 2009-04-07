@@ -123,14 +123,16 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 				entry = entry_didl(0, id);
 				free(id);
 			}
-			id = entryid_id_from_path(contentdir->rootpath);
-			if (strcmp(entry->didl.parentid, id) == 0) {
-				entry_normalize_parent(entry);
+			if (entry != NULL) {
+				id = entryid_id_from_path(contentdir->rootpath);
+				if (strcmp(entry->didl.parentid, id) == 0) {
+					entry_normalize_parent(entry);
+				}
+				free(id);
 			}
-			free(id);
 		}
 		if (entry == NULL) {
-			request->errcode = 701;
+			request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
 			free(objectid);
 			free(browseflag);
 			free(filter);
@@ -145,7 +147,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		updateid = contentdir->updateid;
 		result = entry_to_result(service, entry, 1, startingindex, requestedcount, &numberreturned);
 		if (result == NULL) {
-			request->errcode = 720;
+			request->errcode = UPNP_ERROR_CANNOT_PROCESS;
 			free(objectid);
 			free(browseflag);
 			free(filter);
@@ -183,7 +185,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 			}
 		}
 		if (entry == NULL) {
-			request->errcode = 701;
+			request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
 			free(objectid);
 			free(browseflag);
 			free(filter);
@@ -192,9 +194,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		}
 #if 0
 		if (entry->didl.childcount == 0) {
-			request->ActionResult = NULL;
-			request->ErrCode = 720;
-			strcpy(request->ErrStr, "object is not a container");
+			request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
 			free(objectid);
 			free(browseflag);
 			free(filter);
@@ -209,7 +209,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		updateid = contentdir->updateid;
 		result = entry_to_result(service, entry, 0, startingindex, requestedcount, &numberreturned);
 		if (result == NULL) {
-			request->errcode = 720;
+			request->errcode = UPNP_ERROR_CANNOT_PROCESS;
 			free(objectid);
 			free(browseflag);
 			free(filter);
@@ -233,7 +233,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		}
 		return 0;
 	} else {
-		request->errcode = 402;
+		request->errcode = UPNP_ERROR_INVALIG_ARGS;
 		free(objectid);
 		free(browseflag);
 		free(filter);

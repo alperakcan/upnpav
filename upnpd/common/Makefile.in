@@ -38,19 +38,12 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
-	$(am__EXEEXT_4)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
 @ENABLE_MEDIASERVER_TRUE@am__append_1 = mediaserver.c
-@ENABLE_MEDIARENDER_TRUE@am__append_2 = mediarender.c
-@ENABLE_CONTROLLER_TRUE@am__append_3 = controller.c
-@ENABLE_RENDER_GSTREAMER_TRUE@am__append_4 = render_gstreamer.c
-@ENABLE_RENDER_GSTREAMER_TRUE@am__append_5 = $(GST_CFLAGS)
-@ENABLE_RENDER_FFMPEG_TRUE@am__append_6 = render_ffmpeg.c
-@ENABLE_RENDER_FFMPEG_TRUE@am__append_7 = $(FFMPEG_CFLAGS) -DFFPLAY_UPNPD
-@ENABLE_TESTCLIENT_TRUE@am__append_8 = test_client
-@ENABLE_TESTDEVICE_TRUE@am__append_9 = test_device
-@ENABLE_TESTBROWSE_TRUE@am__append_10 = test_browse
-@ENABLE_TESTRENDER_TRUE@am__append_11 = test_render
+@ENABLE_CONTROLLER_TRUE@am__append_2 = controller.c
+@ENABLE_TESTCLIENT_TRUE@am__append_3 = test_client
+@ENABLE_TESTDEVICE_TRUE@am__append_4 = test_device
+@ENABLE_TESTBROWSE_TRUE@am__append_5 = test_browse
 subdir = upnpd/common
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -68,18 +61,12 @@ am__libcommon_a_SOURCES_DIST = uuid/clear.c uuid/compare.c uuid/copy.c \
 	uuid/gen_uuid.c uuid/isnull.c uuid/pack.c uuid/parse.c \
 	uuid/unpack.c uuid/unparse.c uuid/uuid_time.c uuid/uuid.h \
 	uuid/uuidP.h client.c entry.c debug.c device.c upnp.c \
-	connection.c contentdir.c transport.c rendering.c service.c \
-	inttool.c xml.c uri.c webserver.c render.c interface.c \
-	common.h mediaserver.c mediarender.c controller.c \
-	render_gstreamer.c render_ffmpeg.c
+	connection.c contentdir.c service.c inttool.c xml.c uri.c \
+	webserver.c interface.c common.h mediaserver.c controller.c
 @ENABLE_MEDIASERVER_TRUE@am__objects_1 =  \
 @ENABLE_MEDIASERVER_TRUE@	libcommon_a-mediaserver.$(OBJEXT)
-@ENABLE_MEDIARENDER_TRUE@am__objects_2 =  \
-@ENABLE_MEDIARENDER_TRUE@	libcommon_a-mediarender.$(OBJEXT)
-@ENABLE_CONTROLLER_TRUE@am__objects_3 =  \
+@ENABLE_CONTROLLER_TRUE@am__objects_2 =  \
 @ENABLE_CONTROLLER_TRUE@	libcommon_a-controller.$(OBJEXT)
-@ENABLE_RENDER_GSTREAMER_TRUE@am__objects_4 = libcommon_a-render_gstreamer.$(OBJEXT)
-@ENABLE_RENDER_FFMPEG_TRUE@am__objects_5 = libcommon_a-render_ffmpeg.$(OBJEXT)
 am_libcommon_a_OBJECTS = libcommon_a-clear.$(OBJEXT) \
 	libcommon_a-compare.$(OBJEXT) libcommon_a-copy.$(OBJEXT) \
 	libcommon_a-gen_uuid.$(OBJEXT) libcommon_a-isnull.$(OBJEXT) \
@@ -89,19 +76,15 @@ am_libcommon_a_OBJECTS = libcommon_a-clear.$(OBJEXT) \
 	libcommon_a-entry.$(OBJEXT) libcommon_a-debug.$(OBJEXT) \
 	libcommon_a-device.$(OBJEXT) libcommon_a-upnp.$(OBJEXT) \
 	libcommon_a-connection.$(OBJEXT) \
-	libcommon_a-contentdir.$(OBJEXT) \
-	libcommon_a-transport.$(OBJEXT) \
-	libcommon_a-rendering.$(OBJEXT) libcommon_a-service.$(OBJEXT) \
+	libcommon_a-contentdir.$(OBJEXT) libcommon_a-service.$(OBJEXT) \
 	libcommon_a-inttool.$(OBJEXT) libcommon_a-xml.$(OBJEXT) \
 	libcommon_a-uri.$(OBJEXT) libcommon_a-webserver.$(OBJEXT) \
-	libcommon_a-render.$(OBJEXT) libcommon_a-interface.$(OBJEXT) \
-	$(am__objects_1) $(am__objects_2) $(am__objects_3) \
-	$(am__objects_4) $(am__objects_5)
+	libcommon_a-interface.$(OBJEXT) $(am__objects_1) \
+	$(am__objects_2)
 libcommon_a_OBJECTS = $(am_libcommon_a_OBJECTS)
 @ENABLE_TESTCLIENT_TRUE@am__EXEEXT_1 = test_client$(EXEEXT)
 @ENABLE_TESTDEVICE_TRUE@am__EXEEXT_2 = test_device$(EXEEXT)
 @ENABLE_TESTBROWSE_TRUE@am__EXEEXT_3 = test_browse$(EXEEXT)
-@ENABLE_TESTRENDER_TRUE@am__EXEEXT_4 = test_render$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am__test_browse_SOURCES_DIST = test_browse.c
 @ENABLE_TESTBROWSE_TRUE@am_test_browse_OBJECTS =  \
@@ -109,30 +92,19 @@ am__test_browse_SOURCES_DIST = test_browse.c
 test_browse_OBJECTS = $(am_test_browse_OBJECTS)
 am__DEPENDENCIES_1 =
 @ENABLE_TESTBROWSE_TRUE@test_browse_DEPENDENCIES = $(top_builddir)/upnpd/common/libcommon.a \
-@ENABLE_TESTBROWSE_TRUE@	$(am__DEPENDENCIES_1) \
 @ENABLE_TESTBROWSE_TRUE@	$(am__DEPENDENCIES_1)
 am__test_client_SOURCES_DIST = test_client.c
 @ENABLE_TESTCLIENT_TRUE@am_test_client_OBJECTS =  \
 @ENABLE_TESTCLIENT_TRUE@	test_client-test_client.$(OBJEXT)
 test_client_OBJECTS = $(am_test_client_OBJECTS)
 @ENABLE_TESTCLIENT_TRUE@test_client_DEPENDENCIES = $(top_builddir)/upnpd/common/libcommon.a \
-@ENABLE_TESTCLIENT_TRUE@	$(am__DEPENDENCIES_1) \
 @ENABLE_TESTCLIENT_TRUE@	$(am__DEPENDENCIES_1)
 am__test_device_SOURCES_DIST = test_device.c
 @ENABLE_TESTDEVICE_TRUE@am_test_device_OBJECTS =  \
 @ENABLE_TESTDEVICE_TRUE@	test_device-test_device.$(OBJEXT)
 test_device_OBJECTS = $(am_test_device_OBJECTS)
 @ENABLE_TESTDEVICE_TRUE@test_device_DEPENDENCIES = $(top_builddir)/upnpd/common/libcommon.a \
-@ENABLE_TESTDEVICE_TRUE@	$(am__DEPENDENCIES_1) \
 @ENABLE_TESTDEVICE_TRUE@	$(am__DEPENDENCIES_1)
-am__test_render_SOURCES_DIST = test_render.c
-@ENABLE_TESTRENDER_TRUE@am_test_render_OBJECTS =  \
-@ENABLE_TESTRENDER_TRUE@	test_render-test_render.$(OBJEXT)
-test_render_OBJECTS = $(am_test_render_OBJECTS)
-@ENABLE_TESTRENDER_TRUE@test_render_DEPENDENCIES = $(top_builddir)/upnpd/common/libcommon.a \
-@ENABLE_TESTRENDER_TRUE@	$(am__DEPENDENCIES_1) \
-@ENABLE_TESTRENDER_TRUE@	$(am__DEPENDENCIES_1) \
-@ENABLE_TESTRENDER_TRUE@	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -145,13 +117,11 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libcommon_a_SOURCES) $(test_browse_SOURCES) \
-	$(test_client_SOURCES) $(test_device_SOURCES) \
-	$(test_render_SOURCES)
+	$(test_client_SOURCES) $(test_device_SOURCES)
 DIST_SOURCES = $(am__libcommon_a_SOURCES_DIST) \
 	$(am__test_browse_SOURCES_DIST) \
 	$(am__test_client_SOURCES_DIST) \
-	$(am__test_device_SOURCES_DIST) \
-	$(am__test_render_SOURCES_DIST)
+	$(am__test_device_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -193,32 +163,20 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 ENABLE_CONTROLLER_FALSE = @ENABLE_CONTROLLER_FALSE@
 ENABLE_CONTROLLER_TRUE = @ENABLE_CONTROLLER_TRUE@
-ENABLE_MEDIARENDER_FALSE = @ENABLE_MEDIARENDER_FALSE@
-ENABLE_MEDIARENDER_TRUE = @ENABLE_MEDIARENDER_TRUE@
 ENABLE_MEDIASERVER_FALSE = @ENABLE_MEDIASERVER_FALSE@
 ENABLE_MEDIASERVER_TRUE = @ENABLE_MEDIASERVER_TRUE@
 ENABLE_OPTIONAL_FALSE = @ENABLE_OPTIONAL_FALSE@
 ENABLE_OPTIONAL_TRUE = @ENABLE_OPTIONAL_TRUE@
-ENABLE_RENDER_FFMPEG_FALSE = @ENABLE_RENDER_FFMPEG_FALSE@
-ENABLE_RENDER_FFMPEG_TRUE = @ENABLE_RENDER_FFMPEG_TRUE@
-ENABLE_RENDER_GSTREAMER_FALSE = @ENABLE_RENDER_GSTREAMER_FALSE@
-ENABLE_RENDER_GSTREAMER_TRUE = @ENABLE_RENDER_GSTREAMER_TRUE@
 ENABLE_TESTBROWSE_FALSE = @ENABLE_TESTBROWSE_FALSE@
 ENABLE_TESTBROWSE_TRUE = @ENABLE_TESTBROWSE_TRUE@
 ENABLE_TESTCLIENT_FALSE = @ENABLE_TESTCLIENT_FALSE@
 ENABLE_TESTCLIENT_TRUE = @ENABLE_TESTCLIENT_TRUE@
 ENABLE_TESTDEVICE_FALSE = @ENABLE_TESTDEVICE_FALSE@
 ENABLE_TESTDEVICE_TRUE = @ENABLE_TESTDEVICE_TRUE@
-ENABLE_TESTRENDER_FALSE = @ENABLE_TESTRENDER_FALSE@
-ENABLE_TESTRENDER_TRUE = @ENABLE_TESTRENDER_TRUE@
 EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
-FFMPEG_CFLAGS = @FFMPEG_CFLAGS@
-FFMPEG_LIBS = @FFMPEG_LIBS@
 GREP = @GREP@
-GST_CFLAGS = @GST_CFLAGS@
-GST_LIBS = @GST_LIBS@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -313,12 +271,13 @@ libcommon_a_SOURCES = uuid/clear.c uuid/compare.c uuid/copy.c \
 	uuid/gen_uuid.c uuid/isnull.c uuid/pack.c uuid/parse.c \
 	uuid/unpack.c uuid/unparse.c uuid/uuid_time.c uuid/uuid.h \
 	uuid/uuidP.h client.c entry.c debug.c device.c upnp.c \
-	connection.c contentdir.c transport.c rendering.c service.c \
-	inttool.c xml.c uri.c webserver.c render.c interface.c \
-	common.h $(am__append_1) $(am__append_2) $(am__append_3) \
-	$(am__append_4) $(am__append_6)
-libcommon_a_CFLAGS = -Wall $(LIBUPNP_CFLAGS) $(am__append_5) \
-	$(am__append_7)
+	connection.c contentdir.c service.c inttool.c xml.c uri.c \
+	webserver.c interface.c common.h $(am__append_1) \
+	$(am__append_2)
+libcommon_a_CFLAGS = \
+	-Wall	\
+	$(LIBUPNP_CFLAGS)
+
 @ENABLE_TESTCLIENT_TRUE@test_client_SOURCES = test_client.c
 @ENABLE_TESTCLIENT_TRUE@test_client_CFLAGS = -Wall $(LIBUPNP_CFLAGS)
 @ENABLE_TESTCLIENT_TRUE@test_client_LDADD = $(top_builddir)/upnpd/common/libcommon.a $(LIBUPNP_LIBS) $(GST_LIBS)
@@ -328,9 +287,6 @@ libcommon_a_CFLAGS = -Wall $(LIBUPNP_CFLAGS) $(am__append_5) \
 @ENABLE_TESTBROWSE_TRUE@test_browse_SOURCES = test_browse.c
 @ENABLE_TESTBROWSE_TRUE@test_browse_CFLAGS = -Wall $(LIBUPNP_CFLAGS)
 @ENABLE_TESTBROWSE_TRUE@test_browse_LDADD = $(top_builddir)/upnpd/common/libcommon.a $(LIBUPNP_LIBS) $(LIBMAGIC) $(GST_LIBS)
-@ENABLE_TESTRENDER_TRUE@test_render_SOURCES = test_render.c
-@ENABLE_TESTRENDER_TRUE@test_render_CFLAGS = -Wall $(LIBUPNP_CFLAGS)
-@ENABLE_TESTRENDER_TRUE@test_render_LDADD = $(top_builddir)/upnpd/common/libcommon.a $(LIBUPNP_LIBS) $(LIB_MAGIC) $(GST_LIBS) $(FFMPEG_LIBS) -lbz2
 all: all-recursive
 
 .SUFFIXES:
@@ -387,9 +343,6 @@ test_client$(EXEEXT): $(test_client_OBJECTS) $(test_client_DEPENDENCIES)
 test_device$(EXEEXT): $(test_device_OBJECTS) $(test_device_DEPENDENCIES) 
 	@rm -f test_device$(EXEEXT)
 	$(LINK) $(test_device_LDFLAGS) $(test_device_OBJECTS) $(test_device_LDADD) $(LIBS)
-test_render$(EXEEXT): $(test_render_OBJECTS) $(test_render_DEPENDENCIES) 
-	@rm -f test_render$(EXEEXT)
-	$(LINK) $(test_render_LDFLAGS) $(test_render_OBJECTS) $(test_render_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -411,16 +364,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-interface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-inttool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-isnull.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-mediarender.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-mediaserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-pack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-parse.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-render.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-render_ffmpeg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-render_gstreamer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-rendering.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-service.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-transport.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-unpack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-unparse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-upnp.Po@am__quote@
@@ -431,7 +378,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_browse-test_browse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_client-test_client.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_device-test_device.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_render-test_render.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -692,34 +638,6 @@ libcommon_a-contentdir.obj: contentdir.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-contentdir.obj `if test -f 'contentdir.c'; then $(CYGPATH_W) 'contentdir.c'; else $(CYGPATH_W) '$(srcdir)/contentdir.c'; fi`
 
-libcommon_a-transport.o: transport.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-transport.o -MD -MP -MF "$(DEPDIR)/libcommon_a-transport.Tpo" -c -o libcommon_a-transport.o `test -f 'transport.c' || echo '$(srcdir)/'`transport.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-transport.Tpo" "$(DEPDIR)/libcommon_a-transport.Po"; else rm -f "$(DEPDIR)/libcommon_a-transport.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='transport.c' object='libcommon_a-transport.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-transport.o `test -f 'transport.c' || echo '$(srcdir)/'`transport.c
-
-libcommon_a-transport.obj: transport.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-transport.obj -MD -MP -MF "$(DEPDIR)/libcommon_a-transport.Tpo" -c -o libcommon_a-transport.obj `if test -f 'transport.c'; then $(CYGPATH_W) 'transport.c'; else $(CYGPATH_W) '$(srcdir)/transport.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-transport.Tpo" "$(DEPDIR)/libcommon_a-transport.Po"; else rm -f "$(DEPDIR)/libcommon_a-transport.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='transport.c' object='libcommon_a-transport.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-transport.obj `if test -f 'transport.c'; then $(CYGPATH_W) 'transport.c'; else $(CYGPATH_W) '$(srcdir)/transport.c'; fi`
-
-libcommon_a-rendering.o: rendering.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-rendering.o -MD -MP -MF "$(DEPDIR)/libcommon_a-rendering.Tpo" -c -o libcommon_a-rendering.o `test -f 'rendering.c' || echo '$(srcdir)/'`rendering.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-rendering.Tpo" "$(DEPDIR)/libcommon_a-rendering.Po"; else rm -f "$(DEPDIR)/libcommon_a-rendering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='rendering.c' object='libcommon_a-rendering.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-rendering.o `test -f 'rendering.c' || echo '$(srcdir)/'`rendering.c
-
-libcommon_a-rendering.obj: rendering.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-rendering.obj -MD -MP -MF "$(DEPDIR)/libcommon_a-rendering.Tpo" -c -o libcommon_a-rendering.obj `if test -f 'rendering.c'; then $(CYGPATH_W) 'rendering.c'; else $(CYGPATH_W) '$(srcdir)/rendering.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-rendering.Tpo" "$(DEPDIR)/libcommon_a-rendering.Po"; else rm -f "$(DEPDIR)/libcommon_a-rendering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='rendering.c' object='libcommon_a-rendering.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-rendering.obj `if test -f 'rendering.c'; then $(CYGPATH_W) 'rendering.c'; else $(CYGPATH_W) '$(srcdir)/rendering.c'; fi`
-
 libcommon_a-service.o: service.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-service.o -MD -MP -MF "$(DEPDIR)/libcommon_a-service.Tpo" -c -o libcommon_a-service.o `test -f 'service.c' || echo '$(srcdir)/'`service.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-service.Tpo" "$(DEPDIR)/libcommon_a-service.Po"; else rm -f "$(DEPDIR)/libcommon_a-service.Tpo"; exit 1; fi
@@ -790,20 +708,6 @@ libcommon_a-webserver.obj: webserver.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-webserver.obj `if test -f 'webserver.c'; then $(CYGPATH_W) 'webserver.c'; else $(CYGPATH_W) '$(srcdir)/webserver.c'; fi`
 
-libcommon_a-render.o: render.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-render.o -MD -MP -MF "$(DEPDIR)/libcommon_a-render.Tpo" -c -o libcommon_a-render.o `test -f 'render.c' || echo '$(srcdir)/'`render.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-render.Tpo" "$(DEPDIR)/libcommon_a-render.Po"; else rm -f "$(DEPDIR)/libcommon_a-render.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='render.c' object='libcommon_a-render.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-render.o `test -f 'render.c' || echo '$(srcdir)/'`render.c
-
-libcommon_a-render.obj: render.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-render.obj -MD -MP -MF "$(DEPDIR)/libcommon_a-render.Tpo" -c -o libcommon_a-render.obj `if test -f 'render.c'; then $(CYGPATH_W) 'render.c'; else $(CYGPATH_W) '$(srcdir)/render.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-render.Tpo" "$(DEPDIR)/libcommon_a-render.Po"; else rm -f "$(DEPDIR)/libcommon_a-render.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='render.c' object='libcommon_a-render.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-render.obj `if test -f 'render.c'; then $(CYGPATH_W) 'render.c'; else $(CYGPATH_W) '$(srcdir)/render.c'; fi`
-
 libcommon_a-interface.o: interface.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-interface.o -MD -MP -MF "$(DEPDIR)/libcommon_a-interface.Tpo" -c -o libcommon_a-interface.o `test -f 'interface.c' || echo '$(srcdir)/'`interface.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-interface.Tpo" "$(DEPDIR)/libcommon_a-interface.Po"; else rm -f "$(DEPDIR)/libcommon_a-interface.Tpo"; exit 1; fi
@@ -832,20 +736,6 @@ libcommon_a-mediaserver.obj: mediaserver.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-mediaserver.obj `if test -f 'mediaserver.c'; then $(CYGPATH_W) 'mediaserver.c'; else $(CYGPATH_W) '$(srcdir)/mediaserver.c'; fi`
 
-libcommon_a-mediarender.o: mediarender.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-mediarender.o -MD -MP -MF "$(DEPDIR)/libcommon_a-mediarender.Tpo" -c -o libcommon_a-mediarender.o `test -f 'mediarender.c' || echo '$(srcdir)/'`mediarender.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-mediarender.Tpo" "$(DEPDIR)/libcommon_a-mediarender.Po"; else rm -f "$(DEPDIR)/libcommon_a-mediarender.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mediarender.c' object='libcommon_a-mediarender.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-mediarender.o `test -f 'mediarender.c' || echo '$(srcdir)/'`mediarender.c
-
-libcommon_a-mediarender.obj: mediarender.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-mediarender.obj -MD -MP -MF "$(DEPDIR)/libcommon_a-mediarender.Tpo" -c -o libcommon_a-mediarender.obj `if test -f 'mediarender.c'; then $(CYGPATH_W) 'mediarender.c'; else $(CYGPATH_W) '$(srcdir)/mediarender.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-mediarender.Tpo" "$(DEPDIR)/libcommon_a-mediarender.Po"; else rm -f "$(DEPDIR)/libcommon_a-mediarender.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mediarender.c' object='libcommon_a-mediarender.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-mediarender.obj `if test -f 'mediarender.c'; then $(CYGPATH_W) 'mediarender.c'; else $(CYGPATH_W) '$(srcdir)/mediarender.c'; fi`
-
 libcommon_a-controller.o: controller.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-controller.o -MD -MP -MF "$(DEPDIR)/libcommon_a-controller.Tpo" -c -o libcommon_a-controller.o `test -f 'controller.c' || echo '$(srcdir)/'`controller.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-controller.Tpo" "$(DEPDIR)/libcommon_a-controller.Po"; else rm -f "$(DEPDIR)/libcommon_a-controller.Tpo"; exit 1; fi
@@ -859,34 +749,6 @@ libcommon_a-controller.obj: controller.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='controller.c' object='libcommon_a-controller.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-controller.obj `if test -f 'controller.c'; then $(CYGPATH_W) 'controller.c'; else $(CYGPATH_W) '$(srcdir)/controller.c'; fi`
-
-libcommon_a-render_gstreamer.o: render_gstreamer.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-render_gstreamer.o -MD -MP -MF "$(DEPDIR)/libcommon_a-render_gstreamer.Tpo" -c -o libcommon_a-render_gstreamer.o `test -f 'render_gstreamer.c' || echo '$(srcdir)/'`render_gstreamer.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-render_gstreamer.Tpo" "$(DEPDIR)/libcommon_a-render_gstreamer.Po"; else rm -f "$(DEPDIR)/libcommon_a-render_gstreamer.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='render_gstreamer.c' object='libcommon_a-render_gstreamer.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-render_gstreamer.o `test -f 'render_gstreamer.c' || echo '$(srcdir)/'`render_gstreamer.c
-
-libcommon_a-render_gstreamer.obj: render_gstreamer.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-render_gstreamer.obj -MD -MP -MF "$(DEPDIR)/libcommon_a-render_gstreamer.Tpo" -c -o libcommon_a-render_gstreamer.obj `if test -f 'render_gstreamer.c'; then $(CYGPATH_W) 'render_gstreamer.c'; else $(CYGPATH_W) '$(srcdir)/render_gstreamer.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-render_gstreamer.Tpo" "$(DEPDIR)/libcommon_a-render_gstreamer.Po"; else rm -f "$(DEPDIR)/libcommon_a-render_gstreamer.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='render_gstreamer.c' object='libcommon_a-render_gstreamer.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-render_gstreamer.obj `if test -f 'render_gstreamer.c'; then $(CYGPATH_W) 'render_gstreamer.c'; else $(CYGPATH_W) '$(srcdir)/render_gstreamer.c'; fi`
-
-libcommon_a-render_ffmpeg.o: render_ffmpeg.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-render_ffmpeg.o -MD -MP -MF "$(DEPDIR)/libcommon_a-render_ffmpeg.Tpo" -c -o libcommon_a-render_ffmpeg.o `test -f 'render_ffmpeg.c' || echo '$(srcdir)/'`render_ffmpeg.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-render_ffmpeg.Tpo" "$(DEPDIR)/libcommon_a-render_ffmpeg.Po"; else rm -f "$(DEPDIR)/libcommon_a-render_ffmpeg.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='render_ffmpeg.c' object='libcommon_a-render_ffmpeg.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-render_ffmpeg.o `test -f 'render_ffmpeg.c' || echo '$(srcdir)/'`render_ffmpeg.c
-
-libcommon_a-render_ffmpeg.obj: render_ffmpeg.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-render_ffmpeg.obj -MD -MP -MF "$(DEPDIR)/libcommon_a-render_ffmpeg.Tpo" -c -o libcommon_a-render_ffmpeg.obj `if test -f 'render_ffmpeg.c'; then $(CYGPATH_W) 'render_ffmpeg.c'; else $(CYGPATH_W) '$(srcdir)/render_ffmpeg.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-render_ffmpeg.Tpo" "$(DEPDIR)/libcommon_a-render_ffmpeg.Po"; else rm -f "$(DEPDIR)/libcommon_a-render_ffmpeg.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='render_ffmpeg.c' object='libcommon_a-render_ffmpeg.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-render_ffmpeg.obj `if test -f 'render_ffmpeg.c'; then $(CYGPATH_W) 'render_ffmpeg.c'; else $(CYGPATH_W) '$(srcdir)/render_ffmpeg.c'; fi`
 
 test_browse-test_browse.o: test_browse.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_browse_CFLAGS) $(CFLAGS) -MT test_browse-test_browse.o -MD -MP -MF "$(DEPDIR)/test_browse-test_browse.Tpo" -c -o test_browse-test_browse.o `test -f 'test_browse.c' || echo '$(srcdir)/'`test_browse.c; \
@@ -929,20 +791,6 @@ test_device-test_device.obj: test_device.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_device.c' object='test_device-test_device.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_device_CFLAGS) $(CFLAGS) -c -o test_device-test_device.obj `if test -f 'test_device.c'; then $(CYGPATH_W) 'test_device.c'; else $(CYGPATH_W) '$(srcdir)/test_device.c'; fi`
-
-test_render-test_render.o: test_render.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_render_CFLAGS) $(CFLAGS) -MT test_render-test_render.o -MD -MP -MF "$(DEPDIR)/test_render-test_render.Tpo" -c -o test_render-test_render.o `test -f 'test_render.c' || echo '$(srcdir)/'`test_render.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/test_render-test_render.Tpo" "$(DEPDIR)/test_render-test_render.Po"; else rm -f "$(DEPDIR)/test_render-test_render.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_render.c' object='test_render-test_render.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_render_CFLAGS) $(CFLAGS) -c -o test_render-test_render.o `test -f 'test_render.c' || echo '$(srcdir)/'`test_render.c
-
-test_render-test_render.obj: test_render.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_render_CFLAGS) $(CFLAGS) -MT test_render-test_render.obj -MD -MP -MF "$(DEPDIR)/test_render-test_render.Tpo" -c -o test_render-test_render.obj `if test -f 'test_render.c'; then $(CYGPATH_W) 'test_render.c'; else $(CYGPATH_W) '$(srcdir)/test_render.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/test_render-test_render.Tpo" "$(DEPDIR)/test_render-test_render.Po"; else rm -f "$(DEPDIR)/test_render-test_render.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_render.c' object='test_render-test_render.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_render_CFLAGS) $(CFLAGS) -c -o test_render-test_render.obj `if test -f 'test_render.c'; then $(CYGPATH_W) 'test_render.c'; else $(CYGPATH_W) '$(srcdir)/test_render.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

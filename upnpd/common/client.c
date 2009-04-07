@@ -489,7 +489,6 @@ static int client_event_handler (Upnp_EventType eventtype, void *event, void *co
 	        case UPNP_EVENT_SUBSCRIBE_COMPLETE:
 	        case UPNP_EVENT_UNSUBSCRIBE_COMPLETE:
 	        case UPNP_EVENT_RENEWAL_COMPLETE:
-	        	upnp_print_event(eventtype, event);
 	        	assert(0);
 	        	break;
 	        case UPNP_EVENT_AUTORENEWAL_FAILED:
