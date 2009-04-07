@@ -362,6 +362,7 @@ int device_init (device_t *device)
 	device->port = upnp_getport(upnp);
 	device->ipaddress = upnp_getaddress(upnp);
 	debugf("enabling internal web server");
+	device_vfscallbacks.cookie = device;
 	device->webserver = webserver_init(device->ipaddress, device->port, &device_vfscallbacks);
 	uuid_generate(uuid);
 	device->uuid = (char *) malloc(sizeof(char) * (strlen("uuid:") + 44 + 1));
