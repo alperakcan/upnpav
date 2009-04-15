@@ -177,48 +177,6 @@ CFLAGS="$CFLAGS -Wall -Werror"
 # Check extra parameters
 #
 
-AC_ARG_ENABLE([test_browse],
-[  --disable-test_browse   disable test_browse application [[default=yes]]],
-if test "$enableval" = "no"
-then
-	enable_test_browse=no
-else
-	enable_test_browse=yes
-	AC_DEFINE(ENABLE_TESTBROWSE, 1, [Define to 1 if you want 'test_browse' support.])
-fi
-,
-enable_test_browse=yes
-AC_DEFINE(ENABLE_TESTBROWSE, 1, [Define to 1 if you want 'test_browse' support.])
-)
-
-AC_ARG_ENABLE([test_client],
-[  --disable-test_client   disable test_client application [[default=yes]]],
-if test "$enableval" = "no"
-then
-	enable_test_client=no
-else
-	enable_test_client=yes
-	AC_DEFINE(ENABLE_TESTCLIENT, 1, [Define to 1 if you want 'test_client' support.])
-fi
-,
-enable_test_client=yes
-AC_DEFINE(ENABLE_TESTCLIENT, 1, [Define to 1 if you want 'test_client' support.])
-)
-
-AC_ARG_ENABLE([test_device],
-[  --disable-test_device   disable test_device application [[default=yes]]],
-if test "$enableval" = "no"
-then
-	enable_test_device=no
-else
-	enable_test_device=yes
-	AC_DEFINE(ENABLE_TESTDEVICE, 1, [Define to 1 if you want 'test_device' support.])
-fi
-,
-enable_test_device=yes
-AC_DEFINE(ENABLE_TESTDEVICE, 1, [Define to 1 if you want 'test_device' support.])
-)
-
 AC_ARG_ENABLE([controller],
 [  --disable-controller    disable controller application [[default=yes]]],
 if test "$enableval" = "no"
@@ -300,10 +258,6 @@ AC_SUBST(pkgconfigdir)
 AM_CONDITIONAL(LINUX, test "$arch" = linux)
 AM_CONDITIONAL(DARWIN, test "$arch" = darwin)
 
-AM_CONDITIONAL(ENABLE_TESTBROWSE, test "$enable_test_browse" = "yes")
-AM_CONDITIONAL(ENABLE_TESTCLIENT, test "$enable_test_client" = "yes")
-AM_CONDITIONAL(ENABLE_TESTDEVICE, test "$enable_test_device" = "yes")
-
 AM_CONDITIONAL(ENABLE_CONTROLLER, test "$enable_controller" = "yes")
 AM_CONDITIONAL(ENABLE_MEDIASERVER, test "$enable_mediaserver" = "yes")
 
@@ -316,6 +270,7 @@ AM_CONDITIONAL(ENABLE_OPTIONAL, test "$enable_optional" = "yes")
 AC_CONFIG_FILES([
 	Makefile
 	Documentation/Makefile
+	ixml/Makefile
 	upnpd/Makefile
 	upnpd/common/Makefile
 	upnpd/common/upnp/Makefile

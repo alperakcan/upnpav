@@ -21,11 +21,9 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <signal.h>
+#include <inttypes.h>
 
-#include <upnp/upnp.h>
-#include <upnp/upnptools.h>
-#include <upnp/ithread.h>
-
+#include "upnp.h"
 #include "upnpd.h"
 #include "common.h"
 

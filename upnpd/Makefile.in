@@ -39,9 +39,11 @@ host_triplet = @host@
 target_triplet = @target@
 bin_PROGRAMS = upnpd$(EXEEXT)
 @ENABLE_CONTROLLER_TRUE@am__append_1 = controller
-@ENABLE_CONTROLLER_TRUE@am__append_2 = $(top_builddir)/upnpd/controller/libcontroller.a
-@ENABLE_MEDIASERVER_TRUE@am__append_3 = mediaserver
-@ENABLE_MEDIASERVER_TRUE@am__append_4 = $(top_builddir)/upnpd/mediaserver/libmediaserver.a
+@ENABLE_CONTROLLER_TRUE@am__append_2 = $(LIBUPNP_CFLAGS)
+@ENABLE_CONTROLLER_TRUE@am__append_3 = $(top_builddir)/upnpd/controller/libcontroller.a
+@ENABLE_MEDIASERVER_TRUE@am__append_4 = mediaserver
+@ENABLE_MEDIASERVER_TRUE@am__append_5 = $(top_builddir)/upnpd/mediaserver/libmediaserver.a
+@ENABLE_CONTROLLER_TRUE@am__append_6 = $(LIBUPNP_LIBS)
 subdir = upnpd
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -59,10 +61,12 @@ upnpd_OBJECTS = $(am_upnpd_OBJECTS)
 @ENABLE_CONTROLLER_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/upnpd/controller/libcontroller.a
 @ENABLE_MEDIASERVER_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/upnpd/mediaserver/libmediaserver.a
 am__DEPENDENCIES_3 =
+@ENABLE_CONTROLLER_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_3)
 upnpd_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
 	$(top_builddir)/upnpd/common/libcommon.a \
 	$(top_builddir)/upnpd/common/upnp/libupnp.a \
-	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_3)
+	$(top_builddir)/ixml/libixml.a $(am__DEPENDENCIES_3) \
+	$(am__DEPENDENCIES_4)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -121,12 +125,6 @@ ENABLE_MEDIASERVER_FALSE = @ENABLE_MEDIASERVER_FALSE@
 ENABLE_MEDIASERVER_TRUE = @ENABLE_MEDIASERVER_TRUE@
 ENABLE_OPTIONAL_FALSE = @ENABLE_OPTIONAL_FALSE@
 ENABLE_OPTIONAL_TRUE = @ENABLE_OPTIONAL_TRUE@
-ENABLE_TESTBROWSE_FALSE = @ENABLE_TESTBROWSE_FALSE@
-ENABLE_TESTBROWSE_TRUE = @ENABLE_TESTBROWSE_TRUE@
-ENABLE_TESTCLIENT_FALSE = @ENABLE_TESTCLIENT_FALSE@
-ENABLE_TESTCLIENT_TRUE = @ENABLE_TESTCLIENT_TRUE@
-ENABLE_TESTDEVICE_FALSE = @ENABLE_TESTDEVICE_FALSE@
-ENABLE_TESTDEVICE_TRUE = @ENABLE_TESTDEVICE_TRUE@
 EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
@@ -219,20 +217,19 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = $(am__append_1) $(am__append_3) common
-upnpd_LDADD = $(am__append_2) $(am__append_4) \
+SUBDIRS = $(am__append_1) $(am__append_4) common
+upnpd_LDADD = $(am__append_3) $(am__append_5) \
 	$(top_builddir)/upnpd/common/libcommon.a \
-	$(top_builddir)/upnpd/common/upnp/libupnp.a $(LIBUPNP_LIBS) \
-	$(READLINE_LIBS) -lrt
+	$(top_builddir)/upnpd/common/upnp/libupnp.a \
+	$(top_builddir)/ixml/libixml.a $(READLINE_LIBS) -lpthread -lrt \
+	$(am__append_6)
 upnpd_SOURCES = \
 	upnpd.c		\
 	upnpd.h
 
-upnpd_CFLAGS = \
-	-Wall	\
-	-I$(top_srcdir)/upnpd/common \
-	$(LIBUPNP_CFLAGS)
-
+upnpd_CFLAGS = -Wall -I$(top_srcdir)/ixml/inc -I$(top_srcdir)/upnpd \
+	-I$(top_srcdir)/upnpd/common -I$(top_srcdir)/upnpd/common/upnp \
+	$(am__append_2)
 all: all-recursive
 
 .SUFFIXES:

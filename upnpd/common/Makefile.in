@@ -38,12 +38,13 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
+noinst_PROGRAMS =
 @ENABLE_MEDIASERVER_TRUE@am__append_1 = mediaserver.c
-@ENABLE_CONTROLLER_TRUE@am__append_2 = controller.c
-@ENABLE_TESTCLIENT_TRUE@am__append_3 = test_client
-@ENABLE_TESTDEVICE_TRUE@am__append_4 = test_device
-@ENABLE_TESTBROWSE_TRUE@am__append_5 = test_browse
+@ENABLE_CONTROLLER_TRUE@am__append_2 = \
+@ENABLE_CONTROLLER_TRUE@	client.c \
+@ENABLE_CONTROLLER_TRUE@	controller.c
+
+@ENABLE_CONTROLLER_TRUE@am__append_3 = $(LIBUPNP_CFLAGS)
 subdir = upnpd/common
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -60,51 +61,28 @@ libcommon_a_LIBADD =
 am__libcommon_a_SOURCES_DIST = uuid/clear.c uuid/compare.c uuid/copy.c \
 	uuid/gen_uuid.c uuid/isnull.c uuid/pack.c uuid/parse.c \
 	uuid/unpack.c uuid/unparse.c uuid/uuid_time.c uuid/uuid.h \
-	uuid/uuidP.h client.c entry.c debug.c device.c upnp.c \
-	connection.c contentdir.c service.c inttool.c xml.c uri.c \
-	webserver.c interface.c common.h mediaserver.c controller.c
+	uuid/uuidP.h entry.c debug.c device.c upnp.c connection.c \
+	contentdir.c service.c inttool.c xml.c uri.c webserver.c \
+	interface.c common.h mediaserver.c client.c controller.c
 @ENABLE_MEDIASERVER_TRUE@am__objects_1 =  \
 @ENABLE_MEDIASERVER_TRUE@	libcommon_a-mediaserver.$(OBJEXT)
-@ENABLE_CONTROLLER_TRUE@am__objects_2 =  \
+@ENABLE_CONTROLLER_TRUE@am__objects_2 = libcommon_a-client.$(OBJEXT) \
 @ENABLE_CONTROLLER_TRUE@	libcommon_a-controller.$(OBJEXT)
 am_libcommon_a_OBJECTS = libcommon_a-clear.$(OBJEXT) \
 	libcommon_a-compare.$(OBJEXT) libcommon_a-copy.$(OBJEXT) \
 	libcommon_a-gen_uuid.$(OBJEXT) libcommon_a-isnull.$(OBJEXT) \
 	libcommon_a-pack.$(OBJEXT) libcommon_a-parse.$(OBJEXT) \
 	libcommon_a-unpack.$(OBJEXT) libcommon_a-unparse.$(OBJEXT) \
-	libcommon_a-uuid_time.$(OBJEXT) libcommon_a-client.$(OBJEXT) \
-	libcommon_a-entry.$(OBJEXT) libcommon_a-debug.$(OBJEXT) \
-	libcommon_a-device.$(OBJEXT) libcommon_a-upnp.$(OBJEXT) \
-	libcommon_a-connection.$(OBJEXT) \
+	libcommon_a-uuid_time.$(OBJEXT) libcommon_a-entry.$(OBJEXT) \
+	libcommon_a-debug.$(OBJEXT) libcommon_a-device.$(OBJEXT) \
+	libcommon_a-upnp.$(OBJEXT) libcommon_a-connection.$(OBJEXT) \
 	libcommon_a-contentdir.$(OBJEXT) libcommon_a-service.$(OBJEXT) \
 	libcommon_a-inttool.$(OBJEXT) libcommon_a-xml.$(OBJEXT) \
 	libcommon_a-uri.$(OBJEXT) libcommon_a-webserver.$(OBJEXT) \
 	libcommon_a-interface.$(OBJEXT) $(am__objects_1) \
 	$(am__objects_2)
 libcommon_a_OBJECTS = $(am_libcommon_a_OBJECTS)
-@ENABLE_TESTCLIENT_TRUE@am__EXEEXT_1 = test_client$(EXEEXT)
-@ENABLE_TESTDEVICE_TRUE@am__EXEEXT_2 = test_device$(EXEEXT)
-@ENABLE_TESTBROWSE_TRUE@am__EXEEXT_3 = test_browse$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am__test_browse_SOURCES_DIST = test_browse.c
-@ENABLE_TESTBROWSE_TRUE@am_test_browse_OBJECTS =  \
-@ENABLE_TESTBROWSE_TRUE@	test_browse-test_browse.$(OBJEXT)
-test_browse_OBJECTS = $(am_test_browse_OBJECTS)
-am__DEPENDENCIES_1 =
-@ENABLE_TESTBROWSE_TRUE@test_browse_DEPENDENCIES = $(top_builddir)/upnpd/common/libcommon.a \
-@ENABLE_TESTBROWSE_TRUE@	$(am__DEPENDENCIES_1)
-am__test_client_SOURCES_DIST = test_client.c
-@ENABLE_TESTCLIENT_TRUE@am_test_client_OBJECTS =  \
-@ENABLE_TESTCLIENT_TRUE@	test_client-test_client.$(OBJEXT)
-test_client_OBJECTS = $(am_test_client_OBJECTS)
-@ENABLE_TESTCLIENT_TRUE@test_client_DEPENDENCIES = $(top_builddir)/upnpd/common/libcommon.a \
-@ENABLE_TESTCLIENT_TRUE@	$(am__DEPENDENCIES_1)
-am__test_device_SOURCES_DIST = test_device.c
-@ENABLE_TESTDEVICE_TRUE@am_test_device_OBJECTS =  \
-@ENABLE_TESTDEVICE_TRUE@	test_device-test_device.$(OBJEXT)
-test_device_OBJECTS = $(am_test_device_OBJECTS)
-@ENABLE_TESTDEVICE_TRUE@test_device_DEPENDENCIES = $(top_builddir)/upnpd/common/libcommon.a \
-@ENABLE_TESTDEVICE_TRUE@	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -116,12 +94,8 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libcommon_a_SOURCES) $(test_browse_SOURCES) \
-	$(test_client_SOURCES) $(test_device_SOURCES)
-DIST_SOURCES = $(am__libcommon_a_SOURCES_DIST) \
-	$(am__test_browse_SOURCES_DIST) \
-	$(am__test_client_SOURCES_DIST) \
-	$(am__test_device_SOURCES_DIST)
+SOURCES = $(libcommon_a_SOURCES)
+DIST_SOURCES = $(am__libcommon_a_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -167,12 +141,6 @@ ENABLE_MEDIASERVER_FALSE = @ENABLE_MEDIASERVER_FALSE@
 ENABLE_MEDIASERVER_TRUE = @ENABLE_MEDIASERVER_TRUE@
 ENABLE_OPTIONAL_FALSE = @ENABLE_OPTIONAL_FALSE@
 ENABLE_OPTIONAL_TRUE = @ENABLE_OPTIONAL_TRUE@
-ENABLE_TESTBROWSE_FALSE = @ENABLE_TESTBROWSE_FALSE@
-ENABLE_TESTBROWSE_TRUE = @ENABLE_TESTBROWSE_TRUE@
-ENABLE_TESTCLIENT_FALSE = @ENABLE_TESTCLIENT_FALSE@
-ENABLE_TESTCLIENT_TRUE = @ENABLE_TESTCLIENT_TRUE@
-ENABLE_TESTDEVICE_FALSE = @ENABLE_TESTDEVICE_FALSE@
-ENABLE_TESTDEVICE_TRUE = @ENABLE_TESTDEVICE_TRUE@
 EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
@@ -270,23 +238,12 @@ noinst_LIBRARIES = libcommon.a
 libcommon_a_SOURCES = uuid/clear.c uuid/compare.c uuid/copy.c \
 	uuid/gen_uuid.c uuid/isnull.c uuid/pack.c uuid/parse.c \
 	uuid/unpack.c uuid/unparse.c uuid/uuid_time.c uuid/uuid.h \
-	uuid/uuidP.h client.c entry.c debug.c device.c upnp.c \
-	connection.c contentdir.c service.c inttool.c xml.c uri.c \
-	webserver.c interface.c common.h $(am__append_1) \
-	$(am__append_2)
-libcommon_a_CFLAGS = \
-	-Wall	\
-	$(LIBUPNP_CFLAGS)
-
-@ENABLE_TESTCLIENT_TRUE@test_client_SOURCES = test_client.c
-@ENABLE_TESTCLIENT_TRUE@test_client_CFLAGS = -Wall $(LIBUPNP_CFLAGS)
-@ENABLE_TESTCLIENT_TRUE@test_client_LDADD = $(top_builddir)/upnpd/common/libcommon.a $(LIBUPNP_LIBS) $(GST_LIBS)
-@ENABLE_TESTDEVICE_TRUE@test_device_SOURCES = test_device.c
-@ENABLE_TESTDEVICE_TRUE@test_device_CFLAGS = -Wall $(LIBUPNP_CFLAGS)
-@ENABLE_TESTDEVICE_TRUE@test_device_LDADD = $(top_builddir)/upnpd/common/libcommon.a $(LIBUPNP_LIBS) $(GST_LIBS)
-@ENABLE_TESTBROWSE_TRUE@test_browse_SOURCES = test_browse.c
-@ENABLE_TESTBROWSE_TRUE@test_browse_CFLAGS = -Wall $(LIBUPNP_CFLAGS)
-@ENABLE_TESTBROWSE_TRUE@test_browse_LDADD = $(top_builddir)/upnpd/common/libcommon.a $(LIBUPNP_LIBS) $(LIBMAGIC) $(GST_LIBS)
+	uuid/uuidP.h entry.c debug.c device.c upnp.c connection.c \
+	contentdir.c service.c inttool.c xml.c uri.c webserver.c \
+	interface.c common.h $(am__append_1) $(am__append_2)
+libcommon_a_CFLAGS = -Wall -I$(top_srcdir)/ixml/inc \
+	-I$(top_srcdir)/upnpd -I$(top_srcdir)/upnpd/common \
+	-I$(top_srcdir)/upnpd/common/upnp $(am__append_3)
 all: all-recursive
 
 .SUFFIXES:
@@ -334,15 +291,6 @@ clean-noinstPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
-test_browse$(EXEEXT): $(test_browse_OBJECTS) $(test_browse_DEPENDENCIES) 
-	@rm -f test_browse$(EXEEXT)
-	$(LINK) $(test_browse_LDFLAGS) $(test_browse_OBJECTS) $(test_browse_LDADD) $(LIBS)
-test_client$(EXEEXT): $(test_client_OBJECTS) $(test_client_DEPENDENCIES) 
-	@rm -f test_client$(EXEEXT)
-	$(LINK) $(test_client_LDFLAGS) $(test_client_OBJECTS) $(test_client_LDADD) $(LIBS)
-test_device$(EXEEXT): $(test_device_OBJECTS) $(test_device_DEPENDENCIES) 
-	@rm -f test_device$(EXEEXT)
-	$(LINK) $(test_device_LDFLAGS) $(test_device_OBJECTS) $(test_device_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -375,9 +323,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-uuid_time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-webserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-xml.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_browse-test_browse.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_client-test_client.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_device-test_device.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -539,20 +484,6 @@ libcommon_a-uuid_time.obj: uuid/uuid_time.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/uuid_time.c' object='libcommon_a-uuid_time.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-uuid_time.obj `if test -f 'uuid/uuid_time.c'; then $(CYGPATH_W) 'uuid/uuid_time.c'; else $(CYGPATH_W) '$(srcdir)/uuid/uuid_time.c'; fi`
-
-libcommon_a-client.o: client.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-client.o -MD -MP -MF "$(DEPDIR)/libcommon_a-client.Tpo" -c -o libcommon_a-client.o `test -f 'client.c' || echo '$(srcdir)/'`client.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-client.Tpo" "$(DEPDIR)/libcommon_a-client.Po"; else rm -f "$(DEPDIR)/libcommon_a-client.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='client.c' object='libcommon_a-client.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-client.o `test -f 'client.c' || echo '$(srcdir)/'`client.c
-
-libcommon_a-client.obj: client.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-client.obj -MD -MP -MF "$(DEPDIR)/libcommon_a-client.Tpo" -c -o libcommon_a-client.obj `if test -f 'client.c'; then $(CYGPATH_W) 'client.c'; else $(CYGPATH_W) '$(srcdir)/client.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-client.Tpo" "$(DEPDIR)/libcommon_a-client.Po"; else rm -f "$(DEPDIR)/libcommon_a-client.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='client.c' object='libcommon_a-client.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-client.obj `if test -f 'client.c'; then $(CYGPATH_W) 'client.c'; else $(CYGPATH_W) '$(srcdir)/client.c'; fi`
 
 libcommon_a-entry.o: entry.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-entry.o -MD -MP -MF "$(DEPDIR)/libcommon_a-entry.Tpo" -c -o libcommon_a-entry.o `test -f 'entry.c' || echo '$(srcdir)/'`entry.c; \
@@ -736,6 +667,20 @@ libcommon_a-mediaserver.obj: mediaserver.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-mediaserver.obj `if test -f 'mediaserver.c'; then $(CYGPATH_W) 'mediaserver.c'; else $(CYGPATH_W) '$(srcdir)/mediaserver.c'; fi`
 
+libcommon_a-client.o: client.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-client.o -MD -MP -MF "$(DEPDIR)/libcommon_a-client.Tpo" -c -o libcommon_a-client.o `test -f 'client.c' || echo '$(srcdir)/'`client.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-client.Tpo" "$(DEPDIR)/libcommon_a-client.Po"; else rm -f "$(DEPDIR)/libcommon_a-client.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='client.c' object='libcommon_a-client.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-client.o `test -f 'client.c' || echo '$(srcdir)/'`client.c
+
+libcommon_a-client.obj: client.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-client.obj -MD -MP -MF "$(DEPDIR)/libcommon_a-client.Tpo" -c -o libcommon_a-client.obj `if test -f 'client.c'; then $(CYGPATH_W) 'client.c'; else $(CYGPATH_W) '$(srcdir)/client.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-client.Tpo" "$(DEPDIR)/libcommon_a-client.Po"; else rm -f "$(DEPDIR)/libcommon_a-client.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='client.c' object='libcommon_a-client.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-client.obj `if test -f 'client.c'; then $(CYGPATH_W) 'client.c'; else $(CYGPATH_W) '$(srcdir)/client.c'; fi`
+
 libcommon_a-controller.o: controller.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-controller.o -MD -MP -MF "$(DEPDIR)/libcommon_a-controller.Tpo" -c -o libcommon_a-controller.o `test -f 'controller.c' || echo '$(srcdir)/'`controller.c; \
 @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libcommon_a-controller.Tpo" "$(DEPDIR)/libcommon_a-controller.Po"; else rm -f "$(DEPDIR)/libcommon_a-controller.Tpo"; exit 1; fi
@@ -749,48 +694,6 @@ libcommon_a-controller.obj: controller.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='controller.c' object='libcommon_a-controller.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-controller.obj `if test -f 'controller.c'; then $(CYGPATH_W) 'controller.c'; else $(CYGPATH_W) '$(srcdir)/controller.c'; fi`
-
-test_browse-test_browse.o: test_browse.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_browse_CFLAGS) $(CFLAGS) -MT test_browse-test_browse.o -MD -MP -MF "$(DEPDIR)/test_browse-test_browse.Tpo" -c -o test_browse-test_browse.o `test -f 'test_browse.c' || echo '$(srcdir)/'`test_browse.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/test_browse-test_browse.Tpo" "$(DEPDIR)/test_browse-test_browse.Po"; else rm -f "$(DEPDIR)/test_browse-test_browse.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_browse.c' object='test_browse-test_browse.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_browse_CFLAGS) $(CFLAGS) -c -o test_browse-test_browse.o `test -f 'test_browse.c' || echo '$(srcdir)/'`test_browse.c
-
-test_browse-test_browse.obj: test_browse.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_browse_CFLAGS) $(CFLAGS) -MT test_browse-test_browse.obj -MD -MP -MF "$(DEPDIR)/test_browse-test_browse.Tpo" -c -o test_browse-test_browse.obj `if test -f 'test_browse.c'; then $(CYGPATH_W) 'test_browse.c'; else $(CYGPATH_W) '$(srcdir)/test_browse.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/test_browse-test_browse.Tpo" "$(DEPDIR)/test_browse-test_browse.Po"; else rm -f "$(DEPDIR)/test_browse-test_browse.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_browse.c' object='test_browse-test_browse.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_browse_CFLAGS) $(CFLAGS) -c -o test_browse-test_browse.obj `if test -f 'test_browse.c'; then $(CYGPATH_W) 'test_browse.c'; else $(CYGPATH_W) '$(srcdir)/test_browse.c'; fi`
-
-test_client-test_client.o: test_client.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_client_CFLAGS) $(CFLAGS) -MT test_client-test_client.o -MD -MP -MF "$(DEPDIR)/test_client-test_client.Tpo" -c -o test_client-test_client.o `test -f 'test_client.c' || echo '$(srcdir)/'`test_client.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/test_client-test_client.Tpo" "$(DEPDIR)/test_client-test_client.Po"; else rm -f "$(DEPDIR)/test_client-test_client.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_client.c' object='test_client-test_client.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_client_CFLAGS) $(CFLAGS) -c -o test_client-test_client.o `test -f 'test_client.c' || echo '$(srcdir)/'`test_client.c
-
-test_client-test_client.obj: test_client.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_client_CFLAGS) $(CFLAGS) -MT test_client-test_client.obj -MD -MP -MF "$(DEPDIR)/test_client-test_client.Tpo" -c -o test_client-test_client.obj `if test -f 'test_client.c'; then $(CYGPATH_W) 'test_client.c'; else $(CYGPATH_W) '$(srcdir)/test_client.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/test_client-test_client.Tpo" "$(DEPDIR)/test_client-test_client.Po"; else rm -f "$(DEPDIR)/test_client-test_client.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_client.c' object='test_client-test_client.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_client_CFLAGS) $(CFLAGS) -c -o test_client-test_client.obj `if test -f 'test_client.c'; then $(CYGPATH_W) 'test_client.c'; else $(CYGPATH_W) '$(srcdir)/test_client.c'; fi`
-
-test_device-test_device.o: test_device.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_device_CFLAGS) $(CFLAGS) -MT test_device-test_device.o -MD -MP -MF "$(DEPDIR)/test_device-test_device.Tpo" -c -o test_device-test_device.o `test -f 'test_device.c' || echo '$(srcdir)/'`test_device.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/test_device-test_device.Tpo" "$(DEPDIR)/test_device-test_device.Po"; else rm -f "$(DEPDIR)/test_device-test_device.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_device.c' object='test_device-test_device.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_device_CFLAGS) $(CFLAGS) -c -o test_device-test_device.o `test -f 'test_device.c' || echo '$(srcdir)/'`test_device.c
-
-test_device-test_device.obj: test_device.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_device_CFLAGS) $(CFLAGS) -MT test_device-test_device.obj -MD -MP -MF "$(DEPDIR)/test_device-test_device.Tpo" -c -o test_device-test_device.obj `if test -f 'test_device.c'; then $(CYGPATH_W) 'test_device.c'; else $(CYGPATH_W) '$(srcdir)/test_device.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/test_device-test_device.Tpo" "$(DEPDIR)/test_device-test_device.Po"; else rm -f "$(DEPDIR)/test_device-test_device.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_device.c' object='test_device-test_device.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_device_CFLAGS) $(CFLAGS) -c -o test_device-test_device.obj `if test -f 'test_device.c'; then $(CYGPATH_W) 'test_device.c'; else $(CYGPATH_W) '$(srcdir)/test_device.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

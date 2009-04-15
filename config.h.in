@@ -12,15 +12,6 @@
 /* Define to 1 if you want 'optional' support. */
 #undef ENABLE_OPTIONAL
 
-/* Define to 1 if you want 'test_browse' support. */
-#undef ENABLE_TESTBROWSE
-
-/* Define to 1 if you want 'test_client' support. */
-#undef ENABLE_TESTCLIENT
-
-/* Define to 1 if you want 'test_device' support. */
-#undef ENABLE_TESTDEVICE
-
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
 #undef HAVE_DIRENT_H

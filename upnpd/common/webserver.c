@@ -25,13 +25,14 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <ctype.h>
+#include <inttypes.h>
+#include <time.h>
+#include <pthread.h>
 
-#include <upnp/upnp.h>
-#include <upnp/upnptools.h>
-#include <upnp/ithread.h>
-
+#include "upnp.h"
 #include "common.h"
 
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define ARRAY_SIZE(a)		(sizeof(a) / sizeof((a)[0]))
 #define WEBSERVER_LISTEN_PORT	10000
 #define WEBSERVER_LISTEN_MAX	100

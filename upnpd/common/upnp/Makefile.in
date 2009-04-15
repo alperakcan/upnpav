@@ -14,7 +14,6 @@
 
 @SET_MAKE@
 
-
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -38,7 +37,6 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = test_ssdp$(EXEEXT)
 subdir = upnpd/common/upnp
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -52,14 +50,9 @@ LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 libupnp_a_AR = $(AR) $(ARFLAGS)
 libupnp_a_LIBADD =
-am_libupnp_a_OBJECTS = gena.$(OBJEXT) ssdp.$(OBJEXT) upnp.$(OBJEXT)
+am_libupnp_a_OBJECTS = libupnp_a-gena.$(OBJEXT) \
+	libupnp_a-ssdp.$(OBJEXT) libupnp_a-upnp.$(OBJEXT)
 libupnp_a_OBJECTS = $(am_libupnp_a_OBJECTS)
-PROGRAMS = $(noinst_PROGRAMS)
-am_test_ssdp_OBJECTS = test_ssdp.$(OBJEXT)
-test_ssdp_OBJECTS = $(am_test_ssdp_OBJECTS)
-am__DEPENDENCIES_1 =
-test_ssdp_DEPENDENCIES = $(top_builddir)/upnpd/common/upnp/libupnp.a \
-	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
@@ -71,8 +64,8 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libupnp_a_SOURCES) $(test_ssdp_SOURCES)
-DIST_SOURCES = $(libupnp_a_SOURCES) $(test_ssdp_SOURCES)
+SOURCES = $(libupnp_a_SOURCES)
+DIST_SOURCES = $(libupnp_a_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -111,12 +104,6 @@ ENABLE_MEDIASERVER_FALSE = @ENABLE_MEDIASERVER_FALSE@
 ENABLE_MEDIASERVER_TRUE = @ENABLE_MEDIASERVER_TRUE@
 ENABLE_OPTIONAL_FALSE = @ENABLE_OPTIONAL_FALSE@
 ENABLE_OPTIONAL_TRUE = @ENABLE_OPTIONAL_TRUE@
-ENABLE_TESTBROWSE_FALSE = @ENABLE_TESTBROWSE_FALSE@
-ENABLE_TESTBROWSE_TRUE = @ENABLE_TESTBROWSE_TRUE@
-ENABLE_TESTCLIENT_FALSE = @ENABLE_TESTCLIENT_FALSE@
-ENABLE_TESTCLIENT_TRUE = @ENABLE_TESTCLIENT_TRUE@
-ENABLE_TESTDEVICE_FALSE = @ENABLE_TESTDEVICE_FALSE@
-ENABLE_TESTDEVICE_TRUE = @ENABLE_TESTDEVICE_TRUE@
 EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
@@ -216,11 +203,9 @@ libupnp_a_SOURCES = \
 	ssdp.c \
 	upnp.c
 
-test_ssdp_SOURCES = \
-	test_ssdp.c
-
-test_ssdp_LDADD = \
-	$(top_builddir)/upnpd/common/upnp/libupnp.a $(LIBUPNP_LIBS)
+libupnp_a_CFLAGS = \
+	-I$(top_srcdir)/ixml/inc \
+	-I$(top_srcdir)/upnpd/common/uuid
 
 all: all-am
 
@@ -263,26 +248,15 @@ libupnp.a: $(libupnp_a_OBJECTS) $(libupnp_a_DEPENDENCIES)
 	$(libupnp_a_AR) libupnp.a $(libupnp_a_OBJECTS) $(libupnp_a_LIBADD)
 	$(RANLIB) libupnp.a
 
-clean-noinstPROGRAMS:
-	@list='$(noinst_PROGRAMS)'; for p in $$list; do \
-	  f=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
-	  echo " rm -f $$p $$f"; \
-	  rm -f $$p $$f ; \
-	done
-test_ssdp$(EXEEXT): $(test_ssdp_OBJECTS) $(test_ssdp_DEPENDENCIES) 
-	@rm -f test_ssdp$(EXEEXT)
-	$(LINK) $(test_ssdp_LDFLAGS) $(test_ssdp_OBJECTS) $(test_ssdp_LDADD) $(LIBS)
-
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gena.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssdp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_ssdp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/upnp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libupnp_a-gena.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libupnp_a-ssdp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libupnp_a-upnp.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -304,6 +278,48 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+libupnp_a-gena.o: gena.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libupnp_a_CFLAGS) $(CFLAGS) -MT libupnp_a-gena.o -MD -MP -MF "$(DEPDIR)/libupnp_a-gena.Tpo" -c -o libupnp_a-gena.o `test -f 'gena.c' || echo '$(srcdir)/'`gena.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libupnp_a-gena.Tpo" "$(DEPDIR)/libupnp_a-gena.Po"; else rm -f "$(DEPDIR)/libupnp_a-gena.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gena.c' object='libupnp_a-gena.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libupnp_a_CFLAGS) $(CFLAGS) -c -o libupnp_a-gena.o `test -f 'gena.c' || echo '$(srcdir)/'`gena.c
+
+libupnp_a-gena.obj: gena.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libupnp_a_CFLAGS) $(CFLAGS) -MT libupnp_a-gena.obj -MD -MP -MF "$(DEPDIR)/libupnp_a-gena.Tpo" -c -o libupnp_a-gena.obj `if test -f 'gena.c'; then $(CYGPATH_W) 'gena.c'; else $(CYGPATH_W) '$(srcdir)/gena.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libupnp_a-gena.Tpo" "$(DEPDIR)/libupnp_a-gena.Po"; else rm -f "$(DEPDIR)/libupnp_a-gena.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gena.c' object='libupnp_a-gena.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libupnp_a_CFLAGS) $(CFLAGS) -c -o libupnp_a-gena.obj `if test -f 'gena.c'; then $(CYGPATH_W) 'gena.c'; else $(CYGPATH_W) '$(srcdir)/gena.c'; fi`
+
+libupnp_a-ssdp.o: ssdp.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libupnp_a_CFLAGS) $(CFLAGS) -MT libupnp_a-ssdp.o -MD -MP -MF "$(DEPDIR)/libupnp_a-ssdp.Tpo" -c -o libupnp_a-ssdp.o `test -f 'ssdp.c' || echo '$(srcdir)/'`ssdp.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libupnp_a-ssdp.Tpo" "$(DEPDIR)/libupnp_a-ssdp.Po"; else rm -f "$(DEPDIR)/libupnp_a-ssdp.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ssdp.c' object='libupnp_a-ssdp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libupnp_a_CFLAGS) $(CFLAGS) -c -o libupnp_a-ssdp.o `test -f 'ssdp.c' || echo '$(srcdir)/'`ssdp.c
+
+libupnp_a-ssdp.obj: ssdp.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libupnp_a_CFLAGS) $(CFLAGS) -MT libupnp_a-ssdp.obj -MD -MP -MF "$(DEPDIR)/libupnp_a-ssdp.Tpo" -c -o libupnp_a-ssdp.obj `if test -f 'ssdp.c'; then $(CYGPATH_W) 'ssdp.c'; else $(CYGPATH_W) '$(srcdir)/ssdp.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libupnp_a-ssdp.Tpo" "$(DEPDIR)/libupnp_a-ssdp.Po"; else rm -f "$(DEPDIR)/libupnp_a-ssdp.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='ssdp.c' object='libupnp_a-ssdp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libupnp_a_CFLAGS) $(CFLAGS) -c -o libupnp_a-ssdp.obj `if test -f 'ssdp.c'; then $(CYGPATH_W) 'ssdp.c'; else $(CYGPATH_W) '$(srcdir)/ssdp.c'; fi`
+
+libupnp_a-upnp.o: upnp.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libupnp_a_CFLAGS) $(CFLAGS) -MT libupnp_a-upnp.o -MD -MP -MF "$(DEPDIR)/libupnp_a-upnp.Tpo" -c -o libupnp_a-upnp.o `test -f 'upnp.c' || echo '$(srcdir)/'`upnp.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libupnp_a-upnp.Tpo" "$(DEPDIR)/libupnp_a-upnp.Po"; else rm -f "$(DEPDIR)/libupnp_a-upnp.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='upnp.c' object='libupnp_a-upnp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libupnp_a_CFLAGS) $(CFLAGS) -c -o libupnp_a-upnp.o `test -f 'upnp.c' || echo '$(srcdir)/'`upnp.c
+
+libupnp_a-upnp.obj: upnp.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libupnp_a_CFLAGS) $(CFLAGS) -MT libupnp_a-upnp.obj -MD -MP -MF "$(DEPDIR)/libupnp_a-upnp.Tpo" -c -o libupnp_a-upnp.obj `if test -f 'upnp.c'; then $(CYGPATH_W) 'upnp.c'; else $(CYGPATH_W) '$(srcdir)/upnp.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libupnp_a-upnp.Tpo" "$(DEPDIR)/libupnp_a-upnp.Po"; else rm -f "$(DEPDIR)/libupnp_a-upnp.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='upnp.c' object='libupnp_a-upnp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libupnp_a_CFLAGS) $(CFLAGS) -c -o libupnp_a-upnp.obj `if test -f 'upnp.c'; then $(CYGPATH_W) 'upnp.c'; else $(CYGPATH_W) '$(srcdir)/upnp.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -392,7 +408,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES) $(PROGRAMS)
+all-am: Makefile $(LIBRARIES)
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -421,7 +437,7 @@ maintainer-clean-generic:
 clean: clean-am
 
 clean-am: clean-generic clean-libtool clean-noinstLIBRARIES \
-	clean-noinstPROGRAMS mostlyclean-am
+	mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -470,16 +486,16 @@ ps-am:
 uninstall-am: uninstall-info-am
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-noinstLIBRARIES clean-noinstPROGRAMS ctags \
-	distclean distclean-compile distclean-generic \
-	distclean-libtool distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-man install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-info-am
+	clean-libtool clean-noinstLIBRARIES ctags distclean \
+	distclean-compile distclean-generic distclean-libtool \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-exec \
+	install-exec-am install-info install-info-am install-man \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am tags uninstall uninstall-am \
+	uninstall-info-am
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
