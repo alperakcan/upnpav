@@ -17,17 +17,17 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <ctype.h>
 #include <pthread.h>
+#include <inttypes.h>
+
 #if HAVE_LIBREADLINE
 #include <readline/readline.h>
 #include <readline/history.h>
 #endif
 
-#include <upnp/upnp.h>
-#include <upnp/upnptools.h>
-#include <upnp/ithread.h>
-
+#include "upnp.h"
 #include "upnpd.h"
 #include "common.h"
 

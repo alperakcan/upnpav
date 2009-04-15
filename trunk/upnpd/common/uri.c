@@ -18,11 +18,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <inttypes.h>
 
-#include <upnp/upnp.h>
-#include <upnp/upnptools.h>
-#include <upnp/ithread.h>
-
+#include "upnp.h"
 #include "common.h"
 
 #define HEXCHRLC(x) ((x) >= 10 ? 'a' + (x) : '0' + (x))

@@ -26,11 +26,11 @@
 #include <netdb.h>
 #include <sys/poll.h>
 
-#include <upnp/ixml.h>
 
 #include "upnp.h"
+#include "ixml.h"
 #include "list.h"
-#include "uuid/uuid.h"
+#include "uuid.h"
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))

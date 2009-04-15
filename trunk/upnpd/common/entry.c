@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -28,10 +29,7 @@
 #include <magic.h>
 #endif
 
-#include <upnp/upnp.h>
-#include <upnp/upnptools.h>
-#include <upnp/ithread.h>
-
+#include "upnp.h"
 #include "common.h"
 
 static int entry_filter (const struct dirent *entry)
@@ -308,7 +306,11 @@ entry_t * entry_didl (const unsigned int magic, const char *path)
 				mime = "unknown";
 			}
 		} else {
+#if defined(HAVE_MAGIC)
 			mime = magic_file((magic_t) magic, path);
+#else
+			mime = "unknown";
+#endif
 		}
 		if (strncmp(mime, "audio/", 6) == 0) {
 			entry->didl.entryid = entryid_init_value(path);

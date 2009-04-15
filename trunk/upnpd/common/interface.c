@@ -25,11 +25,9 @@
 #include <net/if.h>
 #include <net/if_arp.h>
 #include <arpa/inet.h>
+#include <inttypes.h>
 
-#include <upnp/upnp.h>
-#include <upnp/upnptools.h>
-#include <upnp/ithread.h>
-
+#include "upnp.h"
 #include "common.h"
 
 #define INADDR(x) (*(struct in_addr *) &ifr->x[sizeof sa.sin_port])

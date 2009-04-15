@@ -17,11 +17,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
-#include <upnp/upnp.h>
-#include <upnp/upnptools.h>
-#include <upnp/ithread.h>
-
+#include "upnp.h"
 #include "common.h"
 
 static void xmlescape_real (const char *str, char *target, int * length, int attribute)

@@ -17,11 +17,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
+#if defined(ENABLE_CONTROLLER)
 #include <upnp/upnp.h>
 #include <upnp/upnptools.h>
 #include <upnp/ithread.h>
+#endif
 
+#include "upnp.h"
 #include "common.h"
 
 static void add_value_attribute (IXML_Document *doc, IXML_Element *parent, char *attrname, char *value)
@@ -296,7 +300,7 @@ int upnp_add_response (upnp_event_action_t *request, char *servicetype, char *ke
 	int rc;
 	debugf("adding '%s'='%s' to response", key, value);
 	rc = upnp_addtoactionresponse(request, servicetype, key, value);
-	if (rc != UPNP_E_SUCCESS) {
+	if (rc != 0) {
 		debugf("upnp_addtoactionresponse() failed");
 		request->errcode = UPNP_ERROR_ACTION_FAILED;
 		return -1;

@@ -16,7 +16,7 @@
 #ifndef UPNP_H_
 #define UPNP_H_
 
-#include <upnp/ixml.h>
+#include <ixml.h>
 
 typedef struct ssdp_s ssdp_t;
 typedef struct ssdp_device_s ssdp_device_t;
