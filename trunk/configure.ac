@@ -268,7 +268,6 @@ AM_CONDITIONAL(ENABLE_OPTIONAL, test "$enable_optional" = "yes")
 
 AC_CONFIG_FILES([
 	Makefile
-	Documentation/Makefile
 	ixml/Makefile
 	upnpd/Makefile
 	upnpd/common/Makefile
