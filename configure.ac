@@ -235,7 +235,6 @@ then
 	AC_DEFINE(ENABLE_LINUPNP, 1, [Define to 1 if you want 'libupnp' support.])
 else
 	enable_libupnp=no
-	AC_MSG_ERROR(Can't find libupnp)
 fi
 
 # - libmagic

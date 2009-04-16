@@ -344,6 +344,22 @@ out:
 	return 0;
 }
 
+static size_t __strnlen (const char *string, size_t maxlen)
+{
+	const char *end = memchr(string, '\0', maxlen);
+	return end ? (size_t) (end - string) : maxlen;
+}
+
+static char * __strndup (const char *s, size_t n)
+{
+	size_t len = __strnlen(s, n);
+	char *new = malloc(len + 1);
+	if (new == NULL)
+		return NULL;
+	new[len] = '\0';
+	return memcpy(new, s, len);
+}
+
 static int uri_parse (const char *uri, upnp_subscribe_url_t *url)
 {
 	char *i;
@@ -366,14 +382,14 @@ static int uri_parse (const char *uri, upnp_subscribe_url_t *url)
 		if (e == NULL) {
 			url->host = strdup(i);
 		} else {
-			url->host = strndup(i, e - i);
+			url->host = __strndup(i, e - i);
 		}
 	} else {
 		if (e != NULL) {
 			*e = '\0';
 		}
 		url->port = atoi(p + 1);
-		url->host = strndup(i, p - i);
+		url->host = __strndup(i, p - i);
 	}
 	if (url->host == NULL || url->port == 0) {
 		free(url->host);
