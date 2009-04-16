@@ -1,4 +1,3 @@
 
-SUBDIRS  = Documentation
-SUBDIRS += ixml
+SUBDIRS  = ixml
 SUBDIRS += upnpd
