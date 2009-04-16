@@ -22,6 +22,7 @@
 #include <getopt.h>
 #include <signal.h>
 #include <inttypes.h>
+#include <pthread.h>
 
 #include "upnp.h"
 #include "upnpd.h"
@@ -71,7 +72,7 @@ int upnpd_help (char *pname)
 	"  -v, --verbose           noisy debug\n",
 	pname);
 	printf("\n"
-	"  %d devices compiled in\n",
+	"  %lu devices compiled in\n",
 	NUM_ARRAY(upnpd_applications) - 1);
 	for (a = upnpd_applications; *a; a++) {
 		printf("    %-15s - %s\n", (*a)->name, (*a)->description);

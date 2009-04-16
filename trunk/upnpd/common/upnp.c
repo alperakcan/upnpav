@@ -18,6 +18,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <sys/time.h>
+#include <pthread.h>
 
 #if defined(ENABLE_CONTROLLER)
 #include <upnp/upnp.h>

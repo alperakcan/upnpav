@@ -18,6 +18,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
+#include <time.h>
+#include <pthread.h>
 
 #include "upnp.h"
 #include "common.h"

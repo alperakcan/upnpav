@@ -199,7 +199,7 @@ static int webserver_replace_escaped (char *in, int index, size_t *max)
 static int webserver_remove_escaped_chars (char *in)
 {
 	int i = 0;
-	unsigned int size;
+	size_t size;
 	size = strlen(in);
 	for( i = 0; i < size; i++ ) {
 		if (webserver_replace_escaped(in, i, &size) != 0) {

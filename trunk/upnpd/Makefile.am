@@ -33,8 +33,7 @@ upnpd_LDADD += \
 	$(top_builddir)/upnpd/common/upnp/libupnp.a \
 	$(top_builddir)/ixml/libixml.a \
 	$(READLINE_LIBS) \
-	-lpthread \
-	-lrt
+	-lpthread
 
 if ENABLE_CONTROLLER
 upnpd_LDADD += $(LIBUPNP_LIBS)

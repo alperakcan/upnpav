@@ -22,6 +22,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <net/if.h>
 #include <net/if_arp.h>
 #include <arpa/inet.h>
@@ -75,7 +76,6 @@ int interface_printall (void)
 {
 	int sockfd;
 	int size  = 1;
-	unsigned char *u;
 	struct ifreq *ifr;
 	struct ifconf ifc;
 	struct sockaddr_in sa;
@@ -122,7 +122,9 @@ int interface_printall (void)
 		printf("interface : %s\n", ifr->ifr_name);
 		printf("ip address: %s\n", inet_ntoa(INADDR(ifr_addr.sa_data)));
 
+#if 0
 		if (ioctl(sockfd, SIOCGIFHWADDR, ifr) == 0) {
+			unsigned char *u;
 			 switch (ifr->ifr_hwaddr.sa_family) {
 				default:
 					continue;
@@ -140,7 +142,7 @@ int interface_printall (void)
 					u[3] & 0xff, u[4] & 0xff, u[5] & 0xff);
 			}
 		}
-
+#endif
 
 		if ((ioctl(sockfd, SIOCGIFNETMASK, ifr) == 0) &&
 		    strcmp("255.255.255.255", inet_ntoa(INADDR(ifr_addr.sa_data)))) {

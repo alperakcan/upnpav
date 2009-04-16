@@ -131,7 +131,7 @@ static int entry_scandir (const char *dir, struct dirent ***namelist, int (*sele
 				}
 				names = new;
 			}
-			dsize = &current->d_name[_D_ALLOC_NAMLEN(current)] - (char *) current;
+			dsize = strlen(current->d_name) + 1;
 			vnew = (struct dirent *) malloc(dsize);
 			if (vnew == NULL) {
 				error = 2;

@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <inttypes.h>
+#include <pthread.h>
 
 #include "upnp.h"
 #include "common.h"
