@@ -72,7 +72,7 @@ int upnpd_help (char *pname)
 	"  -v, --verbose           noisy debug\n",
 	pname);
 	printf("\n"
-	"  %lu devices compiled in\n",
+	"  %u devices compiled in\n",
 	NUM_ARRAY(upnpd_applications) - 1);
 	for (a = upnpd_applications; *a; a++) {
 		printf("    %-15s - %s\n", (*a)->name, (*a)->description);
