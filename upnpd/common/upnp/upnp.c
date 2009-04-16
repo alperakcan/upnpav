@@ -350,7 +350,7 @@ static size_t __strnlen (const char *string, size_t maxlen)
 	return end ? (size_t) (end - string) : maxlen;
 }
 
-static char * __strndup (const char *s, size_t n)
+static char * self_strndup (const char *s, size_t n)
 {
 	size_t len = __strnlen(s, n);
 	char *new = malloc(len + 1);
@@ -382,14 +382,14 @@ static int uri_parse (const char *uri, upnp_subscribe_url_t *url)
 		if (e == NULL) {
 			url->host = strdup(i);
 		} else {
-			url->host = __strndup(i, e - i);
+			url->host = self_strndup(i, e - i);
 		}
 	} else {
 		if (e != NULL) {
 			*e = '\0';
 		}
 		url->port = atoi(p + 1);
-		url->host = __strndup(i, p - i);
+		url->host = self_strndup(i, p - i);
 	}
 	if (url->host == NULL || url->port == 0) {
 		free(url->host);
