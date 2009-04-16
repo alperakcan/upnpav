@@ -73,7 +73,7 @@ int upnpd_help (char *pname)
 	pname);
 	printf("\n"
 	"  %u devices compiled in\n",
-	NUM_ARRAY(upnpd_applications) - 1);
+	(unsigned int) NUM_ARRAY(upnpd_applications) - 1);
 	for (a = upnpd_applications; *a; a++) {
 		printf("    %-15s - %s\n", (*a)->name, (*a)->description);
 	}
