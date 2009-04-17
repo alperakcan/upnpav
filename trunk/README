@@ -13,5 +13,7 @@ make -s
 
 - simple run
 
+# route add -net 239.0.0.0 netmask 255.0.0.0 eth0
+
 # upnpd -d mediaserver -i eth0 -o directory=/path/to/share -v
 # upnpd -d controller -i eth0 -v
