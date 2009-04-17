@@ -36,5 +36,5 @@ upnpd_LDADD += \
 	-lpthread
 
 if ENABLE_CONTROLLER
-upnpd_LDADD += $(LIBUPNP_LIBS)
+upnpd_LDADD += $(LIBUPNP_LIBS) -lrt
 endif
