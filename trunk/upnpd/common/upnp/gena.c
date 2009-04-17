@@ -417,6 +417,57 @@ static void gena_sendfileheader (int fd, gena_fileinfo_internal_t *fileinfo)
 	free(header);
 }
 
+static void gena_handler_unsubscribe (gena_thread_t *gena_thread, char *header, const char *path)
+{
+	gena_event_t event;
+	memset(&event, 0, sizeof(gena_event_t));
+	event.event.subscribe.path = strdup(path);
+
+	while (1) {
+		if (gena_getline(gena_thread->fd, GENA_READ_TIMEOUT, header, GENA_HEADER_SIZE) <= 0) {
+			break;
+		}
+		if (strncasecmp(header, "HOST:", strlen("HOST:")) == 0) {
+			event.event.unsubscribe.host = strdup(gena_trim(header + strlen("HOST:")));
+		} else if (strncasecmp(header, "SID:", strlen("SID:")) == 0) {
+			event.event.unsubscribe.sid = strdup(gena_trim(header + strlen("SID:")));
+		}
+	}
+
+	debugf("unsubscribe event;\n"
+	       "  path    : '%s'\n"
+	       "  host    : '%s'\n"
+	       "  sid     : '%s'\n",
+	       event.event.unsubscribe.path,
+	       event.event.unsubscribe.host,
+	       event.event.unsubscribe.sid);
+
+	if (event.event.unsubscribe.path == NULL) {
+		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
+		goto out;
+	}
+	if (gena_thread->callbacks == NULL ||
+	    gena_thread->callbacks->gena.event == NULL) {
+		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_NOT_IMPLEMENTED);
+		goto out;
+	}
+
+	event.type = GENA_EVENT_TYPE_SUBSCRIBE_DROP;
+	if (gena_thread->callbacks->gena.event(gena_thread->callbacks->gena.cookie, &event) == 0) {
+		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_OK);
+		goto out;
+	} else {
+		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
+		goto out;
+	}
+
+	gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_NOT_IMPLEMENTED);
+out:
+	free(event.event.unsubscribe.path);
+	free(event.event.unsubscribe.host);
+	free(event.event.unsubscribe.sid);
+}
+
 static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, const char *path)
 {
 	const char *fmt =
@@ -427,10 +478,9 @@ static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, co
 		"Content-Type: text/xml\r\n"
 		"Content-Length: 0\r\n"
 		"\r\n";
+
 	gena_event_t event;
-
 	memset(&event, 0, sizeof(gena_event_t));
-
 	event.event.subscribe.path = strdup(path);
 
 	while (1) {
@@ -647,6 +697,7 @@ static void * gena_thread_loop (void *arg)
 	static const char request_head[] = "HEAD";
 	static const char request_post[] = "POST";
 	static const char request_subscribe[] = "SUBSCRIBE";
+	static const char request_unsubscribe[] = "UNSUBSCRIBE";
 
 	int rlen;
 	int readlen;
@@ -690,8 +741,9 @@ static void * gena_thread_loop (void *arg)
 	if (strcasecmp(header, request_get) != 0 &&
 	    strcasecmp(header, request_head) != 0 &&
 	    strcasecmp(header, request_post) != 0 &&
-	    strcasecmp(header, request_subscribe) != 0) {
-		debugf("support get/head request only (%s)", header);
+	    strcasecmp(header, request_subscribe) != 0 &&
+	    strcasecmp(header, request_unsubscribe) != 0) {
+		debugf("unsupported header: '%s'", header);
 		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_NOT_IMPLEMENTED);
 		goto out;
 	}
@@ -716,9 +768,9 @@ static void * gena_thread_loop (void *arg)
 	gena_remove_escaped_chars(pathptr);
 	debugf("requested url is: %s", pathptr);
 
-	if (strcasecmp(header, request_subscribe) == 0) {
-		debugf("gena subscribe event");
-		gena_handler_subscribe(gena_thread, header, pathptr);
+	if (strcasecmp(header, request_unsubscribe) == 0) {
+		debugf("gena unsubscribe event");
+		gena_handler_unsubscribe(gena_thread, header, pathptr);
 		goto out;
 	}
 	if (strcasecmp(header, request_subscribe) == 0) {

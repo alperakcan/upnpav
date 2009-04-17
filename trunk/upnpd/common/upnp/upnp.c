@@ -494,6 +494,28 @@ out:	pthread_mutex_unlock(&upnp->mutex);
 	return -1;
 }
 
+static int gena_callback_event_subscribe_drop (upnp_t *upnp, gena_event_unsubscribe_t *unsubscribe)
+{
+	upnp_service_t *s;
+	upnp_subscribe_t *c;
+	upnp_subscribe_t *cn;
+	pthread_mutex_lock(&upnp->mutex);
+	list_for_each_entry(s, &upnp->device.services, head) {
+		if (strcmp(unsubscribe->path, s->eventurl) == 0) {
+			list_for_each_entry_safe(c, cn, &s->subscribers, head) {
+				if (strcmp(c->sid, unsubscribe->sid) == 0) {
+					list_del(&c->head);
+					free(c->url.host);
+					free(c->url.url);
+					free(c);
+				}
+			}
+		}
+	}
+	pthread_mutex_unlock(&upnp->mutex);
+	return 0;
+}
+
 static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action)
 {
 	int ret;
@@ -581,6 +603,8 @@ static int gena_callback_event (void *cookie, gena_event_t *event)
 			return gena_callback_event_subscribe_accept(upnp, &event->event.subscribe);
 		case GENA_EVENT_TYPE_SUBSCRIBE_RENEW:
 			return gena_callback_event_subscribe_renew(upnp, &event->event.subscribe);
+		case GENA_EVENT_TYPE_SUBSCRIBE_DROP:
+			return gena_callback_event_subscribe_drop(upnp, &event->event.unsubscribe);
 		case GENA_EVENT_TYPE_ACTION:
 			return gena_callback_event_action(upnp, &event->event.action);
 		default:
