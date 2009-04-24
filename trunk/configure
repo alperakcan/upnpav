@@ -21124,80 +21124,6 @@ done
 CFLAGS="$CFLAGS -Wall -Werror"
 
 #
-# Check extra parameters
-#
-
-# Check whether --enable-controller was given.
-if test "${enable_controller+set}" = set; then
-  enableval=$enable_controller; if test "$enableval" = "no"
-then
-	enable_controller=no
-else
-	enable_controller=yes
-
-cat >>confdefs.h <<\_ACEOF
-#define ENABLE_CONTROLLER 1
-_ACEOF
-
-fi
-
-else
-  enable_controller=yes
-
-cat >>confdefs.h <<\_ACEOF
-#define ENABLE_CONTROLLER 1
-_ACEOF
-
-
-fi
-
-
-# Check whether --enable-mediaserver was given.
-if test "${enable_mediaserver+set}" = set; then
-  enableval=$enable_mediaserver; if test "$enableval" = "no"
-then
-	enable_mediaserver=no
-else
-	enable_mediaserver=yes
-
-cat >>confdefs.h <<\_ACEOF
-#define ENABLE_MEDIASERVER 1
-_ACEOF
-
-fi
-
-else
-  enable_mediaserver=yes
-
-cat >>confdefs.h <<\_ACEOF
-#define ENABLE_MEDIASERVER 1
-_ACEOF
-
-
-fi
-
-
-# Check whether --enable-optional was given.
-if test "${enable_optional+set}" = set; then
-  enableval=$enable_optional; if test "$enableval" = "no"
-then
-	enable_optional=no
-else
-	enable_optional=yes
-
-cat >>confdefs.h <<\_ACEOF
-#define ENABLE_OPTIONAL 1
-_ACEOF
-
-fi
-
-else
-  enable_optional=no
-
-fi
-
-
-#
 # dependencies
 #
 
@@ -21867,7 +21793,6 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 else
-	enable_controller=no
 	enable_libupnp=no
 fi
 
@@ -22096,6 +22021,80 @@ else
   pkgconfigdir='${libdir}/pkgconfig'
 fi
 
+
+
+#
+# Check extra parameters
+#
+
+# Check whether --enable-controller was given.
+if test "${enable_controller+set}" = set; then
+  enableval=$enable_controller; if test "$enableval" = "no" -o "$enable_libupnp" = "no"
+then
+	enable_controller=no
+else
+	enable_controller=yes
+
+cat >>confdefs.h <<\_ACEOF
+#define ENABLE_CONTROLLER 1
+_ACEOF
+
+fi
+
+else
+  enable_controller=yes
+
+cat >>confdefs.h <<\_ACEOF
+#define ENABLE_CONTROLLER 1
+_ACEOF
+
+
+fi
+
+
+# Check whether --enable-mediaserver was given.
+if test "${enable_mediaserver+set}" = set; then
+  enableval=$enable_mediaserver; if test "$enableval" = "no"
+then
+	enable_mediaserver=no
+else
+	enable_mediaserver=yes
+
+cat >>confdefs.h <<\_ACEOF
+#define ENABLE_MEDIASERVER 1
+_ACEOF
+
+fi
+
+else
+  enable_mediaserver=yes
+
+cat >>confdefs.h <<\_ACEOF
+#define ENABLE_MEDIASERVER 1
+_ACEOF
+
+
+fi
+
+
+# Check whether --enable-optional was given.
+if test "${enable_optional+set}" = set; then
+  enableval=$enable_optional; if test "$enableval" = "no"
+then
+	enable_optional=no
+else
+	enable_optional=yes
+
+cat >>confdefs.h <<\_ACEOF
+#define ENABLE_OPTIONAL 1
+_ACEOF
+
+fi
+
+else
+  enable_optional=no
+
+fi
 
 
 #
