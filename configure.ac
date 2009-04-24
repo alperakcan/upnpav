@@ -234,6 +234,7 @@ then
 	enable_libupnp=yes
 	AC_DEFINE(ENABLE_LINUPNP, 1, [Define to 1 if you want 'libupnp' support.])
 else
+	enable_controller=no
 	enable_libupnp=no
 fi
 

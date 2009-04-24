@@ -21867,6 +21867,7 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 else
+	enable_controller=no
 	enable_libupnp=no
 fi
 
