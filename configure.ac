@@ -174,12 +174,44 @@ AC_DEFUN([VL_LIB_READLINE], [
 CFLAGS="$CFLAGS -Wall -Werror"
 
 #
+# dependencies
+#
+
+# - readline
+
+VL_LIB_READLINE
+
+# - libpupnp
+
+PKG_CHECK_MODULES(LIBUPNP, libupnp, HAVE_LINUPNP=yes, HAVE_LINUPNP=no)
+if test "$HAVE_LINUPNP" = "yes"
+then
+	enable_libupnp=yes
+	AC_DEFINE(ENABLE_LINUPNP, 1, [Define to 1 if you want 'libupnp' support.])
+else
+	enable_libupnp=no
+fi
+
+# - libmagic
+
+AC_CHECK_HEADERS([magic.h], [AC_SUBST([MAGIC_CFLAGS], [-DHAVE_MAGIC=1])], [])
+AC_CHECK_LIB([magic], [magic_open], [AC_SUBST([MAGIC_LIBS], [-lmagic])], [], [-lz])
+LIBS="$LIBS $MAGIC_LIBS"
+CFLAGS="$CFLAGS $MAGIC_CFLAGS"
+
+AC_ARG_WITH(pkgconfigdir,
+            [  --with-pkgconfigdir=DIR pkgconfig file in DIR @<:@LIBDIR/pkgconfig@:>@],
+            [pkgconfigdir=$withval],
+            [pkgconfigdir='${libdir}/pkgconfig'])
+AC_SUBST(pkgconfigdir)
+
+#
 # Check extra parameters
 #
 
 AC_ARG_ENABLE([controller],
 [  --disable-controller    disable controller application [[default=yes]]],
-if test "$enableval" = "no"
+if test "$enableval" = "no" -o "$enable_libupnp" = "no"
 then
 	enable_controller=no
 else
@@ -217,39 +249,6 @@ fi
 ,
 enable_optional=no
 )
-
-#
-# dependencies
-#
-
-# - readline
-
-VL_LIB_READLINE
-
-# - libpupnp
-
-PKG_CHECK_MODULES(LIBUPNP, libupnp, HAVE_LINUPNP=yes, HAVE_LINUPNP=no)
-if test "$HAVE_LINUPNP" = "yes"
-then
-	enable_libupnp=yes
-	AC_DEFINE(ENABLE_LINUPNP, 1, [Define to 1 if you want 'libupnp' support.])
-else
-	enable_controller=no
-	enable_libupnp=no
-fi
-
-# - libmagic
-
-AC_CHECK_HEADERS([magic.h], [AC_SUBST([MAGIC_CFLAGS], [-DHAVE_MAGIC=1])], [])
-AC_CHECK_LIB([magic], [magic_open], [AC_SUBST([MAGIC_LIBS], [-lmagic])], [], [-lz])
-LIBS="$LIBS $MAGIC_LIBS"
-CFLAGS="$CFLAGS $MAGIC_CFLAGS"
-
-AC_ARG_WITH(pkgconfigdir,
-            [  --with-pkgconfigdir=DIR pkgconfig file in DIR @<:@LIBDIR/pkgconfig@:>@],
-            [pkgconfigdir=$withval],
-            [pkgconfigdir='${libdir}/pkgconfig'])
-AC_SUBST(pkgconfigdir)
 
 #
 # Variables to pass Makefiles
