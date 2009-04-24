@@ -356,6 +356,7 @@ int device_init (device_t *device)
 	debugf("initializing upnp stack");
 	upnp = upnp_init(device->interface, 0);
 	if (upnp == NULL) {
+		debugf("upnp_init('%s') failed", device->interface);
 		pthread_mutex_destroy(&device->mutex);
 		goto out;
 	}
@@ -379,9 +380,11 @@ int device_init (device_t *device)
 		goto out;
 	}
 	if (upnp_register_device(upnp, device->description, device_event_handler, device) != 0) {
+		debugf("upnp_register_device() failed");
 		goto out;
 	}
 	if (upnp_advertise(upnp) != 0) {
+		debugf("upnp_advertise() failed");
 		goto out;
 	}
 	debugf("listening for control point connections");
