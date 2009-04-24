@@ -219,8 +219,11 @@ else
 	AC_DEFINE(ENABLE_CONTROLLER, 1, [Define to 1 if you want 'controller' support.])
 fi
 ,
-enable_controller=yes
-AC_DEFINE(ENABLE_CONTROLLER, 1, [Define to 1 if you want 'controller' support.])
+if test "$enable_libupnp" = "yes"
+then
+	enable_controller=yes
+	AC_DEFINE(ENABLE_CONTROLLER, 1, [Define to 1 if you want 'controller' support.])
+fi
 )
 
 AC_ARG_ENABLE([mediaserver],
