@@ -449,6 +449,42 @@ static int connectionmanager_register_mimetype_actual (device_service_t *service
 	debugf("changing source protocol info variable");
 	variable = service_variable_find(service, "SourceProtocolInfo");
 	if (variable != NULL) {
+		if (variable->value == NULL) {
+			/* sony shit */
+			variable->value = strdup(
+					"http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_TN,"
+					"http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_SM;DLNA.ORG_OP=01;DLNA.ORG_CI=0,"
+					"http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_MED;DLNA.ORG_OP=01;DLNA.ORG_CI=0,"
+					"http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_LRG;DLNA.ORG_OP=01;DLNA.ORG_CI=0,"
+					"http-get:*:video/mpeg:DLNA.ORG_PN=MPEG_PS_NTSC;DLNA.ORG_OP=01;DLNA.ORG_CI=0,"
+					"http-get:*:video/mpeg:DLNA.ORG_PN=MPEG_PS_PAL;DLNA.ORG_OP=01;DLNA.ORG_CI=0,"
+					"http-get:*:video/mpeg:DLNA.ORG_PN=MPEG_TS_HD_NA_ISO;DLNA.ORG_OP=01;DLNA.ORG_CI=0,"
+					"http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=MPEG_TS_HD_NA;DLNA.ORG_OP=01;DLNA.ORG_CI=0,"
+					"http-get:*:video/vnd.dlna.mpeg-tts:DLNA.ORG_PN=AVC_TS_MP_HD_AC3_T;DLNA.ORG_OP=01;DLNA.ORG_CI=0,"
+					"http-get:*:video/x-ms-wmv:DLNA.ORG_PN=WMVHIGH_PRO;DLNA.ORG_OP=01;DLNA.ORG_CI=0,"
+					"http-get:*:audio/mpeg:DLNA.ORG_PN=MP3;DLNA.ORG_OP=01,"
+					"http-get:*:audio/x-ms-wma:DLNA.ORG_PN=WMABASE;DLNA.ORG_OP=01,"
+					"http-get:*:audio/x-ms-wma:DLNA.ORG_PN=WMAFULL;DLNA.ORG_OP=01,"
+					"http-get:*:audio/x-ms-wma:DLNA.ORG_PN=WMAPRO;DLNA.ORG_OP=01,"
+					"http-get:*:audio/mp4:DLNA.ORG_PN=AAC_ISO_320;DLNA.ORG_OP=01,"
+					"http-get:*:audio/mp4:DLNA.ORG_PN=AAC_ISO;DLNA.ORG_OP=01,"
+					"http-get:*:audio/mp4:DLNA.ORG_PN=AAC_MULT5_ISO;DLNA.ORG_OP=01,"
+					"http-get:*:audio/mp4:*,"
+					"http-get:*:audio/wav:*,"
+					"http-get:*:audio/x-aiff:*,"
+					"http-get:*:audio/x-flac:*,"
+					"http-get:*:application/ogg:*,"
+					"http-get:*:image/jpeg:*,"
+					"http-get:*:image/gif:*,"
+					"http-get:*:audio/x-mpegurl:*,"
+					"http-get:*:video/mpeg:*,"
+					"http-get:*:video/x-msvideo:*,"
+					"http-get:*:video/avi:*,"
+					"http-get:*:video/mpeg2:*,"
+					"http-get:*:video/dvd:*,"
+					"http-get:*:video/x-ms-wmv:*"
+					);
+		}
 		if (variable->value != NULL) {
 			tmp = variable->value;
 			if (asprintf(&variable->value, "%s,http-get:*:%s:*", tmp, mime) < 0) {
