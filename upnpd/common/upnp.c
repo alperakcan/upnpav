@@ -137,6 +137,7 @@ static IXML_Document * generate_description (device_t *device)
 	add_value_element(doc, parent, "modelName", device->modelname);
 	add_value_element(doc, parent, "modelURL", device->modelurl);
 	add_value_element(doc, parent, "UDN", device->uuid);
+	add_value_element(doc, parent, "dlna:X_DLNADOC", "DMS-1.50");
 
 	if (device->icons) {
 		child = generate_description_iconlist(doc, device->icons);
