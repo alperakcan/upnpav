@@ -319,7 +319,7 @@ found:
 		debugf("UpnpDownloadXmlDoc(%s, &desc) failed (%d)", event->Location, rc);
 		return 0;
 	}
-	debugf("reding elements from document '%s'", event->Location);
+	debugf("reading elements from document '%s'", event->Location);
 	uuid = xml_get_first_document_item(desc, "UDN");
 	devicetype = xml_get_first_document_item(desc, "deviceType");
 	friendlyname = xml_get_first_document_item(desc, "friendlyName");
