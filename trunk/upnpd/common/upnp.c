@@ -29,7 +29,7 @@ static void add_value_attribute (IXML_Document *doc, IXML_Element *parent, char 
 	ixmlElement_setAttribute(parent, attrname, value);
 }
 
-static void add_value_element (IXML_Document *doc, IXML_Element *parent, char *tagname, char *value)
+static IXML_Element * add_value_element (IXML_Document *doc, IXML_Element *parent, char *tagname, char *value)
 {
 	IXML_Element *top;
 	IXML_Node *child;
@@ -37,6 +37,7 @@ static void add_value_element (IXML_Document *doc, IXML_Element *parent, char *t
 	child = ixmlDocument_createTextNode(doc, value);
 	ixmlNode_appendChild((IXML_Node *) top, (IXML_Node *) child);
 	ixmlNode_appendChild((IXML_Node *) parent, (IXML_Node *) top);
+	return top;
 }
 
 static void add_value_element_int (IXML_Document *doc, IXML_Element *parent, char *tagname, int value)
@@ -131,7 +132,8 @@ static IXML_Document * generate_description (device_t *device)
 	add_value_element(doc, parent, "modelName", device->modelname);
 	add_value_element(doc, parent, "modelURL", device->modelurl);
 	add_value_element(doc, parent, "UDN", device->uuid);
-	add_value_element(doc, parent, "dlna:X_DLNADOC", "DMS-1.50");
+	child = add_value_element(doc, parent, "dlna:X_DLNADOC", "DMS-1.50");
+	add_value_attribute(doc, child, "xmlns:dlna", "urn:schemas-dlna-org:device-1-0");
 
 	if (device->icons) {
 		child = generate_description_iconlist(doc, device->icons);
