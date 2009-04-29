@@ -28,6 +28,8 @@
 
 
 #include "upnp.h"
+#include "ssdp.h"
+#include "gena.h"
 #include "ixml.h"
 #include "list.h"
 #include "uuid.h"
@@ -381,7 +383,19 @@ static char * self_strndup (const char *s, size_t n)
 	return memcpy(new, s, len);
 }
 
-static int uri_parse (const char *uri, upnp_url_t *url)
+static int url_uninit (upnp_url_t *url)
+{
+	free(url->host);
+	free(url->path);
+	free(url->url);
+	url->host = NULL;
+	url->url = NULL;
+	url->port = 0;
+	url->path = NULL;
+	return 0;
+}
+
+static int url_parse (const char *uri, upnp_url_t *url)
 {
 	char *i;
 	char *p;
@@ -420,13 +434,7 @@ static int uri_parse (const char *uri, upnp_url_t *url)
 		url->path = strdup(e);
 	}
 	if (url->host == NULL || url->port == 0) {
-		free(url->host);
-		free(url->url);
-		free(url->path);
-		url->host = NULL;
-		url->url = NULL;
-		url->port = 0;
-		url->path = NULL;
+		url_uninit(url);
 		return -1;
 	}
 	return 0;
@@ -459,7 +467,7 @@ static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subsc
 				ret = -1;
 				goto out;
 			}
-			if (uri_parse(subscribe->callback + 1, &c->url) != 0) {
+			if (url_parse(subscribe->callback + 1, &c->url) != 0) {
 				free(c);
 				ret = -1;
 				goto out;
@@ -1017,27 +1025,21 @@ IXML_Document * upnp_makeaction (upnp_t *upnp, const char *actionname, const cha
 		"</u:%s>\n";
 	buffer = NULL;
 	action = NULL;
-	if (uri_parse(controlurl, &url) != 0) {
+	if (url_parse(controlurl, &url) != 0) {
 		return NULL;
 	}
 	if (asprintf(&buffer, format_action, actionname, servicetype, actionname) < 0) {
-		free(url.host);
-		free(url.path);
-		free(url.url);
+		url_uninit(&url);
 		return NULL;
 	}
 	if (ixmlParseBufferEx(buffer, &action) != IXML_SUCCESS) {
-		free(url.host);
-		free(url.path);
-		free(url.url);
+		url_uninit(&url);
 		free(buffer);
 		return NULL;
 	}
 	free(buffer);
 	if (action == NULL) {
-		free(url.host);
-		free(url.path);
-		free(url.url);
+		url_uninit(&url);
 		return NULL;
 	}
 	for (p = 0; p < param_count; p++) {
@@ -1069,9 +1071,7 @@ IXML_Document * upnp_makeaction (upnp_t *upnp, const char *actionname, const cha
 
 	}
 	free(result);
-	free(url.host);
-	free(url.path);
-	free(url.url);
+	url_uninit(&url);
 	return response;
 }
 
@@ -1092,16 +1092,14 @@ int upnp_subscribe (upnp_t *upnp, const char *serviceurl, int *timeout, char **s
 int upnp_resolveurl (const char *baseurl, const char *relativeurl, char *absoluteurl)
 {
 	upnp_url_t url;
-	if (uri_parse(baseurl, &url) != 0) {
+	if (url_parse(baseurl, &url) != 0) {
 		return -1;
 	}
 	while (*relativeurl == '/') {
 		relativeurl++;
 	}
 	sprintf(absoluteurl, "%s:%d/%s", url.host, url.port, relativeurl);
-	free(url.host);
-	free(url.url);
-	free(url.path);
+	url_uninit(&url);
 	return 0;
 }
 
@@ -1109,12 +1107,10 @@ char * upnp_download (upnp_t *upnp, const char *location)
 {
 	char *buffer;
 	upnp_url_t url;
-	if (uri_parse(location, &url) != 0) {
+	if (url_parse(location, &url) != 0) {
 		return NULL;
 	}
 	buffer = gena_download(upnp->gena, url.host, url.port, url.path);
-	free(url.host);
-	free(url.url);
-	free(url.path);
+	url_uninit(&url);
 	return buffer;
 }

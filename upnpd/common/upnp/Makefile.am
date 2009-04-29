@@ -3,6 +3,8 @@ noinst_LIBRARIES = libupnp.a
 
 libupnp_a_SOURCES = \
 	upnp.h \
+	ssdp.h \
+	gena.h \
 	gena.c \
 	ssdp.c \
 	upnp.c
