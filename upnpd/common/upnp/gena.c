@@ -1067,7 +1067,6 @@ static int gena_init_server (gena_t *gena)
 	gena->fd = fd;
 	gena->port = ntohs(soc.sin_port);
 	debugf("gena started on port: %s:%u", inet_ntoa(soc.sin_addr), gena->port);
-
 	return 0;
 }
 
@@ -1087,9 +1086,14 @@ static int gena_send_data (int s, const void *write_buf, int total_size)
 err:	return -1;
 }
 
-int gena_send_recv (gena_t *gena, const char *host, const unsigned short port, const char *header, const char *data)
+char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port, const char *header, const char *data)
 {
-        int fd;
+	int r;
+	int t;
+	int fd;
+	char *buffer;
+	struct pollfd pfd;
+	unsigned int length;
 	struct sockaddr_in server;
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = inet_addr(host);
@@ -1097,32 +1101,84 @@ int gena_send_recv (gena_t *gena, const char *host, const unsigned short port, c
 
         fd = socket(AF_INET, SOCK_STREAM, 0);
         if (fd < 0) {
-        	return -1;
+        	return NULL;
 	}
 	if (connect(fd, (struct sockaddr *) &server, sizeof(server)) == -1) {
 		close(fd);
-		return -1;
+		return NULL;
 	}
 	if (gena_send_data(fd, header, strlen(header)) < 0) {
 		close(fd);
-		return -1;
+		return NULL;
 	}
-	if (gena_send_data(fd, data, strlen(data)) < 0) {
-		close(fd);
-		return -1;
+	if (data != NULL) {
+		if (gena_send_data(fd, data, strlen(data)) < 0) {
+			close(fd);
+			return NULL;
+		}
 	}
 
-	char *buffer;
+	length = 0;
 	buffer = malloc(GENA_HEADER_SIZE);
 	while (1) {
 		if (gena_getline(fd, GENA_READ_TIMEOUT, buffer, GENA_HEADER_SIZE) <= 0) {
 			break;
 		}
+		if (strncasecmp(buffer, "Content-length:", strlen("Content-length:")) == 0) {
+			length = atol(gena_trim(buffer + strlen("Content-length:")));
+		}
 	}
 	free(buffer);
-
+	if (length <= 0) {
+		close(fd);
+		return NULL;
+	}
+	buffer = malloc(sizeof(char) * (length + 1));
+	if (buffer == NULL) {
+		close(fd);
+		return NULL;
+	}
+	t = 0;
+	while (t < length) {
+		memset(&pfd, 0, sizeof(struct pollfd));
+		pfd.fd = fd;
+		pfd.events = POLLIN;
+		r = poll(&pfd, 1, 1000);
+		if (r <= 0 || pfd.revents != POLLIN) {
+			break;
+		}
+		r = recv(fd, buffer + t, length - t, MSG_DONTWAIT);
+		if (r <= 0) {
+			break;
+		}
+		t += r;
+	}
+	buffer[length] = '\0';
+	if (t != length) {
+		free(buffer);
+		buffer = NULL;
+	}
 	close(fd);
-	return 0;
+	return buffer;
+}
+
+char * gena_download (gena_t *gena, const char *host, const unsigned short port, const char *path)
+{
+	char *data;
+	char *buffer;
+	char *format_get =
+		"GET /%s HTTP/1.0\r\n"
+		"Host: %s:%d\r\n"
+		"Accept: */*\r\n"
+		"Connection: keep-alive\r\n"
+		"Cache-Control: max-age=0\r\n"
+		"\r\n";
+	if (asprintf(&buffer, format_get, path, host, port) < 0) {
+		return NULL;
+	}
+	data = gena_send_recv(gena, host, port, buffer, NULL);
+	free(buffer);
+	return data;
 }
 
 unsigned short gena_getport (gena_t *gena)

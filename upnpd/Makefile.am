@@ -18,8 +18,7 @@ upnpd_CFLAGS =	\
 
 if ENABLE_CONTROLLER
 SUBDIRS      += controller
-upnpd_CFLAGS += $(LIBUPNP_CFLAGS)
-upnpd_LDADD  += $(top_builddir)/upnpd/controller/libcontroller.a
+upnpd_LDADD  += $(top_builddir)/upnpd/controller/libcontroller.a -lrt
 endif
 
 if ENABLE_MEDIASERVER
@@ -34,7 +33,3 @@ upnpd_LDADD += \
 	$(top_builddir)/ixml/libixml.a \
 	$(READLINE_LIBS) \
 	-lpthread
-
-if ENABLE_CONTROLLER
-upnpd_LDADD += $(LIBUPNP_LIBS) -lrt
-endif

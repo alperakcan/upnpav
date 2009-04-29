@@ -492,6 +492,7 @@ static int connectionmanager_register_mimetype_actual (device_service_t *service
 				variable->value = tmp;
 				return -1;
 			}
+			free(tmp);
 		} else {
 			if (asprintf(&variable->value, "http-get:*:%s:*", mime) < 0) {
 				debugf("asprintf() failed");
@@ -509,6 +510,7 @@ static int connectionmanager_register_mimetype_actual (device_service_t *service
 				variable->value = tmp;
 				return -1;
 			}
+			free(tmp);
 		} else {
 			if (asprintf(&variable->value, "http-get:*:%s:*", mime) < 0) {
 				debugf("asprintf() failed");

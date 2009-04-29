@@ -1,5 +1,5 @@
 
-AC_INIT([upnpd], [0.0.1], [upnpd@alperakcan.org])
+AC_INIT([upnpd], [0.0.2], [upnpd@alperakcan.org])
 AC_CANONICAL_TARGET
 
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
@@ -181,17 +181,6 @@ CFLAGS="$CFLAGS -Wall -Werror"
 
 VL_LIB_READLINE
 
-# - libpupnp
-
-PKG_CHECK_MODULES(LIBUPNP, libupnp, HAVE_LINUPNP=yes, HAVE_LINUPNP=no)
-if test "$HAVE_LINUPNP" = "yes"
-then
-	enable_libupnp=yes
-	AC_DEFINE(ENABLE_LINUPNP, 1, [Define to 1 if you want 'libupnp' support.])
-else
-	enable_libupnp=no
-fi
-
 # - libmagic
 
 AC_CHECK_HEADERS([magic.h], [AC_SUBST([MAGIC_CFLAGS], [-DHAVE_MAGIC=1])], [])
@@ -211,7 +200,7 @@ AC_SUBST(pkgconfigdir)
 
 AC_ARG_ENABLE([controller],
 [  --disable-controller    disable controller application [[default=yes]]],
-if test "$enableval" = "no" -o "$enable_libupnp" = "no"
+if test "$enableval" = "no"
 then
 	enable_controller=no
 else
@@ -219,11 +208,8 @@ else
 	AC_DEFINE(ENABLE_CONTROLLER, 1, [Define to 1 if you want 'controller' support.])
 fi
 ,
-if test "$enable_libupnp" = "yes"
-then
-	enable_controller=yes
-	AC_DEFINE(ENABLE_CONTROLLER, 1, [Define to 1 if you want 'controller' support.])
-fi
+enable_controller=yes
+AC_DEFINE(ENABLE_CONTROLLER, 1, [Define to 1 if you want 'controller' support.])
 )
 
 AC_ARG_ENABLE([mediaserver],

@@ -74,17 +74,18 @@ static upnp_error_t upnp_errors[] = {
 	[UPNP_ERROR_CANNOT_PROCESS]             = {720, "Cannot Process The Request"},
 };
 
-typedef struct upnp_subscribe_url_s {
+typedef struct upnp_url_s {
 	char *url;
 	char *host;
 	unsigned short port;
-} upnp_subscribe_url_t;
+	char *path;
+} upnp_url_t;
 
 typedef struct upnp_subscribe_s {
 	list_t head;
 	char sid[50];
 	unsigned int sequence;
-	upnp_subscribe_url_t url;
+	upnp_url_t url;
 } upnp_subscribe_t;
 
 typedef struct upnp_service_s {
@@ -96,7 +97,14 @@ typedef struct upnp_service_s {
 	list_t subscribers;
 } upnp_service_t;
 
+typedef enum {
+	UPNP_TYPE_UNKNOWN = 0x00,
+	UPNP_TYPE_DEVICE,
+	UPNP_TYPE_CLIENT,
+} upnp_type_t;
+
 typedef struct upnp_device_s {
+	upnp_type_t type;
 	char *description;
 	char *location;
 	list_t services;
@@ -104,12 +112,22 @@ typedef struct upnp_device_s {
 	void *cookie;
 } upnp_device_t;
 
+typedef struct upnp_client_s {
+	upnp_type_t type;
+	int (*callback) (void *cookie, upnp_event_t *event);
+	void *cookie;
+} upnp_client_t;
+
 struct upnp_s {
 	char *host;
 	unsigned short port;
 	ssdp_t *ssdp;
 	gena_t *gena;
-	upnp_device_t device;
+	union {
+		upnp_type_t type;
+		upnp_device_t device;
+		upnp_client_t client;
+	} type;
 	pthread_mutex_t mutex;
 	gena_callbacks_t gena_callbacks;
 };
@@ -120,7 +138,7 @@ static int gena_callback_info (void *cookie, char *path, gena_fileinfo_t *info)
 	upnp = (upnp_t *) cookie;
 	pthread_mutex_lock(&upnp->mutex);
 	if (strcmp(path, "/description.xml") == 0) {
-		info->size = strlen(upnp->device.description);
+		info->size = strlen(upnp->type.device.description);
 		info->mtime = 0;
 		info->mimetype = strdup("text/xml");
 		pthread_mutex_unlock(&upnp->mutex);
@@ -144,8 +162,8 @@ static void * gena_callback_open (void *cookie, char *path, gena_filemode_t mode
 		}
 		memset(file, 0, sizeof(gena_file_t));
 		file->virtual = 1;
-		file->size = strlen(upnp->device.description);
-		file->buf = strdup(upnp->device.description);
+		file->size = strlen(upnp->type.device.description);
+		file->buf = strdup(upnp->type.device.description);
 		if (file->buf == NULL) {
 			free(file);
 			file = NULL;
@@ -286,6 +304,7 @@ static char * upnp_propertyset (const char **names, const char **values, unsigne
 
 int upnp_accept_subscription (upnp_t *upnp, const char *udn, const char *serviceid, const char **variable_names, const char **variable_values, const unsigned int variables_count, const char *sid)
 {
+	char *data;
 	char *header;
 	char *propset;
 	upnp_service_t *s;
@@ -301,7 +320,7 @@ int upnp_accept_subscription (upnp_t *upnp, const char *udn, const char *service
 		"SEQ: %u\r\n"
 		"\r\n";
 	pthread_mutex_lock(&upnp->mutex);
-	list_for_each_entry(s, &upnp->device.services, head) {
+	list_for_each_entry(s, &upnp->type.device.services, head) {
 		if (strcmp(s->serviceid, serviceid) == 0 &&
 		    strcmp(s->udn, udn) == 0) {
 			list_for_each_entry(c, &s->subscribers, head) {
@@ -333,10 +352,12 @@ found:
 	printf("header: %s\n", header);
 	printf("propset: %s\n", propset);
 
-	if (gena_send_recv(upnp->gena, c->url.host, c->url.port, header, propset) < 0) {
+	data = gena_send_recv(upnp->gena, c->url.host, c->url.port, header, propset);
+	if (data == NULL) {
 		debugf("gena_send_recv() failed");
 	}
 
+	free(data);
 	free(header);
 	free(propset);
 out:
@@ -360,12 +381,12 @@ static char * self_strndup (const char *s, size_t n)
 	return memcpy(new, s, len);
 }
 
-static int uri_parse (const char *uri, upnp_subscribe_url_t *url)
+static int uri_parse (const char *uri, upnp_url_t *url)
 {
 	char *i;
 	char *p;
 	char *e;
-	url->url = strdup(uri + 1);
+	url->url = strdup(uri);
 	if (url->url == NULL) {
 		return -1;
 	}
@@ -377,11 +398,12 @@ static int uri_parse (const char *uri, upnp_subscribe_url_t *url)
 
 	p = strchr(i, ':');
 	e = strchr(i, '/');
-	if (p == NULL) {
+	if (p == NULL || e < p) {
 		url->port = 80;
 		if (e == NULL) {
 			url->host = strdup(i);
 		} else {
+			*e = '\0';
 			url->host = self_strndup(i, e - i);
 		}
 	} else {
@@ -391,12 +413,20 @@ static int uri_parse (const char *uri, upnp_subscribe_url_t *url)
 		url->port = atoi(p + 1);
 		url->host = self_strndup(i, p - i);
 	}
+	if (e != NULL) {
+		do {
+			e++;
+		} while (*e == '/');
+		url->path = strdup(e);
+	}
 	if (url->host == NULL || url->port == 0) {
 		free(url->host);
 		free(url->url);
+		free(url->path);
 		url->host = NULL;
 		url->url = NULL;
 		url->port = 0;
+		url->path = NULL;
 		return -1;
 	}
 	return 0;
@@ -411,7 +441,7 @@ static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subsc
 	ret = -1;
 	debugf("enter");
 	pthread_mutex_lock(&upnp->mutex);
-	list_for_each_entry(s, &upnp->device.services, head) {
+	list_for_each_entry(s, &upnp->type.device.services, head) {
 		debugf("eventurl: %s", s->eventurl);
 		if (strcmp(subscribe->path, s->eventurl) == 0) {
 			c = (upnp_subscribe_t *) malloc(sizeof(upnp_subscribe_t));
@@ -429,7 +459,7 @@ static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subsc
 				ret = -1;
 				goto out;
 			}
-			if (uri_parse(subscribe->callback, &c->url) != 0) {
+			if (uri_parse(subscribe->callback + 1, &c->url) != 0) {
 				free(c);
 				ret = -1;
 				goto out;
@@ -452,7 +482,7 @@ static int gena_callback_event_subscribe_accept (upnp_t *upnp, gena_event_subscr
 	ret = -1;
 	debugf("enter");
 	pthread_mutex_lock(&upnp->mutex);
-	list_for_each_entry(s, &upnp->device.services, head) {
+	list_for_each_entry(s, &upnp->type.device.services, head) {
 		if (strcmp(subscribe->path, s->eventurl) == 0) {
 			memset(&e, 0, sizeof(upnp_event_t));
 			e.type = UPNP_EVENT_TYPE_SUBSCRIBE_REQUEST;
@@ -460,8 +490,8 @@ static int gena_callback_event_subscribe_accept (upnp_t *upnp, gena_event_subscr
 			e.event.subscribe.udn = s->udn;
 			e.event.subscribe.sid = subscribe->sid;
 			pthread_mutex_unlock(&upnp->mutex);
-			if (upnp->device.callback != NULL) {
-				upnp->device.callback(upnp->device.cookie, &e);
+			if (upnp->type.device.callback != NULL) {
+				upnp->type.device.callback(upnp->type.device.cookie, &e);
 			}
 			pthread_mutex_lock(&upnp->mutex);
 			ret = 0;
@@ -480,7 +510,7 @@ static int gena_callback_event_subscribe_renew (upnp_t *upnp, gena_event_subscri
 	upnp_subscribe_t *c;
 	ret = -1;
 	pthread_mutex_lock(&upnp->mutex);
-	list_for_each_entry(s, &upnp->device.services, head) {
+	list_for_each_entry(s, &upnp->type.device.services, head) {
 		if (strcmp(subscribe->path, s->eventurl) == 0) {
 			list_for_each_entry(c, &s->subscribers, head) {
 				if (strcmp(c->sid, subscribe->sid) == 0) {
@@ -500,13 +530,14 @@ static int gena_callback_event_subscribe_drop (upnp_t *upnp, gena_event_unsubscr
 	upnp_subscribe_t *c;
 	upnp_subscribe_t *cn;
 	pthread_mutex_lock(&upnp->mutex);
-	list_for_each_entry(s, &upnp->device.services, head) {
+	list_for_each_entry(s, &upnp->type.device.services, head) {
 		if (strcmp(unsubscribe->path, s->eventurl) == 0) {
 			list_for_each_entry_safe(c, cn, &s->subscribers, head) {
 				if (strcmp(c->sid, unsubscribe->sid) == 0) {
 					list_del(&c->head);
 					free(c->url.host);
 					free(c->url.url);
+					free(c->url.path);
 					free(c);
 				}
 			}
@@ -550,7 +581,7 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 
 	ret = -1;
 	pthread_mutex_lock(&upnp->mutex);
-	list_for_each_entry(s, &upnp->device.services, head) {
+	list_for_each_entry(s, &upnp->type.device.services, head) {
 		if (strcmp(action->path, s->controlurl) == 0) {
 			memset(&e, 0, sizeof(upnp_event_t));
 			e.type = UPNP_EVENT_TYPE_ACTION;
@@ -563,8 +594,8 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 			e.event.action.serviceid = s->serviceid;
 			e.event.action.udn = s->udn;
 			pthread_mutex_unlock(&upnp->mutex);
-			if (upnp->device.callback != NULL) {
-				upnp->device.callback(upnp->device.cookie, &e);
+			if (upnp->type.device.callback != NULL) {
+				upnp->type.device.callback(upnp->type.device.cookie, &e);
 			}
 			if (e.event.action.errcode == 0) {
 				response = ixmlPrintNode((IXML_Node *) e.event.action.response);
@@ -613,6 +644,52 @@ static int gena_callback_event (void *cookie, gena_event_t *event)
 	return -1;
 }
 
+static int ssdp_callback_event_notify (upnp_t *upnp, ssdp_event_notify_t *notify)
+{
+	upnp_event_t e;
+	memset(&e, 0, sizeof(upnp_event_t));
+	e.type = UPNP_EVENT_TYPE_ADVERTISEMENT_ALIVE;
+	e.event.advertisement.device = notify->device;
+	e.event.advertisement.location = notify->location;
+	e.event.advertisement.uuid = notify->uuid;
+	e.event.advertisement.expires = notify->expires;
+	if (upnp->type.client.callback != NULL) {
+		upnp->type.client.callback(upnp->type.client.cookie, &e);
+	}
+	return 0;
+}
+
+static int ssdp_callback_event_byebye (upnp_t *upnp, ssdp_event_byebye_t *byebye)
+{
+	upnp_event_t e;
+	memset(&e, 0, sizeof(upnp_event_t));
+	e.type = UPNP_EVENT_TYPE_ADVERTISEMENT_BYEBYE;
+	e.event.advertisement.device = byebye->device;
+	e.event.advertisement.uuid = byebye->uuid;
+	if (upnp->type.client.callback != NULL) {
+		upnp->type.client.callback(upnp->type.client.cookie, &e);
+	}
+	return 0;
+}
+
+static int ssdp_callback_event (void *cookie, ssdp_event_t *event)
+{
+	upnp_t *upnp;
+	upnp = (upnp_t *) cookie;
+	if (upnp->type.type == UPNP_TYPE_DEVICE) {
+		return 0;
+	}
+	switch (event->type) {
+		case SSDP_EVENT_TYPE_NOTIFY:
+			return ssdp_callback_event_notify(upnp, &event->event.notify);
+		case SSDP_EVENT_TYPE_BYEBYE:
+			return ssdp_callback_event_byebye(upnp, &event->event.byebye);
+		default:
+			break;
+	}
+	return -1;
+}
+
 int upnp_advertise (upnp_t *upnp)
 {
 	int rc;
@@ -648,6 +725,16 @@ static char * upnp_ixml_getfirstelementitem (IXML_Element *element, const char *
 	return ret;
 }
 
+int upnp_register_client (upnp_t *upnp, int (*callback) (void *cookie, upnp_event_t *), void *cookie)
+{
+	pthread_mutex_lock(&upnp->mutex);
+	upnp->type.type = UPNP_TYPE_CLIENT;
+	upnp->type.client.callback = callback;
+	upnp->type.client.cookie = cookie;
+	pthread_mutex_unlock(&upnp->mutex);
+	return 0;
+}
+
 int upnp_register_device (upnp_t *upnp, const char *description, int (*callback) (void *cookie, upnp_event_t *), void *cookie)
 {
 	int i;
@@ -677,16 +764,17 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 	upnp_service_t *service;
 
 	pthread_mutex_lock(&upnp->mutex);
-	list_init(&upnp->device.services);
-	upnp->device.description = strdup(description);
-	upnp->device.callback = callback;
-	upnp->device.cookie = cookie;
-	if (upnp->device.description == NULL) {
+	upnp->type.type = UPNP_TYPE_DEVICE;
+	list_init(&upnp->type.device.services);
+	upnp->type.device.description = strdup(description);
+	upnp->type.device.callback = callback;
+	upnp->type.device.cookie = cookie;
+	if (upnp->type.device.description == NULL) {
 		pthread_mutex_unlock(&upnp->mutex);
 		return -1;
 	}
-	if (asprintf(&upnp->device.location, "http://%s:%d/description.xml", upnp->host, upnp->port) < 0) {
-		free(upnp->device.description);
+	if (asprintf(&upnp->type.device.location, "http://%s:%d/description.xml", upnp->host, upnp->port) < 0) {
+		free(upnp->type.device.description);
 		pthread_mutex_unlock(&upnp->mutex);
 		return -1;
 	}
@@ -719,13 +807,13 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 
 			/* ssdp entries for device */
 			if (asprintf(&deviceusn, "%s::%s", deviceudn, "upnp:rootdevice") > 0) {
-				ssdp_register(upnp->ssdp, "upnp:rootdevice", deviceusn, upnp->device.location, "mini upnp stack 1.0", 100000);
+				ssdp_register(upnp->ssdp, "upnp:rootdevice", deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
 				free(deviceusn);
 			}
-			ssdp_register(upnp->ssdp, deviceudn, deviceudn, upnp->device.location, "mini upnp stack 1.0", 100000);
+			ssdp_register(upnp->ssdp, deviceudn, deviceudn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
 			if (asprintf(&deviceusn, "%s::%s", deviceudn, devicetype) > 0) {
-				ssdp_register(upnp->ssdp, devicetype, deviceusn, upnp->device.location, "mini upnp stack 1.0", 100000);
-				ssdp_register(upnp->ssdp, deviceudn, deviceusn, upnp->device.location, "mini upnp stack 1.0", 100000);
+				ssdp_register(upnp->ssdp, devicetype, deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
+				ssdp_register(upnp->ssdp, deviceudn, deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
 				free(deviceusn);
 			}
 
@@ -748,7 +836,7 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 					goto __continue;
 				}
 				if (asprintf(&deviceusn, "%s::%s", deviceudn, servicetype) > 0) {
-					if (ssdp_register(upnp->ssdp, servicetype, deviceusn, upnp->device.location, "mini upnp stack 1.0", 100000) == 0) {
+					if (ssdp_register(upnp->ssdp, servicetype, deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000) == 0) {
 						service = (upnp_service_t *) malloc(sizeof(upnp_service_t));
 						if (service != NULL) {
 							memset(service, 0, sizeof(upnp_service_t));
@@ -762,7 +850,7 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 								service->controlurl = controlurl;
 								service->serviceid = serviceid;
 								debugf("adding service: %s", serviceid);
-								list_add(&service->head, &upnp->device.services);
+								list_add(&service->head, &upnp->type.device.services);
 								controlurl = NULL;
 								eventurl = NULL;
 								serviceid = NULL;
@@ -832,7 +920,7 @@ upnp_t * upnp_init (const char *host, const unsigned short port)
 		return NULL;
 	}
 	upnp->port = port;
-	upnp->ssdp = ssdp_init();
+	upnp->ssdp = ssdp_init(ssdp_callback_event, upnp);
 	if (upnp->ssdp == NULL) {
 		free(upnp->host);
 		free(upnp);
@@ -870,26 +958,163 @@ int upnp_uninit (upnp_t *upnp)
 	upnp_service_t *sn;
 	upnp_subscribe_t *c;
 	upnp_subscribe_t *cn;
-	list_for_each_entry_safe(s, sn, &upnp->device.services, head) {
-		list_for_each_entry_safe(c, cn, &s->subscribers, head) {
-			list_del(&c->head);
-			free(c->url.host);
-			free(c->url.url);
-			free(c);
+	ssdp_uninit(upnp->ssdp);
+	if (upnp->type.type == UPNP_TYPE_DEVICE) {
+		list_for_each_entry_safe(s, sn, &upnp->type.device.services, head) {
+			list_for_each_entry_safe(c, cn, &s->subscribers, head) {
+				list_del(&c->head);
+				free(c->url.host);
+				free(c->url.url);
+				free(c->url.path);
+				free(c);
+			}
+			list_del(&s->head);
+			free(s->udn);
+			free(s->eventurl);
+			free(s->controlurl);
+			free(s->serviceid);
+			free(s);
 		}
-		list_del(&s->head);
-		free(s->udn);
-		free(s->eventurl);
-		free(s->controlurl);
-		free(s->serviceid);
-		free(s);
+		free(upnp->type.device.description);
+		free(upnp->type.device.location);
 	}
 	gena_uninit(upnp->gena);
-	ssdp_uninit(upnp->ssdp);
 	pthread_mutex_destroy(&upnp->mutex);
-	free(upnp->device.description);
-	free(upnp->device.location);
 	free(upnp->host);
 	free(upnp);
 	return 0;
+}
+
+IXML_Document * upnp_makeaction (upnp_t *upnp, const char *actionname, const char *controlurl, const char *servicetype, const int param_count, char **param_name, char **param_val)
+{
+	int p;
+	char *data;
+	char *result;
+	char *buffer;
+	upnp_url_t url;
+	IXML_Node *text;
+	IXML_Node *node;
+	IXML_Element *elem;
+	IXML_Document *action;
+	IXML_Document *response;
+	const char *format_post =
+		"POST /%s HTTP/1.1\r\n"
+		"HOST: %s:%d\r\n"
+		"CONTENT-LENGTH: %u\r\n"
+		"CONTENT-TYPE: text/xml; charset=\"utf-8\"\r\n"
+		"SOAPACTION: \"%s#%s\"\r\n"
+		"\r\n"
+		"%s%s%s";
+	const char *format_envelope_start =
+		"<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\""
+		" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
+		"<s:Body>\n";
+	const char *format_envelope_end =
+		"</s:Body>\n"
+		"</s:Envelope>\n";
+	const char *format_action =
+		"<u:%s xmlns:u=\"%s\">\n"
+		"</u:%s>\n";
+	buffer = NULL;
+	action = NULL;
+	if (uri_parse(controlurl, &url) != 0) {
+		return NULL;
+	}
+	if (asprintf(&buffer, format_action, actionname, servicetype, actionname) < 0) {
+		free(url.host);
+		free(url.path);
+		free(url.url);
+		return NULL;
+	}
+	if (ixmlParseBufferEx(buffer, &action) != IXML_SUCCESS) {
+		free(url.host);
+		free(url.path);
+		free(url.url);
+		free(buffer);
+		return NULL;
+	}
+	free(buffer);
+	if (action == NULL) {
+		free(url.host);
+		free(url.path);
+		free(url.url);
+		return NULL;
+	}
+	for (p = 0; p < param_count; p++) {
+                node = ixmlNode_getFirstChild((IXML_Node *) action);
+                elem = ixmlDocument_createElement(action, param_name[p]);
+                if (param_val[p] != NULL) {
+                        text = ixmlDocument_createTextNode(action, param_val[p]);
+                        ixmlNode_appendChild((IXML_Node *) elem, text);
+                }
+                ixmlNode_appendChild(node, (IXML_Node *) elem);
+	}
+	buffer = ixmlPrintNode((IXML_Node *) action);
+	ixmlDocument_free(action);
+	data = NULL;
+	if (asprintf(&data, format_post,
+			url.path,
+			url.host, url.port,
+			strlen(buffer) + strlen(format_envelope_start) + strlen(format_envelope_end),
+			servicetype, actionname,
+			format_envelope_start, buffer, format_envelope_end) < 0) {
+	}
+	free(buffer);
+	result = gena_send_recv(upnp->gena, url.host, url.port, data, NULL);
+	free(data);
+	if (result != NULL) {
+		if (ixmlParseBufferEx(result, &response) != IXML_SUCCESS) {
+			response = NULL;
+	        }
+
+	}
+	free(result);
+	free(url.host);
+	free(url.path);
+	free(url.url);
+	return response;
+}
+
+int upnp_search (upnp_t *upnp, int timeout, const char *uuid)
+{
+	int ret;
+	pthread_mutex_lock(&upnp->mutex);
+	ret = ssdp_search(upnp->ssdp, uuid, timeout);
+	pthread_mutex_unlock(&upnp->mutex);
+	return 0;
+}
+
+int upnp_subscribe (upnp_t *upnp, const char *serviceurl, int *timeout, char **sid)
+{
+	return 0;
+}
+
+int upnp_resolveurl (const char *baseurl, const char *relativeurl, char *absoluteurl)
+{
+	upnp_url_t url;
+	if (uri_parse(baseurl, &url) != 0) {
+		return -1;
+	}
+	while (*relativeurl == '/') {
+		relativeurl++;
+	}
+	sprintf(absoluteurl, "%s:%d/%s", url.host, url.port, relativeurl);
+	free(url.host);
+	free(url.url);
+	free(url.path);
+	return 0;
+}
+
+char * upnp_download (upnp_t *upnp, const char *location)
+{
+	char *buffer;
+	upnp_url_t url;
+	if (uri_parse(location, &url) != 0) {
+		return NULL;
+	}
+	buffer = gena_download(upnp->gena, url.host, url.port, url.path);
+	free(url.host);
+	free(url.url);
+	free(url.path);
+	return buffer;
 }

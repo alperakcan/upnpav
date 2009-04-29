@@ -17,16 +17,19 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
+#include <inttypes.h>
 #include <pthread.h>
+
+#if HAVE_LIBREADLINE
 #include <readline/readline.h>
 #include <readline/history.h>
+#endif
 
-#include <upnp/upnp.h>
-#include <upnp/upnptools.h>
-#include <upnp/ithread.h>
-
+#include "upnp.h"
 #include "upnpd.h"
 #include "common.h"
+
 #include "controller.h"
 
 static int browse_device (client_t *client, char *device, char *object)

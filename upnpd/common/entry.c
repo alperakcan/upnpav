@@ -765,7 +765,6 @@ static entry_t * entry_from_element (IXML_Element *elem, int container)
 	int i;
 	int n;
 	char *tmp;
-	char *class;
 	entry_t *entry;
 	IXML_Element *eres;
 	IXML_NodeList *nres;
@@ -774,7 +773,6 @@ static entry_t * entry_from_element (IXML_Element *elem, int container)
 		return NULL;
 	}
 	memset(entry, 0, sizeof(entry_t));
-	class = xml_get_first_element_item(elem, "upnp:class");
 	entry->didl.entryid = entryid_init_string(ixmlElement_getAttribute(elem, "id"));
 	entry->didl.parentid = strdup(ixmlElement_getAttribute(elem, "parentID"));
 	entry->didl.childcount = strtouint32(ixmlElement_getAttribute(elem, "childCount"));

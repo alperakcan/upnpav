@@ -59,7 +59,7 @@ typedef enum {
 typedef struct webserver_fileinfo_s {
 	unsigned long size;
 	char *mimetype;
-	time_t mtime;
+	unsigned long mtime;
 } webserver_fileinfo_t;
 
 typedef struct webserver_callbacks_s {
@@ -479,8 +479,6 @@ struct client_s {
 	int port;
 	/** */
 	client_device_t *devices;
-	/** */
-	int handle;
 };
 
 /** device service struct

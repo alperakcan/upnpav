@@ -302,7 +302,7 @@ static void webserver_sendfileheader (int fd, webserver_fileinfo_internal_t *fil
 			      "Date: %s\r\nConnection: close\r\n",
 			      responseNum, responseString, fileinfo->fileinfo.mimetype, tmpstr);
 
-	strftime(tmpstr, sizeof(tmpstr), RFC1123FMT, gmtime(&fileinfo->fileinfo.mtime));
+	strftime(tmpstr, sizeof(tmpstr), RFC1123FMT, gmtime((time_t *) &fileinfo->fileinfo.mtime));
 	if (type == WEBSERVER_RESPONSE_TYPE_PARTIAL_CONTENT) {
 		len += sprintf(header + len,
 			"Accept-Ranges: bytes\r\n"

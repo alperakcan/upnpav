@@ -36,7 +36,8 @@ libcommon_a_CFLAGS =	\
 	-I$(top_srcdir)/ixml/inc \
 	-I$(top_srcdir)/upnpd \
 	-I$(top_srcdir)/upnpd/common \
-	-I$(top_srcdir)/upnpd/common/upnp
+	-I$(top_srcdir)/upnpd/common/upnp \
+	-I$(top_srcdir)/upnpd/common/uuid
 
 if ENABLE_MEDIASERVER
 libcommon_a_SOURCES += mediaserver.c
@@ -46,5 +47,4 @@ if ENABLE_CONTROLLER
 libcommon_a_SOURCES += \
 	client.c \
 	controller.c
-libcommon_a_CFLAGS  += $(LIBUPNP_CFLAGS)
 endif

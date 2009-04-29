@@ -21,12 +21,6 @@
 #include <sys/time.h>
 #include <pthread.h>
 
-#if defined(ENABLE_CONTROLLER)
-#include <upnp/upnp.h>
-#include <upnp/upnptools.h>
-#include <upnp/ithread.h>
-#endif
-
 #include "upnp.h"
 #include "common.h"
 

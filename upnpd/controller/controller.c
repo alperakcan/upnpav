@@ -18,15 +18,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+#include <inttypes.h>
 
-#include <upnp/upnp.h>
-#include <upnp/upnptools.h>
-#include <upnp/ithread.h>
-
+#include "upnp.h"
 #include "upnpd.h"
 #include "common.h"
+
 #include "controller.h"
 
 extern controller_gui_t controller_console;

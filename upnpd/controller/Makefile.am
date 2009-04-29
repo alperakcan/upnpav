@@ -7,6 +7,7 @@ libcontroller_a_SOURCES =	\
 
 libcontroller_a_CFLAGS =	\
 	-Wall	\
-	-I$(top_srcdir)/upnpd	\
-	-I$(top_srcdir)/upnpd/common	\
-	$(LIBUPNP_CFLAGS)
+	-I$(top_srcdir)/ixml/inc \
+	-I$(top_srcdir)/upnpd \
+	-I$(top_srcdir)/upnpd/common \
+	-I$(top_srcdir)/upnpd/common/upnp

@@ -41,16 +41,19 @@ struct ssdp_s {
 	pthread_cond_t cond;
 	pthread_mutex_t mutex;
 	list_t devices;
+	list_t requests;
+	int (*callback) (void *cookie, ssdp_event_t *event);
+	void *cookie;
 };
 
 typedef enum {
 	SSDP_TYPE_UNKNOWN,
 	SSDP_TYPE_NOTIFY,
 	SSDP_TYPE_MSEARCH,
+	SSDP_TYPE_ANSWER,
 } ssdp_type_t;
 
 typedef struct ssdp_request_notify_s {
-	ssdp_type_t request;
 	char *host;
 	char *nt;
 	char *nts;
@@ -62,7 +65,6 @@ typedef struct ssdp_request_notify_s {
 } ssdp_request_notify_t;
 
 typedef struct ssdp_request_search_s {
-	ssdp_type_t request;
 	char *s;
 	char *host;
 	char *man;
@@ -70,10 +72,22 @@ typedef struct ssdp_request_search_s {
 	char *mx;
 } ssdp_request_search_t;
 
-typedef union ssdp_request_u {
-	ssdp_type_t request;
-	ssdp_request_notify_t notify;
-	ssdp_request_search_t search;
+typedef struct ssdp_request_answer_s {
+	char *usn;
+	char *st;
+	char *location;
+	char *server;
+	char *cachecontrol;
+} ssdp_request_answer_t;
+
+typedef struct ssdp_request_s {
+	list_t head;
+	ssdp_type_t type;
+	union {
+		ssdp_request_notify_t notify;
+		ssdp_request_search_t search;
+		ssdp_request_answer_t answer;
+	} request;
 } ssdp_request_t;
 
 struct ssdp_device_s {
@@ -89,7 +103,7 @@ struct ssdp_device_s {
 static const char *ssdp_ip = "239.255.255.250";
 static const unsigned short ssdp_port = 1900;
 static const unsigned int ssdp_buffer_length = 2500;
-static const unsigned int ssdp_recv_timeout = 10000;
+static const unsigned int ssdp_recv_timeout = 2000;
 static const unsigned int ssdp_ttl = 4;
 static const unsigned int ssdp_pause = 100;
 
@@ -167,35 +181,36 @@ static ssdp_request_t * ssdp_request_init (void)
 		return NULL;
 	}
 	memset(r, 0, sizeof(ssdp_request_t));
-	r->request = SSDP_TYPE_UNKNOWN;
+	r->type = SSDP_TYPE_UNKNOWN;
 	return r;
-}
-
-static int ssdp_request_uninit_notify (ssdp_request_notify_t *n)
-{
-	free(n->al);
-	free(n->location);
-	free(n->server);
-	free(n->cachecontrol);
-	free(n->host);
-	free(n->nt);
-	free(n->nts);
-	free(n->usn);
-	return 0;
 }
 
 static int ssdp_request_uninit (ssdp_request_t *r)
 {
-	switch (r->request) {
+	switch (r->type) {
 		case SSDP_TYPE_MSEARCH:
-			free(r->search.host);
-			free(r->search.man);
-			free(r->search.mx);
-			free(r->search.s);
-			free(r->search.st);
+			free(r->request.search.host);
+			free(r->request.search.man);
+			free(r->request.search.mx);
+			free(r->request.search.s);
+			free(r->request.search.st);
 			break;
 		case SSDP_TYPE_NOTIFY:
-			ssdp_request_uninit_notify(&r->notify);
+			free(r->request.notify.al);
+			free(r->request.notify.location);
+			free(r->request.notify.server);
+			free(r->request.notify.cachecontrol);
+			free(r->request.notify.host);
+			free(r->request.notify.nt);
+			free(r->request.notify.nts);
+			free(r->request.notify.usn);
+			break;
+		case SSDP_TYPE_ANSWER:
+			free(r->request.answer.location);
+			free(r->request.answer.server);
+			free(r->request.answer.cachecontrol);
+			free(r->request.answer.usn);
+			free(r->request.answer.st);
 			break;
 		case SSDP_TYPE_UNKNOWN:
 			break;
@@ -206,29 +221,36 @@ static int ssdp_request_uninit (ssdp_request_t *r)
 
 static int ssdp_request_valid (ssdp_request_t *request)
 {
-	switch (request->request) {
+	switch (request->type) {
 		case SSDP_TYPE_MSEARCH:
-			if (request->search.st == NULL ||
-			    request->search.man == NULL) {
+			if (request->request.search.st == NULL ||
+			    request->request.search.man == NULL) {
 				return -1;
 			}
-			if (strcasecmp(request->search.man, "ssdp:discover") == 0) {
+			if (strcasecmp(request->request.search.man, "ssdp:discover") == 0) {
 				return 0;
 			}
 			break;
 		case SSDP_TYPE_NOTIFY:
-			if (request->notify.nt == NULL ||
-			    request->notify.nts == NULL ||
-			    request->notify.usn == NULL ||
-			    (request->notify.al == NULL && request->notify.location == NULL)) {
+			if (request->request.notify.nt == NULL ||
+			    request->request.notify.nts == NULL ||
+			    request->request.notify.usn == NULL ||
+			    (request->request.notify.al == NULL && request->request.notify.location == NULL)) {
 				return -1;
 			}
-			if (strcasecmp(request->notify.nts, "ssdp:alive") == 0) {
+			if (strcasecmp(request->request.notify.nts, "ssdp:alive") == 0) {
 				return 0;
-			} else if (strcasecmp(request->notify.nts, "ssdp:byebye") == 0) {
+			} else if (strcasecmp(request->request.notify.nts, "ssdp:byebye") == 0) {
 				return 0;
 			}
 			break;
+		case SSDP_TYPE_ANSWER:
+			if (request->request.answer.st == NULL ||
+			    request->request.answer.location == NULL ||
+			    request->request.answer.usn == NULL) {
+				return-1;
+			}
+			return 0;
 		default:
 			break;
 	}
@@ -257,47 +279,67 @@ static ssdp_request_t * ssdp_parse (char *buffer, int length)
 			ptr++;
 		}
 		if (strncasecmp(line, "M-SEARCH", 8) == 0) {
-			if (request->request != SSDP_TYPE_UNKNOWN) {
+			if (request->type != SSDP_TYPE_UNKNOWN) {
 				free(request);
 				return NULL;
 			}
-			request->request = SSDP_TYPE_MSEARCH;
+			request->type = SSDP_TYPE_MSEARCH;
 		} else if (strncasecmp(line, "NOTIFY", 6) == 0) {
-			if (request->request != SSDP_TYPE_UNKNOWN) {
+			if (request->type != SSDP_TYPE_UNKNOWN) {
 				free(request);
 				return NULL;
 			}
-			request->request = SSDP_TYPE_NOTIFY;
-		}
-		if (request->request == SSDP_TYPE_NOTIFY) {
-			if (strncasecmp(line, "Host:", 5) == 0) {
-				request->notify.host = strdup(ssdp_trim(line + 5));
-			} else if (strncasecmp(line, "NT:", 3) == 0) {
-				request->notify.nt = strdup(ssdp_trim(line + 3));
-			} else if (strncasecmp(line, "NTS:", 4) == 0) {
-				request->notify.nts = strdup(ssdp_trim(line + 4));
-			} else if (strncasecmp(line, "USN:", 4) == 0) {
-				request->notify.usn = strdup(ssdp_trim(line + 4));
-			} else if (strncasecmp(line, "AL:", 3) == 0) {
-				request->notify.al = strdup(ssdp_trim(line + 3));
-			} else if (strncasecmp(line, "LOCATION:", 9) == 0) {
-				request->notify.location = strdup(ssdp_trim(line + 9));
-			} else if (strncasecmp(line, "Cache-Control:", 14) == 0) {
-				request->notify.cachecontrol = strdup(ssdp_trim(line + 14));
-			} else if (strncasecmp(line, "Server:", 7) == 0) {
-				request->notify.server = strdup(ssdp_trim(line + 7));
+			request->type = SSDP_TYPE_NOTIFY;
+		} else if (strncasecmp(line, "HTTP/1.1", 8) == 0 &&
+			   strstr(line, "200") != NULL &&
+			   strcasestr(line, "OK") != NULL) {
+			if (request->type != SSDP_TYPE_UNKNOWN) {
+				free(request);
+				return NULL;
 			}
-		} else if (request->request == SSDP_TYPE_MSEARCH) {
+			request->type = SSDP_TYPE_ANSWER;
+		}
+		if (request->type == SSDP_TYPE_NOTIFY) {
+			if (strncasecmp(line, "Host:", 5) == 0) {
+				request->request.notify.host = strdup(ssdp_trim(line + 5));
+			} else if (strncasecmp(line, "NT:", 3) == 0) {
+				request->request.notify.nt = strdup(ssdp_trim(line + 3));
+			} else if (strncasecmp(line, "NTS:", 4) == 0) {
+				request->request.notify.nts = strdup(ssdp_trim(line + 4));
+			} else if (strncasecmp(line, "USN:", 4) == 0) {
+				request->request.notify.usn = strdup(ssdp_trim(line + 4));
+			} else if (strncasecmp(line, "AL:", 3) == 0) {
+				request->request.notify.al = strdup(ssdp_trim(line + 3));
+			} else if (strncasecmp(line, "LOCATION:", 9) == 0) {
+				request->request.notify.location = strdup(ssdp_trim(line + 9));
+			} else if (strncasecmp(line, "Cache-Control:", 14) == 0) {
+				request->request.notify.cachecontrol = strdup(ssdp_trim(line + 14));
+			} else if (strncasecmp(line, "Server:", 7) == 0) {
+				request->request.notify.server = strdup(ssdp_trim(line + 7));
+			}
+		} else if (request->type == SSDP_TYPE_MSEARCH) {
 			if (strncasecmp(line, "S:", 2) == 0) {
-				request->search.s = strdup(ssdp_trim(line + 2));
+				request->request.search.s = strdup(ssdp_trim(line + 2));
 			} else if (strncasecmp(line, "Host:", 5) == 0) {
-				request->search.host = strdup(ssdp_trim(line + 5));
+				request->request.search.host = strdup(ssdp_trim(line + 5));
 			} else if (strncasecmp(line, "Man:", 4) == 0) {
-				request->search.man = strdup(ssdp_trim(line + 4));
+				request->request.search.man = strdup(ssdp_trim(line + 4));
 			} else if (strncasecmp(line, "ST:", 3) == 0) {
-				request->search.st = strdup(ssdp_trim(line + 3));
+				request->request.search.st = strdup(ssdp_trim(line + 3));
 			} else if (strncasecmp(line, "MX:", 3) == 0) {
-				request->search.mx = strdup(ssdp_trim(line + 3));
+				request->request.search.mx = strdup(ssdp_trim(line + 3));
+			}
+		} else if (request->type == SSDP_TYPE_ANSWER) {
+			if (strncasecmp(line, "USN:", 4) == 0) {
+				request->request.answer.usn = strdup(ssdp_trim(line + 4));
+			} else if (strncasecmp(line, "ST:", 3) == 0) {
+				request->request.answer.st = strdup(ssdp_trim(line + 3));
+			} else if (strncasecmp(line, "LOCATION:", 9) == 0) {
+				request->request.answer.location = strdup(ssdp_trim(line + 9));
+			} else if (strncasecmp(line, "Server:", 7) == 0) {
+				request->request.answer.server = strdup(ssdp_trim(line + 7));
+			} else if (strncasecmp(line, "Cache-Control:", 14) == 0) {
+				request->request.answer.cachecontrol = strdup(ssdp_trim(line + 14));
 			}
 		}
 	}
@@ -310,12 +352,15 @@ static ssdp_request_t * ssdp_parse (char *buffer, int length)
 
 static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, struct sockaddr_in *sender)
 {
+	char *ptr;
 	char *buffer;
+	ssdp_event_t e;
 	ssdp_device_t *d;
+	memset(&e, 0, sizeof(ssdp_event_t));
 	pthread_mutex_lock(&ssdp->mutex);
-	switch (request->request) {
+	switch (request->type) {
 		case SSDP_TYPE_MSEARCH:
-			if (strcasecmp(request->search.st, "upnp:rootdevice") == 0) {
+			if (strcasecmp(request->request.search.st, "upnp:rootdevice") == 0) {
 				list_for_each_entry(d, &ssdp->devices, head) {
 					buffer = ssdp_advertise_buffer(d, 1);
 					if (buffer != NULL) {
@@ -325,7 +370,7 @@ static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, struct s
 				}
 			} else {
 				list_for_each_entry(d, &ssdp->devices, head) {
-					if (strncasecmp(d->nt, request->search.st, strlen(request->search.st)) == 0) {
+					if (strncasecmp(d->nt, request->request.search.st, strlen(request->request.search.st)) == 0) {
 						buffer = ssdp_advertise_buffer(d, 1);
 						if (buffer != NULL) {
 							ssdp_advertise_send(buffer, sender);
@@ -336,9 +381,42 @@ static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, struct s
 			}
 			break;
 		case SSDP_TYPE_NOTIFY:
+			if (strcasecmp(request->request.notify.nts, "ssdp:alive") == 0) {
+				e.type = SSDP_EVENT_TYPE_NOTIFY;
+			} else if (strcasecmp(request->request.notify.nts, "ssdp:byebye") == 0) {
+				e.type = SSDP_EVENT_TYPE_BYEBYE;
+			}
+			e.event.notify.device = request->request.notify.nt;
+			e.event.notify.location = request->request.notify.location;
+			e.event.notify.expires = 100;
+			ptr = strstr(request->request.notify.usn, "::");
+			if (ptr != NULL) {
+				*ptr = '\0';
+			}
+			e.event.notify.uuid = request->request.notify.usn;
+			pthread_mutex_unlock(&ssdp->mutex);
+			if (ssdp->callback != NULL) {
+				ssdp->callback(ssdp->cookie, &e);
+			}
+			pthread_mutex_lock(&ssdp->mutex);
+			break;
+		case SSDP_TYPE_ANSWER:
+			e.type = SSDP_EVENT_TYPE_NOTIFY;
+			e.event.notify.device = request->request.answer.st;
+			e.event.notify.location = request->request.answer.location;
+			e.event.notify.expires = 100;
+			ptr = strstr(request->request.answer.usn, "::");
+			if (ptr != NULL) {
+				*ptr = '\0';
+			}
+			e.event.notify.uuid = request->request.answer.usn;
+			pthread_mutex_unlock(&ssdp->mutex);
+			if (ssdp->callback != NULL) {
+				ssdp->callback(ssdp->cookie, &e);
+			}
+			pthread_mutex_lock(&ssdp->mutex);
 			break;
 		case SSDP_TYPE_UNKNOWN:
-		default:
 			break;
 	}
 	pthread_mutex_unlock(&ssdp->mutex);
@@ -366,6 +444,7 @@ static void * ssdp_thread_loop (void *arg)
 	char *buffer;
 	ssdp_t *ssdp;
 	ssdp_device_t *d;
+	ssdp_request_t *r;
 	struct pollfd pfd;
 	socklen_t sender_length;
 	ssdp_request_t *request;
@@ -406,6 +485,14 @@ static void * ssdp_thread_loop (void *arg)
 		}
 		times[0] = __gettimeofday();
 		pthread_mutex_lock(&ssdp->mutex);
+		while (list_count(&ssdp->requests) != 0) {
+			r = list_first_entry(&ssdp->requests, ssdp_request_t, head);
+			list_del(&r->head);
+			pthread_mutex_unlock(&ssdp->mutex);
+			ssdp_request_handler(ssdp, r, NULL);
+			pthread_mutex_lock(&ssdp->mutex);
+			ssdp_request_uninit(r);
+		}
 		if (ssdp->running == 0 || ssdp->socket < 0) {
 			pthread_mutex_unlock(&ssdp->mutex);
 			break;
@@ -599,6 +686,69 @@ static char * ssdp_byebye_buffer (ssdp_device_t *device)
 	return buffer;
 }
 
+int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
+{
+	int r;
+	int t;
+	int ret;
+	char *data;
+	char *buffer;
+	ssdp_request_t *request;
+	const char *format_search =
+		"M-SEARCH * HTTP/1.1\r\n"
+		"HOST: %s:%d\r\n"
+		"MAN: ssdp:discover\r\n"
+		"MX: %d\r\n"
+		"ST: %s\r\n"
+		"\r\n";
+	int ttl;
+	int sock;
+	int socklen;
+	struct sockaddr_in dest;
+	memset(&dest, 0, sizeof(dest));
+	dest.sin_family = AF_INET;
+	dest.sin_addr.s_addr = inet_addr(ssdp_ip);
+	dest.sin_port = htons(ssdp_port);
+	ret = asprintf(
+		&buffer,
+		format_search,
+		ssdp_ip,
+		ssdp_port,
+		timeout,
+		device);
+	if (ret < 0) {
+		return -1;
+	}
+	sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock < 0) {
+		free(buffer);
+		return -1;
+	}
+	ttl = ssdp_ttl;
+	socklen = sizeof(struct sockaddr_in);
+	setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, (char *) &ttl, sizeof(int));
+	data = malloc(sizeof(char) * 4096);
+	for (t = 0; t < timeout; t++) {
+		ssdp_advertise_send(buffer, &dest);
+		sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *) &dest, socklen);
+		usleep(ssdp_pause * 1000);
+		r = recvfrom(sock, data, 4096, MSG_DONTWAIT, NULL, NULL);
+		if (r > 0) {
+			data[r] = '\0';
+			request = ssdp_parse(data, r);
+			if (request != NULL) {
+				pthread_mutex_lock(&ssdp->mutex);
+				list_add_tail(&request->head, &ssdp->requests);
+				pthread_mutex_unlock(&ssdp->mutex);
+			}
+		}
+	}
+	close(sock);
+	free(buffer);
+	free(data);
+	return 0;
+}
+
 int ssdp_advertise (ssdp_t *ssdp)
 {
 	char *buffer;
@@ -663,7 +813,7 @@ int ssdp_register (ssdp_t *ssdp, char *nt, char *usn, char *location, char *serv
 	return ret;
 }
 
-ssdp_t * ssdp_init (void)
+ssdp_t * ssdp_init (int (*callback) (void *cookie, ssdp_event_t *event), void *cookie)
 {
 	ssdp_t *ssdp;
 	ssdp = (ssdp_t *) malloc(sizeof(ssdp_t));
@@ -671,7 +821,10 @@ ssdp_t * ssdp_init (void)
 		return NULL;
 	}
 	memset(ssdp, 0, sizeof(ssdp_t));
+	ssdp->cookie = cookie;
+	ssdp->callback = callback;
 	list_init(&ssdp->devices);
+	list_init(&ssdp->requests);
 	if (ssdp_init_server(ssdp) != 0) {
 		free(ssdp);
 		return NULL;
@@ -682,6 +835,7 @@ ssdp_t * ssdp_init (void)
 int ssdp_uninit (ssdp_t *ssdp)
 {
 	ssdp_device_t *d, *dn;
+	ssdp_request_t *r, *rn;
 	ssdp_byebye(ssdp);
 	pthread_mutex_lock(&ssdp->mutex);
 	ssdp->running = 0;
@@ -693,6 +847,10 @@ int ssdp_uninit (ssdp_t *ssdp)
 	list_for_each_entry_safe(d, dn, &ssdp->devices, head) {
 		list_del(&d->head);
 		ssdp_device_uninit(d);
+	}
+	list_for_each_entry_safe(r, rn, &ssdp->devices, head) {
+		list_del(&r->head);
+		ssdp_request_uninit(r);
 	}
 	pthread_mutex_unlock(&ssdp->mutex);
 	pthread_mutex_destroy(&ssdp->mutex);

@@ -112,12 +112,40 @@ typedef struct gena_callbacks_s {
 	gena_callback_gena_t gena;
 } gena_callbacks_t;
 
+typedef enum {
+	SSDP_EVENT_TYPE_UNKNOWN,
+	SSDP_EVENT_TYPE_NOTIFY,
+	SSDP_EVENT_TYPE_BYEBYE,
+} ssdp_event_type_t;
+
+typedef struct ssdp_event_notify_s {
+	char *device;
+	char *location;
+	char *uuid;
+	int expires;
+} ssdp_event_notify_t;
+
+typedef struct ssdp_event_byebye_s {
+	char *device;
+	char *uuid;
+} ssdp_event_byebye_t;
+
+typedef struct ssdp_event_s {
+	ssdp_event_type_t type;
+	union {
+		ssdp_event_notify_t notify;
+		ssdp_event_byebye_t byebye;
+	} event;
+} ssdp_event_t;
+
+int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout);
 int ssdp_advertise (ssdp_t *ssdp);
 int ssdp_register (ssdp_t *ssdp, char *nt, char *usn, char *location, char *server, int age);
-ssdp_t * ssdp_init (void);
+ssdp_t * ssdp_init (int (*callback) (void *cookie, ssdp_event_t *event), void *cookie);
 int ssdp_uninit (ssdp_t *ssdp);
 
-int gena_send_recv (gena_t *gena, const char *host, const unsigned short port, const char *header, const char *data);
+char * gena_download(gena_t *gena, const char *host, const unsigned short port, const char *path);
+char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port, const char *header, const char *data);
 unsigned short gena_getport (gena_t *gena);
 const char * gena_getaddress (gena_t *gena);
 gena_t * gena_init (char *address, unsigned short port, gena_callbacks_t *callbacks);
@@ -151,9 +179,11 @@ typedef enum {
 } upnp_error_type_t;
 
 typedef enum {
-	UPNP_EVENT_TYPE_UNKNOWN           = 0x00,
-	UPNP_EVENT_TYPE_SUBSCRIBE_REQUEST = 0x01,
-	UPNP_EVENT_TYPE_ACTION            = 0x02,
+	UPNP_EVENT_TYPE_UNKNOWN              = 0x00,
+	UPNP_EVENT_TYPE_SUBSCRIBE_REQUEST    = 0x01,
+	UPNP_EVENT_TYPE_ACTION               = 0x02,
+	UPNP_EVENT_TYPE_ADVERTISEMENT_ALIVE  = 0x03,
+	UPNP_EVENT_TYPE_ADVERTISEMENT_BYEBYE = 0x04,
 } upnp_event_type_t;
 
 typedef struct upnp_event_subscribe_s {
@@ -171,13 +201,28 @@ typedef struct upnp_event_action_s {
 	IXML_Document *response;
 } upnp_event_action_t;
 
+typedef struct upnp_event_advertisement_s {
+	char *device;
+	char *location;
+	char *uuid;
+	int expires;
+} upnp_event_advertisement_t;
+
 typedef struct upnp_event_s {
 	upnp_event_type_t type;
 	union {
 		upnp_event_subscribe_t subscribe;
 		upnp_event_action_t action;
+		upnp_event_advertisement_t advertisement;
 	} event;
 } upnp_event_t;
+
+char * upnp_download (upnp_t *upnp, const char *location);
+IXML_Document * upnp_makeaction (upnp_t *upnp, const char *actionname, const char *controlurl, const char *servicetype, const int param_count, char **param_name, char **param_val);
+int upnp_search (upnp_t *upnp, int timeout, const char *uuid);
+int upnp_subscribe (upnp_t *upnp, const char *serviceurl, int *timeout, char **sid);
+int upnp_resolveurl (const char *baseurl, const char *relativeurl, char *absoluteurl);
+int upnp_register_client (upnp_t *upnp, int (*callback) (void *cookie, upnp_event_t *), void *cookie);
 
 int upnp_advertise (upnp_t *upnp);
 int upnp_register_device (upnp_t *upnp, const char *description, int (*callback) (void *cookie, upnp_event_t *), void *cookie);
