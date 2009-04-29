@@ -29,7 +29,7 @@
 #include <ctype.h>
 #include <assert.h>
 
-#include "upnp.h"
+#include "gena.h"
 #include "list.h"
 
 #define debugf(a...) { \
