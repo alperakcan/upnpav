@@ -25,6 +25,7 @@ int op_getattr (const char *path, struct stat *stbuf)
 {
 	char *d;
 	char *o;
+	char *p;
 	time_t t;
 	entry_t *e;
 	debugfs("enter");
@@ -38,13 +39,29 @@ int op_getattr (const char *path, struct stat *stbuf)
 		stbuf->st_atime = t;
 		stbuf->st_mtime = t;
 		stbuf->st_ctime = t;
-	} else if (strstr(path, "/.metadata") != NULL) {
+	} else if (strcmp(path, "/.devices") == 0) {
 		stbuf->st_mode = S_IFDIR | 0755;
 		stbuf->st_nlink = 2;
 		stbuf->st_size = 512;
 		stbuf->st_atime = t;
 		stbuf->st_mtime = t;
 		stbuf->st_ctime = t;
+	} else if ((p = strstr(path, "/.metadata")) != NULL) {
+		if (strcmp(p, "/.metadata") == 0) {
+			stbuf->st_mode = S_IFDIR | 0755;
+			stbuf->st_nlink = 2;
+			stbuf->st_size = 512;
+			stbuf->st_atime = t;
+			stbuf->st_mtime = t;
+			stbuf->st_ctime = t;
+		} else {
+			stbuf->st_mode = S_IFREG | 0444;
+			stbuf->st_nlink = 1;
+			stbuf->st_size = 0;
+			stbuf->st_atime = t;
+			stbuf->st_mtime = t;
+			stbuf->st_ctime = t;
+		}
 	} else {
 		if (do_findpath(path, &d, &o) != 0) {
 			return -ENOENT;
