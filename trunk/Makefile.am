@@ -1,3 +1,0 @@
-
-SUBDIRS  = ixml
-SUBDIRS += upnpd
