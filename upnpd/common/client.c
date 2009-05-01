@@ -38,9 +38,9 @@ static int client_variable_uninit (client_variable_t *variable)
 static int client_service_uninit (client_service_t *service)
 {
 	client_variable_t *variable;
-	while (service->variables != NULL) {
-		variable = service->variables;
-		service->variables = variable->next;
+	client_variable_t *variablen;
+	list_for_each_entry_safe(variable, variablen, &service->variables, head) {
+		list_del(&variable->head);
 		client_variable_uninit(variable);
 	}
 	free(service->type);
@@ -85,6 +85,7 @@ static client_service_t * client_service_init (IXML_Document *desc, char *locati
 				break;
 			}
 			memset(service, 0, sizeof(client_service_t));
+			list_init(&service->variables);
 			service->type = strdup(servicetype);
 			service->id = xml_get_first_element_item(servicedesc, "serviceId");
 			relcontrolURL = xml_get_first_element_item(servicedesc, "controlURL");
@@ -145,15 +146,14 @@ static client_service_t * client_service_init (IXML_Document *desc, char *locati
 static int client_device_uninit (client_device_t *device)
 {
 	client_service_t *service;
-	while (device->services != NULL) {
-		service = device->services;
-		device->services = service->next;
+	client_service_t *servicen;
+	list_for_each_entry_safe(service, servicen, &device->services, head) {
+		list_del(&service->head);
 		client_service_uninit(service);
 	}
 	free(device->name);
 	free(device->type);
 	free(device->uuid);
-	free(device->friendlyname);
 	free(device);
 	return 0;
 }
@@ -173,50 +173,16 @@ static client_device_t * client_device_init (char *type, char *uuid, char *frien
 	memset(device, 0, sizeof(client_device_t));
 	device->type = strdup(type);
 	device->uuid = strdup(uuid);
-	device->friendlyname = strdup(friendlyname);
 	device->name = strdup(friendlyname);
 	device->expiretime = expiretime;
 	if (device->type == NULL ||
 	    device->uuid == NULL ||
-	    device->friendlyname == NULL ||
 	    device->name == NULL) {
 		client_device_uninit(device);
 		return NULL;
 	}
+	list_init(&device->services);
 	return device;
-}
-
-static int client_device_add (client_t *client, client_device_t *device)
-{
-	device->next = client->devices;
-	if (device->next != NULL) {
-		device->next->prev = device;
-	}
-	client->devices = device;
-	return 0;
-}
-
-static int client_device_del (client_t *client, client_device_t *device)
-{
-	if (device->prev != NULL) {
-		device->prev->next = device->next;
-	} else {
-		client->devices = device->next;
-	}
-	if (device->next != NULL) {
-		device->next->prev = device->prev;
-	}
-	return 0;
-}
-
-static int client_service_add (client_device_t *device, client_service_t *service)
-{
-	service->next = device->services;
-	if (service->next != NULL) {
-		service->next->prev = service;
-	}
-	device->services = service;
-	return 0;
 }
 
 static int client_service_subscribe (client_t *client, client_service_t *service)
@@ -254,13 +220,11 @@ static int client_event_advertisement_alive (client_t *client, upnp_event_advert
 	}
 	return 0;
 found:
-	device = client->devices;
-	while (device != NULL) {
+	list_for_each_entry(device, &client->devices, head) {
 		if (strcmp(advertisement->uuid, device->uuid) == 0) {
 			device->expiretime = advertisement->expires;
 			return 0;
 		}
-		device = device->next;
 	}
 	buffer = upnp_download(upnp, advertisement->location);
 	if (buffer == NULL) {
@@ -290,7 +254,7 @@ found:
 	for (s = 0; description->services[s] != NULL; s++) {
 		service = client_service_init(desc, advertisement->location, description->services[s]);
 		if (service != NULL) {
-			client_service_add(device, service);
+			list_add(&service->head, &device->services);
 			if (client_service_subscribe(client, service) != 0) {
 				debugf("client_service_subscribe(service); failed");
 				client_device_uninit(device);
@@ -298,7 +262,7 @@ found:
 			}
 		}
 	}
-	client_device_add(client, device);
+	list_add_tail(&device->head, &client->devices);
 	debugf("added '%s' to device list", device->uuid);
 out:	free(uuid);
 	free(devicetype);
@@ -308,8 +272,27 @@ out:	free(uuid);
 	return 0;
 }
 
-static void client_event_advertisement_byebye (client_t *client, upnp_event_advertisement_t *advertisement)
+static int client_event_advertisement_byebye (client_t *client, upnp_event_advertisement_t *advertisement)
 {
+	int d;
+	client_device_t *device;
+	client_device_t *devicen;
+	device_description_t *description;
+	for (d = 0; (description = client->descriptions[d]) != NULL; d++) {
+		if (strcmp(advertisement->device, description->device) == 0) {
+			goto found;
+		}
+	}
+	return 0;
+found:
+	list_for_each_entry_safe(device, devicen, &client->devices, head) {
+		if (strcmp(advertisement->uuid, device->uuid) == 0) {
+			list_del(&device->head);
+			debugf("removed '%s' from device list", device->uuid);
+			client_device_uninit(device);
+		}
+	}
+	return 0;
 }
 
 static int client_event_handler (void *cookie, upnp_event_t *event)
@@ -337,9 +320,9 @@ static void * client_timer (void *arg)
 {
 	int stamp;
 	client_t *client;
-	client_device_t *tmp;
-	client_device_t *device;
 	struct timespec tspec;
+	client_device_t *device;
+	client_device_t *devicen;
 
 	client = (client_t *) arg;
 	stamp = 30;
@@ -359,19 +342,16 @@ static void * client_timer (void *arg)
 			goto out;
 		}
 		debugf("checking for expire times");
-		device = client->devices;
-		while (device != NULL) {
+		list_for_each_entry_safe(device, devicen, &client->devices, head) {
 			device->expiretime -= stamp;
-			tmp = device;
-			device = device->next;
-			if (tmp->expiretime < 0) {
-				client_device_del(client, tmp);
-				debugf("removed '%s' from device list", tmp->uuid);
-				client_device_uninit(tmp);
-			} else if (tmp->expiretime < stamp) {
-				debugf("sending search request for '%s'", tmp->uuid);
-				if (upnp_search(upnp, 5, tmp->uuid) != 0) {
-					debugf("error sending search request for %s", tmp->uuid);
+			if (device->expiretime < 0) {
+				list_del(&device->head);
+				debugf("removed '%s' from device list", device->uuid);
+				client_device_uninit(device);
+			} else if (device->expiretime < stamp) {
+				debugf("sending search request for '%s'", device->uuid);
+				if (upnp_search(upnp, 5, device->uuid) != 0) {
+					debugf("error sending search request for %s", device->uuid);
 				}
 			}
 		}
@@ -399,7 +379,9 @@ int client_init (client_t *client)
 		pthread_mutex_destroy(&client->mutex);
 		goto out;
 	}
-	debugf("initilizing upnp stack");
+	debugf("initializing devices list");
+	list_init(&client->devices);
+	debugf("initializing upnp stack");
 	upnp = upnp_init(client->interface, 0);
 	if (upnp == NULL) {
 		debugf("upnp_init() failed");
@@ -442,6 +424,7 @@ int client_uninit (client_t *client)
 {
 	int ret;
 	client_device_t *device;
+	client_device_t *devicen;
 	ret = -1;
 	debugf("uninitializing client '%s'", client->name);
 	pthread_mutex_lock(&client->mutex);
@@ -455,9 +438,8 @@ int client_uninit (client_t *client)
 	}
 	debugf("joining timer thread");
 	pthread_join(client->timer_thread, NULL);
-	while (client->devices != NULL) {
-		device = client->devices;
-		client->devices = device->next;
+	list_for_each_entry_safe(device, devicen, &client->devices, head) {
+		list_del(&device->head);
 		client_device_uninit(device);
 	}
 	debugf("unregistering client '%s'", client->name);
@@ -473,21 +455,18 @@ int client_refresh (client_t *client, int remove)
 {
 	int d;
 	int ret;
-	client_device_t *tmp;
 	client_device_t *device;
+	client_device_t *devicen;
 	device_description_t *description;
 	ret = 0;
 	pthread_mutex_lock(&client->mutex);
 	debugf("refreshing device list");
 	if (remove != 0) {
 		debugf("cleaning device list");
-		device = client->devices;
-		while (device != NULL) {
-			tmp = device;
-			device = device->next;
-			client_device_uninit(tmp);
+		list_for_each_entry_safe(device, devicen, &client->devices, head) {
+			list_del(&device->head);
+			client_device_uninit(device);
 		}
-		client->devices = NULL;
 	}
 	for (d = 0; (description = client->descriptions[d]) != NULL; d++) {
 		if (upnp_search(upnp, 5, description->device) != 0) {
@@ -511,24 +490,24 @@ IXML_Document * client_action (client_t *client, char *devicename, char *service
 	actionNode = NULL;
 
 	pthread_mutex_lock(&client->mutex);
-
-	for (device = client->devices; device != NULL; device = device->next) {
+	list_for_each_entry(device, &client->devices, head) {
 		if (strcmp(device->name, devicename) == 0) {
 			goto found_device;
 		}
 	}
 	pthread_mutex_unlock(&client->mutex);
 	return NULL;
+
 found_device:
-	for (service = device->services; service != NULL; service = service->next) {
+	list_for_each_entry(service, &device->services, head) {
 		if (strcmp(service->type, servicetype) == 0) {
 			goto found_service;
 		}
 	}
 	pthread_mutex_unlock(&client->mutex);
 	return NULL;
-found_service:
 
+found_service:
 	response = upnp_makeaction(upnp, actionname, service->controlurl, service->type, param_count, param_name, param_val);
 	if (response == NULL) {
 		debugf("upnp_makeaction() failed");
@@ -536,5 +515,6 @@ found_service:
 		return NULL;
 	}
 	pthread_mutex_unlock(&client->mutex);
+
 	return response;
 }

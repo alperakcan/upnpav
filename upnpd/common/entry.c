@@ -202,6 +202,7 @@ char * entryid_path_from_id (const char *id)
 	for (i = 0; i < l; i++) {
 		path[i] = (entryid_convert(id[i * 2]) << 0x04) | entryid_convert(id[i * 2 + 1]);
 	}
+	debugf("entry path '%s'", path);
 	return path;
 }
 
@@ -268,9 +269,11 @@ static char * entryid_parentid_from_path (const char *path)
 
 entry_t * entry_didl (const unsigned int magic, const char *path)
 {
+	unsigned int m;
 	entry_t *entry;
 	const char *mime;
 	struct stat stbuf;
+	m = 0;
 	entry = (entry_t *) malloc(sizeof(entry_t));
 	if (entry == NULL) {
 		return NULL;
@@ -296,6 +299,18 @@ entry_t * entry_didl (const unsigned int magic, const char *path)
 		return entry;
 	} else if (S_ISREG(stbuf.st_mode)) {
 		if (magic == 0) {
+#if defined(HAVE_MAGIC)
+			m = (unsigned int) magic_open(MAGIC_SYMLINK | MAGIC_MIME | MAGIC_ERROR);
+			if (m != 0) {
+				if (magic_load((magic_t) m, NULL) != 0) {
+					debugf("magic_load() failed");
+					magic_close((magic_t) m);
+					m = 0;
+				}
+			}
+#endif
+		}
+		if (magic == 0 && m == 0) {
 			if (fnmatch("*.mp3", path, FNM_CASEFOLD) == 0) {
 				mime = "audio/mpeg";
 			} else if (fnmatch("*.mpg", path, FNM_CASEFOLD) == 0) {
@@ -307,7 +322,7 @@ entry_t * entry_didl (const unsigned int magic, const char *path)
 			}
 		} else {
 #if defined(HAVE_MAGIC)
-			mime = magic_file((magic_t) magic, path);
+			mime = magic_file((magic_t) ((magic == 0) ? m : magic), path);
 #else
 			mime = "unknown";
 #endif
@@ -345,7 +360,6 @@ entry_t * entry_didl (const unsigned int magic, const char *path)
 			entry->didl.upnp.musictrack.audioitem.longdescription = strdup("");
 			asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
 			entry->didl.res.size = stbuf.st_size;
-			return entry;
 		} else if (strncmp(mime, "video/", 6) == 0) {
 			entry->didl.entryid = entryid_init_value(path);
 			if (entry->didl.entryid == NULL) {
@@ -375,7 +389,6 @@ entry_t * entry_didl (const unsigned int magic, const char *path)
 			entry->didl.upnp.movie.videoitem.rating = strdup("");
 			asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
 			entry->didl.res.size = stbuf.st_size;
-			return entry;
 		} else if (strncmp(mime, "image/", 6) == 0) {
 			entry->didl.entryid = entryid_init_value(path);
 			if (entry->didl.entryid == NULL) {
@@ -403,10 +416,23 @@ entry_t * entry_didl (const unsigned int magic, const char *path)
 			entry->didl.upnp.photo.album = strdup("");
 			asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
 			entry->didl.res.size = stbuf.st_size;
-			return entry;
+		} else {
+			debugf("unkown mime '%s'", mime);
+			goto error;
 		}
 	}
+#if defined(HAVE_MAGIC)
+	if (m != 0) {
+		magic_close((magic_t) m);
+	}
+#endif
+	return entry;
 error:	free(entry);
+#if defined(HAVE_MAGIC)
+	if (m != 0) {
+		magic_close((magic_t) m);
+	}
+#endif
 	return NULL;
 }
 
@@ -693,6 +719,8 @@ int entry_uninit (entry_t *root)
 		free(p->didl.parentid);
 		free(p->didl.dc.title);
 		free(p->didl.dc.contributor);
+		free(p->didl.dc.coverage);
+		free(p->didl.dc.creator);
 		free(p->didl.dc.date);
 		free(p->didl.dc.description);
 		free(p->didl.dc.publisher);

@@ -76,13 +76,6 @@ static upnp_error_t upnp_errors[] = {
 	[UPNP_ERROR_CANNOT_PROCESS]             = {720, "Cannot Process The Request"},
 };
 
-typedef struct upnp_url_s {
-	char *url;
-	char *host;
-	unsigned short port;
-	char *path;
-} upnp_url_t;
-
 typedef struct upnp_subscribe_s {
 	list_t head;
 	char sid[50];
@@ -383,7 +376,7 @@ static char * self_strndup (const char *s, size_t n)
 	return memcpy(new, s, len);
 }
 
-static int url_uninit (upnp_url_t *url)
+int upnp_url_uninit (upnp_url_t *url)
 {
 	free(url->host);
 	free(url->path);
@@ -395,7 +388,7 @@ static int url_uninit (upnp_url_t *url)
 	return 0;
 }
 
-static int url_parse (const char *uri, upnp_url_t *url)
+int upnp_url_parse (const char *uri, upnp_url_t *url)
 {
 	char *i;
 	char *p;
@@ -434,7 +427,7 @@ static int url_parse (const char *uri, upnp_url_t *url)
 		url->path = strdup(e);
 	}
 	if (url->host == NULL || url->port == 0) {
-		url_uninit(url);
+		upnp_url_uninit(url);
 		return -1;
 	}
 	return 0;
@@ -467,7 +460,7 @@ static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subsc
 				ret = -1;
 				goto out;
 			}
-			if (url_parse(subscribe->callback + 1, &c->url) != 0) {
+			if (upnp_url_parse(subscribe->callback + 1, &c->url) != 0) {
 				free(c);
 				ret = -1;
 				goto out;
@@ -966,7 +959,11 @@ int upnp_uninit (upnp_t *upnp)
 	upnp_service_t *sn;
 	upnp_subscribe_t *c;
 	upnp_subscribe_t *cn;
+	debugf("calling ssdp_uninit");
 	ssdp_uninit(upnp->ssdp);
+	debugf("calling gena_uninit");
+	gena_uninit(upnp->gena);
+	debugf("free device memory");
 	if (upnp->type.type == UPNP_TYPE_DEVICE) {
 		list_for_each_entry_safe(s, sn, &upnp->type.device.services, head) {
 			list_for_each_entry_safe(c, cn, &s->subscribers, head) {
@@ -986,7 +983,6 @@ int upnp_uninit (upnp_t *upnp)
 		free(upnp->type.device.description);
 		free(upnp->type.device.location);
 	}
-	gena_uninit(upnp->gena);
 	pthread_mutex_destroy(&upnp->mutex);
 	free(upnp->host);
 	free(upnp);
@@ -1025,21 +1021,21 @@ IXML_Document * upnp_makeaction (upnp_t *upnp, const char *actionname, const cha
 		"</u:%s>\n";
 	buffer = NULL;
 	action = NULL;
-	if (url_parse(controlurl, &url) != 0) {
+	if (upnp_url_parse(controlurl, &url) != 0) {
 		return NULL;
 	}
 	if (asprintf(&buffer, format_action, actionname, servicetype, actionname) < 0) {
-		url_uninit(&url);
+		upnp_url_uninit(&url);
 		return NULL;
 	}
 	if (ixmlParseBufferEx(buffer, &action) != IXML_SUCCESS) {
-		url_uninit(&url);
+		upnp_url_uninit(&url);
 		free(buffer);
 		return NULL;
 	}
 	free(buffer);
 	if (action == NULL) {
-		url_uninit(&url);
+		upnp_url_uninit(&url);
 		return NULL;
 	}
 	for (p = 0; p < param_count; p++) {
@@ -1071,7 +1067,7 @@ IXML_Document * upnp_makeaction (upnp_t *upnp, const char *actionname, const cha
 
 	}
 	free(result);
-	url_uninit(&url);
+	upnp_url_uninit(&url);
 	return response;
 }
 
@@ -1092,14 +1088,14 @@ int upnp_subscribe (upnp_t *upnp, const char *serviceurl, int *timeout, char **s
 int upnp_resolveurl (const char *baseurl, const char *relativeurl, char *absoluteurl)
 {
 	upnp_url_t url;
-	if (url_parse(baseurl, &url) != 0) {
+	if (upnp_url_parse(baseurl, &url) != 0) {
 		return -1;
 	}
 	while (*relativeurl == '/') {
 		relativeurl++;
 	}
 	sprintf(absoluteurl, "%s:%d/%s", url.host, url.port, relativeurl);
-	url_uninit(&url);
+	upnp_url_uninit(&url);
 	return 0;
 }
 
@@ -1107,10 +1103,10 @@ char * upnp_download (upnp_t *upnp, const char *location)
 {
 	char *buffer;
 	upnp_url_t url;
-	if (url_parse(location, &url) != 0) {
+	if (upnp_url_parse(location, &url) != 0) {
 		return NULL;
 	}
 	buffer = gena_download(upnp->gena, url.host, url.port, url.path);
-	url_uninit(&url);
+	upnp_url_uninit(&url);
 	return buffer;
 }

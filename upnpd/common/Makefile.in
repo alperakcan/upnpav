@@ -53,22 +53,15 @@ LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 libcommon_a_AR = $(AR) $(ARFLAGS)
 libcommon_a_LIBADD =
-am__libcommon_a_SOURCES_DIST = uuid/clear.c uuid/compare.c uuid/copy.c \
-	uuid/gen_uuid.c uuid/isnull.c uuid/pack.c uuid/parse.c \
-	uuid/unpack.c uuid/unparse.c uuid/uuid_time.c uuid/uuid.h \
-	uuid/uuidP.h entry.c debug.c device.c upnp.c connection.c \
-	contentdir.c service.c inttool.c xml.c uri.c webserver.c \
-	interface.c common.h mediaserver.c client.c controller.c
+am__libcommon_a_SOURCES_DIST = entry.c debug.c device.c upnp.c \
+	connection.c contentdir.c service.c inttool.c xml.c uri.c \
+	webserver.c interface.c common.h mediaserver.c client.c \
+	controller.c
 @ENABLE_MEDIASERVER_TRUE@am__objects_1 =  \
 @ENABLE_MEDIASERVER_TRUE@	libcommon_a-mediaserver.$(OBJEXT)
 @ENABLE_CONTROLLER_TRUE@am__objects_2 = libcommon_a-client.$(OBJEXT) \
 @ENABLE_CONTROLLER_TRUE@	libcommon_a-controller.$(OBJEXT)
-am_libcommon_a_OBJECTS = libcommon_a-clear.$(OBJEXT) \
-	libcommon_a-compare.$(OBJEXT) libcommon_a-copy.$(OBJEXT) \
-	libcommon_a-gen_uuid.$(OBJEXT) libcommon_a-isnull.$(OBJEXT) \
-	libcommon_a-pack.$(OBJEXT) libcommon_a-parse.$(OBJEXT) \
-	libcommon_a-unpack.$(OBJEXT) libcommon_a-unparse.$(OBJEXT) \
-	libcommon_a-uuid_time.$(OBJEXT) libcommon_a-entry.$(OBJEXT) \
+am_libcommon_a_OBJECTS = libcommon_a-entry.$(OBJEXT) \
 	libcommon_a-debug.$(OBJEXT) libcommon_a-device.$(OBJEXT) \
 	libcommon_a-upnp.$(OBJEXT) libcommon_a-connection.$(OBJEXT) \
 	libcommon_a-contentdir.$(OBJEXT) libcommon_a-service.$(OBJEXT) \
@@ -141,6 +134,8 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
+LIBFUSE_CFLAGS = @LIBFUSE_CFLAGS@
+LIBFUSE_LIBS = @LIBFUSE_LIBS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
@@ -160,6 +155,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 READLINE_LIBS = @READLINE_LIBS@
 SED = @SED@
@@ -226,10 +222,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = upnp
 noinst_LIBRARIES = libcommon.a
-libcommon_a_SOURCES = uuid/clear.c uuid/compare.c uuid/copy.c \
-	uuid/gen_uuid.c uuid/isnull.c uuid/pack.c uuid/parse.c \
-	uuid/unpack.c uuid/unparse.c uuid/uuid_time.c uuid/uuid.h \
-	uuid/uuidP.h entry.c debug.c device.c upnp.c connection.c \
+libcommon_a_SOURCES = entry.c debug.c device.c upnp.c connection.c \
 	contentdir.c service.c inttool.c xml.c uri.c webserver.c \
 	interface.c common.h $(am__append_1) $(am__append_2)
 libcommon_a_CFLAGS = \
@@ -238,7 +231,7 @@ libcommon_a_CFLAGS = \
 	-I$(top_srcdir)/upnpd \
 	-I$(top_srcdir)/upnpd/common \
 	-I$(top_srcdir)/upnpd/common/upnp \
-	-I$(top_srcdir)/upnpd/common/uuid
+	-I$(top_srcdir)/upnpd/common/upnp/uuid
 
 all: all-recursive
 
@@ -294,29 +287,19 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-clear.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-client.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-compare.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-connection.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-contentdir.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-controller.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-copy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-debug.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-device.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-entry.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-gen_uuid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-interface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-inttool.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-isnull.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-mediaserver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-pack.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-parse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-service.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-unpack.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-unparse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-upnp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-uri.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-uuid_time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-webserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-xml.Po@am__quote@
 
@@ -340,146 +323,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
-
-libcommon_a-clear.o: uuid/clear.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-clear.o -MD -MP -MF $(DEPDIR)/libcommon_a-clear.Tpo -c -o libcommon_a-clear.o `test -f 'uuid/clear.c' || echo '$(srcdir)/'`uuid/clear.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-clear.Tpo $(DEPDIR)/libcommon_a-clear.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/clear.c' object='libcommon_a-clear.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-clear.o `test -f 'uuid/clear.c' || echo '$(srcdir)/'`uuid/clear.c
-
-libcommon_a-clear.obj: uuid/clear.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-clear.obj -MD -MP -MF $(DEPDIR)/libcommon_a-clear.Tpo -c -o libcommon_a-clear.obj `if test -f 'uuid/clear.c'; then $(CYGPATH_W) 'uuid/clear.c'; else $(CYGPATH_W) '$(srcdir)/uuid/clear.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-clear.Tpo $(DEPDIR)/libcommon_a-clear.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/clear.c' object='libcommon_a-clear.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-clear.obj `if test -f 'uuid/clear.c'; then $(CYGPATH_W) 'uuid/clear.c'; else $(CYGPATH_W) '$(srcdir)/uuid/clear.c'; fi`
-
-libcommon_a-compare.o: uuid/compare.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-compare.o -MD -MP -MF $(DEPDIR)/libcommon_a-compare.Tpo -c -o libcommon_a-compare.o `test -f 'uuid/compare.c' || echo '$(srcdir)/'`uuid/compare.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-compare.Tpo $(DEPDIR)/libcommon_a-compare.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/compare.c' object='libcommon_a-compare.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-compare.o `test -f 'uuid/compare.c' || echo '$(srcdir)/'`uuid/compare.c
-
-libcommon_a-compare.obj: uuid/compare.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-compare.obj -MD -MP -MF $(DEPDIR)/libcommon_a-compare.Tpo -c -o libcommon_a-compare.obj `if test -f 'uuid/compare.c'; then $(CYGPATH_W) 'uuid/compare.c'; else $(CYGPATH_W) '$(srcdir)/uuid/compare.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-compare.Tpo $(DEPDIR)/libcommon_a-compare.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/compare.c' object='libcommon_a-compare.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-compare.obj `if test -f 'uuid/compare.c'; then $(CYGPATH_W) 'uuid/compare.c'; else $(CYGPATH_W) '$(srcdir)/uuid/compare.c'; fi`
-
-libcommon_a-copy.o: uuid/copy.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-copy.o -MD -MP -MF $(DEPDIR)/libcommon_a-copy.Tpo -c -o libcommon_a-copy.o `test -f 'uuid/copy.c' || echo '$(srcdir)/'`uuid/copy.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-copy.Tpo $(DEPDIR)/libcommon_a-copy.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/copy.c' object='libcommon_a-copy.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-copy.o `test -f 'uuid/copy.c' || echo '$(srcdir)/'`uuid/copy.c
-
-libcommon_a-copy.obj: uuid/copy.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-copy.obj -MD -MP -MF $(DEPDIR)/libcommon_a-copy.Tpo -c -o libcommon_a-copy.obj `if test -f 'uuid/copy.c'; then $(CYGPATH_W) 'uuid/copy.c'; else $(CYGPATH_W) '$(srcdir)/uuid/copy.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-copy.Tpo $(DEPDIR)/libcommon_a-copy.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/copy.c' object='libcommon_a-copy.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-copy.obj `if test -f 'uuid/copy.c'; then $(CYGPATH_W) 'uuid/copy.c'; else $(CYGPATH_W) '$(srcdir)/uuid/copy.c'; fi`
-
-libcommon_a-gen_uuid.o: uuid/gen_uuid.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-gen_uuid.o -MD -MP -MF $(DEPDIR)/libcommon_a-gen_uuid.Tpo -c -o libcommon_a-gen_uuid.o `test -f 'uuid/gen_uuid.c' || echo '$(srcdir)/'`uuid/gen_uuid.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-gen_uuid.Tpo $(DEPDIR)/libcommon_a-gen_uuid.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/gen_uuid.c' object='libcommon_a-gen_uuid.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-gen_uuid.o `test -f 'uuid/gen_uuid.c' || echo '$(srcdir)/'`uuid/gen_uuid.c
-
-libcommon_a-gen_uuid.obj: uuid/gen_uuid.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-gen_uuid.obj -MD -MP -MF $(DEPDIR)/libcommon_a-gen_uuid.Tpo -c -o libcommon_a-gen_uuid.obj `if test -f 'uuid/gen_uuid.c'; then $(CYGPATH_W) 'uuid/gen_uuid.c'; else $(CYGPATH_W) '$(srcdir)/uuid/gen_uuid.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-gen_uuid.Tpo $(DEPDIR)/libcommon_a-gen_uuid.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/gen_uuid.c' object='libcommon_a-gen_uuid.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-gen_uuid.obj `if test -f 'uuid/gen_uuid.c'; then $(CYGPATH_W) 'uuid/gen_uuid.c'; else $(CYGPATH_W) '$(srcdir)/uuid/gen_uuid.c'; fi`
-
-libcommon_a-isnull.o: uuid/isnull.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-isnull.o -MD -MP -MF $(DEPDIR)/libcommon_a-isnull.Tpo -c -o libcommon_a-isnull.o `test -f 'uuid/isnull.c' || echo '$(srcdir)/'`uuid/isnull.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-isnull.Tpo $(DEPDIR)/libcommon_a-isnull.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/isnull.c' object='libcommon_a-isnull.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-isnull.o `test -f 'uuid/isnull.c' || echo '$(srcdir)/'`uuid/isnull.c
-
-libcommon_a-isnull.obj: uuid/isnull.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-isnull.obj -MD -MP -MF $(DEPDIR)/libcommon_a-isnull.Tpo -c -o libcommon_a-isnull.obj `if test -f 'uuid/isnull.c'; then $(CYGPATH_W) 'uuid/isnull.c'; else $(CYGPATH_W) '$(srcdir)/uuid/isnull.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-isnull.Tpo $(DEPDIR)/libcommon_a-isnull.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/isnull.c' object='libcommon_a-isnull.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-isnull.obj `if test -f 'uuid/isnull.c'; then $(CYGPATH_W) 'uuid/isnull.c'; else $(CYGPATH_W) '$(srcdir)/uuid/isnull.c'; fi`
-
-libcommon_a-pack.o: uuid/pack.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-pack.o -MD -MP -MF $(DEPDIR)/libcommon_a-pack.Tpo -c -o libcommon_a-pack.o `test -f 'uuid/pack.c' || echo '$(srcdir)/'`uuid/pack.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-pack.Tpo $(DEPDIR)/libcommon_a-pack.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/pack.c' object='libcommon_a-pack.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-pack.o `test -f 'uuid/pack.c' || echo '$(srcdir)/'`uuid/pack.c
-
-libcommon_a-pack.obj: uuid/pack.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-pack.obj -MD -MP -MF $(DEPDIR)/libcommon_a-pack.Tpo -c -o libcommon_a-pack.obj `if test -f 'uuid/pack.c'; then $(CYGPATH_W) 'uuid/pack.c'; else $(CYGPATH_W) '$(srcdir)/uuid/pack.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-pack.Tpo $(DEPDIR)/libcommon_a-pack.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/pack.c' object='libcommon_a-pack.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-pack.obj `if test -f 'uuid/pack.c'; then $(CYGPATH_W) 'uuid/pack.c'; else $(CYGPATH_W) '$(srcdir)/uuid/pack.c'; fi`
-
-libcommon_a-parse.o: uuid/parse.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-parse.o -MD -MP -MF $(DEPDIR)/libcommon_a-parse.Tpo -c -o libcommon_a-parse.o `test -f 'uuid/parse.c' || echo '$(srcdir)/'`uuid/parse.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-parse.Tpo $(DEPDIR)/libcommon_a-parse.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/parse.c' object='libcommon_a-parse.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-parse.o `test -f 'uuid/parse.c' || echo '$(srcdir)/'`uuid/parse.c
-
-libcommon_a-parse.obj: uuid/parse.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-parse.obj -MD -MP -MF $(DEPDIR)/libcommon_a-parse.Tpo -c -o libcommon_a-parse.obj `if test -f 'uuid/parse.c'; then $(CYGPATH_W) 'uuid/parse.c'; else $(CYGPATH_W) '$(srcdir)/uuid/parse.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-parse.Tpo $(DEPDIR)/libcommon_a-parse.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/parse.c' object='libcommon_a-parse.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-parse.obj `if test -f 'uuid/parse.c'; then $(CYGPATH_W) 'uuid/parse.c'; else $(CYGPATH_W) '$(srcdir)/uuid/parse.c'; fi`
-
-libcommon_a-unpack.o: uuid/unpack.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-unpack.o -MD -MP -MF $(DEPDIR)/libcommon_a-unpack.Tpo -c -o libcommon_a-unpack.o `test -f 'uuid/unpack.c' || echo '$(srcdir)/'`uuid/unpack.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-unpack.Tpo $(DEPDIR)/libcommon_a-unpack.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/unpack.c' object='libcommon_a-unpack.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-unpack.o `test -f 'uuid/unpack.c' || echo '$(srcdir)/'`uuid/unpack.c
-
-libcommon_a-unpack.obj: uuid/unpack.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-unpack.obj -MD -MP -MF $(DEPDIR)/libcommon_a-unpack.Tpo -c -o libcommon_a-unpack.obj `if test -f 'uuid/unpack.c'; then $(CYGPATH_W) 'uuid/unpack.c'; else $(CYGPATH_W) '$(srcdir)/uuid/unpack.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-unpack.Tpo $(DEPDIR)/libcommon_a-unpack.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/unpack.c' object='libcommon_a-unpack.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-unpack.obj `if test -f 'uuid/unpack.c'; then $(CYGPATH_W) 'uuid/unpack.c'; else $(CYGPATH_W) '$(srcdir)/uuid/unpack.c'; fi`
-
-libcommon_a-unparse.o: uuid/unparse.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-unparse.o -MD -MP -MF $(DEPDIR)/libcommon_a-unparse.Tpo -c -o libcommon_a-unparse.o `test -f 'uuid/unparse.c' || echo '$(srcdir)/'`uuid/unparse.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-unparse.Tpo $(DEPDIR)/libcommon_a-unparse.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/unparse.c' object='libcommon_a-unparse.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-unparse.o `test -f 'uuid/unparse.c' || echo '$(srcdir)/'`uuid/unparse.c
-
-libcommon_a-unparse.obj: uuid/unparse.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-unparse.obj -MD -MP -MF $(DEPDIR)/libcommon_a-unparse.Tpo -c -o libcommon_a-unparse.obj `if test -f 'uuid/unparse.c'; then $(CYGPATH_W) 'uuid/unparse.c'; else $(CYGPATH_W) '$(srcdir)/uuid/unparse.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-unparse.Tpo $(DEPDIR)/libcommon_a-unparse.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/unparse.c' object='libcommon_a-unparse.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-unparse.obj `if test -f 'uuid/unparse.c'; then $(CYGPATH_W) 'uuid/unparse.c'; else $(CYGPATH_W) '$(srcdir)/uuid/unparse.c'; fi`
-
-libcommon_a-uuid_time.o: uuid/uuid_time.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-uuid_time.o -MD -MP -MF $(DEPDIR)/libcommon_a-uuid_time.Tpo -c -o libcommon_a-uuid_time.o `test -f 'uuid/uuid_time.c' || echo '$(srcdir)/'`uuid/uuid_time.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-uuid_time.Tpo $(DEPDIR)/libcommon_a-uuid_time.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/uuid_time.c' object='libcommon_a-uuid_time.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-uuid_time.o `test -f 'uuid/uuid_time.c' || echo '$(srcdir)/'`uuid/uuid_time.c
-
-libcommon_a-uuid_time.obj: uuid/uuid_time.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-uuid_time.obj -MD -MP -MF $(DEPDIR)/libcommon_a-uuid_time.Tpo -c -o libcommon_a-uuid_time.obj `if test -f 'uuid/uuid_time.c'; then $(CYGPATH_W) 'uuid/uuid_time.c'; else $(CYGPATH_W) '$(srcdir)/uuid/uuid_time.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-uuid_time.Tpo $(DEPDIR)/libcommon_a-uuid_time.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uuid/uuid_time.c' object='libcommon_a-uuid_time.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-uuid_time.obj `if test -f 'uuid/uuid_time.c'; then $(CYGPATH_W) 'uuid/uuid_time.c'; else $(CYGPATH_W) '$(srcdir)/uuid/uuid_time.c'; fi`
 
 libcommon_a-entry.o: entry.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-entry.o -MD -MP -MF $(DEPDIR)/libcommon_a-entry.Tpo -c -o libcommon_a-entry.o `test -f 'entry.c' || echo '$(srcdir)/'`entry.c

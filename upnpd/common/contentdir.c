@@ -117,6 +117,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 				entry = entry_didl(0, contentdir->rootpath);
 				entry_normalize_root(entry);
 			} else {
+				debugf("looking for '%s'", objectid);
 				id = entryid_path_from_id(objectid);
 				entry = entry_didl(0, id);
 				free(id);
@@ -127,6 +128,8 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 					entry_normalize_parent(entry);
 				}
 				free(id);
+			} else {
+				debugf("could not find object '%s'",objectid);
 			}
 		}
 		if (entry == NULL) {

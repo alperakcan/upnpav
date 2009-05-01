@@ -107,7 +107,7 @@ int controller_uninit (client_t *controller)
 	return 0;
 }
 
-entry_t * controller_browse_children (client_t *controller, char *device, char *object)
+entry_t * controller_browse_children (client_t *controller, const char *device, const char *object)
 {
 	char *tmp;
 	char *result;
@@ -142,7 +142,7 @@ entry_t * controller_browse_children (client_t *controller, char *device, char *
 	}
 
 	do {
-		values[0] = object;
+		values[0] = (char *) object;
 		values[1] = "BrowseDirectChildren";
 		values[2] = "*";
 		sprintf(values[3], "%u", count);
@@ -150,13 +150,13 @@ entry_t * controller_browse_children (client_t *controller, char *device, char *
 		values[5] = "+dc:title";
 
 		debugf("browsing '%s':'%s'", device, object);
-		response = client_action(controller, device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
+		response = client_action(controller, (char *) device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
 		if (response == NULL) {
 			debugf("client_action() failed");
 			goto out;
 		}
 
-#if 1
+#if 0
 		{
 			char *tmp;
 			tmp = ixmlDocumenttoString(response);
@@ -225,7 +225,7 @@ out:	if (result) {
 	return entry;
 }
 
-entry_t * controller_browse_metadata (client_t *controller, char *device, char *object)
+entry_t * controller_browse_metadata (client_t *controller, const char *device, const char *object)
 {
 	entry_t *entry;
 	char *tmp;
@@ -248,7 +248,7 @@ entry_t * controller_browse_metadata (client_t *controller, char *device, char *
 	params[4] = "RequestedCount";
 	params[5] = "SortCriteria";
 
-	values[0] = object;
+	values[0] = (char *) object;
 	values[1] = "BrowseMetadata";
 	values[2] = "*";
 	values[3] = "0";
@@ -256,7 +256,7 @@ entry_t * controller_browse_metadata (client_t *controller, char *device, char *
 	values[5] = "+dc:title";
 
 	debugf("browsing '%s':'%s'", device, object);
-	response = client_action(controller, device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
+	response = client_action(controller, (char *) device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
 	if (response == NULL) {
 		debugf("client_action() failed");
 		goto out;

@@ -5,18 +5,6 @@ noinst_PROGRAMS  =
 noinst_LIBRARIES = libcommon.a
 
 libcommon_a_SOURCES = \
-	uuid/clear.c \
-	uuid/compare.c \
-	uuid/copy.c \
-	uuid/gen_uuid.c \
-	uuid/isnull.c \
-	uuid/pack.c \
-	uuid/parse.c \
-	uuid/unpack.c \
-	uuid/unparse.c \
-	uuid/uuid_time.c \
-	uuid/uuid.h \
-	uuid/uuidP.h \
 	entry.c \
 	debug.c \
 	device.c \
@@ -37,7 +25,7 @@ libcommon_a_CFLAGS =	\
 	-I$(top_srcdir)/upnpd \
 	-I$(top_srcdir)/upnpd/common \
 	-I$(top_srcdir)/upnpd/common/upnp \
-	-I$(top_srcdir)/upnpd/common/uuid
+	-I$(top_srcdir)/upnpd/common/upnp/uuid
 
 if ENABLE_MEDIASERVER
 libcommon_a_SOURCES += mediaserver.c

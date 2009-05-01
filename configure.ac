@@ -177,6 +177,15 @@ CFLAGS="$CFLAGS -Wall -Werror"
 # dependencies
 #
 
+# - pkgconfig
+
+AC_ARG_WITH(pkgconfigdir,
+            [  --with-pkgconfigdir=DIR pkgconfig file in DIR @<:@LIBDIR/pkgconfig@:>@],
+            [pkgconfigdir=$withval],
+            [pkgconfigdir='${libdir}/pkgconfig'])
+AC_SUBST(pkgconfigdir)
+
+
 # - readline
 
 VL_LIB_READLINE
@@ -188,11 +197,27 @@ AC_CHECK_LIB([magic], [magic_open], [AC_SUBST([MAGIC_LIBS], [-lmagic])], [], [-l
 LIBS="$LIBS $MAGIC_LIBS"
 CFLAGS="$CFLAGS $MAGIC_CFLAGS"
 
-AC_ARG_WITH(pkgconfigdir,
-            [  --with-pkgconfigdir=DIR pkgconfig file in DIR @<:@LIBDIR/pkgconfig@:>@],
-            [pkgconfigdir=$withval],
-            [pkgconfigdir='${libdir}/pkgconfig'])
-AC_SUBST(pkgconfigdir)
+# - fuse
+
+PKG_CHECK_MODULES(LIBFUSE, libfuse, HAVE_LIBFUSE=yes, HAVE_LIBFUSE=no)
+if test "$HAVE_LIBFUSE" = "yes"
+then
+	enable_libfuse=yes
+	AC_DEFINE(HAVE_LIBFUSE, 1, [Define to 1 if you want 'libfuse' support.])
+else
+	enable_libfuse=no
+fi
+
+AC_MSG_CHECKING([if FUSE on this system is too new for us])
+AC_EGREP_CPP([fuse_version_yes], [
+#define _FILE_OFFSET_BITS 64
+#define FUSE_USE_VERSION 27
+#include "fuse.h"
+#if FUSE_VERSION > 27
+fuse_version_yes
+#endif
+], AC_DEFINE([FUSE_USE_VERSION], [27], [Version of FUSE interface]) AC_MSG_RESULT([yes]),
+   AC_DEFINE([FUSE_USE_VERSION], [FUSE_VERSION], [Version of FUSE interface]) AC_MSG_RESULT([no]))
 
 #
 # Check extra parameters
@@ -210,6 +235,23 @@ fi
 ,
 enable_controller=yes
 AC_DEFINE(ENABLE_CONTROLLER, 1, [Define to 1 if you want 'controller' support.])
+)
+
+AC_ARG_ENABLE([upnpfs],
+[  --disable-upnpfs        disable upnpfs controller [[default=yes]]],
+if test "$enableval" = "no" -o "$enable_libfuse" = "no"
+then
+	enable_upnpfs=no
+else
+if test "$enable_libfuse" = "yes"
+then
+	enable_upnpfs=yes
+	AC_DEFINE(ENABLE_UPNPFS, 1, [Define to 1 if you want 'upnpfs' support.])
+fi
+fi
+,
+enable_upnpfs=yes
+AC_DEFINE(ENABLE_UPNPFS, 1, [Define to 1 if you want 'upnpfs' support.])
 )
 
 AC_ARG_ENABLE([mediaserver],
@@ -248,6 +290,7 @@ AM_CONDITIONAL(DARWIN, test "$arch" = darwin)
 
 AM_CONDITIONAL(ENABLE_CONTROLLER, test "$enable_controller" = "yes")
 AM_CONDITIONAL(ENABLE_MEDIASERVER, test "$enable_mediaserver" = "yes")
+AM_CONDITIONAL(ENABLE_UPNPFS, test "$enable_upnpfs" = "yes")
 
 AM_CONDITIONAL(ENABLE_OPTIONAL, test "$enable_optional" = "yes")
 
@@ -263,6 +306,7 @@ AC_CONFIG_FILES([
 	upnpd/common/upnp/Makefile
 	upnpd/controller/Makefile
 	upnpd/mediaserver/Makefile
+	upnpfs/Makefile
 ])
 
 AC_OUTPUT

@@ -32,10 +32,14 @@
 #include "gena.h"
 #include "list.h"
 
+#if 0
 #define debugf(a...) { \
 	printf(a); \
 	printf(" [%s (%s:%d)]\n", __FUNCTION__, __FILE__, __LINE__); \
 }
+#else
+#define debugf(a...)
+#endif
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define ARRAY_SIZE(a)		(sizeof(a) / sizeof((a)[0]))

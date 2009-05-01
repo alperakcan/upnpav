@@ -9,6 +9,12 @@
 /* Define to 1 if you want 'optional' support. */
 #undef ENABLE_OPTIONAL
 
+/* Define to 1 if you want 'upnpfs' support. */
+#undef ENABLE_UPNPFS
+
+/* Version of FUSE interface */
+#undef FUSE_USE_VERSION
+
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
 #undef HAVE_DIRENT_H
@@ -21,6 +27,9 @@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Define to 1 if you want 'libfuse' support. */
+#undef HAVE_LIBFUSE
 
 /* Define if you have a readline compatible library */
 #undef HAVE_LIBREADLINE

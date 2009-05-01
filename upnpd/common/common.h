@@ -26,11 +26,6 @@ typedef struct device_service_s device_service_t;
 typedef struct service_action_s service_action_t;
 typedef struct service_variable_s service_variable_t;
 
-typedef struct render_s render_t;
-typedef struct render_info_s render_info_t;
-typedef struct render_module_s render_module_t;
-typedef struct render_mimetype_s render_mimetype_t;
-
 typedef enum {
 	RENDER_STATE_UNKNOWN,
 	RENDER_STATE_PLAYING,
@@ -395,18 +390,18 @@ struct service_variable_s {
   */
 typedef struct client_variable_s {
 	/** */
+	list_t head;
+	/** */
 	char *name;
 	/** */
 	char *value;
-	/** */
-	struct client_variable_s *next;
-	/** */
-	struct client_variable_s *prev;
 } client_variable_t;
 
 /** client service struct
   */
 typedef struct client_service_s {
+	/** */
+	list_t head;
 	/** */
 	char *type;
 	/** */
@@ -418,16 +413,14 @@ typedef struct client_service_s {
 	/** */
 	char *eventurl;
 	/** */
-	client_variable_t *variables;
-	/** */
-	struct client_service_s *next;
-	/** */
-	struct client_service_s *prev;
+	list_t variables;
 } client_service_t;
 
 /** client device struct
   */
 typedef struct client_device_s {
+	/** */
+	list_t head;
 	/** */
 	char *name;
 	/** */
@@ -435,15 +428,9 @@ typedef struct client_device_s {
 	/** */
 	char *uuid;
 	/** */
-	char *friendlyname;
-	/** */
 	int expiretime;
 	/** */
-	client_service_t *services;
-	/** */
-	struct client_device_s *next;
-	/** */
-	struct client_device_s *prev;
+	list_t services;
 } client_device_t;
 
 /** client device desc struct
@@ -478,7 +465,7 @@ struct client_s {
 	/** */
 	int port;
 	/** */
-	client_device_t *devices;
+	list_t devices;
 };
 
 /** device service struct
@@ -583,8 +570,8 @@ IXML_Document * client_action (client_t *client, char *devicename, char *service
 
 client_t * controller_init (char *options);
 int controller_uninit (client_t *controller);
-entry_t * controller_browse_children (client_t *controller, char *device, char *object);
-entry_t * controller_browse_metadata (client_t *controller, char *device, char *object);
+entry_t * controller_browse_children (client_t *controller, const char *device, const char *object);
+entry_t * controller_browse_metadata (client_t *controller, const char *device, const char *object);
 
 /* device.c */
 
@@ -620,23 +607,6 @@ uint32_t connection_instance_new (void);
 int connectionmanager_uninit (device_service_t *cotentdir);
 device_service_t * connectionmanager_init (void);
 
-/* rendering.c */
-
-int renderingcontrol_uninit (device_service_t *service);
-device_service_t * renderingcontrol_init (void);
-
-/* transport.c */
-
-uint32_t transport_instance_new (device_t *device);
-int transport_instance_delete (device_t *device, uint32_t instanceid);
-const char * transport_instance_transportstate (uint32_t instanceid);
-const char * transport_instance_transportstatus (uint32_t instanceid);
-const char * transport_instance_currenturi (uint32_t instanceid);
-const char * transport_instance_currenturimetadata (uint32_t instanceid);
-const char * transport_instance_playspeed (uint32_t instanceid);
-int avtransport_uninit (device_service_t *avtransport);
-device_service_t * avtransport_init (render_t *render);
-
 /* inttool.c */
 
 char * uint32tostr (char *out, uint32_t val);
@@ -660,66 +630,6 @@ int service_init (device_service_t *service);
 int service_uninit (device_service_t *service);
 service_variable_t * service_variable_find (device_service_t *service, char *name);
 service_action_t * service_action_find (device_service_t *service, char *name);
-
-/* render.c */
-
-struct render_info_s {
-	/** */
-	unsigned long position;
-	/** */
-	unsigned long duration;
-	/** */
-	render_state_t state;
-};
-
-struct render_module_s {
-	/** */
-	char *name;
-	/** */
-	char *author;
-	/** */
-	char *description;
-	/** */
-	int (*init) (render_module_t *, int argc, char *argv[]);
-	/** */
-	int (*uninit) (render_module_t *);
-	/** */
-	int (*play) (render_module_t *, char *);
-	/** */
-	int (*pause) (render_module_t *);
-	/** */
-	int (*stop) (render_module_t *);
-	/** */
-	int (*seek) (render_module_t *, long);
-	/** */
-	int (*info) (render_module_t *, render_info_t *);
-	/** */
-	render_t *render;
-	/** */
-	void *data;
-};
-
-struct render_mimetype_s {
-	/** */
-	list_t head;
-	/** */
-	char *mimetype;
-};
-
-struct render_s {
-	render_module_t *module;
-	/** */
-	list_t mimetypes;
-};
-
-render_t * render_init (char *name, char *options);
-int render_register_mimetype (render_t *render,const  char *mimetype);
-int render_uninit (render_t *render);
-int render_play (render_t *render, char *uri);
-int render_pause (render_t *render);
-int render_stop (render_t *render);
-int render_seek (render_t *render, long offset);
-int render_info (render_t *render, render_info_t *info);
 
 /* upnp.c */
 

@@ -63,11 +63,10 @@ static int list_devices (client_t *client)
 {
 	client_device_t *device;
 	pthread_mutex_lock(&client->mutex);
-	for (device = client->devices; device != NULL; device = device->next) {
-		printf("-- %s\n", device->friendlyname);
+	list_for_each_entry(device, &client->devices, head) {
+		printf("-- %s\n", device->name);
 		printf("  type         : %s\n", device->type);
 		printf("  uuid         : %s\n", device->uuid);
-		printf("  friendlyname : %s\n", device->friendlyname);
 		printf("  expiretime   : %d\n", device->expiretime);
 	}
 	pthread_mutex_unlock(&client->mutex);
@@ -80,20 +79,19 @@ static int print_device (client_t *client, char *name)
 	client_service_t *service;
 	client_variable_t *variable;
 	pthread_mutex_lock(&client->mutex);
-	for (device = client->devices; device != NULL; device = device->next) {
-		if (strcmp(name, device->friendlyname) == 0) {
-			printf("-- %s\n", device->friendlyname);
+	list_for_each_entry(device, &client->devices, head) {
+		if (strcmp(name, device->name) == 0) {
+			printf("-- %s\n", device->name);
 			printf("  type         : %s\n", device->type);
 			printf("  uuid         : %s\n", device->uuid);
-			printf("  friendlyname : %s\n", device->friendlyname);
 			printf("  expiretime   : %d\n", device->expiretime);
-			for (service = device->services; service != NULL; service = service->next) {
+			list_for_each_entry(service, &device->services, head) {
 				printf("  -- type       : %s\n", service->type);
 				printf("     id         : %s\n", service->id);
 				printf("     sid        : %s\n", service->sid);
 				printf("     controlurl : %s\n", service->controlurl);
 				printf("     eventurl   : %s\n", service->eventurl);
-				for (variable = service->variables; variable != NULL; variable = variable->next) {
+				list_for_each_entry(variable, &service->variables, head) {
 					printf("    -- name  : %s\n", variable->name);
 					printf("       value : %s\n", variable->value);
 				}
@@ -110,19 +108,18 @@ static int print_devices (client_t *client)
 	client_service_t *service;
 	client_variable_t *variable;
 	pthread_mutex_lock(&client->mutex);
-	for (device = client->devices; device != NULL; device = device->next) {
-		printf("-- %s\n", device->friendlyname);
+	list_for_each_entry(device, &client->devices, head) {
+		printf("-- %s\n", device->name);
 		printf("  type         : %s\n", device->type);
 		printf("  uuid         : %s\n", device->uuid);
-		printf("  friendlyname : %s\n", device->friendlyname);
 		printf("  expiretime   : %d\n", device->expiretime);
-		for (service = device->services; service != NULL; service = service->next) {
+		list_for_each_entry(service, &device->services, head) {
 			printf("  -- type       : %s\n", service->type);
 			printf("     id         : %s\n", service->id);
 			printf("     sid        : %s\n", service->sid);
 			printf("     controlurl : %s\n", service->controlurl);
 			printf("     eventurl   : %s\n", service->eventurl);
-			for (variable = service->variables; variable != NULL; variable = variable->next) {
+			list_for_each_entry(variable, &service->variables, head) {
 				printf("    -- name  : %s\n", variable->name);
 				printf("       value : %s\n", variable->value);
 			}
