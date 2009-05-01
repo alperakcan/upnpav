@@ -199,7 +199,7 @@ CFLAGS="$CFLAGS $MAGIC_CFLAGS"
 
 # - fuse
 
-PKG_CHECK_MODULES(LIBFUSE, libfuse, HAVE_LIBFUSE=yes, HAVE_LIBFUSE=no)
+PKG_CHECK_MODULES(LIBFUSE, fuse, HAVE_LIBFUSE=yes, HAVE_LIBFUSE=no)
 if test "$HAVE_LIBFUSE" = "yes"
 then
 	enable_libfuse=yes
