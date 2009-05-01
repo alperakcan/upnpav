@@ -41,7 +41,7 @@ static const char *usage_msg =
 "Options:  ro, force, allow_others\n"
 "          Please see details in the manual.\n"
 "\n"
-"Example:  upnpfs /music /mnt/upnpfs\n"
+"Example:  upnpfs /mnt/upnpfs\n"
 "\n"
 "%s\n"
 "\n";
@@ -109,26 +109,10 @@ static int parse_options (int argc, char *argv[])
 	while ((c = getopt_long(argc, argv, sopt, lopt, NULL)) != -1) {
 		switch (c) {
 			case 1:	/* A non-option argument */
-				if (!opts.device) {
-					opts.device = malloc(PATH_MAX + 1);
-					if (!opts.device) {
-						return -1;
-					}
-
-					/* We don't want relative path in /etc/mtab. */
-					if (optarg[0] != '/') {
-						if (!realpath(optarg, opts.device)) {
-							debugfs("Cannot mount %s", optarg);
-							free(opts.device);
-							opts.device = NULL;
-							return -1;
-						}
-					} else
-						strcpy(opts.device, optarg);
-				} else if (!opts.mnt_point) {
+				if (!opts.mnt_point) {
 					opts.mnt_point = optarg;
 				} else {
-					debugfs("You must specify exactly one device and exactly one mount point");
+					debugfs("You must specify exactly one mount point");
 					return -1;
 				}
 				break;
@@ -154,12 +138,8 @@ static int parse_options (int argc, char *argv[])
 		}
 	}
 
-	if (!opts.device) {
-		debugfs("No device is specified");
-		return -1;
-	}
 	if (!opts.mnt_point) {
-		debugfs("No mountpoint is specified");
+		debugfs("No mount point is specified");
 		return -1;
 	}
 
@@ -211,16 +191,15 @@ static char * parse_mount_options (const char *orig_opts)
 	strcat(ret, def_opts);
 	strcat(ret, "ro,");
 	strcat(ret, "fsname=");
-	strcat(ret, opts.device);
 #if __FreeBSD__ == 10
 	strcat(ret, ",fstypename=");
 	strcat(ret, "ext2");
 	strcat(ret, ",volname=");
-	s = strrchr(opts.device, '/');
+	s = strrchr(opts.mnt_point, '/');
 	if (s != NULL) {
 		strcat(ret, s + 1);
 	} else {
-		strcat(ret, opts.device);
+		strcat(ret, opts.mnt_point);
 	}
 #endif
 exit:
@@ -274,7 +253,6 @@ static const struct fuse_operations upnpfs_ops = {
 int main (int argc, char *argv[])
 {
 	int err = 0;
-	struct stat sbuf;
 	char *parsed_options = NULL;
 	struct fuse_args fargs = FUSE_ARGS_INIT(0, NULL);
 
@@ -292,13 +270,6 @@ int main (int argc, char *argv[])
 		goto err_out;
 	}
 
-	if (stat(opts.device, &sbuf)) {
-		debugfs("Failed to access '%s'", opts.device);
-		err = -3;
-		goto err_out;
-	}
-
-	debugfs("opts.device: %s", opts.device);
 	debugfs("opts.mnt_point: %s", opts.mnt_point);
 	debugfs("opts.options: %s", opts.options);
 	debugfs("parsed_options: %s", parsed_options);
@@ -322,6 +293,5 @@ err_out:
 	fuse_opt_free_args(&fargs);
 	free(parsed_options);
 	free(opts.options);
-	free(opts.device);
 	return err;
 }

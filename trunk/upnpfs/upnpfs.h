@@ -52,7 +52,6 @@ struct options_s {
 	int silent;
 	char *mnt_point;
 	char *options;
-	char *device;
 };
 
 struct private_s {

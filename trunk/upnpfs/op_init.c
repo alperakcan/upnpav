@@ -22,7 +22,6 @@
 void * op_init (struct fuse_conn_info *conn)
 {
 	debugfs("enter");
-	priv.name = opts.device;
 	priv.options = strdup("daemonize=0,interface=172.16.9.146");
 	priv.controller = controller_init(priv.options);
 	if (priv.controller == NULL) {
