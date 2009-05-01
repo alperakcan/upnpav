@@ -25,6 +25,8 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 {
 	char *d;
 	char *o;
+	char *p;
+	char *t;
 	entry_t *e;
 	entry_t *r;
 	client_device_t *device;
@@ -34,13 +36,46 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 	if (strcmp(path, "/") == 0) {
 		pthread_mutex_lock(&priv.controller->mutex);
 		if (list_count(&priv.controller->devices) > 0) {
-			filler(buffer, ".metadata", NULL, 0);
+			filler(buffer, ".devices", NULL, 0);
 		}
 		list_for_each_entry(device, &priv.controller->devices, head) {
 			filler(buffer, device->name, NULL, 0);
 		}
 		pthread_mutex_unlock(&priv.controller->mutex);
-	} else if (strstr(path, "/.metadata") != NULL) {
+	} else if (((t = strstr(path, "/.metadata")) != NULL) &&
+		   (strcmp(t, "/.metadata") == 0)) {
+		p = strdup(path);
+		if (p == NULL) {
+			debugfs("strdup() failed");
+			return 0;
+		}
+		t = strstr(p, "/.metadata");
+		*t = '\0';
+		if (do_findpath(p, &d, &o) != 0) {
+			debugfs("do_findpath() failed");
+			free(p);
+			return 0;
+		}
+		free(p);
+		e = controller_browse_children(priv.controller, d, o);
+		if (e == NULL) {
+			debugfs("controller_browse_children('%s', '%s') failed", d, o);
+			free(d);
+			free(o);
+			return 0;
+		}
+		r = e;
+		while (e) {
+			p = NULL;
+			if (asprintf(&p, "%s.xml", e->didl.dc.title) >= 0) {
+				filler(buffer, p, NULL, 0);
+				free(p);
+			}
+			e = e->next;
+		}
+		entry_uninit(r);
+		free(d);
+		free(o);
 	} else {
 		if (do_findpath(path, &d, &o) != 0) {
 			debugfs("do_findpath() failed");
