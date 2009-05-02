@@ -17,11 +17,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
+#include <inttypes.h>
 
-#include <upnp/upnp.h>
-#include <upnp/upnptools.h>
-#include <upnp/ithread.h>
-
+#include "upnp.h"
 #include "common.h"
 
 typedef enum {

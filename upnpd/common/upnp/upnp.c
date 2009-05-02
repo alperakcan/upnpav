@@ -910,6 +910,9 @@ unsigned short upnp_getport (upnp_t *upnp)
 upnp_t * upnp_init (const char *host, const unsigned short port)
 {
 	upnp_t *upnp;
+	debugf("ignoring sigpipe signal");
+	signal(SIGPIPE, SIG_IGN);
+	debugf("initializing upnp stack");
 	upnp = (upnp_t *) malloc(sizeof(upnp_t));
 	if (upnp == NULL) {
 		return NULL;
