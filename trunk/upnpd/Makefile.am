@@ -18,7 +18,7 @@ upnpd_CFLAGS =	\
 
 if ENABLE_CONTROLLER
 SUBDIRS      += controller
-upnpd_LDADD  += $(top_builddir)/upnpd/controller/libcontroller.a -lrt
+upnpd_LDADD  += $(top_builddir)/upnpd/controller/libcontroller.a
 endif
 
 if ENABLE_MEDIASERVER

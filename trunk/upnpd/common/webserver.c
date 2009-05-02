@@ -28,6 +28,7 @@
 #include <inttypes.h>
 #include <time.h>
 #include <pthread.h>
+#include <signal.h>
 
 #include "upnp.h"
 #include "common.h"
@@ -543,6 +544,7 @@ out:
 	pthread_cond_signal(&webserver_thread->cond);
 	pthread_mutex_unlock(&webserver_thread->mutex);
 
+	debugf("returning from webserver thread");
 	return NULL;
 }
 
@@ -577,12 +579,12 @@ static void * webserver_loop (void *arg)
 		pfd.events = POLLIN;
 
 		rc = poll(&pfd, 1, timeout);
-
 		pthread_mutex_lock(&webserver->mutex);
 		running = webserver->running;
 		list_for_each_entry_safe(webserver_thread, webserver_thread_next, &webserver->threads, head) {
 			pthread_mutex_lock(&webserver_thread->mutex);
 			if (webserver_thread->stopped == 1) {
+				debugf("joining webserver thread");
 				pthread_join(webserver_thread->thread, NULL);
 				debugf("closing stopped webserver child threads");
 				list_del(&webserver_thread->head);

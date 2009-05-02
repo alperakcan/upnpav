@@ -22,7 +22,7 @@
 void * op_init (struct fuse_conn_info *conn)
 {
 	debugfs("enter");
-	priv.options = strdup("daemonize=0,interface=172.16.9.146");
+	priv.options = strdup("daemonize=0,interface=192.168.1.1");
 	priv.controller = controller_init(priv.options);
 	if (priv.controller == NULL) {
 		debugfs("controller_init('%s') failed", priv.options);

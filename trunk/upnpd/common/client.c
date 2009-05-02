@@ -320,6 +320,7 @@ static void * client_timer (void *arg)
 {
 	int stamp;
 	client_t *client;
+	struct timeval tval;
 	struct timespec tspec;
 	client_device_t *device;
 	client_device_t *devicen;
@@ -335,8 +336,9 @@ static void * client_timer (void *arg)
 
 	while (1) {
 		pthread_mutex_lock(&client->mutex);
-		clock_gettime(CLOCK_REALTIME, &tspec);
-		tspec.tv_sec += stamp;
+		gettimeofday(&tval, NULL);
+		tspec.tv_sec = tval.tv_sec + stamp;
+		tspec.tv_nsec = 0;
 		pthread_cond_timedwait(&client->cond, &client->mutex, &tspec);
 		if (client->running == 0) {
 			goto out;
