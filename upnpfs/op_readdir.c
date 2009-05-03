@@ -93,8 +93,8 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 		while (e) {
 			char *pt;
 			if (asprintf(&pt, "%s/%s", path, e->didl.dc.title) >= 0) {
-				do_insertcache(pt, d, e->didl.dc.title);
-				free(ptr);
+				do_insertcache(pt, d, e->didl.entryid);
+				free(pt);
 			}
 			filler(buffer, e->didl.dc.title, NULL, 0);
 			e = e->next;
