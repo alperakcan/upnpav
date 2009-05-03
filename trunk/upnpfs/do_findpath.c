@@ -27,7 +27,7 @@ int do_findcache (const char *path, char **device, char **object)
 		if (strcmp(path, c->path) == 0) {
 			*device = strdup(c->device);
 			*object = strdup(c->object);
-			debugfs("cache found for '%s'", path);
+			debugfs("cache found for '%s' (%s:%s)", path, *device, *object);
 			return 0;
 		}
 	}
@@ -55,7 +55,7 @@ int do_insertcache (const char *path, const char *device, char *object)
 	c->device = strdup(device);
 	c->object = strdup(object);
 	list_add(&c->head, &priv.cache);
-	debugfs("insert cache update for '%s'", path);
+	debugfs("insert cache update for '%s' (%s:%s)", path, device, object);
 	debugfs("leave");
 	return 0;
 }
@@ -113,6 +113,7 @@ int do_findpath (const char *path, char **device, char **object)
 		e->didl.entryid = NULL;
 		entry_uninit(e);
 		e = controller_browse_children(priv.controller, d, o);
+		debugfs("controller_browse_clidren returned %p", e);
 		if (e == NULL) {
 			debugfs("controller_browse_children('%s', '%s') failed", d, o);
 			free(o);
@@ -159,5 +160,6 @@ int do_findpath (const char *path, char **device, char **object)
 	do_insertcache(path, *device, *object);
 	entry_uninit(e);
 	free(tmp);
+	debugfs("leave");
 	return 0;
 }

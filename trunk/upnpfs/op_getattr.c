@@ -30,7 +30,7 @@ int op_getattr (const char *path, struct stat *stbuf)
 	entry_t *e;
 	debugfs("enter");
 	debugfs("path = '%s'", path);
-	t = time(NULL);
+	t = 0;
 	memset(stbuf, 0, sizeof(*stbuf));
 	if (strcmp(path, "/") == 0) {
 		stbuf->st_mode = S_IFDIR | 0755;
