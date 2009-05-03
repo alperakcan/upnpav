@@ -70,6 +70,10 @@ int do_findpath (const char *path, char **device, char **object)
 	entry_t *e;
 	entry_t *r;
 	debugfs("path: %s", path);
+	if (strstr(path, "/.") != NULL) {
+		debugfs("hidden file ?");
+		return -1;
+	}
 	*device = NULL;
 	*object = NULL;
 	if (do_findcache(path, device, object) == 0) {
