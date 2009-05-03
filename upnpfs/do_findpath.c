@@ -137,6 +137,7 @@ int do_findpath (const char *path, char **device, char **object)
 			free(tmp);
 			return -1;
 		}
+		do_insertcache(path, d, e->didl.entryid);
 		entry_uninit(r);
 	}
 	free(o);
