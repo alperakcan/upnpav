@@ -37,6 +37,7 @@ void * op_init (struct fuse_conn_info *conn)
 		debugfs("controller_init('%s') failed", priv.options);
 		exit(-1);
 	}
+	list_init(&priv.cache);
 	debugfs("leave");
 	return NULL;
 }
