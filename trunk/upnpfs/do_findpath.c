@@ -19,7 +19,7 @@
 
 #include "upnpfs.h"
 
-static int do_findcache (const char *path, char **device, char **object)
+int do_findcache (const char *path, char **device, char **object)
 {
 	upnpfs_cache_t *c;
 	debugfs("enter");
@@ -35,7 +35,7 @@ static int do_findcache (const char *path, char **device, char **object)
 	return -1;
 }
 
-static int do_insertcache (const char *path, const char *device, char *object)
+int do_insertcache (const char *path, const char *device, char *object)
 {
 	upnpfs_cache_t *c;
 	debugfs("enter");
