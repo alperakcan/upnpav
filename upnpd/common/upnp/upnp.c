@@ -25,7 +25,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <sys/poll.h>
-
+#include <signal.h>
 
 #include "upnp.h"
 #include "ssdp.h"
