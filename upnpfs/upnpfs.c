@@ -97,7 +97,7 @@ static int parse_options (int argc, char *argv[])
 		{ NULL,		 0,			NULL,  0  }
 	};
 
-#if 1
+#if 0
 	printf("arguments;\n");
 	for (c = 0; c < argc; c++) {
 		printf("%d: %s\n", c, argv[c]);
