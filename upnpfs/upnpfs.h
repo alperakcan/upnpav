@@ -47,6 +47,13 @@
 #define PATH_MAX 4096
 #endif
 
+typedef struct upnpfs_cache_s {
+	list_t head;
+	char *path;
+	char *device;
+	char *object;
+} upnpfs_cache_t;
+
 struct options_s {
 	int debug;
 	int silent;
@@ -59,6 +66,7 @@ struct private_s {
 	char *name;
 	char *options;
 	client_t *controller;
+	list_t cache;
 };
 
 extern struct options_s opts;

@@ -19,6 +19,47 @@
 
 #include "upnpfs.h"
 
+static int do_findcache (const char *path, char **device, char **object)
+{
+	upnpfs_cache_t *c;
+	debugfs("enter");
+	list_for_each_entry(c, &priv.cache, head) {
+		if (strcmp(path, c->path) == 0) {
+			*device = strdup(c->device);
+			*object = strdup(c->object);
+			debugfs("cache found for '%s'", path);
+			return 0;
+		}
+	}
+	debugfs("leave");
+	return -1;
+}
+
+static int do_insertcache (const char *path, const char *device, char *object)
+{
+	upnpfs_cache_t *c;
+	debugfs("enter");
+	list_for_each_entry(c, &priv.cache, head) {
+		if (strcmp(path, c->path) == 0) {
+			free(c->device);
+			free(c->object);
+			c->device = strdup(device);
+			c->object = strdup(object);
+			debugfs("cache update for '%s'", path);
+			return 0;
+		}
+	}
+	c = (upnpfs_cache_t *) malloc(sizeof(upnpfs_cache_t));
+	memset(c, 0, sizeof(upnpfs_cache_t));
+	c->path = strdup(path);
+	c->device = strdup(device);
+	c->object = strdup(object);
+	list_add(&c->head, &priv.cache);
+	debugfs("insert cache update for '%s'", path);
+	debugfs("leave");
+	return 0;
+}
+
 int do_findpath (const char *path, char **device, char **object)
 {
 	char *d;
@@ -31,6 +72,10 @@ int do_findpath (const char *path, char **device, char **object)
 	debugfs("path: %s", path);
 	*device = NULL;
 	*object = NULL;
+	if (do_findcache(path, device, object) == 0) {
+		debugfs("working from cache");
+		return 0;
+	}
 	tmp  = strdup(path);
 	if  (tmp == NULL) {
 		return -1;
@@ -106,6 +151,7 @@ int do_findpath (const char *path, char **device, char **object)
 		free(tmp);
 		return -1;
 	}
+	do_insertcache(path, *device, *object);
 	entry_uninit(e);
 	free(tmp);
 	return 0;
