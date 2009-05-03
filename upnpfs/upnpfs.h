@@ -105,6 +105,8 @@ typedef struct upnpfs_file_s {
 	char *protocol;
 } upnpfs_file_t;
 
+int do_insertcache (const char *path, const char *device, char *object);
+
 int do_findpath (const char *path, char **device, char **object);
 
 int op_access (const char *path, int mask);
