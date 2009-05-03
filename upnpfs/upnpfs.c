@@ -88,15 +88,16 @@ static int parse_options (int argc, char *argv[])
 {
 	int c;
 
-	static const char *sopt = "-o:hv";
+	static const char *sopt = "-o:i:hv";
 	static const struct option lopt[] = {
 		{ "options",	 required_argument,	NULL, 'o' },
 		{ "help",	 no_argument,		NULL, 'h' },
+		{ "interface",	 no_argument,		NULL, 'i' },
 		{ "verbose",	 no_argument,		NULL, 'v' },
 		{ NULL,		 0,			NULL,  0  }
 	};
 
-#if 0
+#if 1
 	printf("arguments;\n");
 	for (c = 0; c < argc; c++) {
 		printf("%d: %s\n", c, argv[c]);
@@ -109,8 +110,8 @@ static int parse_options (int argc, char *argv[])
 	while ((c = getopt_long(argc, argv, sopt, lopt, NULL)) != -1) {
 		switch (c) {
 			case 1:	/* A non-option argument */
-				if (!opts.mnt_point) {
-					opts.mnt_point = optarg;
+				if (!opts.mntpoint) {
+					opts.mntpoint = optarg;
 				} else {
 					debugfs("You must specify exactly one mount point");
 					return -1;
@@ -132,14 +133,21 @@ static int parse_options (int argc, char *argv[])
 				 * we don't use it because mount(8) passes it.
 				 */
 				break;
+			case 'i':
+				opts.interface = optarg;
+				break;
 			default:
 				debugfs("Unknown option '%s'", argv[optind - 1]);
 				return -1;
 		}
 	}
 
-	if (!opts.mnt_point) {
+	if (!opts.mntpoint) {
 		debugfs("No mount point is specified");
+		return -1;
+	}
+	if (!opts.interface) {
+		debugfs("No interface is specified");
 		return -1;
 	}
 
@@ -191,16 +199,12 @@ static char * parse_mount_options (const char *orig_opts)
 	strcat(ret, def_opts);
 	strcat(ret, "ro,");
 	strcat(ret, "fsname=");
+	strcat(ret, "upnpfs");
 #if __FreeBSD__ == 10
 	strcat(ret, ",fstypename=");
-	strcat(ret, "ext2");
+	strcat(ret, "upnpfs");
 	strcat(ret, ",volname=");
-	s = strrchr(opts.mnt_point, '/');
-	if (s != NULL) {
-		strcat(ret, s + 1);
-	} else {
-		strcat(ret, opts.mnt_point);
-	}
+	strcat(ret, "upnpfs");
 #endif
 exit:
 	free(options);
@@ -270,7 +274,8 @@ int main (int argc, char *argv[])
 		goto err_out;
 	}
 
-	debugfs("opts.mnt_point: %s", opts.mnt_point);
+	debugfs("opts.mntpoint: %s", opts.mntpoint);
+	debugfs("opts.interface: %s", opts.interface);
 	debugfs("opts.options: %s", opts.options);
 	debugfs("parsed_options: %s", parsed_options);
 
@@ -278,7 +283,7 @@ int main (int argc, char *argv[])
 	    fuse_opt_add_arg(&fargs, "-s") == -1 ||
 	    fuse_opt_add_arg(&fargs, "-o") == -1 ||
 	    fuse_opt_add_arg(&fargs, parsed_options) == -1 ||
-	    fuse_opt_add_arg(&fargs, opts.mnt_point) == -1) {
+	    fuse_opt_add_arg(&fargs, opts.mntpoint) == -1) {
 		debugfs("Failed to set FUSE options");
 		fuse_opt_free_args(&fargs);
 		err = -5;

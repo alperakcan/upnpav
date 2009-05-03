@@ -50,7 +50,8 @@
 struct options_s {
 	int debug;
 	int silent;
-	char *mnt_point;
+	char *mntpoint;
+	char *interface;
 	char *options;
 };
 
