@@ -21,8 +21,17 @@
 
 void * op_init (struct fuse_conn_info *conn)
 {
+	char *ipaddr;
 	debugfs("enter");
-	priv.options = strdup("daemonize=0,interface=192.168.1.1");
+	ipaddr = interface_getaddr(opts.interface);
+	if (ipaddr == NULL) {
+		debugfs("interface_getaddr('%s') failed", opts.interface);
+		exit(-1);
+	}
+	if (asprintf(&priv.options, "aemonize=0,interface=%s", ipaddr) < 0) {
+		debugfs("interface_getaddr('%s') failed", opts.interface);
+		exit(-2);
+	}
 	priv.controller = controller_init(priv.options);
 	if (priv.controller == NULL) {
 		debugfs("controller_init('%s') failed", priv.options);
