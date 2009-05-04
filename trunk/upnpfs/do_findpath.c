@@ -43,8 +43,21 @@ upnpfs_cache_t * do_insertcache (const char *path, const char *device, entry_t *
 			return c;
 		}
 	}
+	if (list_count(&priv.cache) > priv.cache_max) {
+		c = list_entry(priv.cache.prev, upnpfs_cache_t, head);
+		list_del(&c->head);
+		free(c->path);
+		free(c->device);
+		free(c->object);
+		free(c->source);
+		free(c);
+	}
 	debugfs("creating new cache entry");
 	c = (upnpfs_cache_t *) malloc(sizeof(upnpfs_cache_t));
+	if (c == NULL) {
+		debugfs("malloc() failed");
+		return NULL;
+	}
 	memset(c, 0, sizeof(upnpfs_cache_t));
 	debugfs("path: %s", path);
 	c->path = strdup(path);
@@ -71,6 +84,7 @@ upnpfs_cache_t * do_findpath (const char *path)
 	char *d;
 	char *o;
 	char *p;
+	char *pt;
 	char *dir;
 	char *tmp;
 	entry_t *e;
@@ -112,7 +126,13 @@ upnpfs_cache_t * do_findpath (const char *path)
 		free(tmp);
 		return NULL;
 	}
-	c = do_insertcache(path, d, e);
+	if (asprintf(&pt, "/%s", d) < 0) {
+		free(tmp);
+		entry_uninit(e);
+		return NULL;
+	}
+	c = do_insertcache(pt, d, e);
+	free(pt);
 	while (p && *p && (dir = strsep(&p, "/"))) {
 		debugfs("looking for '%s", dir);
 		free(o);

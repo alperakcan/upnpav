@@ -93,6 +93,9 @@ typedef struct upnp_url_s {
 	char *path;
 } upnp_url_t;
 
+#define debugf(fmt...) debug_debugf(__FILE__, __LINE__, __FUNCTION__, fmt);
+void debug_debugf (char *file, int line, const char *func, char *fmt, ...);
+
 int upnp_url_uninit (upnp_url_t *url);
 int upnp_url_parse (const char *uri, upnp_url_t *url);
 

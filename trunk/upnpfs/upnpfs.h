@@ -70,6 +70,7 @@ struct private_s {
 	char *options;
 	client_t *controller;
 	list_t cache;
+	unsigned int cache_max;
 };
 
 extern struct options_s opts;

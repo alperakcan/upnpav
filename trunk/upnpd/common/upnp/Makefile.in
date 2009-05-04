@@ -52,7 +52,8 @@ am_libupnp_a_OBJECTS = libupnp_a-clear.$(OBJEXT) \
 	libupnp_a-pack.$(OBJEXT) libupnp_a-parse.$(OBJEXT) \
 	libupnp_a-unpack.$(OBJEXT) libupnp_a-unparse.$(OBJEXT) \
 	libupnp_a-uuid_time.$(OBJEXT) libupnp_a-gena.$(OBJEXT) \
-	libupnp_a-ssdp.$(OBJEXT) libupnp_a-upnp.$(OBJEXT)
+	libupnp_a-ssdp.$(OBJEXT) libupnp_a-upnp.$(OBJEXT) \
+	libupnp_a-debug.$(OBJEXT)
 libupnp_a_OBJECTS = $(am_libupnp_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -212,7 +213,8 @@ libupnp_a_SOURCES = \
 	gena.h \
 	gena.c \
 	ssdp.c \
-	upnp.c
+	upnp.c \
+	debug.c
 
 libupnp_a_CFLAGS = \
 	-I$(top_srcdir)/ixml/inc \
@@ -268,6 +270,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libupnp_a-clear.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libupnp_a-compare.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libupnp_a-copy.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libupnp_a-debug.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libupnp_a-gen_uuid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libupnp_a-gena.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libupnp_a-isnull.Po@am__quote@
@@ -481,6 +484,20 @@ libupnp_a-upnp.obj: upnp.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='upnp.c' object='libupnp_a-upnp.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libupnp_a_CFLAGS) $(CFLAGS) -c -o libupnp_a-upnp.obj `if test -f 'upnp.c'; then $(CYGPATH_W) 'upnp.c'; else $(CYGPATH_W) '$(srcdir)/upnp.c'; fi`
+
+libupnp_a-debug.o: debug.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libupnp_a_CFLAGS) $(CFLAGS) -MT libupnp_a-debug.o -MD -MP -MF $(DEPDIR)/libupnp_a-debug.Tpo -c -o libupnp_a-debug.o `test -f 'debug.c' || echo '$(srcdir)/'`debug.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libupnp_a-debug.Tpo $(DEPDIR)/libupnp_a-debug.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='debug.c' object='libupnp_a-debug.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libupnp_a_CFLAGS) $(CFLAGS) -c -o libupnp_a-debug.o `test -f 'debug.c' || echo '$(srcdir)/'`debug.c
+
+libupnp_a-debug.obj: debug.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libupnp_a_CFLAGS) $(CFLAGS) -MT libupnp_a-debug.obj -MD -MP -MF $(DEPDIR)/libupnp_a-debug.Tpo -c -o libupnp_a-debug.obj `if test -f 'debug.c'; then $(CYGPATH_W) 'debug.c'; else $(CYGPATH_W) '$(srcdir)/debug.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libupnp_a-debug.Tpo $(DEPDIR)/libupnp_a-debug.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='debug.c' object='libupnp_a-debug.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libupnp_a_CFLAGS) $(CFLAGS) -c -o libupnp_a-debug.obj `if test -f 'debug.c'; then $(CYGPATH_W) 'debug.c'; else $(CYGPATH_W) '$(srcdir)/debug.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

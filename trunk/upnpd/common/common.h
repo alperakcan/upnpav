@@ -554,11 +554,6 @@ struct device_s {
 	int daemonize;
 };
 
-/* debug.c */
-
-#define debugf(fmt...) debug_debugf(__FILE__, __LINE__, __FUNCTION__, fmt);
-void debug_debugf (char *file, int line, const char *func, char *fmt, ...);
-
 /* client.c */
 
 int client_init (client_t *client);
