@@ -20,6 +20,8 @@
 #ifndef UPNPFS_H_
 #define UPNPFS_H_
 
+#define _GNU_SOURCE
+
 #include <config.h>
 
 #include <stdio.h>
@@ -72,6 +74,7 @@ struct private_s {
 	client_t *controller;
 	list_t cache;
 	unsigned int cache_size;
+	pthread_mutex_t cache_mutex;
 };
 
 extern struct options_s opts;
@@ -108,6 +111,12 @@ typedef struct upnpfs_file_s {
 	char *path;
 	unsigned int size;
 } upnpfs_file_t;
+
+int do_releasecache (upnpfs_cache_t *cache);
+
+upnpfs_cache_t * do_referencecache (upnpfs_cache_t *cache);
+
+upnpfs_cache_t * do_findcache (const char *path);
 
 upnpfs_cache_t * do_insertcache (const char *path, const char *device, entry_t *entry);
 
