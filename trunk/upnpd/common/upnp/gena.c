@@ -34,8 +34,9 @@
 
 #if 1
 #define debugf(a...) { \
-	printf(a); \
-	printf(" [%s (%s:%d)]\n", __FUNCTION__, __FILE__, __LINE__); \
+	fprintf(stderr, a); \
+	fprintf(stderr, " [%s (%s:%d)]\n", __FUNCTION__, __FILE__, __LINE__); \
+	fflush(stderr); \
 }
 #else
 #define debugf(a...)
@@ -47,8 +48,7 @@
 #define GENA_LISTEN_MAX	100
 #define GENA_HEADER_SIZE	(1024 * 4)
 #define GENA_DATA_SIZE	(1024 * 1024)
-#define GENA_READ_TIMEOUT	1000
-#define GENA_SEND_TIMEOUT	-1
+#define GENA_SOCKET_TIMEOUT	5000
 
 typedef struct gena_filerange_s {
 	unsigned long start;
@@ -149,6 +149,7 @@ static int gena_send (int fd, int timeout, const void *buf, unsigned int len)
 
 	rc = poll(&pfd, 1, timeout);
 	if (rc <= 0 || pfd.revents != POLLOUT) {
+		debugf("poll failed (%d, 0x%x)", rc, pfd.revents);
 		return 0;
 	}
 
@@ -333,7 +334,7 @@ static void gena_senderrorheader (int fd, gena_response_type_t type)
 	}
 	header[len] = '\0';
 	debugf("sending header: %s", header);
-	if (gena_send(fd, GENA_SEND_TIMEOUT, header, len) != len) {
+	if (gena_send(fd, GENA_SOCKET_TIMEOUT, header, len) != len) {
 		debugf("send() failed");
 	}
 	free(header);
@@ -416,7 +417,7 @@ static void gena_sendfileheader (int fd, gena_fileinfo_internal_t *fileinfo)
 	header[len] = '\0';
 
 	debugf("header: %s", header);
-	if (gena_send(fd, GENA_SEND_TIMEOUT, header, len) != len) {
+	if (gena_send(fd, GENA_SOCKET_TIMEOUT, header, len) != len) {
 		debugf("send() failed");
 	}
 	free(header);
@@ -429,7 +430,7 @@ static void gena_handler_unsubscribe (gena_thread_t *gena_thread, char *header, 
 	event.event.subscribe.path = strdup(path);
 
 	while (1) {
-		if (gena_getline(gena_thread->fd, GENA_READ_TIMEOUT, header, GENA_HEADER_SIZE) <= 0) {
+		if (gena_getline(gena_thread->fd, GENA_SOCKET_TIMEOUT, header, GENA_HEADER_SIZE) <= 0) {
 			break;
 		}
 		if (strncasecmp(header, "HOST:", strlen("HOST:")) == 0) {
@@ -489,7 +490,7 @@ static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, co
 	event.event.subscribe.path = strdup(path);
 
 	while (1) {
-		if (gena_getline(gena_thread->fd, GENA_READ_TIMEOUT, header, GENA_HEADER_SIZE) <= 0) {
+		if (gena_getline(gena_thread->fd, GENA_SOCKET_TIMEOUT, header, GENA_HEADER_SIZE) <= 0) {
 			break;
 		}
 		if (strncasecmp(header, "HOST:", strlen("HOST:")) == 0) {
@@ -550,7 +551,7 @@ static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, co
 		if (gena_thread->callbacks->gena.event(gena_thread->callbacks->gena.cookie, &event) == 0) {
 			sprintf(header, fmt, event.event.subscribe.sid, 1800);
 			debugf("header:\n%s", header);
-			if (gena_send(gena_thread->fd, GENA_SEND_TIMEOUT, header, strlen(header)) != strlen(header)) {
+			if (gena_send(gena_thread->fd, GENA_SOCKET_TIMEOUT, header, strlen(header)) != strlen(header)) {
 				debugf("send() failed");
 			} else {
 				event.type = GENA_EVENT_TYPE_SUBSCRIBE_ACCEPT;
@@ -567,7 +568,7 @@ static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, co
 		if (gena_thread->callbacks->gena.event(gena_thread->callbacks->gena.cookie, &event) == 0) {
 			sprintf(header, fmt, event.event.subscribe.sid, 1800);
 			debugf("header:\n%s", header);
-			if (gena_send(gena_thread->fd, GENA_SEND_TIMEOUT, header, strlen(header)) != strlen(header)) {
+			if (gena_send(gena_thread->fd, GENA_SOCKET_TIMEOUT, header, strlen(header)) != strlen(header)) {
 				debugf("send() failed");
 			} else {
 				event.type = GENA_EVENT_TYPE_SUBSCRIBE_ACCEPT;
@@ -606,7 +607,7 @@ static void gena_handler_post (gena_thread_t *gena_thread, char *header, const c
 	event.event.action.path = strdup(path);
 
 	while (1) {
-		if (gena_getline(gena_thread->fd, GENA_READ_TIMEOUT, header, GENA_HEADER_SIZE) <= 0) {
+		if (gena_getline(gena_thread->fd, GENA_SOCKET_TIMEOUT, header, GENA_HEADER_SIZE) <= 0) {
 			break;
 		}
 		if (strncasecmp(header, "HOST:", strlen("HOST:")) == 0) {
@@ -628,7 +629,7 @@ static void gena_handler_post (gena_thread_t *gena_thread, char *header, const c
 		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
 		goto out;
 	}
-	if (gena_getcontent(gena_thread->fd, GENA_READ_TIMEOUT, event.event.action.request, event.event.action.length) != event.event.action.length) {
+	if (gena_getcontent(gena_thread->fd, GENA_SOCKET_TIMEOUT, event.event.action.request, event.event.action.length) != event.event.action.length) {
 		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_BAD_REQUEST);
 		goto out;
 	}
@@ -668,10 +669,11 @@ static void gena_handler_post (gena_thread_t *gena_thread, char *header, const c
 		goto out;
 	}
 	if (gena_thread->callbacks->gena.event(gena_thread->callbacks->gena.cookie, &event) == 0) {
+		debugf("sending action response");
 		sprintf(header, format, strlen(event.event.action.response));
-		if (gena_send(gena_thread->fd, GENA_SEND_TIMEOUT, header, strlen(header)) != strlen(header)) {
+		if (gena_send(gena_thread->fd, GENA_SOCKET_TIMEOUT, header, strlen(header)) != strlen(header)) {
 			debugf("send() failed");
-		} else if (gena_send(gena_thread->fd, GENA_SEND_TIMEOUT, event.event.action.response, strlen(event.event.action.response)) != strlen(event.event.action.response)) {
+		} else if (gena_send(gena_thread->fd, GENA_SOCKET_TIMEOUT, event.event.action.response, strlen(event.event.action.response)) != strlen(event.event.action.response)) {
 			debugf("send() failed");
 		}
 		goto out;
@@ -731,7 +733,7 @@ static void * gena_thread_loop (void *arg)
 	if (header == NULL) {
 		goto out;
 	}
-	if (gena_getline(gena_thread->fd, GENA_READ_TIMEOUT, header, GENA_HEADER_SIZE) <= 0) {
+	if (gena_getline(gena_thread->fd, GENA_SOCKET_TIMEOUT, header, GENA_HEADER_SIZE) <= 0) {
 		gena_senderrorheader(gena_thread->fd, GENA_RESPONSE_TYPE_BAD_REQUEST);
 		goto out;
 	}
@@ -791,7 +793,7 @@ static void * gena_thread_loop (void *arg)
 
 	/* eat rest of headers */
 	while (1) {
-		if (gena_getline(gena_thread->fd, GENA_READ_TIMEOUT, header, GENA_HEADER_SIZE) <= 0) {
+		if (gena_getline(gena_thread->fd, GENA_SOCKET_TIMEOUT, header, GENA_HEADER_SIZE) <= 0) {
 			break;
 		}
 		if (strncasecmp(header, "Range:", strlen("Range:")) == 0) {
@@ -879,7 +881,7 @@ static void * gena_thread_loop (void *arg)
 			debugf("read failed");
 			break;
 		}
-		if (gena_send(gena_thread->fd, GENA_SEND_TIMEOUT, data, rlen) != rlen) {
+		if (gena_send(gena_thread->fd, GENA_SOCKET_TIMEOUT, data, rlen) != rlen) {
 			debugf("send() failed");
 			break;
 		}
@@ -1079,7 +1081,16 @@ static int gena_send_data (int s, const void *write_buf, int total_size)
 {
 	int ret;
 	int sent = 0;
+	struct pollfd pfd;
+
 	while (total_size > 0) {
+		memset(&pfd, 0, sizeof(struct pollfd));
+		pfd.fd = s;
+		pfd.events = POLLOUT;
+		ret = poll(&pfd, 1, GENA_SOCKET_TIMEOUT);
+		if (ret <= 0 || pfd.revents != POLLOUT) {
+			goto err;
+		}
 		ret = send(s, write_buf + sent, total_size, 0);
 		if (ret < 0) {
 			goto err;
@@ -1112,21 +1123,24 @@ char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port
 		close(fd);
 		return NULL;
 	}
-	if (gena_send_data(fd, header, strlen(header)) < 0) {
+	if (gena_send_data(fd, header, strlen(header)) != strlen(header)) {
 		close(fd);
+		debugf("gena_send_data() failed");
 		return NULL;
 	}
 	if (data != NULL) {
-		if (gena_send_data(fd, data, strlen(data)) < 0) {
+		if (gena_send_data(fd, data, strlen(data)) != strlen(data)) {
 			close(fd);
+			debugf("gena_send_data() failed");
 			return NULL;
 		}
 	}
+	debugf("request sent, waiting response");
 
 	length = 0;
 	buffer = malloc(GENA_HEADER_SIZE);
 	while (1) {
-		if (gena_getline(fd, GENA_READ_TIMEOUT, buffer, GENA_HEADER_SIZE) <= 0) {
+		if (gena_getline(fd, GENA_SOCKET_TIMEOUT, buffer, GENA_HEADER_SIZE) <= 0) {
 			break;
 		}
 		if (strncasecmp(buffer, "Content-length:", strlen("Content-length:")) == 0) {
@@ -1150,7 +1164,7 @@ char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port
 		memset(&pfd, 0, sizeof(struct pollfd));
 		pfd.fd = fd;
 		pfd.events = POLLIN;
-		r = poll(&pfd, 1, 1000);
+		r = poll(&pfd, 1, GENA_SOCKET_TIMEOUT);
 		if (r <= 0 || pfd.revents != POLLIN) {
 			break;
 		}
