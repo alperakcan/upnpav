@@ -417,7 +417,7 @@ entry_t * entry_didl (const unsigned int magic, const char *path)
 			asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
 			entry->didl.res.size = stbuf.st_size;
 		} else {
-			debugf("unkown mime '%s'", mime);
+			debugf("unknown mime '%s'", mime);
 			goto error;
 		}
 	}
