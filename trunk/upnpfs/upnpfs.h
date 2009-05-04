@@ -63,6 +63,7 @@ struct options_s {
 	char *mntpoint;
 	char *interface;
 	char *options;
+	int cache_size;
 };
 
 struct private_s {
@@ -70,7 +71,7 @@ struct private_s {
 	char *options;
 	client_t *controller;
 	list_t cache;
-	unsigned int cache_max;
+	unsigned int cache_size;
 };
 
 extern struct options_s opts;

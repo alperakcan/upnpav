@@ -38,7 +38,7 @@ void * op_init (struct fuse_conn_info *conn)
 		exit(-1);
 	}
 	list_init(&priv.cache);
-	priv.cache_max = 100;
+	priv.cache_size = opts.cache_size;
 	free(ipaddr);
 	debugfs("leave");
 	return NULL;
