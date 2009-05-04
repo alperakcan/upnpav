@@ -1024,6 +1024,7 @@ IXML_Document * upnp_makeaction (upnp_t *upnp, const char *actionname, const cha
 		"</u:%s>\n";
 	buffer = NULL;
 	action = NULL;
+	response = NULL;
 	if (upnp_url_parse(controlurl, &url) != 0) {
 		return NULL;
 	}
