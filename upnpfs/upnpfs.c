@@ -90,7 +90,7 @@ static int parse_options (int argc, char *argv[])
 {
 	int c;
 
-	static const char *sopt = "-o:i:hv";
+	static const char *sopt = "-o:i:c:hv";
 	static const struct option lopt[] = {
 		{ "options",	 required_argument,	NULL, 'o' },
 		{ "help",	 no_argument,		NULL, 'h' },

@@ -89,6 +89,7 @@ int op_getattr (const char *path, struct stat *stbuf)
 			stbuf->st_mtime = t;
 			stbuf->st_ctime = t;
 		}
+		do_releasecache(c);
 	}
 	debugfs("leave");
 	return 0;

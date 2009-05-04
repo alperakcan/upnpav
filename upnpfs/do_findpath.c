@@ -19,16 +19,75 @@
 
 #include "upnpfs.h"
 
+#include <pthread.h>
+
+static inline char * safe_strdup (const char *str)
+{
+	if (str != NULL) {
+		return strdup(str);
+	}
+	return NULL;
+}
+
+static inline int do_validatecache (upnpfs_cache_t *cache)
+{
+	if (cache->path == NULL ||
+	    cache->device == NULL ||
+	    cache->object == NULL ||
+	    (cache->container == 0 && cache->source == NULL)) {
+		return -1;
+	}
+	return 0;
+}
+
+int do_releasecache (upnpfs_cache_t *cache)
+{
+	if (cache == NULL) {
+		return 0;
+	}
+	free(cache->path);
+	free(cache->device);
+	free(cache->object);
+	free(cache->source);
+	free(cache);
+	return 0;
+}
+
+upnpfs_cache_t * do_referencecache (upnpfs_cache_t *cache)
+{
+	upnpfs_cache_t *c;
+	c = (upnpfs_cache_t *) malloc(sizeof(upnpfs_cache_t));
+	if (c == NULL) {
+		return NULL;
+	}
+	c->path = safe_strdup(cache->path);
+	c->device = safe_strdup(cache->device);
+	c->object = safe_strdup(cache->object);
+	c->source = safe_strdup(cache->source);
+	c->container = cache->container;
+	c->size = cache->size;
+	if (do_validatecache(c) != 0) {
+		do_releasecache(c);
+		return NULL;
+	}
+	return c;
+}
+
 upnpfs_cache_t * do_findcache (const char *path)
 {
 	upnpfs_cache_t *c;
+	upnpfs_cache_t *n;
 	debugfs("enter");
+	pthread_mutex_lock(&priv.cache_mutex);
 	list_for_each_entry(c, &priv.cache, head) {
 		if (strcmp(path, c->path) == 0) {
-			debugfs("returning cache entry %p", c);
-			return c;
+			n = do_referencecache(c);
+			debugfs("returning cache entry %p", n);
+			pthread_mutex_unlock(&priv.cache_mutex);
+			return n;
 		}
 	}
+	pthread_mutex_unlock(&priv.cache_mutex);
 	debugfs("leave");
 	return NULL;
 }
@@ -36,47 +95,54 @@ upnpfs_cache_t * do_findcache (const char *path)
 upnpfs_cache_t * do_insertcache (const char *path, const char *device, entry_t *entry)
 {
 	upnpfs_cache_t *c;
+	upnpfs_cache_t *n;
 	debugfs("enter");
+	pthread_mutex_lock(&priv.cache_mutex);
 	list_for_each_entry(c, &priv.cache, head) {
 		if (strcmp(path, c->path) == 0) {
-			debugfs("returning cache entry %p", c);
-			return c;
+			n = do_referencecache(c);
+			debugfs("returning cache entry '%p'", n);
+			pthread_mutex_unlock(&priv.cache_mutex);
+			return n;
 		}
 	}
 	if (list_count(&priv.cache) > priv.cache_size) {
 		c = list_entry(priv.cache.prev, upnpfs_cache_t, head);
 		list_del(&c->head);
-		free(c->path);
-		free(c->device);
-		free(c->object);
-		free(c->source);
-		free(c);
+		debugfs("too many cache, releasing: %s", c->path);
+		do_releasecache(c);
 	}
-	debugfs("creating new cache entry");
+	debugfs("creating new cache entry for '%s' '%s : %s", path, device, entry->didl.entryid);
 	c = (upnpfs_cache_t *) malloc(sizeof(upnpfs_cache_t));
 	if (c == NULL) {
 		debugfs("malloc() failed");
+		pthread_mutex_unlock(&priv.cache_mutex);
 		return NULL;
 	}
 	memset(c, 0, sizeof(upnpfs_cache_t));
-	debugfs("path: %s", path);
-	c->path = strdup(path);
-	debugfs("device: %s", device);
-	c->device = strdup(device);
-	debugfs("title: %s", entry->didl.dc.title);
-	c->object = strdup(entry->didl.entryid);
+	c->path = safe_strdup(path);
+	c->device = safe_strdup(device);
+	c->object = safe_strdup(entry->didl.entryid);
 	if (strncmp(entry->didl.upnp.object.class, "object.container", strlen("object.container")) == 0) {
 		debugfs("cache entry is a container");
 		c->container = 1;
 	} else if (strncmp(entry->didl.upnp.object.class, "object.item", strlen("object.item")) == 0) {
 		debugfs("cache entry is an item");
 		c->container = 0;
-		c->source = strdup(entry->didl.res.path);
+		c->source = safe_strdup(entry->didl.res.path);
 		c->size = entry->didl.res.size;
 	}
+	if (do_validatecache(c) != 0) {
+		debugfs("do_validatecache() failed");
+		do_releasecache(c);
+		pthread_mutex_unlock(&priv.cache_mutex);
+		return NULL;
+	}
+	n = do_referencecache(c);
 	list_add(&c->head, &priv.cache);
+	pthread_mutex_unlock(&priv.cache_mutex);
 	debugfs("leave");
-	return c;
+	return n;
 }
 
 upnpfs_cache_t * do_findpath (const char *path)
@@ -85,6 +151,7 @@ upnpfs_cache_t * do_findpath (const char *path)
 	char *o;
 	char *p;
 	char *pt;
+	char *ptm;
 	char *dir;
 	char *tmp;
 	entry_t *e;
@@ -132,7 +199,6 @@ upnpfs_cache_t * do_findpath (const char *path)
 		return NULL;
 	}
 	c = do_insertcache(pt, d, e);
-	free(pt);
 	while (p && *p && (dir = strsep(&p, "/"))) {
 		debugfs("looking for '%s", dir);
 		free(o);
@@ -143,8 +209,10 @@ upnpfs_cache_t * do_findpath (const char *path)
 		debugfs("controller_browse_clidren returned %p", e);
 		if (e == NULL) {
 			debugfs("controller_browse_children('%s', '%s') failed", d, o);
+			free(pt);
 			free(o);
 			free(tmp);
+			do_releasecache(c);
 			return NULL;
 		}
 		r = e;
@@ -156,22 +224,38 @@ upnpfs_cache_t * do_findpath (const char *path)
 		}
 		if (e == NULL) {
 			debugfs("could not find object '%s' in '%s'", o, d);
+			free(pt);
 			free(o);
 			entry_uninit(r);
+			do_releasecache(c);
 			free(tmp);
 			return NULL;
 		}
 		e = controller_browse_metadata(priv.controller, d, e->didl.entryid);
 		if (e == NULL) {
 			debugfs("could not find object '%s' in '%s'", o, d);
+			free(pt);
 			free(o);
 			entry_uninit(r);
+			do_releasecache(c);
 			free(tmp);
 			return NULL;
 		}
-		c = do_insertcache(path, d, e);
+		if (asprintf(&ptm, "%s/%s", pt, dir) < 0) {
+			free(pt);
+			free(o);
+			free(tmp);
+			entry_uninit(r);
+			do_releasecache(c);
+			return NULL;
+		}
+		free(pt);
+		pt = ptm;
+		do_releasecache(c);
+		c = do_insertcache(pt, d, e);
 		entry_uninit(r);
 	}
+	free(pt);
 	free(o);
 	entry_uninit(e);
 	free(tmp);

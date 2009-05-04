@@ -28,6 +28,7 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 	entry_t *e;
 	entry_t *r;
 	upnpfs_cache_t *c;
+	upnpfs_cache_t *n;
 	client_device_t *device;
 	debugfs("enter");
 	filler(buffer, ".", NULL, 0);
@@ -78,8 +79,10 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 			debugfs("do_findpath() failed");
 			return 0;
 		}
+		debugfs("cache entry for '%s' is '%s : %s'", path, c->device, c->object);
 		e = controller_browse_children(priv.controller, c->device, c->object);
 		if (e == NULL) {
+			do_releasecache(c);
 			debugfs("controller_browse_children('%s', '%s') failed", c->device, c->object);
 			return 0;
 		}
@@ -88,12 +91,14 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 		while (e) {
 			char *pt;
 			if (asprintf(&pt, "%s/%s", path, e->didl.dc.title) >= 0) {
-				do_insertcache(pt, c->device, e);
+				n = do_insertcache(pt, c->device, e);
+				do_releasecache(n);
 				free(pt);
 			}
 			filler(buffer, e->didl.dc.title, NULL, 0);
 			e = e->next;
 		}
+		do_releasecache(c);
 		entry_uninit(r);
 	}
 	debugfs("leave");
