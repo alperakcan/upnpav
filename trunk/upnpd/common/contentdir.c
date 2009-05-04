@@ -115,6 +115,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 			char *id;
 			if (objectid == NULL || strcmp(objectid, "0") == 0) {
 				entry = entry_didl(0, contentdir->rootpath);
+				debugf("found entry %p", entry);
 				entry_normalize_root(entry);
 			} else {
 				debugf("looking for '%s'", objectid);

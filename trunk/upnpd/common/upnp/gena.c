@@ -32,7 +32,7 @@
 #include "gena.h"
 #include "list.h"
 
-#if 0
+#if 1
 #define debugf(a...) { \
 	printf(a); \
 	printf(" [%s (%s:%d)]\n", __FUNCTION__, __FILE__, __LINE__); \
@@ -196,6 +196,7 @@ static int gena_getline (int fd, int timeout, char *buf, int buflen)
 
 	rc = poll(&pfd, 1, timeout);
 	if (rc <= 0 || pfd.revents != POLLIN) {
+		debugf("poll failed rc:%d", rc);
 		return 0;
 	}
 
@@ -1135,11 +1136,13 @@ char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port
 	free(buffer);
 	if (length <= 0) {
 		close(fd);
+		debugf("no data received %d", length);
 		return NULL;
 	}
 	buffer = malloc(sizeof(char) * (length + 1));
 	if (buffer == NULL) {
 		close(fd);
+		debugf("no data received %d", length);
 		return NULL;
 	}
 	t = 0;

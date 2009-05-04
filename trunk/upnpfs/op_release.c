@@ -27,7 +27,6 @@ int op_release (const char *path, struct fuse_file_info *fi)
 	free(f->device);
 	free(f->object);
 	free(f->path);
-	free(f->protocol);
 	free(f);
 	debugfs("leave");
 	return 0;
