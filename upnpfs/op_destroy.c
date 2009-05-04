@@ -21,8 +21,18 @@
 
 void op_destroy (void *userdata)
 {
+	upnpfs_cache_t *c;
+	upnpfs_cache_t *cn;
 	debugfs("enter");
 	controller_uninit(priv.controller);
 	free(priv.options);
+	list_for_each_entry_safe(c, cn, &priv.cache, head) {
+		list_del(&c->head);
+		free(c->path);
+		free(c->device);
+		free(c->object);
+		free(c->source);
+		free(c);
+	}
 	debugfs("leave");
 }

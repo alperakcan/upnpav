@@ -37,11 +37,6 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
-#define debugf(a...) { \
-	printf(a); \
-	printf(" [%s (%s:%d)]\n", __FUNCTION__, __FILE__, __LINE__); \
-}
-
 #define UPNP_SUBSCRIPTION_MAX 100
 
 typedef struct upnp_error_s {

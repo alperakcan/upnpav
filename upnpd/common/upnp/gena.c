@@ -29,18 +29,9 @@
 #include <ctype.h>
 #include <assert.h>
 
+#include "upnp.h"
 #include "gena.h"
 #include "list.h"
-
-#if 1
-#define debugf(a...) { \
-	fprintf(stderr, a); \
-	fprintf(stderr, " [%s (%s:%d)]\n", __FUNCTION__, __FILE__, __LINE__); \
-	fflush(stderr); \
-}
-#else
-#define debugf(a...)
-#endif
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define ARRAY_SIZE(a)		(sizeof(a) / sizeof((a)[0]))

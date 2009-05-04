@@ -19,7 +19,8 @@ libupnp_a_SOURCES = \
 	gena.h \
 	gena.c \
 	ssdp.c \
-	upnp.c
+	upnp.c \
+	debug.c
 
 libupnp_a_CFLAGS = \
 	-I$(top_srcdir)/ixml/inc \

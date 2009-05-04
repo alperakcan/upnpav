@@ -19,7 +19,7 @@
 #include <stdarg.h>
 #include <pthread.h>
 
-unsigned char upnpd_debug = 1;
+unsigned char upnp_debug = 0;
 
 void debug_debugf (char *file, int line, const char *func, char *fmt, ...)
 {
@@ -28,7 +28,7 @@ void debug_debugf (char *file, int line, const char *func, char *fmt, ...)
 	char *p;
 	va_list args;
 
-	if (upnpd_debug == 0) {
+	if (upnp_debug == 0) {
 		return;
 	}
 

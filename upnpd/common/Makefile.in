@@ -53,17 +53,16 @@ LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 libcommon_a_AR = $(AR) $(ARFLAGS)
 libcommon_a_LIBADD =
-am__libcommon_a_SOURCES_DIST = entry.c debug.c device.c upnp.c \
-	connection.c contentdir.c service.c inttool.c xml.c uri.c \
-	webserver.c interface.c common.h mediaserver.c client.c \
-	controller.c
+am__libcommon_a_SOURCES_DIST = entry.c device.c upnp.c connection.c \
+	contentdir.c service.c inttool.c xml.c uri.c webserver.c \
+	interface.c common.h mediaserver.c client.c controller.c
 @ENABLE_MEDIASERVER_TRUE@am__objects_1 =  \
 @ENABLE_MEDIASERVER_TRUE@	libcommon_a-mediaserver.$(OBJEXT)
 @ENABLE_CONTROLLER_TRUE@am__objects_2 = libcommon_a-client.$(OBJEXT) \
 @ENABLE_CONTROLLER_TRUE@	libcommon_a-controller.$(OBJEXT)
 am_libcommon_a_OBJECTS = libcommon_a-entry.$(OBJEXT) \
-	libcommon_a-debug.$(OBJEXT) libcommon_a-device.$(OBJEXT) \
-	libcommon_a-upnp.$(OBJEXT) libcommon_a-connection.$(OBJEXT) \
+	libcommon_a-device.$(OBJEXT) libcommon_a-upnp.$(OBJEXT) \
+	libcommon_a-connection.$(OBJEXT) \
 	libcommon_a-contentdir.$(OBJEXT) libcommon_a-service.$(OBJEXT) \
 	libcommon_a-inttool.$(OBJEXT) libcommon_a-xml.$(OBJEXT) \
 	libcommon_a-uri.$(OBJEXT) libcommon_a-webserver.$(OBJEXT) \
@@ -222,7 +221,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = upnp
 noinst_LIBRARIES = libcommon.a
-libcommon_a_SOURCES = entry.c debug.c device.c upnp.c connection.c \
+libcommon_a_SOURCES = entry.c device.c upnp.c connection.c \
 	contentdir.c service.c inttool.c xml.c uri.c webserver.c \
 	interface.c common.h $(am__append_1) $(am__append_2)
 libcommon_a_CFLAGS = \
@@ -291,7 +290,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-connection.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-contentdir.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-controller.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-debug.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-device.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-entry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcommon_a-interface.Po@am__quote@
@@ -337,20 +335,6 @@ libcommon_a-entry.obj: entry.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='entry.c' object='libcommon_a-entry.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-entry.obj `if test -f 'entry.c'; then $(CYGPATH_W) 'entry.c'; else $(CYGPATH_W) '$(srcdir)/entry.c'; fi`
-
-libcommon_a-debug.o: debug.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-debug.o -MD -MP -MF $(DEPDIR)/libcommon_a-debug.Tpo -c -o libcommon_a-debug.o `test -f 'debug.c' || echo '$(srcdir)/'`debug.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-debug.Tpo $(DEPDIR)/libcommon_a-debug.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='debug.c' object='libcommon_a-debug.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-debug.o `test -f 'debug.c' || echo '$(srcdir)/'`debug.c
-
-libcommon_a-debug.obj: debug.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-debug.obj -MD -MP -MF $(DEPDIR)/libcommon_a-debug.Tpo -c -o libcommon_a-debug.obj `if test -f 'debug.c'; then $(CYGPATH_W) 'debug.c'; else $(CYGPATH_W) '$(srcdir)/debug.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/libcommon_a-debug.Tpo $(DEPDIR)/libcommon_a-debug.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='debug.c' object='libcommon_a-debug.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -c -o libcommon_a-debug.obj `if test -f 'debug.c'; then $(CYGPATH_W) 'debug.c'; else $(CYGPATH_W) '$(srcdir)/debug.c'; fi`
 
 libcommon_a-device.o: device.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcommon_a_CFLAGS) $(CFLAGS) -MT libcommon_a-device.o -MD -MP -MF $(DEPDIR)/libcommon_a-device.Tpo -c -o libcommon_a-device.o `test -f 'device.c' || echo '$(srcdir)/'`device.c

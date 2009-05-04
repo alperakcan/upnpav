@@ -6,7 +6,6 @@ noinst_LIBRARIES = libcommon.a
 
 libcommon_a_SOURCES = \
 	entry.c \
-	debug.c \
 	device.c \
 	upnp.c \
 	connection.c \
