@@ -52,6 +52,9 @@ typedef struct upnpfs_cache_s {
 	char *path;
 	char *device;
 	char *object;
+	int container;
+	unsigned int size;
+	char *source;
 } upnpfs_cache_t;
 
 struct options_s {
@@ -102,12 +105,11 @@ typedef struct upnpfs_file_s {
 	char *object;
 	char *path;
 	unsigned int size;
-	char *protocol;
 } upnpfs_file_t;
 
-int do_insertcache (const char *path, const char *device, char *object);
+upnpfs_cache_t * do_insertcache (const char *path, const char *device, entry_t *entry);
 
-int do_findpath (const char *path, char **device, char **object);
+upnpfs_cache_t * do_findpath (const char *path);
 
 int op_access (const char *path, int mask);
 

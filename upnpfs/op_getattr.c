@@ -23,11 +23,9 @@
 
 int op_getattr (const char *path, struct stat *stbuf)
 {
-	char *d;
-	char *o;
 	char *p;
 	time_t t;
-	entry_t *e;
+	upnpfs_cache_t *c;
 	debugfs("enter");
 	debugfs("path = '%s'", path);
 	t = 0;
@@ -63,39 +61,25 @@ int op_getattr (const char *path, struct stat *stbuf)
 			stbuf->st_ctime = t;
 		}
 	} else {
-		if (do_findpath(path, &d, &o) != 0) {
+		c = do_findpath(path);
+		if (c == NULL) {
 			return -ENOENT;
 		}
-		e = controller_browse_metadata(priv.controller, d, o);
-		if (e == NULL) {
-			free(d);
-			free(o);
-			return -ENOENT;
-		}
-		if (strncmp(e->didl.upnp.object.class, "object.container", strlen("object.container")) == 0) {
+		if (c->container == 1) {
 			stbuf->st_mode = S_IFDIR | 0755;
 			stbuf->st_nlink = 2;
 			stbuf->st_size = 512;
 			stbuf->st_atime = t;
 			stbuf->st_mtime = t;
 			stbuf->st_ctime = t;
-		} else if (strncmp(e->didl.upnp.object.class, "object.item", strlen("object.item")) == 0) {
+		} else {
 			stbuf->st_mode = S_IFREG | 0444;
 			stbuf->st_nlink = 1;
-			stbuf->st_size = e->didl.res.size;
+			stbuf->st_size = c->size;
 			stbuf->st_atime = t;
 			stbuf->st_mtime = t;
 			stbuf->st_ctime = t;
-		} else {
-			entry_uninit(e);
-			free(d);
-			free(o);
-			return -ENOENT;
 		}
-		//entry_dump(e);
-		entry_uninit(e);
-		free(d);
-		free(o);
 	}
 	debugfs("leave");
 	return 0;

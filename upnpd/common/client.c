@@ -497,6 +497,7 @@ IXML_Document * client_action (client_t *client, char *devicename, char *service
 			goto found_device;
 		}
 	}
+	debugf("could not find device");
 	pthread_mutex_unlock(&client->mutex);
 	return NULL;
 
@@ -506,10 +507,12 @@ found_device:
 			goto found_service;
 		}
 	}
+	debugf("could not find service");
 	pthread_mutex_unlock(&client->mutex);
 	return NULL;
 
 found_service:
+	debugf("generating action");
 	response = upnp_makeaction(upnp, actionname, service->controlurl, service->type, param_count, param_name, param_val);
 	if (response == NULL) {
 		debugf("upnp_makeaction() failed");

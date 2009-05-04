@@ -23,12 +23,11 @@
 
 int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
 {
-	char *d;
-	char *o;
 	char *p;
 	char *t;
 	entry_t *e;
 	entry_t *r;
+	upnpfs_cache_t *c;
 	client_device_t *device;
 	debugfs("enter");
 	filler(buffer, ".", NULL, 0);
@@ -51,17 +50,16 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 		}
 		t = strstr(p, "/.metadata");
 		*t = '\0';
-		if (do_findpath(p, &d, &o) != 0) {
+		c = do_findpath(p);
+		if (c == NULL) {
 			debugfs("do_findpath() failed");
 			free(p);
 			return 0;
 		}
 		free(p);
-		e = controller_browse_children(priv.controller, d, o);
+		e = controller_browse_children(priv.controller, c->device, c->object);
 		if (e == NULL) {
-			debugfs("controller_browse_children('%s', '%s') failed", d, o);
-			free(d);
-			free(o);
+			debugfs("controller_browse_children('%s', '%s') failed", c->device, c->object);
 			return 0;
 		}
 		r = e;
@@ -74,18 +72,15 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 			e = e->next;
 		}
 		entry_uninit(r);
-		free(d);
-		free(o);
 	} else {
-		if (do_findpath(path, &d, &o) != 0) {
+		c = do_findpath(path);
+		if (c == NULL) {
 			debugfs("do_findpath() failed");
 			return 0;
 		}
-		e = controller_browse_children(priv.controller, d, o);
+		e = controller_browse_children(priv.controller, c->device, c->object);
 		if (e == NULL) {
-			debugfs("controller_browse_children('%s', '%s') failed", d, o);
-			free(d);
-			free(o);
+			debugfs("controller_browse_children('%s', '%s') failed", c->device, c->object);
 			return 0;
 		}
 		filler(buffer, ".metadata", NULL, 0);
@@ -93,15 +88,13 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 		while (e) {
 			char *pt;
 			if (asprintf(&pt, "%s/%s", path, e->didl.dc.title) >= 0) {
-				do_insertcache(pt, d, e->didl.entryid);
+				do_insertcache(pt, c->device, e);
 				free(pt);
 			}
 			filler(buffer, e->didl.dc.title, NULL, 0);
 			e = e->next;
 		}
 		entry_uninit(r);
-		free(d);
-		free(o);
 	}
 	debugfs("leave");
 	return 0;

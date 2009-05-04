@@ -19,48 +19,54 @@
 
 #include "upnpfs.h"
 
-int do_findcache (const char *path, char **device, char **object)
+upnpfs_cache_t * do_findcache (const char *path)
 {
 	upnpfs_cache_t *c;
 	debugfs("enter");
 	list_for_each_entry(c, &priv.cache, head) {
 		if (strcmp(path, c->path) == 0) {
-			*device = strdup(c->device);
-			*object = strdup(c->object);
-			debugfs("cache found for '%s' (%s:%s)", path, *device, *object);
-			return 0;
+			debugfs("returning cache entry %p", c);
+			return c;
 		}
 	}
 	debugfs("leave");
-	return -1;
+	return NULL;
 }
 
-int do_insertcache (const char *path, const char *device, char *object)
+upnpfs_cache_t * do_insertcache (const char *path, const char *device, entry_t *entry)
 {
 	upnpfs_cache_t *c;
 	debugfs("enter");
 	list_for_each_entry(c, &priv.cache, head) {
 		if (strcmp(path, c->path) == 0) {
-			free(c->device);
-			free(c->object);
-			c->device = strdup(device);
-			c->object = strdup(object);
-			debugfs("cache update for '%s'", path);
-			return 0;
+			debugfs("returning cache entry %p", c);
+			return c;
 		}
 	}
+	debugfs("creating new cache entry");
 	c = (upnpfs_cache_t *) malloc(sizeof(upnpfs_cache_t));
 	memset(c, 0, sizeof(upnpfs_cache_t));
+	debugfs("path: %s", path);
 	c->path = strdup(path);
+	debugfs("device: %s", device);
 	c->device = strdup(device);
-	c->object = strdup(object);
+	debugfs("title: %s", entry->didl.dc.title);
+	c->object = strdup(entry->didl.entryid);
+	if (strncmp(entry->didl.upnp.object.class, "object.container", strlen("object.container")) == 0) {
+		debugfs("cache entry is a container");
+		c->container = 1;
+	} else if (strncmp(entry->didl.upnp.object.class, "object.item", strlen("object.item")) == 0) {
+		debugfs("cache entry is an item");
+		c->container = 0;
+		c->source = strdup(entry->didl.res.path);
+		c->size = entry->didl.res.size;
+	}
 	list_add(&c->head, &priv.cache);
-	debugfs("insert cache update for '%s' (%s:%s)", path, device, object);
 	debugfs("leave");
-	return 0;
+	return c;
 }
 
-int do_findpath (const char *path, char **device, char **object)
+upnpfs_cache_t * do_findpath (const char *path)
 {
 	char *d;
 	char *o;
@@ -69,20 +75,20 @@ int do_findpath (const char *path, char **device, char **object)
 	char *tmp;
 	entry_t *e;
 	entry_t *r;
+	upnpfs_cache_t *c;
 	debugfs("path: %s", path);
 	if (strstr(path, "/.") != NULL) {
 		debugfs("hidden file ?");
-		return -1;
+		return NULL;
 	}
-	*device = NULL;
-	*object = NULL;
-	if (do_findcache(path, device, object) == 0) {
+	c = do_findcache(path);
+	if (c != NULL) {
 		debugfs("working from cache");
-		return 0;
+		return c;
 	}
 	tmp  = strdup(path);
 	if  (tmp == NULL) {
-		return -1;
+		return NULL;
 	}
 	p = tmp;
 	d = NULL;
@@ -98,14 +104,15 @@ int do_findpath (const char *path, char **device, char **object)
 	}
 	if (d == NULL) {
 		free(tmp);
-		return -1;
+		return NULL;
 	}
 	debugfs("device: '%s'", d);
 	e = controller_browse_metadata(priv.controller, d, "0");
 	if (e == NULL) {
 		free(tmp);
-		return -1;
+		return NULL;
 	}
+	c = do_insertcache(path, d, e);
 	while (p && *p && (dir = strsep(&p, "/"))) {
 		debugfs("looking for '%s", dir);
 		free(o);
@@ -118,7 +125,7 @@ int do_findpath (const char *path, char **device, char **object)
 			debugfs("controller_browse_children('%s', '%s') failed", d, o);
 			free(o);
 			free(tmp);
-			return -1;
+			return NULL;
 		}
 		r = e;
 		while (e) {
@@ -132,7 +139,7 @@ int do_findpath (const char *path, char **device, char **object)
 			free(o);
 			entry_uninit(r);
 			free(tmp);
-			return -1;
+			return NULL;
 		}
 		e = controller_browse_metadata(priv.controller, d, e->didl.entryid);
 		if (e == NULL) {
@@ -140,26 +147,14 @@ int do_findpath (const char *path, char **device, char **object)
 			free(o);
 			entry_uninit(r);
 			free(tmp);
-			return -1;
+			return NULL;
 		}
-		do_insertcache(path, d, e->didl.entryid);
+		c = do_insertcache(path, d, e);
 		entry_uninit(r);
 	}
 	free(o);
-	*device = strdup(d);
-	*object = strdup(e->didl.entryid);
-	if (*device == NULL || *object == NULL) {
-		free(*device);
-		free(*object);
-		*device = NULL;
-		*object = NULL;
-		entry_uninit(e);
-		free(tmp);
-		return -1;
-	}
-	do_insertcache(path, *device, *object);
 	entry_uninit(e);
 	free(tmp);
 	debugfs("leave");
-	return 0;
+	return c;
 }

@@ -21,47 +21,24 @@
 
 int op_open (const char *path, struct fuse_file_info *fi)
 {
-	char *d;
-	char *o;
-	entry_t *e;
 	upnpfs_file_t *f;
+	upnpfs_cache_t *c;
 	debugfs("enter");
-	if (do_findpath(path, &d, &o) != 0) {
+	c = do_findpath(path);
+	if (c == NULL) {
 		debugfs("do_findpath('%s') failed", path);
-		return -ENOENT;
-	}
-	e = controller_browse_metadata(priv.controller, d, o);
-	if (e == NULL) {
-		free(d);
-		free(o);
-		return -ENOENT;
-	}
-	if (e->didl.res.path == NULL) {
-		free(d);
-		free(o);
-		entry_uninit(e);
 		return -ENOENT;
 	}
 	f = (upnpfs_file_t *) malloc(sizeof(upnpfs_file_t));
 	if (f == NULL) {
-		free(d);
-		free(o);
-		entry_uninit(e);
 		return -ENOENT;
 	}
-	entry_dump(e);
 	memset(f, 0, sizeof(upnpfs_file_t));
-	f->device = d;
-	f->object = o;
-	f->path = e->didl.res.path;
-	f->size = e->didl.res.size;
-	f->protocol = e->didl.res.protocolinfo;
+	f->device = strdup(c->device);
+	f->object = strdup(c->object);
+	f->path = strdup(c->source);
+	f->size = c->size;
 	fi->fh = (unsigned long) f;
-	d = NULL;
-	o = NULL;
-	e->didl.res.path = NULL;
-	e->didl.res.protocolinfo = NULL;
-	entry_uninit(e);
 	debugfs("leave");
 	return 0;
 }

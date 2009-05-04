@@ -1063,6 +1063,7 @@ IXML_Document * upnp_makeaction (upnp_t *upnp, const char *actionname, const cha
 	free(buffer);
 	result = gena_send_recv(upnp->gena, url.host, url.port, data, NULL);
 	free(data);
+	debugf("result: '%s'", result);
 	if (result != NULL) {
 		if (ixmlParseBufferEx(result, &response) != IXML_SUCCESS) {
 			response = NULL;
