@@ -43,7 +43,7 @@ upnpfs_cache_t * do_insertcache (const char *path, const char *device, entry_t *
 			return c;
 		}
 	}
-	if (list_count(&priv.cache) > priv.cache_max) {
+	if (list_count(&priv.cache) > priv.cache_size) {
 		c = list_entry(priv.cache.prev, upnpfs_cache_t, head);
 		list_del(&c->head);
 		free(c->path);

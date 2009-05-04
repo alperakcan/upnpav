@@ -93,6 +93,7 @@ static int parse_options (int argc, char *argv[])
 		{ "options",	 required_argument,	NULL, 'o' },
 		{ "help",	 no_argument,		NULL, 'h' },
 		{ "interface",	 no_argument,		NULL, 'i' },
+		{ "cache",	 no_argument,		NULL, 'c' },
 		{ "verbose",	 no_argument,		NULL, 'v' },
 		{ NULL,		 0,			NULL,  0  }
 	};
@@ -132,6 +133,9 @@ static int parse_options (int argc, char *argv[])
 				 * We must handle the 'verbose' option even if
 				 * we don't use it because mount(8) passes it.
 				 */
+				break;
+			case 'c':
+				opts.cache_size = atoi(optarg);
 				break;
 			case 'i':
 				opts.interface = optarg;
@@ -262,6 +266,8 @@ int main (int argc, char *argv[])
 
 	memset(&opts, 0, sizeof(opts));
 	memset(&priv, 0, sizeof(priv));
+
+	opts.cache_size = 1000;
 
 	if (parse_options(argc, argv)) {
 		usage();
