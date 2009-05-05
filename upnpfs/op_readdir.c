@@ -25,6 +25,7 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 {
 	char *p;
 	char *t;
+	char *pt;
 	entry_t *e;
 	entry_t *r;
 	upnpfs_cache_t *c;
@@ -91,7 +92,6 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 		filler(buffer, ".metadata", NULL, 0);
 		r = e;
 		while (e) {
-			char *pt;
 			if (asprintf(&pt, "%s/%s", path, e->didl.dc.title) >= 0) {
 				n = do_insertcache(pt, c->device, e);
 				do_releasecache(n);
