@@ -312,7 +312,6 @@ int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse
 		}
 		siz = (size < (len - offset)) ? size : (len - offset);
 		memcpy(buf, e->metadata, siz);
-		printf("metadata: %s (%d)\n", e->metadata, siz);
 		entry_uninit(e);
 		return siz;
 	} else {
