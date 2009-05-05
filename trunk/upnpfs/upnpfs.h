@@ -93,11 +93,12 @@ static inline void debugfs_printf (const char *function, char *file, int line, c
 	if (opts.debug == 0 || opts.silent == 1) {
 		return;
 	}
-	printf("%s: ", PACKAGE);
+	fprintf(stderr, "%s: ", PACKAGE);
 	va_start(args, fmt);
 	vprintf(fmt, args);
 	va_end(args);
-	printf(" [%s (%s:%d)]\n", function, file, line);
+	fprintf(stderr, " [%s (%s:%d)]\n", function, file, line);
+	fflush(stderr);
 }
 
 #define debugfs(a...) { \

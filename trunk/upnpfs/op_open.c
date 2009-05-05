@@ -19,7 +19,7 @@
 
 #include "upnpfs.h"
 
-static upnpfs_cache_t * do_findmetadata (const char *path)
+static inline upnpfs_cache_t * do_findmetadata (const char *path)
 {
 	char *p;
 	char *t;

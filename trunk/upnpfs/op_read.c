@@ -313,6 +313,7 @@ int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse
 		siz = (size < (len - offset)) ? size : (len - offset);
 		memcpy(buf, e->metadata, siz);
 		entry_uninit(e);
+		debugfs("leave, size: %u, offset: %u, len: %d", (unsigned int) size, (unsigned int) offset, siz);
 		return siz;
 	} else {
 		memset(&h, 0, sizeof(upnpfs_http_t));
