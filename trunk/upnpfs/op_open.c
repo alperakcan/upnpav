@@ -19,15 +19,49 @@
 
 #include "upnpfs.h"
 
+static upnpfs_cache_t * do_findmetadata (const char *path)
+{
+	char *p;
+	char *t;
+	char *m;
+	upnpfs_cache_t *c;
+	p = strdup(path);
+	if (p == NULL) {
+		return NULL;
+	}
+	t = p + strlen(p) - strlen(".xml");
+	if (strcmp(t, ".xml") != 0) {
+		free(p);
+		return NULL;
+	}
+	*t = '\0';
+	t = strstr(p, "/.metadata/");
+	if (t == NULL) {
+		free(p);
+		return NULL;
+	}
+	m = t + strlen("/.metadata");
+	memmove(t, m, strlen(m));
+	debugfs("path from metadata is '%s'", p);
+	c = do_findpath(p);
+	free(p);
+	return c;
+}
+
 int op_open (const char *path, struct fuse_file_info *fi)
 {
 	char *t;
-	upnpfs_file_t *f;
 	upnpfs_cache_t *c;
 	debugfs("enter");
 	t = strstr(path, "/.metadata/");
 	if (t != NULL) {
 		debugfs("looking for metadata information");
+		c = do_findmetadata(path);
+		if (c == NULL) {
+			debugfs("do_findmetadata('%s') failed", path);
+			return -ENOENT;
+		}
+		do_releasecache(c);
 		return -ENOENT;
 	} else {
 		c = do_findpath(path);
@@ -35,16 +69,7 @@ int op_open (const char *path, struct fuse_file_info *fi)
 			debugfs("do_findpath('%s') failed", path);
 			return -ENOENT;
 		}
-		f = (upnpfs_file_t *) malloc(sizeof(upnpfs_file_t));
-		if (f == NULL) {
-			return -ENOENT;
-		}
-		memset(f, 0, sizeof(upnpfs_file_t));
-		f->device = strdup(c->device);
-		f->object = strdup(c->object);
-		f->path = strdup(c->source);
-		f->size = c->size;
-		fi->fh = (unsigned long) f;
+		fi->fh = (unsigned long) c;
 	}
 	debugfs("leave");
 	return 0;

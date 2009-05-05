@@ -288,13 +288,13 @@ error:
 int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
 	int len;
-	upnpfs_file_t *f;
 	upnpfs_http_t h;
+	upnpfs_cache_t *c;
 	debugfs("enter");
-	f = (upnpfs_file_t *) (unsigned long) fi->fh;
+	c = (upnpfs_cache_t *) (unsigned long) fi->fh;
 	memset(&h, 0, sizeof(upnpfs_http_t));
-	if (upnp_url_parse(f->path, &h.url) != 0) {
-		debugf("upnp_url_parse('%s') failed", f->path);
+	if (upnp_url_parse(c->source, &h.url) != 0) {
+		debugf("upnp_url_parse('%s') failed", c->source);
 		return -EIO;
 	}
 	if (http_open(&h, offset) != 0) {

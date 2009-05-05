@@ -105,13 +105,6 @@ static inline void debugfs_printf (const char *function, char *file, int line, c
 
 #endif /* ENABLE_DEBUG */
 
-typedef struct upnpfs_file_s {
-	char *device;
-	char *object;
-	char *path;
-	unsigned int size;
-} upnpfs_file_t;
-
 int do_releasecache (upnpfs_cache_t *cache);
 
 upnpfs_cache_t * do_referencecache (upnpfs_cache_t *cache);
