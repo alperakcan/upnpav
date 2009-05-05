@@ -159,7 +159,8 @@ static int gena_getcontent (int fd, int timeout, char *buf, int buflen)
 	pfd.events = POLLIN;
 
 	rc = poll(&pfd, 1, timeout);
-	if (rc <= 0 || pfd.revents != POLLIN) {
+	if (rc <= 0 || (pfd.revents & POLLIN) == 0) {
+		debugf("poll failed rc:%d(0x%x)", rc, pfd.revents);
 		return 0;
 	}
 
@@ -187,8 +188,8 @@ static int gena_getline (int fd, int timeout, char *buf, int buflen)
 	pfd.events = POLLIN;
 
 	rc = poll(&pfd, 1, timeout);
-	if (rc <= 0 || pfd.revents != POLLIN) {
-		debugf("poll failed rc:%d", rc);
+	if (rc <= 0 || (pfd.revents & POLLIN) == 0) {
+		debugf("poll failed rc:%d(0x%x)", rc, pfd.revents);
 		return 0;
 	}
 
@@ -1156,7 +1157,7 @@ char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port
 		pfd.fd = fd;
 		pfd.events = POLLIN;
 		r = poll(&pfd, 1, GENA_SOCKET_TIMEOUT);
-		if (r <= 0 || pfd.revents != POLLIN) {
+		if (r <= 0 || (pfd.revents & POLLIN) == 0) {
 			break;
 		}
 		r = recv(fd, buffer + t, length - t, MSG_DONTWAIT);
@@ -1179,12 +1180,13 @@ char * gena_download (gena_t *gena, const char *host, const unsigned short port,
 	char *data;
 	char *buffer;
 	char *format_get =
-		"GET /%s HTTP/1.0\r\n"
+		"GET /%s HTTP/1.1\r\n"
 		"Host: %s:%d\r\n"
 		"Accept: */*\r\n"
 		"Connection: keep-alive\r\n"
 		"Cache-Control: max-age=0\r\n"
 		"\r\n";
+	debugf("downloading '%s' from '%s:%u'", path, host, port);
 	if (asprintf(&buffer, format_get, path, host, port) < 0) {
 		return NULL;
 	}
