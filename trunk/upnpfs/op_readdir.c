@@ -61,6 +61,7 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 		e = controller_browse_children(priv.controller, c->device, c->object);
 		if (e == NULL) {
 			debugfs("controller_browse_children('%s', '%s') failed", c->device, c->object);
+			do_releasecache(c);
 			return 0;
 		}
 		r = e;
@@ -72,6 +73,7 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 			}
 			e = e->next;
 		}
+		do_releasecache(c);
 		entry_uninit(r);
 	} else {
 		c = do_findpath(path);
@@ -82,8 +84,8 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 		debugfs("cache entry for '%s' is '%s : %s'", path, c->device, c->object);
 		e = controller_browse_children(priv.controller, c->device, c->object);
 		if (e == NULL) {
-			do_releasecache(c);
 			debugfs("controller_browse_children('%s', '%s') failed", c->device, c->object);
+			do_releasecache(c);
 			return 0;
 		}
 		filler(buffer, ".metadata", NULL, 0);

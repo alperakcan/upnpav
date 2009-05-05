@@ -715,6 +715,7 @@ int entry_uninit (entry_t *root)
 		free(p->mime);
 		free(p->path);
 		free(p->ext_info);
+		free(p->metadata);
 		entryid_uninit(p->didl.entryid);
 		free(p->didl.parentid);
 		free(p->didl.dc.title);

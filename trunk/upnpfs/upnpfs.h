@@ -59,6 +59,11 @@ typedef struct upnpfs_cache_s {
 	char *source;
 } upnpfs_cache_t;
 
+typedef struct upnpfs_file_s {
+	int metadata;
+	upnpfs_cache_t *cache;
+} upnpfs_file_t;
+
 struct options_s {
 	int debug;
 	int silent;
