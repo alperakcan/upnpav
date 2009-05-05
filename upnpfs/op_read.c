@@ -287,35 +287,60 @@ error:
 
 int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
+	int siz;
 	int len;
+	entry_t *e;
 	upnpfs_http_t h;
-	upnpfs_cache_t *c;
+	upnpfs_file_t *f;
 	debugfs("enter");
-	c = (upnpfs_cache_t *) (unsigned long) fi->fh;
-	memset(&h, 0, sizeof(upnpfs_http_t));
-	if (upnp_url_parse(c->source, &h.url) != 0) {
-		debugf("upnp_url_parse('%s') failed", c->source);
-		return -EIO;
-	}
-	if (http_open(&h, offset) != 0) {
-		debugfs("http_open() failed");
-		return -EIO;
-	}
-	if (h.buffer_length < size) {
-		h.buffer = (char *) realloc(h.buffer, sizeof(unsigned char) * size);
-		if (h.buffer == NULL) {
-			http_close(&h);
+	f = (upnpfs_file_t *) (unsigned long) fi->fh;
+	if (f->metadata == 1) {
+		e = controller_browse_metadata(priv.controller, f->cache->device, f->cache->object);
+		if (e == NULL) {
+			debugfs("controller_browse_metadata() failed");
 			return -EIO;
 		}
-		h.buffer_length = size;
+		if (e->metadata == NULL) {
+			debugfs("no metadata information");
+			entry_uninit(e);
+			return -EIO;
+		}
+		len = strlen(e->metadata);
+		if (offset >= len) {
+			entry_uninit(e);
+			return 0;
+		}
+		siz = (size < (len - offset)) ? size : (len - offset);
+		memcpy(buf, e->metadata, siz);
+		printf("metadata: %s (%d)\n", e->metadata, siz);
+		entry_uninit(e);
+		return siz;
+	} else {
+		memset(&h, 0, sizeof(upnpfs_http_t));
+		if (upnp_url_parse(f->cache->source, &h.url) != 0) {
+			debugf("upnp_url_parse('%s') failed", f->cache->source);
+			return -EIO;
+		}
+		if (http_open(&h, offset) != 0) {
+			debugfs("http_open() failed");
+			return -EIO;
+		}
+		if (h.buffer_length < size) {
+			h.buffer = (char *) realloc(h.buffer, sizeof(unsigned char) * size);
+			if (h.buffer == NULL) {
+				http_close(&h);
+				return -EIO;
+			}
+			h.buffer_length = size;
+		}
+		len = http_read(&h, h.buffer, size);
+		memcpy(buf, h.buffer, len);
+		if (len > 0) {
+			h.offset += len;
+		}
+		http_close(&h);
+		upnp_url_uninit(&h.url);
+		debugfs("leave, size: %u, offset: %u, len: %d", (unsigned int) size, (unsigned int) offset, len);
+		return len;
 	}
-	len = http_read(&h, h.buffer, size);
-	memcpy(buf, h.buffer, len);
-	if (len > 0) {
-		h.offset += len;
-	}
-	http_close(&h);
-	upnp_url_uninit(&h.url);
-	debugfs("leave, size: %u, offset: %u, len: %d", (unsigned int) size, (unsigned int) offset, len);
-	return len;
 }

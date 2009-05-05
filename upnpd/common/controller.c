@@ -261,15 +261,6 @@ entry_t * controller_browse_metadata (client_t *controller, const char *device, 
 		goto out;
 	}
 
-#if 0
-	{
-		char *tmp;
-		tmp = ixmlDocumenttoString(response);
-		printf("%s\n", tmp);
-		free(tmp);
-	}
-#endif
-
 	tmp = xml_get_first_document_item(response, "TotalMatches");
 	totalmatches = strtouint32(tmp);
 	free(tmp);
@@ -291,8 +282,8 @@ entry_t * controller_browse_metadata (client_t *controller, const char *device, 
 		debugf("entry_from_result() failed");
 		goto out;
 	}
+	entry->metadata = result;
 
-out:	free(result);
-	ixmlDocument_free(response);
+out:	ixmlDocument_free(response);
 	return entry;
 }

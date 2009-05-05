@@ -41,7 +41,7 @@ static upnpfs_cache_t * do_findmetadata (const char *path)
 		return NULL;
 	}
 	m = t + strlen("/.metadata");
-	memmove(t, m, strlen(m));
+	memmove(t, m, strlen(m) + 1);
 	debugfs("path from metadata is '%s'", p);
 	c = do_findpath(p);
 	free(p);
@@ -51,8 +51,14 @@ static upnpfs_cache_t * do_findmetadata (const char *path)
 int op_open (const char *path, struct fuse_file_info *fi)
 {
 	char *t;
+	upnpfs_file_t *f;
 	upnpfs_cache_t *c;
 	debugfs("enter");
+	f = (upnpfs_file_t *) malloc(sizeof(upnpfs_file_t));
+	if (f == NULL) {
+		return -EIO;
+	}
+	memset(f, 0, sizeof(upnpfs_file_t));
 	t = strstr(path, "/.metadata/");
 	if (t != NULL) {
 		debugfs("looking for metadata information");
@@ -61,15 +67,18 @@ int op_open (const char *path, struct fuse_file_info *fi)
 			debugfs("do_findmetadata('%s') failed", path);
 			return -ENOENT;
 		}
-		do_releasecache(c);
-		return -ENOENT;
+		f->metadata = 1;
+		f->cache = c;
+		fi->fh = (unsigned long) f;
 	} else {
 		c = do_findpath(path);
 		if (c == NULL) {
 			debugfs("do_findpath('%s') failed", path);
 			return -ENOENT;
 		}
-		fi->fh = (unsigned long) c;
+		f->metadata = 0;
+		f->cache = c;
+		fi->fh = (unsigned long) f;
 	}
 	debugfs("leave");
 	return 0;

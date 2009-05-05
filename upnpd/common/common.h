@@ -306,6 +306,8 @@ struct entry_s {
 	char *mime;
 	/** */
 	char *ext_info;
+	/** */
+	char *metadata;
 
 	/** */
 	entry_t *next;

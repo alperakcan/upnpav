@@ -21,10 +21,11 @@
 
 int op_release (const char *path, struct fuse_file_info *fi)
 {
-	upnpfs_cache_t *c;
+	upnpfs_file_t *f;
 	debugfs("enter");
-	c = (upnpfs_cache_t *) (unsigned long) fi->fh;
-	do_releasecache(c);
+	f = (upnpfs_file_t *) (unsigned long) fi->fh;
+	do_releasecache(f->cache);
+	free(f);
 	debugfs("leave");
 	return 0;
 }
