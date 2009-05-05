@@ -95,7 +95,7 @@ static inline void debugfs_printf (const char *function, char *file, int line, c
 	}
 	fprintf(stderr, "%s: ", PACKAGE);
 	va_start(args, fmt);
-	vprintf(fmt, args);
+	vfprintf(stderr, fmt, args);
 	va_end(args);
 	fprintf(stderr, " [%s (%s:%d)]\n", function, file, line);
 	fflush(stderr);
