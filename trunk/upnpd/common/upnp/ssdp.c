@@ -29,8 +29,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#include "upnp.h"
 #include "ssdp.h"
+#include "gena.h"
+#include "upnp.h"
 #include "list.h"
 
 struct ssdp_s {

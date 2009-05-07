@@ -20,6 +20,7 @@
 #include <inttypes.h>
 #include <pthread.h>
 
+#include "gena.h"
 #include "upnp.h"
 #include "upnpd.h"
 #include "uuid.h"
@@ -384,7 +385,7 @@ int client_init (client_t *client)
 	debugf("initializing devices list");
 	list_init(&client->devices);
 	debugf("initializing upnp stack");
-	upnp = upnp_init(client->interface, 0);
+	upnp = upnp_init(client->interface, 0, NULL, NULL);
 	if (upnp == NULL) {
 		debugf("upnp_init() failed");
 		pthread_cond_destroy(&client->cond);

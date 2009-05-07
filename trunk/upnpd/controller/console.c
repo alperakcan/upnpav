@@ -26,6 +26,7 @@
 #include <readline/history.h>
 #endif
 
+#include "gena.h"
 #include "upnp.h"
 #include "upnpd.h"
 #include "common.h"

@@ -40,46 +40,6 @@ struct list_s {
 	struct list_s *prev;
 };
 
-typedef enum {
-	WEBSERVER_FILEMODE_READ  = 0x01,
-	WEBSERVER_FILEMODE_WRITE = 0x02,
-} webserver_filemode_t;
-
-typedef enum {
-	WEBSERVER_SEEK_SET = 0x01,
-	WEBSERVER_SEEK_CUR = 0x02,
-	WEBSERVER_SEEK_END = 0x03,
-} webserver_seek_t;
-
-typedef struct webserver_fileinfo_s {
-	unsigned long size;
-	char *mimetype;
-	unsigned long mtime;
-} webserver_fileinfo_t;
-
-typedef struct webserver_callbacks_s {
-	int (*info) (void *cookie, char *path, webserver_fileinfo_t *info);
-	void * (*open) (void *cookie, char *path, webserver_filemode_t mode);
-	int (*read) (void *cookie, void *handle, char *buffer, unsigned int length);
-	int (*write) (void *cookie, void *handle, char *buffer, unsigned int length);
-	unsigned long (*seek)  (void *cookie, void *handle, long offset, webserver_seek_t whence);
-	int (*close) (void *cookie, void *handle);
-	void *cookie;
-} webserver_callbacks_t;
-
-typedef struct webserver_s {
-	int running;
-	int stopped;
-	int fd;
-	char *address;
-	unsigned short port;
-	webserver_callbacks_t *callbacks;
-	pthread_t thread;
-	pthread_cond_t cond;
-	pthread_mutex_t mutex;
-	list_t threads;
-} webserver_t;
-
 /**
   */
 struct file_s {
@@ -490,7 +450,7 @@ struct device_service_s {
         /** */
 	service_variable_t **variables;
 	/** */
-	webserver_callbacks_t *vfscallbacks;
+	gena_callback_vfs_t *vfscallbacks;
 	/** */
 	int (*uninit) (device_service_t *service);
 
@@ -538,9 +498,6 @@ struct device_s {
 	device_service_t **services;
 
 	/** */
-	webserver_t *webserver;
-
-	/** */
 	pthread_mutex_t mutex;
 	/** */
 	char *ipaddress;
@@ -554,6 +511,9 @@ struct device_s {
 	char *description;
 	/** */
 	int daemonize;
+
+	/** */
+	upnp_t *upnp;
 };
 
 /* client.c */
@@ -647,13 +607,6 @@ char * xml_get_string (IXML_Document *doc, const char *item);
 /* uri.c */
 
 char * uri_escape (const char *str);
-
-/* webserver.c */
-
-unsigned short webserver_getport (webserver_t *webserver);
-const char * webserver_getaddress (webserver_t *webserver);
-int webserver_uninit (webserver_t *webserver);
-webserver_t * webserver_init (char *address, unsigned short port, webserver_callbacks_t *callbacks);
 
 /* interface.c */
 

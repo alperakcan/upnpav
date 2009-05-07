@@ -29,8 +29,8 @@
 #include <ctype.h>
 #include <assert.h>
 
-#include "upnp.h"
 #include "gena.h"
+#include "upnp.h"
 #include "list.h"
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))

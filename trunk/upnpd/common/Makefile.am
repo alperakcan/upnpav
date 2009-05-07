@@ -14,7 +14,6 @@ libcommon_a_SOURCES = \
 	inttool.c \
 	xml.c \
 	uri.c \
-	webserver.c \
 	interface.c \
 	common.h
 

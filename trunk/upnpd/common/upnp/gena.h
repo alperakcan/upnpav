@@ -41,6 +41,7 @@ typedef struct gena_file_s {
 	unsigned int size;
 	unsigned int offset;
 	char *buf;
+	void *data;
 } gena_file_t;
 
 typedef struct gena_fileinfo_s {

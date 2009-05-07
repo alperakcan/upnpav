@@ -23,7 +23,8 @@
 #include <stdint.h>
 #include <pthread.h>
 
-#include "upnp/upnp.h"
+#include "gena.h"
+#include "upnp.h"
 
 #include "common.h"
 #include "uuid/uuid.h"
@@ -31,9 +32,7 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-static upnp_t *upnp;
-
-static int device_vfsgetinfo (void *cookie, char *path, webserver_fileinfo_t *info)
+static int device_vfsgetinfo (void *cookie, char *path, gena_fileinfo_t *info)
 {
 	int s;
 	device_t *device;
@@ -66,7 +65,7 @@ static int device_vfsgetinfo (void *cookie, char *path, webserver_fileinfo_t *in
 	return -1;
 }
 
-static void * device_vfsopen (void *cookie, char *path, webserver_filemode_t mode)
+static void * device_vfsopen (void *cookie, char *path, gena_filemode_t mode)
 {
 	int s;
 	file_t *file;
@@ -144,7 +143,7 @@ static int device_vfswrite (void *cookie, void *handle, char *buffer, unsigned i
 	return 0;
 }
 
-static unsigned long device_vfsseek (void *cookie, void *handle, long offset, webserver_seek_t whence)
+static unsigned long device_vfsseek (void *cookie, void *handle, long offset, gena_seek_t whence)
 {
 	file_t *file;
 	unsigned long off;
@@ -156,9 +155,9 @@ static unsigned long device_vfsseek (void *cookie, void *handle, long offset, we
 	/* is fake file */
 	if (file->virtual == 1) {
 		switch (whence) {
-			case WEBSERVER_SEEK_SET: file->offset = offset; break;
-			case WEBSERVER_SEEK_CUR: file->offset += offset; break;
-			case WEBSERVER_SEEK_END: file->offset = file->size + offset; break;
+			case GENA_SEEK_SET: file->offset = offset; break;
+			case GENA_SEEK_CUR: file->offset += offset; break;
+			case GENA_SEEK_END: file->offset = file->size + offset; break;
 		}
 		file->offset = MAX(0, file->offset);
 		file->offset = MIN(file->offset, file->size);
@@ -200,7 +199,7 @@ static int device_vfsclose (void *cookie, void *handle)
 	return 0;
 }
 
-static webserver_callbacks_t device_vfscallbacks = {
+static gena_callback_vfs_t device_vfscallbacks = {
 	device_vfsgetinfo,
 	device_vfsopen,
 	device_vfsread,
@@ -315,7 +314,7 @@ static void device_event_subscription_request (device_t *device, upnp_event_subs
 			variable_count++;
 		}
 	}
-	upnp_accept_subscription(upnp, event->udn, event->serviceid, (const char **) variable_names, (const char **) variable_values, variable_count, event->sid);
+	upnp_accept_subscription(device->upnp, event->udn, event->serviceid, (const char **) variable_names, (const char **) variable_values, variable_count, event->sid);
 	for (i = 0; i < variable_count; i++) {
 		free(variable_values[i]);
 	}
@@ -354,17 +353,15 @@ int device_init (device_t *device)
 		goto out;
 	}
 	debugf("initializing upnp stack");
-	upnp = upnp_init(device->interface, 0);
-	if (upnp == NULL) {
+	device->upnp = upnp_init(device->interface, 0, &device_vfscallbacks, device);
+	if (device->upnp == NULL) {
 		debugf("upnp_init('%s') failed", device->interface);
 		pthread_mutex_destroy(&device->mutex);
 		goto out;
 	}
-	device->port = upnp_getport(upnp);
-	device->ipaddress = upnp_getaddress(upnp);
+	device->port = upnp_getport(device->upnp);
+	device->ipaddress = upnp_getaddress(device->upnp);
 	debugf("enabling internal web server");
-	device_vfscallbacks.cookie = device;
-	device->webserver = webserver_init(device->ipaddress, device->port, &device_vfscallbacks);
 	uuid_generate(uuid);
 	device->uuid = (char *) malloc(sizeof(char) * (strlen("uuid:") + 44 + 1));
 	if (device->uuid == NULL) {
@@ -379,11 +376,11 @@ int device_init (device_t *device)
 		debugf("description_generate_from_device(device) failed");
 		goto out;
 	}
-	if (upnp_register_device(upnp, device->description, device_event_handler, device) != 0) {
+	if (upnp_register_device(device->upnp, device->description, device_event_handler, device) != 0) {
 		debugf("upnp_register_device() failed");
 		goto out;
 	}
-	if (upnp_advertise(upnp) != 0) {
+	if (upnp_advertise(device->upnp) != 0) {
 		debugf("upnp_advertise() failed");
 		goto out;
 	}
@@ -411,8 +408,6 @@ int device_uninit (device_t *device)
 	int ret;
 	device_service_t *service;
 	ret = -1;
-	debugf("uninitializing webserver");
-	webserver_uninit(device->webserver);
 	debugf("uninitializing device '%s'", device->name);
 	pthread_mutex_lock(&device->mutex);
 	debugf("uninitializing services");
@@ -422,7 +417,7 @@ int device_uninit (device_t *device)
 		service_uninit(service);
 	}
 	debugf("unregistering device '%s'", device->name);
-	upnp_uninit(upnp);
+	upnp_uninit(device->upnp);
 	pthread_mutex_unlock(&device->mutex);
 	pthread_mutex_destroy(&device->mutex);
 	free(device->services);

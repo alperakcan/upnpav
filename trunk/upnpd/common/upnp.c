@@ -21,6 +21,7 @@
 #include <sys/time.h>
 #include <pthread.h>
 
+#include "gena.h"
 #include "upnp.h"
 #include "common.h"
 
@@ -58,7 +59,7 @@ static IXML_Element * generate_description_servicelist (IXML_Document *doc, devi
 
 	top = ixmlDocument_createElement(doc, "serviceList");
 	for (i = 0; (service = services[i]) != NULL; i++) {
-		if (asprintf(&scdpurl, "http://%s:%u%s", webserver_getaddress(service->device->webserver), webserver_getport(service->device->webserver), service->scpdurl) < 0) {
+		if (asprintf(&scdpurl, "%s", service->scpdurl) < 0) {
 			continue;
 		}
 		parent = ixmlDocument_createElement(doc, "service");

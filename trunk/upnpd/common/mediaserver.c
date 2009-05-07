@@ -21,6 +21,7 @@
 #include <inttypes.h>
 #include <pthread.h>
 
+#include "gena.h"
 #include "upnp.h"
 #include "common.h"
 

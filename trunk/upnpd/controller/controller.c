@@ -20,6 +20,7 @@
 #include <pthread.h>
 #include <inttypes.h>
 
+#include "gena.h"
 #include "upnp.h"
 #include "upnpd.h"
 #include "common.h"

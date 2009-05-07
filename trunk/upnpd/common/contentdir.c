@@ -23,6 +23,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#include "gena.h"
 #include "upnp.h"
 #include "common.h"
 
@@ -304,7 +305,7 @@ static service_action_t *contentdirectory_actions[] = {
 	NULL,
 };
 
-static int contentdirectory_vfsgetinfo (void *cookie, char *path, webserver_fileinfo_t *info)
+static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_t *info)
 {
 	char *id;
 	entry_t *entry;
@@ -347,7 +348,7 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, webserver_file
 	return -1;
 }
 
-static void * contentdirectory_vfsopen (void *cookie, char *path, webserver_filemode_t mode)
+static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_t mode)
 {
 	char *id;
 	file_t *file;
@@ -418,7 +419,7 @@ static int contentdirectory_vfswrite (void *cookie, void *handle, char *buffer, 
 	return -1;
 }
 
-static unsigned long contentdirectory_vfsseek (void *cookie, void *handle, long offset, webserver_seek_t whence)
+static unsigned long contentdirectory_vfsseek (void *cookie, void *handle, long offset, gena_seek_t whence)
 {
 	file_t *file;
 	contentdir_t *contentdir;
@@ -426,9 +427,9 @@ static unsigned long contentdirectory_vfsseek (void *cookie, void *handle, long 
 	file = (file_t *) handle;
 	contentdir = (contentdir_t *) cookie;
 	switch (whence) {
-		case WEBSERVER_SEEK_SET: return lseek(file->fd, offset, SEEK_SET);
-		case WEBSERVER_SEEK_CUR: return lseek(file->fd, offset, SEEK_CUR);
-		case WEBSERVER_SEEK_END: return lseek(file->fd, offset, SEEK_END);
+		case GENA_SEEK_SET: return lseek(file->fd, offset, SEEK_SET);
+		case GENA_SEEK_CUR: return lseek(file->fd, offset, SEEK_CUR);
+		case GENA_SEEK_END: return lseek(file->fd, offset, SEEK_END);
 	}
 	return -1;
 }
@@ -445,7 +446,7 @@ static int contentdirectory_vfsclose (void *cookie, void *handle)
 	return 0;
 }
 
-static webserver_callbacks_t contentdir_vfscallbacks = {
+static gena_callback_vfs_t contentdir_vfscallbacks = {
 	contentdirectory_vfsgetinfo,
 	contentdirectory_vfsopen,
 	contentdirectory_vfsread,
