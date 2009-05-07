@@ -110,7 +110,7 @@ int upnp_advertise (upnp_t *upnp);
 int upnp_register_device (upnp_t *upnp, const char *description, int (*callback) (void *cookie, upnp_event_t *), void *cookie);
 char * upnp_getaddress (upnp_t *upnp);
 unsigned short upnp_getport (upnp_t *upnp);
-upnp_t * upnp_init (const char *host, const unsigned short port);
+upnp_t * upnp_init (const char *host, const unsigned short port, gena_callback_vfs_t *vfscallbacks, void *vfscookie);
 int upnp_uninit (upnp_t *upnp);
 int upnp_accept_subscription (upnp_t *upnp, const char *udn, const char *serviceid, const char **variable_names, const char **variable_values, const unsigned int variables_count, const char *sid);
 int upnp_addtoactionresponse (upnp_event_action_t *response, const char *service, const char *variable, const char *value);

@@ -27,9 +27,9 @@
 #include <sys/poll.h>
 #include <signal.h>
 
-#include "upnp.h"
 #include "ssdp.h"
 #include "gena.h"
+#include "upnp.h"
 #include "ixml.h"
 #include "list.h"
 #include "uuid.h"
@@ -120,11 +120,14 @@ struct upnp_s {
 	} type;
 	pthread_mutex_t mutex;
 	gena_callbacks_t gena_callbacks;
+	gena_callback_vfs_t *vfscallbacks;
 };
 
 static int gena_callback_info (void *cookie, char *path, gena_fileinfo_t *info)
 {
+	int ret;
 	upnp_t *upnp;
+	ret = -1;
 	upnp = (upnp_t *) cookie;
 	pthread_mutex_lock(&upnp->mutex);
 	if (strcmp(path, "/description.xml") == 0) {
@@ -134,27 +137,37 @@ static int gena_callback_info (void *cookie, char *path, gena_fileinfo_t *info)
 		pthread_mutex_unlock(&upnp->mutex);
 		return 0;
 	}
+	if (upnp->vfscallbacks != NULL &&
+	    upnp->vfscallbacks->info != NULL) {
+		ret = upnp->vfscallbacks->info(upnp->vfscallbacks->cookie, path, info);
+	}
 	pthread_mutex_unlock(&upnp->mutex);
-	return -1;
+	return ret;
 }
 
 static void * gena_callback_open (void *cookie, char *path, gena_filemode_t mode)
 {
-	gena_file_t *file;
 	upnp_t *upnp;
+	gena_file_t *file;
 	upnp = (upnp_t *) cookie;
+	file = (gena_file_t *) malloc(sizeof(gena_file_t));
+	memset(file, 0, sizeof(gena_file_t));
 	pthread_mutex_lock(&upnp->mutex);
 	if (strcmp(path, "/description.xml") == 0) {
-		file = (gena_file_t *) malloc(sizeof(gena_file_t));
-		if (file == NULL) {
-			pthread_mutex_unlock(&upnp->mutex);
-			return file;
-		}
-		memset(file, 0, sizeof(gena_file_t));
 		file->virtual = 1;
 		file->size = strlen(upnp->type.device.description);
 		file->buf = strdup(upnp->type.device.description);
 		if (file->buf == NULL) {
+			free(file);
+			file = NULL;
+		}
+		pthread_mutex_unlock(&upnp->mutex);
+		return file;
+	}
+	if (upnp->vfscallbacks != NULL &&
+	    upnp->vfscallbacks->open != NULL) {
+		file->data = upnp->vfscallbacks->open(upnp->vfscallbacks->cookie, path, mode);
+		if (file->data == NULL) {
 			free(file);
 			file = NULL;
 		}
@@ -168,7 +181,9 @@ static void * gena_callback_open (void *cookie, char *path, gena_filemode_t mode
 static int gena_callback_read (void *cookie, void *handle, char *buffer, unsigned int length)
 {
 	size_t len;
+	upnp_t *upnp;
 	gena_file_t *file;
+	upnp = (upnp_t *) cookie;
 	file = (gena_file_t *) handle;
 	if (file == NULL) {
 		return -1;
@@ -183,6 +198,10 @@ static int gena_callback_read (void *cookie, void *handle, char *buffer, unsigne
 		file->offset += len;
 		return len;
 	}
+	if (upnp->vfscallbacks != NULL &&
+	    upnp->vfscallbacks->read != NULL) {
+		return upnp->vfscallbacks->read(upnp->vfscallbacks->cookie, file->data, buffer, length);
+	}
 	return -1;
 }
 
@@ -193,7 +212,9 @@ static int gena_callback_write (void *cookie, void *handle, char *buffer, unsign
 
 static unsigned long gena_callback_seek (void *cookie, void *handle, long offset, gena_seek_t whence)
 {
+	upnp_t *upnp;
 	gena_file_t *file;
+	upnp = (upnp_t *) cookie;
 	file = (gena_file_t *) handle;
 	if (file == NULL) {
 		return -1;
@@ -208,12 +229,19 @@ static unsigned long gena_callback_seek (void *cookie, void *handle, long offset
 		file->offset = MIN(file->offset, file->size);
 		return file->offset;
 	}
+	if (upnp->vfscallbacks != NULL &&
+	    upnp->vfscallbacks->seek != NULL) {
+		return upnp->vfscallbacks->seek(upnp->vfscallbacks->cookie, file->data, offset, whence);
+	}
 	return -1;
 }
 
 static int gena_callback_close (void *cookie, void *handle)
 {
+	int ret;
+	upnp_t *upnp;
 	gena_file_t *file;
+	upnp = (upnp_t *) cookie;
 	file = (gena_file_t *) handle;
 	if (file == NULL) {
 		return -1;
@@ -222,6 +250,12 @@ static int gena_callback_close (void *cookie, void *handle)
 		free(file->buf);
 		free(file);
 		return 0;
+	}
+	if (upnp->vfscallbacks != NULL &&
+	    upnp->vfscallbacks->close != NULL) {
+		ret = upnp->vfscallbacks->close(upnp->vfscallbacks->cookie, file->data);
+		free(file);
+		return ret;
 	}
 	return 0;
 }
@@ -902,7 +936,7 @@ unsigned short upnp_getport (upnp_t *upnp)
 	return upnp->port;
 }
 
-upnp_t * upnp_init (const char *host, const unsigned short port)
+upnp_t * upnp_init (const char *host, const unsigned short port, gena_callback_vfs_t *vfscallbacks, void *vfscookie)
 {
 	upnp_t *upnp;
 	debugf("ignoring sigpipe signal");
@@ -936,6 +970,11 @@ upnp_t * upnp_init (const char *host, const unsigned short port)
 
 	upnp->gena_callbacks.gena.event = gena_callback_event;
 	upnp->gena_callbacks.gena.cookie = upnp;
+
+	upnp->vfscallbacks = vfscallbacks;
+	if (upnp->vfscallbacks != NULL) {
+		upnp->vfscallbacks->cookie = vfscookie;
+	}
 
 	upnp->gena = gena_init(upnp->host, upnp->port, &upnp->gena_callbacks);
 	if (upnp->gena == NULL) {

@@ -23,12 +23,11 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <fnmatch.h>
-#if defined(ENABLE_LIBDLNA)
-#endif
 #if defined(HAVE_MAGIC)
 #include <magic.h>
 #endif
 
+#include "gena.h"
 #include "upnp.h"
 #include "common.h"
 
@@ -1060,7 +1059,7 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata,
 				entry->didl.upnp.musictrack.playlist,
 				genre,
 				entry->didl.upnp.audioitem.longdescription,
-				entry->didl.res.protocolinfo, entry->didl.res.size, webserver_getaddress(service->device->webserver), webserver_getport(service->device->webserver), path);
+				entry->didl.res.protocolinfo, entry->didl.res.size, upnp_getaddress(service->device->upnp), upnp_getport(service->device->upnp), path);
 			free(album);
 			free(artist);
 			free(genre);
@@ -1101,7 +1100,7 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata,
 				entry->didl.upnp.videoitem.rating,
 				entry->didl.upnp.videoitem.actor,
 				entry->didl.upnp.videoitem.director,
-				entry->didl.res.protocolinfo, entry->didl.res.size, webserver_getaddress(service->device->webserver), webserver_getport(service->device->webserver), path);
+				entry->didl.res.protocolinfo, entry->didl.res.size, upnp_getaddress(service->device->upnp), upnp_getport(service->device->upnp), path);
 		} else if (strcmp(entry->didl.upnp.object.class, "object.item.imageItem.photo") == 0) {
 			static char *ifmt =
 				"<item id=\"%s\" parentID=\"%s\" restricted=\"%s\">"
@@ -1135,7 +1134,7 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata,
 				entry->didl.upnp.imageitem.rating,
 				entry->didl.upnp.imageitem.storagemedium,
 				entry->didl.upnp.photo.album,
-				entry->didl.res.protocolinfo, entry->didl.res.size, webserver_getaddress(service->device->webserver), webserver_getport(service->device->webserver), path);
+				entry->didl.res.protocolinfo, entry->didl.res.size, upnp_getaddress(service->device->upnp), upnp_getport(service->device->upnp), path);
 		} else {
 			debugf("unknown class '%s'", entry->didl.upnp.object.class);
 			free(out);
