@@ -674,7 +674,7 @@ static int gena_callback_event (void *cookie, gena_event_t *event)
 	return -1;
 }
 
-static int ssdp_callback_event_notify (upnp_t *upnp, ssdp_event_notify_t *notify)
+static int ssdp_callback_event_notify (upnp_t *upnp, ssdp_event_t *notify)
 {
 	upnp_event_t e;
 	memset(&e, 0, sizeof(upnp_event_t));
@@ -689,7 +689,7 @@ static int ssdp_callback_event_notify (upnp_t *upnp, ssdp_event_notify_t *notify
 	return 0;
 }
 
-static int ssdp_callback_event_byebye (upnp_t *upnp, ssdp_event_byebye_t *byebye)
+static int ssdp_callback_event_byebye (upnp_t *upnp, ssdp_event_t *byebye)
 {
 	upnp_event_t e;
 	memset(&e, 0, sizeof(upnp_event_t));
@@ -711,9 +711,9 @@ static int ssdp_callback_event (void *cookie, ssdp_event_t *event)
 	}
 	switch (event->type) {
 		case SSDP_EVENT_TYPE_NOTIFY:
-			return ssdp_callback_event_notify(upnp, &event->event.notify);
+			return ssdp_callback_event_notify(upnp, event);
 		case SSDP_EVENT_TYPE_BYEBYE:
-			return ssdp_callback_event_byebye(upnp, &event->event.byebye);
+			return ssdp_callback_event_byebye(upnp, event);
 		default:
 			break;
 	}
