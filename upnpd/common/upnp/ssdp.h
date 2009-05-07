@@ -22,24 +22,12 @@ typedef enum {
 	SSDP_EVENT_TYPE_BYEBYE,
 } ssdp_event_type_t;
 
-typedef struct ssdp_event_notify_s {
+typedef struct ssdp_event_s {
+	ssdp_event_type_t type;
 	char *device;
 	char *location;
 	char *uuid;
 	int expires;
-} ssdp_event_notify_t;
-
-typedef struct ssdp_event_byebye_s {
-	char *device;
-	char *uuid;
-} ssdp_event_byebye_t;
-
-typedef struct ssdp_event_s {
-	ssdp_event_type_t type;
-	union {
-		ssdp_event_notify_t notify;
-		ssdp_event_byebye_t byebye;
-	} event;
 } ssdp_event_t;
 
 int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout);

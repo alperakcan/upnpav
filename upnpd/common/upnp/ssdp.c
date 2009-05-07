@@ -236,11 +236,11 @@ static int ssdp_request_valid (ssdp_request_t *request)
 		case SSDP_TYPE_NOTIFY:
 			if (request->request.notify.nt == NULL ||
 			    request->request.notify.nts == NULL ||
-			    request->request.notify.usn == NULL ||
-			    (request->request.notify.al == NULL && request->request.notify.location == NULL)) {
+			    request->request.notify.usn == NULL) {
 				return -1;
 			}
-			if (strcasecmp(request->request.notify.nts, "ssdp:alive") == 0) {
+			if (strcasecmp(request->request.notify.nts, "ssdp:alive") == 0 &&
+			   (request->request.notify.al != NULL || request->request.notify.location != NULL)) {
 				return 0;
 			} else if (strcasecmp(request->request.notify.nts, "ssdp:byebye") == 0) {
 				return 0;
@@ -388,14 +388,14 @@ static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, struct s
 			} else if (strcasecmp(request->request.notify.nts, "ssdp:byebye") == 0) {
 				e.type = SSDP_EVENT_TYPE_BYEBYE;
 			}
-			e.event.notify.device = request->request.notify.nt;
-			e.event.notify.location = request->request.notify.location;
-			e.event.notify.expires = 100;
+			e.device = request->request.notify.nt;
+			e.location = request->request.notify.location;
+			e.expires = 100;
 			ptr = strstr(request->request.notify.usn, "::");
 			if (ptr != NULL) {
 				*ptr = '\0';
 			}
-			e.event.notify.uuid = request->request.notify.usn;
+			e.uuid = request->request.notify.usn;
 			pthread_mutex_unlock(&ssdp->mutex);
 			if (ssdp->callback != NULL) {
 				ssdp->callback(ssdp->cookie, &e);
@@ -404,14 +404,14 @@ static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, struct s
 			break;
 		case SSDP_TYPE_ANSWER:
 			e.type = SSDP_EVENT_TYPE_NOTIFY;
-			e.event.notify.device = request->request.answer.st;
-			e.event.notify.location = request->request.answer.location;
-			e.event.notify.expires = 100;
+			e.device = request->request.answer.st;
+			e.location = request->request.answer.location;
+			e.expires = 100;
 			ptr = strstr(request->request.answer.usn, "::");
 			if (ptr != NULL) {
 				*ptr = '\0';
 			}
-			e.event.notify.uuid = request->request.answer.usn;
+			e.uuid = request->request.answer.usn;
 			pthread_mutex_unlock(&ssdp->mutex);
 			if (ssdp->callback != NULL) {
 				ssdp->callback(ssdp->cookie, &e);
@@ -781,6 +781,7 @@ int ssdp_byebye (ssdp_t *ssdp)
 	dest.sin_port = htons(ssdp_port);
 	pthread_mutex_lock(&ssdp->mutex);
 	list_for_each_entry(d, &ssdp->devices, head) {
+		debugf("sending byebye notify for '%s'", d->nt);
 		buffer = ssdp_byebye_buffer(d);
 		ssdp_advertise_send(buffer, &dest);
 		free(buffer);
