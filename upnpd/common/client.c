@@ -352,10 +352,17 @@ static void * client_timer (void *arg)
 				debugf("removed '%s' from device list", device->uuid);
 				client_device_uninit(device);
 			} else if (device->expiretime < stamp) {
+#if 1
+				debugf("sending search request for '%s'", "upnp:rootdevice");
+				if (upnp_search(upnp, 2, "upnp:rootdevice") != 0) {
+					debugf("error sending search request for %s", "upnp:rootdevice");
+				}
+#else
 				debugf("sending search request for '%s'", device->uuid);
-				if (upnp_search(upnp, 5, device->uuid) != 0) {
+				if (upnp_search(upnp, 2, device->uuid) != 0) {
 					debugf("error sending search request for %s", device->uuid);
 				}
+#endif
 			}
 		}
 		pthread_mutex_unlock(&client->mutex);
@@ -456,11 +463,9 @@ int client_uninit (client_t *client)
 
 int client_refresh (client_t *client, int remove)
 {
-	int d;
 	int ret;
 	client_device_t *device;
 	client_device_t *devicen;
-	device_description_t *description;
 	ret = 0;
 	pthread_mutex_lock(&client->mutex);
 	debugf("refreshing device list");
@@ -471,11 +476,20 @@ int client_refresh (client_t *client, int remove)
 			client_device_uninit(device);
 		}
 	}
+	debugf("sending requests");
+#if 0
+	int d;
+	device_description_t *description;
 	for (d = 0; (description = client->descriptions[d]) != NULL; d++) {
-		if (upnp_search(upnp, 5, description->device) != 0) {
+		if (upnp_search(upnp, 2, description->device) != 0) {
 			debugf("error sending search request for %s", description->device);
 		}
 	}
+#else
+	if (upnp_search(upnp, 2, "upnp:rootdevice") != 0) {
+		debugf("error sending search request for %s", "upnp:rootdevice");
+	}
+#endif
 	pthread_mutex_unlock(&client->mutex);
 	return ret;
 }

@@ -237,6 +237,7 @@ static int ssdp_request_valid (ssdp_request_t *request)
 			if (request->request.notify.nt == NULL ||
 			    request->request.notify.nts == NULL ||
 			    request->request.notify.usn == NULL) {
+				debugf("notify not valid");
 				return -1;
 			}
 			if (strcasecmp(request->request.notify.nts, "ssdp:alive") == 0 &&
@@ -245,11 +246,13 @@ static int ssdp_request_valid (ssdp_request_t *request)
 			} else if (strcasecmp(request->request.notify.nts, "ssdp:byebye") == 0) {
 				return 0;
 			}
+			debugf("notify not valid");
 			break;
 		case SSDP_TYPE_ANSWER:
 			if (request->request.answer.st == NULL ||
 			    request->request.answer.location == NULL ||
 			    request->request.answer.usn == NULL) {
+				debugf("answer not valid");
 				return-1;
 			}
 			return 0;
@@ -695,13 +698,14 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 	int ret;
 	char *data;
 	char *buffer;
+	struct pollfd pfd;
 	ssdp_request_t *request;
 	const char *format_search =
 		"M-SEARCH * HTTP/1.1\r\n"
-		"HOST: %s:%d\r\n"
-		"MAN: ssdp:discover\r\n"
-		"MX: %d\r\n"
 		"ST: %s\r\n"
+		"MX: %d\r\n"
+		"MAN: \"ssdp:discover\"\r\n"
+		"HOST: %s:%d\r\n"
 		"\r\n";
 	int ttl;
 	int sock;
@@ -714,10 +718,10 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 	ret = asprintf(
 		&buffer,
 		format_search,
-		ssdp_ip,
-		ssdp_port,
+		device,
 		timeout,
-		device);
+		ssdp_ip,
+		ssdp_port);
 	if (ret < 0) {
 		return -1;
 	}
@@ -734,6 +738,16 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 		ssdp_advertise_send(buffer, &dest);
 		sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *) &dest, socklen);
 		usleep(ssdp_pause * 1000);
+	}
+	do {
+		memset(&pfd, 0, sizeof(struct pollfd));
+		pfd.fd = sock;
+		pfd.events = POLLIN;
+		pfd.revents = 0;
+		ret = poll(&pfd, 1, ssdp_recv_timeout);
+		if (ret <= 0 || pfd.revents != POLLIN) {
+			break;
+		}
 		r = recvfrom(sock, data, 4096, MSG_DONTWAIT, NULL, NULL);
 		if (r > 0) {
 			data[r] = '\0';
@@ -744,7 +758,8 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 				pthread_mutex_unlock(&ssdp->mutex);
 			}
 		}
-	}
+	} while (1);
+
 	close(sock);
 	free(buffer);
 	free(data);
