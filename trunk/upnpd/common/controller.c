@@ -50,6 +50,8 @@ static char *mediarenderer_services[] = {
 static device_description_t *controller_devices[] = {
 	& (device_description_t) { "urn:schemas-upnp-org:device:MediaServer:1", mediaserver_services },
 	& (device_description_t) { "urn:schemas-upnp-org:device:MediaRenderer:1", mediarenderer_services },
+	& (device_description_t) { "upnp:rootdevice", mediaserver_services },
+	& (device_description_t) { "upnp:rootdevice", mediarenderer_services },
 	NULL,
 };
 

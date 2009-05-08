@@ -1132,7 +1132,7 @@ char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port
 	length = 0;
 	buffer = malloc(GENA_HEADER_SIZE);
 	while (1) {
-		if (gena_getline(fd, GENA_SOCKET_TIMEOUT, buffer, GENA_HEADER_SIZE) <= 0) {
+		if (gena_getline(fd, 100000, buffer, GENA_HEADER_SIZE) <= 0) {
 			break;
 		}
 		if (strncasecmp(buffer, "Content-length:", strlen("Content-length:")) == 0) {
