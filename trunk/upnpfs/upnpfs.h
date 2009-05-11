@@ -114,8 +114,6 @@ static inline void debugfs_printf (const char *function, char *file, int line, c
 
 int do_releasecache (upnpfs_cache_t *cache);
 
-upnpfs_cache_t * do_referencecache (upnpfs_cache_t *cache);
-
 upnpfs_cache_t * do_findcache (const char *path);
 
 upnpfs_cache_t * do_insertcache (const char *path, const char *device, entry_t *entry);
