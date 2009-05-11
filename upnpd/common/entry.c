@@ -326,6 +326,7 @@ entry_t * entry_didl (const unsigned int magic, const char *path)
 			mime = "unknown";
 #endif
 		}
+		debugf("mime: '%s' (%s)", mime, path);
 		if (strncmp(mime, "audio/", 6) == 0) {
 			entry->didl.entryid = entryid_init_value(path);
 			if (entry->didl.entryid == NULL) {
