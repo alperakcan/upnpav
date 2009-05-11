@@ -53,7 +53,7 @@ int do_releasecache (upnpfs_cache_t *cache)
 	return 0;
 }
 
-upnpfs_cache_t * do_referencecache (upnpfs_cache_t *cache)
+static upnpfs_cache_t * do_referencecache (upnpfs_cache_t *cache)
 {
 	upnpfs_cache_t *c;
 	c = (upnpfs_cache_t *) malloc(sizeof(upnpfs_cache_t));
