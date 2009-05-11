@@ -7,8 +7,9 @@ libcontroller_a_SOURCES = \
 	sdl.c
 
 libcontroller_a_CFLAGS = \
-	-Wall	\
 	-I$(top_srcdir)/ixml/inc \
 	-I$(top_srcdir)/upnpd \
 	-I$(top_srcdir)/upnpd/common \
-	-I$(top_srcdir)/upnpd/common/upnp
+	-I$(top_srcdir)/upnpd/common/upnp \
+	$(LIBSDL_CFLAGS) \
+	$(LIBCAIRO_CFLAGS)

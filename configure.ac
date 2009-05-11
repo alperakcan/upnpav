@@ -261,19 +261,22 @@ AC_DEFINE(ENABLE_CONTROLLER, 1, [Define to 1 if you want 'controller' support.])
 
 AC_ARG_ENABLE([upnpfs],
 [  --disable-upnpfs        disable upnpfs controller [[default=yes]]],
-if test "$enableval" = "no" -o "$enable_libfuse" = "no"
+if test "$enableval" = "no" -o "$enable_libfuse" = "no" -o "$enable_controller" = "no"
 then
 	enable_upnpfs=no
 else
-if test "$enable_libfuse" = "yes"
+if test "$enable_libfuse" = "yes" -a "$enable_controller" = "yes"
 then
 	enable_upnpfs=yes
 	AC_DEFINE(ENABLE_UPNPFS, 1, [Define to 1 if you want 'upnpfs' support.])
 fi
 fi
 ,
-enable_upnpfs=yes
-AC_DEFINE(ENABLE_UPNPFS, 1, [Define to 1 if you want 'upnpfs' support.])
+if test "$enable_libfuse" = "yes" -a "$enable_controller" = "yes"
+then
+	enable_upnpfs=yes
+	AC_DEFINE(ENABLE_UPNPFS, 1, [Define to 1 if you want 'upnpfs' support.])
+fi
 )
 
 AC_ARG_ENABLE([mediaserver],

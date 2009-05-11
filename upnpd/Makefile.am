@@ -10,7 +10,6 @@ upnpd_SOURCES =	\
 	upnpd.h
 
 upnpd_CFLAGS =	\
-	-Wall	\
 	-I$(top_srcdir)/ixml/inc \
 	-I$(top_srcdir)/upnpd \
 	-I$(top_srcdir)/upnpd/common \
@@ -32,4 +31,6 @@ upnpd_LDADD += \
 	$(top_builddir)/upnpd/common/upnp/libupnp.a \
 	$(top_builddir)/ixml/libixml.a \
 	$(READLINE_LIBS) \
+	$(LIBSDL_LIBS) \
+	$(LIBCAIRO_LIBS) \
 	-lpthread
