@@ -28,9 +28,11 @@
 #include "controller.h"
 
 extern controller_gui_t controller_console;
+extern controller_gui_t controller_sdl;
 
 static controller_gui_t *controller_gui[] = {
 	&controller_console,
+	&controller_sdl,
 	NULL,
 };
 

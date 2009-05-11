@@ -219,6 +219,28 @@ fuse_version_yes
 ], AC_DEFINE([FUSE_USE_VERSION], [27], [Version of FUSE interface]) AC_MSG_RESULT([yes]),
    AC_DEFINE([FUSE_USE_VERSION], [FUSE_VERSION], [Version of FUSE interface]) AC_MSG_RESULT([no]))
 
+# - cairo
+
+PKG_CHECK_MODULES(LIBCAIRO, cairo, HAVE_LIBCAIRO=yes, HAVE_LIBCAIRO=no)
+if test "$HAVE_LIBCAIRO" = "yes"
+then
+	enable_libcairo=yes
+	AC_DEFINE(HAVE_LIBCAIRO, 1, [Define to 1 if you want 'libcairo' support.])
+else
+	enable_libcairo=no
+fi
+
+# - sdl
+
+PKG_CHECK_MODULES(LIBSDL, sdl, HAVE_LIBSDL=yes, HAVE_LIBSDL=no)
+if test "$HAVE_LIBSDL" = "yes"
+then
+	enable_libsdl=yes
+	AC_DEFINE(HAVE_LIBSDL, 1, [Define to 1 if you want 'libsdl' support.])
+else
+	enable_libsdl=no
+fi
+
 #
 # Check extra parameters
 #
@@ -291,6 +313,9 @@ AM_CONDITIONAL(DARWIN, test "$arch" = darwin)
 AM_CONDITIONAL(ENABLE_CONTROLLER, test "$enable_controller" = "yes")
 AM_CONDITIONAL(ENABLE_MEDIASERVER, test "$enable_mediaserver" = "yes")
 AM_CONDITIONAL(ENABLE_UPNPFS, test "$enable_upnpfs" = "yes")
+
+AM_CONDITIONAL(ENABLE_LIBSDL, test "$enable_libsdl" = "yes")
+AM_CONDITIONAL(ENABLE_LIBCAIRO, test "$enable_libcairo" = "yes")
 
 AM_CONDITIONAL(ENABLE_OPTIONAL, test "$enable_optional" = "yes")
 
