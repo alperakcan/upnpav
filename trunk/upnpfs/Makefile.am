@@ -17,7 +17,7 @@ upnpfs_SOURCES = \
 	op_release.c
 
 upnpfs_CFLAGS = \
-	-D_FILE_OFFSET_BITS=64 \
+	$(LIBFUSE_CFLAGS) \
 	-I$(top_srcdir)/ixml/inc \
 	-I$(top_srcdir)/upnpd \
 	-I$(top_srcdir)/upnpd/common \
@@ -32,4 +32,4 @@ upnpfs_LDADD = \
 	$(top_builddir)/upnpd/common/libcommon.a \
 	$(top_builddir)/upnpd/common/upnp/libupnp.a \
 	$(top_builddir)/ixml/libixml.a \
-	-lfuse
+	$(LIBFUSE_LIBS)
