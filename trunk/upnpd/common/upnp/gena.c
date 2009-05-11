@@ -131,40 +131,49 @@ static char * gena_trim (char *buffer)
 
 static int gena_send (int fd, int timeout, const void *buf, unsigned int len)
 {
+	int t;
+	int s;
 	int rc;
 	struct pollfd pfd;
-
-	memset(&pfd, 0, sizeof(struct pollfd));
-	pfd.fd = fd;
-	pfd.events = POLLOUT;
-
-	rc = poll(&pfd, 1, timeout);
-	if (rc <= 0 || pfd.revents != POLLOUT) {
-		debugf("poll failed (%d, 0x%x)", rc, pfd.revents);
-		return 0;
+	t = 0;
+	while (1) {
+		memset(&pfd, 0, sizeof(struct pollfd));
+		pfd.fd = fd;
+		pfd.events = POLLOUT;
+		rc = poll(&pfd, 1, timeout);
+		if (rc == 0) {
+			debugf("poll timeout");
+			continue;
+		}
+		if (rc <= 0 || (pfd.revents & POLLOUT) == 0) {
+			debugf("poll failed (%d, 0x%x)", rc, pfd.revents);
+			break;
+		}
+		s = send(pfd.fd, buf + t, len - t, MSG_DONTWAIT);
+		if (s <= 0) {
+			break;
+		}
+		t += s;
 	}
-
-	return send(pfd.fd, buf, len, 0);
+	return t;
 }
 
 static int gena_getcontent (int fd, int timeout, char *buf, int buflen)
 {
-	int rc;
-	struct pollfd pfd;
-	int count = 0;
 	char c;
-
-	memset(&pfd, 0, sizeof(struct pollfd));
-	pfd.fd = fd;
-	pfd.events = POLLIN;
-
-	rc = poll(&pfd, 1, timeout);
-	if (rc <= 0 || (pfd.revents & POLLIN) == 0) {
-		debugf("poll failed rc:%d(0x%x)", rc, pfd.revents);
-		return 0;
-	}
-
+	int rc;
+	int count;
+	struct pollfd pfd;
+	count = 0;
 	while (1) {
+		memset(&pfd, 0, sizeof(struct pollfd));
+		pfd.fd = fd;
+		pfd.events = POLLIN;
+		rc = poll(&pfd, 1, timeout);
+		if (rc <= 0 || (pfd.revents & POLLIN) == 0) {
+			debugf("poll failed rc:%d(0x%x)", rc, pfd.revents);
+			return 0;
+		}
 		if (recv(pfd.fd, &c, 1, MSG_DONTWAIT) <= 0) {
 			break;
 		}
@@ -178,22 +187,20 @@ static int gena_getcontent (int fd, int timeout, char *buf, int buflen)
 
 static int gena_getline (int fd, int timeout, char *buf, int buflen)
 {
-	int rc;
-	struct pollfd pfd;
-	int count = 0;
 	char c;
-
-	memset(&pfd, 0, sizeof(struct pollfd));
-	pfd.fd = fd;
-	pfd.events = POLLIN;
-
-	rc = poll(&pfd, 1, timeout);
-	if (rc <= 0 || (pfd.revents & POLLIN) == 0) {
-		debugf("poll failed rc:%d(0x%x)", rc, pfd.revents);
-		return 0;
-	}
-
+	int rc;
+	int count;
+	struct pollfd pfd;
+	count = 0;
 	while (1) {
+		memset(&pfd, 0, sizeof(struct pollfd));
+		pfd.fd = fd;
+		pfd.events = POLLIN;
+		rc = poll(&pfd, 1, timeout);
+		if (rc <= 0 || (pfd.revents & POLLIN) == 0) {
+			debugf("poll failed rc:%d(0x%x)", rc, pfd.revents);
+			return 0;
+		}
 		if (recv(pfd.fd, &c, 1, MSG_DONTWAIT) <= 0) {
 			break;
 		}
@@ -1069,31 +1076,6 @@ static int gena_init_server (gena_t *gena)
 	return 0;
 }
 
-static int gena_send_data (int s, const void *write_buf, int total_size)
-{
-	int ret;
-	int sent = 0;
-	struct pollfd pfd;
-
-	while (total_size > 0) {
-		memset(&pfd, 0, sizeof(struct pollfd));
-		pfd.fd = s;
-		pfd.events = POLLOUT;
-		ret = poll(&pfd, 1, GENA_SOCKET_TIMEOUT);
-		if (ret <= 0 || pfd.revents != POLLOUT) {
-			goto err;
-		}
-		ret = send(s, write_buf + sent, total_size, 0);
-		if (ret < 0) {
-			goto err;
-		}
-		sent += ret;
-		total_size -= ret;
-	}
-	return sent;
-err:	return -1;
-}
-
 char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port, const char *header, const char *data)
 {
 	int r;
@@ -1115,15 +1097,15 @@ char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port
 		close(fd);
 		return NULL;
 	}
-	if (gena_send_data(fd, header, strlen(header)) != strlen(header)) {
+	if (gena_send(fd, GENA_SOCKET_TIMEOUT, header, strlen(header)) != strlen(header)) {
 		close(fd);
-		debugf("gena_send_data() failed");
+		debugf("gena_send() failed");
 		return NULL;
 	}
 	if (data != NULL) {
-		if (gena_send_data(fd, data, strlen(data)) != strlen(data)) {
+		if (gena_send(fd, GENA_SOCKET_TIMEOUT, data, strlen(data)) != strlen(data)) {
 			close(fd);
-			debugf("gena_send_data() failed");
+			debugf("gena_send() failed");
 			return NULL;
 		}
 	}
