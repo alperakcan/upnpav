@@ -219,6 +219,17 @@ fuse_version_yes
 ], AC_DEFINE([FUSE_USE_VERSION], [27], [Version of FUSE interface]) AC_MSG_RESULT([yes]),
    AC_DEFINE([FUSE_USE_VERSION], [FUSE_VERSION], [Version of FUSE interface]) AC_MSG_RESULT([no]))
 
+# - ffmpeg
+
+PKG_CHECK_MODULES(LIBFFMPEG, libavutil libswscale libavcodec, HAVE_LIBFFMPEG=yes, HAVE_LIBFFMPEG=no)
+if test "$HAVE_LIBFFMPEG" = "yes"
+then
+	enable_libffmpeg=yes
+	AC_DEFINE(HAVE_LIBFFMPEG, 1, [Define to 1 if you want 'libffmpeg' support.])
+else
+	enable_libffmpeg=no
+fi
+
 # - cairo
 
 PKG_CHECK_MODULES(LIBCAIRO, cairo, HAVE_LIBCAIRO=yes, HAVE_LIBCAIRO=no)
@@ -329,6 +340,7 @@ AM_CONDITIONAL(ENABLE_OPTIONAL, test "$enable_optional" = "yes")
 AC_CONFIG_FILES([
 	Makefile
 	ixml/Makefile
+	metadata/Makefile
 	upnpd/Makefile
 	upnpd/common/Makefile
 	upnpd/common/upnp/Makefile
