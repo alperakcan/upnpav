@@ -185,8 +185,7 @@ static int item_browser_compare (const void *a, const void *b)
 	itemb = *(const item_browser_t **) b;
 	if (itema->item.type == itemb->item.type) {
 		return strcmp(itema->item.name, itemb->item.name);
-	}
-	if (itema->item.type == SDL_ITEM_TYPE_CONTAINER) {
+	} else if (itema->item.type == SDL_ITEM_TYPE_CONTAINER) {
 		return -1;
 	} else {
 		return 1;
