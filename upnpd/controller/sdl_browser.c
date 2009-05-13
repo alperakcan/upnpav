@@ -261,7 +261,16 @@ sdl_item_t * item_browser_init (void)
 		return NULL;
 	}
 	browser->path = strdup("/");
+	if (browser->path == NULL) {
+		free(browser);
+		return NULL;
+	}
 	browser->item.name = strdup("Browser");
+	if (browser->item.name == NULL) {
+		free(browser->path);
+		free(browser);
+		return NULL;
+	}
 	browser->item.type = SDL_ITEM_TYPE_CONTAINER;
 	browser->item.image = NULL;
 	browser->item.info = NULL;
