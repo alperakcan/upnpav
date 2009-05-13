@@ -84,7 +84,7 @@ static void item_browser_qsort (void *base, size_t nel, size_t width, int (*comp
 	}
 }
 
-static int item_browser_scandir (const char *dir, struct dirent ***namelist, int (*selector) (const struct dirent *), int (*compar) (const void *, const void *))
+static int item_browser_scandir (const char *dir, struct dirent ***namelist, int (*selector) (const struct dirent *))
 {
 	DIR *dp;
 	int error;
@@ -138,9 +138,6 @@ static int item_browser_scandir (const char *dir, struct dirent ***namelist, int
 	}
 	closedir(dp);
 
-	if (compar != NULL) {
-		item_browser_qsort(names, pos, sizeof(struct dirent *), compar);
-	}
 	*namelist = names;
 	return pos;
 }
@@ -162,7 +159,18 @@ static int item_browser_filter (const struct dirent *entry)
 
 static int item_browser_compare (const void *a, const void *b)
 {
-	return strcmp((*(const struct dirent **) a)->d_name, (*(const struct dirent **) b)->d_name);
+	const item_browser_t *itema;
+	const item_browser_t *itemb;
+	itema = *(const item_browser_t **) a;
+	itemb = *(const item_browser_t **) b;
+	if (itema->item.type == itemb->item.type) {
+		return strcmp(itema->item.name, itemb->item.name);
+	}
+	if (itema->item.type == SDL_ITEM_TYPE_CONTAINER) {
+		return -1;
+	} else {
+		return 1;
+	}
 }
 
 static int item_browser_items (sdl_item_t *item, int *nitems, sdl_item_t ***items)
@@ -180,8 +188,8 @@ static int item_browser_items (sdl_item_t *item, int *nitems, sdl_item_t ***item
 	*items = NULL;
 	*nitems = 0;
 
-	n = item_browser_scandir(browser->path, &namelist, item_browser_filter, item_browser_compare);
-	if (n < 0) {
+	n = item_browser_scandir(browser->path, &namelist, item_browser_filter);
+	if (n <= 0) {
 		goto error;
 	}
 
@@ -235,6 +243,7 @@ static int item_browser_items (sdl_item_t *item, int *nitems, sdl_item_t ***item
 		free(namelist[i]);
 	}
 	free(namelist);
+	item_browser_qsort(*items, *nitems, sizeof(sdl_item_t *), item_browser_compare);
 	return 0;
 error:
 	for (i = 0; i < *nitems; i++) {
