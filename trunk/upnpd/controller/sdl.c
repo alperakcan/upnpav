@@ -28,12 +28,15 @@ typedef struct sdl_s {
 	int width;
 	int height;
 	int bitsperpixel;
-	sdl_item_t **prevs;
+
 	int nprevs;
-	sdl_item_t **items;
+	sdl_item_t **prevs;
+	int *pselected;
+
 	int nitems;
+	sdl_item_t **items;
+
 	int selected;
-	int pselected;
 } sdl_t;
 
 static sdl_t sdl;
@@ -68,6 +71,7 @@ static int sdl_gui_uninit (void)
 		}
 	}
 	free(sdl.prevs);
+	free(sdl.pselected);
 	for (i = 0; i < sdl.nitems; i++) {
 		if (sdl.items[i]->uninit != NULL) {
 			sdl.items[i]->uninit(sdl.items[i]);
@@ -80,6 +84,7 @@ static int sdl_gui_uninit (void)
 static int sdl_gui_init (void)
 {
 	sdl.prevs = NULL;
+	sdl.pselected = NULL;
 	sdl.nprevs = 0;
 	sdl.items = (sdl_item_t **) malloc(sizeof(sdl_item_t *) * 2);
 	if (sdl.items == NULL) {
@@ -137,9 +142,10 @@ static int sdl_keyspace (void)
 		}
 
 		sdl.prevs = (sdl_item_t **) realloc(sdl.prevs, sizeof(sdl_item_t *) * (sdl.nprevs + 1));
+		sdl.pselected = (int *) realloc(sdl.pselected, sizeof(int) * (sdl.nprevs + 1));
 		sdl.prevs[sdl.nprevs] = item;
+		sdl.pselected[sdl.nprevs] = sdl.selected;
 		sdl.nprevs++;
-		sdl.pselected = sdl.selected;
 
 		free(sdl.items);
 		sdl.items = items;
@@ -155,6 +161,7 @@ static int sdl_keyescape (void)
 {
 	int i;
 	int nitems;
+	int selected;
 	sdl_item_t *item;
 	sdl_item_t **items;
 
@@ -165,6 +172,8 @@ static int sdl_keyescape (void)
 	}
 
 	item = sdl.prevs[sdl.nprevs - 2];
+	selected = sdl.pselected[sdl.nprevs - 1];
+
 	if (item->items(item, &nitems, &items) != 0) {
 		return -1;
 	}
@@ -180,13 +189,14 @@ static int sdl_keyescape (void)
 	free(sdl.items);
 	sdl.items = items;
 	sdl.nitems = nitems;
-	sdl.selected = sdl.pselected;
+	sdl.selected = selected;
 
 	item = sdl.prevs[sdl.nprevs - 1];
 	if (item->uninit != NULL) {
 		item->uninit(item);
 	}
 	sdl.prevs = (sdl_item_t **) realloc(sdl.prevs, sizeof(sdl_item_t *) * (sdl.nprevs - 1));
+	sdl.pselected = (int *) realloc(sdl.pselected, sizeof(sdl_item_t *) * (sdl.nprevs - 1));
 	sdl.nprevs--;
 
 	sdl_gui_update();
