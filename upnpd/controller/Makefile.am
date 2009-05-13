@@ -4,7 +4,8 @@ noinst_LIBRARIES = libcontroller.a
 libcontroller_a_SOURCES = \
 	controller.c \
 	console.c \
-	sdl.c
+	sdl.c \
+	sdl.h
 
 libcontroller_a_CFLAGS = \
 	-I$(top_srcdir)/ixml/inc \

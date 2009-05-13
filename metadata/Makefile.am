@@ -13,4 +13,7 @@ metadata_SOURCES = \
 	metadata.c
 
 metadata_LDADD = \
-	$(LIBFFMPEG_LIBS)
+	$(top_builddir)/metadata/libmetadata.a \
+	$(LIBFFMPEG_LIBS) \
+	-lm \
+	-lbz2
