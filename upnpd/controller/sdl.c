@@ -96,9 +96,7 @@ static int sdl_gui_init (void)
 
 static int sdl_keyup (void)
 {
-	sdl_item_t *item;
 	sdl.selected = MAX(sdl.selected - 1, 0);
-	item = sdl.items[sdl.selected];
 	sdl_gui_update();
 	return 0;
 }
