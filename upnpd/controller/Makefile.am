@@ -5,6 +5,8 @@ libcontroller_a_SOURCES = \
 	controller.c \
 	console.c \
 	sdl.c \
+	sdl_browser.c \
+	sdl_setup.c \
 	sdl.h
 
 libcontroller_a_CFLAGS = \

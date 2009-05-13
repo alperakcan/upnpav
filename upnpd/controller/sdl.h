@@ -66,3 +66,6 @@ struct sdl_item_s {
 	int (*items) (sdl_item_t *item, int *nitems, sdl_item_t ***items);
 	int (*uninit) (sdl_item_t *item);
 };
+
+sdl_item_t * item_setup_init (void);
+sdl_item_t * item_browser_init (void);
