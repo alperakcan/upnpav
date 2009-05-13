@@ -40,10 +40,13 @@ typedef enum {
 } sdl_item_image_type_t;
 
 struct sdl_item_image_t {
-	sdl_item_image_type_t type;
-	unsigned char *buffer;
-	unsigned int width;
-	unsigned int height;
+	int nimages;
+	struct {
+		sdl_item_image_type_t type;
+		unsigned char *buffer;
+		unsigned int width;
+		unsigned int height;
+	} **images;
 };
 
 struct sdl_item_info_s {
