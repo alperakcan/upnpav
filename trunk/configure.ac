@@ -221,7 +221,7 @@ fuse_version_yes
 
 # - ffmpeg
 
-PKG_CHECK_MODULES(LIBFFMPEG, libavutil libswscale libavcodec, HAVE_LIBFFMPEG=yes, HAVE_LIBFFMPEG=no)
+PKG_CHECK_MODULES(LIBFFMPEG, libavformat libavcodec libswscale libavutil, HAVE_LIBFFMPEG=yes, HAVE_LIBFFMPEG=no)
 if test "$HAVE_LIBFFMPEG" = "yes"
 then
 	enable_libffmpeg=yes
