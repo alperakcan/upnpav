@@ -137,7 +137,6 @@ static int item_browser_scandir (const char *dir, struct dirent ***namelist, int
 		return -1;
 	}
 	closedir(dp);
-
 	*namelist = names;
 	return pos;
 }
