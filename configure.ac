@@ -330,6 +330,7 @@ AM_CONDITIONAL(ENABLE_UPNPFS, test "$enable_upnpfs" = "yes")
 
 AM_CONDITIONAL(ENABLE_LIBSDL, test "$enable_libsdl" = "yes")
 AM_CONDITIONAL(ENABLE_LIBCAIRO, test "$enable_libcairo" = "yes")
+AM_CONDITIONAL(ENABLE_LIBFFMPEG, test "$enable_libffmpeg" = "yes")
 
 AM_CONDITIONAL(ENABLE_OPTIONAL, test "$enable_optional" = "yes")
 

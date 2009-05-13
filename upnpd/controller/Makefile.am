@@ -3,11 +3,15 @@ noinst_LIBRARIES = libcontroller.a
 
 libcontroller_a_SOURCES = \
 	controller.c \
-	console.c \
+	console.c
+
+if ENABLE_LIBSDL
+libcontroller_a_SOURCES += \
 	sdl.c \
 	sdl_browser.c \
 	sdl_setup.c \
 	sdl.h
+endif
 
 libcontroller_a_CFLAGS = \
 	-I$(top_srcdir)/ixml/inc \
