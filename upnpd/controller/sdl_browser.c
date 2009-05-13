@@ -40,6 +40,27 @@ static int item_browser_uninit (sdl_item_t *item)
 	return 0;
 }
 
+static int item_browser_info (sdl_item_t *item, sdl_item_info_t *info)
+{
+	item_browser_t *browser;
+	browser = (item_browser_t *) item;
+	return -1;
+}
+
+static int item_browser_image (sdl_item_t *item, sdl_item_image_t *image)
+{
+	item_browser_t *browser;
+	browser = (item_browser_t *) item;
+	return -1;
+}
+
+static int item_browser_status (sdl_item_t *item, sdl_item_status_t *status)
+{
+	item_browser_t *browser;
+	browser = (item_browser_t *) item;
+	return -1;
+}
+
 static void item_browser_qsort (void *base, size_t nel, size_t width, int (*comp) (const void *, const void *))
 {
 	char tmp;
@@ -225,11 +246,17 @@ static int item_browser_items (sdl_item_t *item, int *nitems, sdl_item_t ***item
 			itm->item.type = SDL_ITEM_TYPE_CONTAINER;
 			itm->item.items = item_browser_items;
 			itm->item.uninit = item_browser_uninit;
+			itm->item.info = item_browser_info;
+			itm->item.image = item_browser_image;
+			itm->item.status = item_browser_status;
 			(*items)[*nitems] = &itm->item;
 			*nitems = *nitems + 1;
 		} else if (S_ISREG(stbuf.st_mode)) {
 			itm->item.type = SDL_ITEM_TYPE_OBJECT;
 			itm->item.uninit = item_browser_uninit;
+			itm->item.info = item_browser_info;
+			itm->item.image = item_browser_image;
+			itm->item.status = item_browser_status;
 			(*items)[*nitems] = &itm->item;
 			*nitems = *nitems + 1;
 		} else {
