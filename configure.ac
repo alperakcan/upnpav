@@ -199,10 +199,12 @@ CFLAGS="$CFLAGS $MAGIC_CFLAGS"
 
 # - fuse
 
-PKG_CHECK_MODULES(LIBFUSE, fuse, HAVE_LIBFUSE=yes, HAVE_LIBFUSE=no)
+AC_CHECK_LIB([fuse], [fuse_main], [AC_SUBST([HAVE_LIBFUSE], [yes])], [])
 if test "$HAVE_LIBFUSE" = "yes"
 then
 	enable_libfuse=yes
+	AC_SUBST([LIBFUSE_LIBS], [-lfuse])
+	AC_SUBST([LIBFUSE_CFLAGS], [-D_FILE_OFFSET_BITS=64])
 	AC_DEFINE(HAVE_LIBFUSE, 1, [Define to 1 if you want 'libfuse' support.])
 else
 	enable_libfuse=no
@@ -256,6 +258,23 @@ fi
 # Check extra parameters
 #
 
+AC_ARG_ENABLE([metadata],
+[  --disable-metadata      disable metadata library [[default=yes]]],
+if test "$enableval" = "no" -o "$enable_libffmpeg" = "no"
+then
+	enable_metadata=no
+else
+	enable_metadata=yes
+	AC_DEFINE(ENABLE_METADATA, 1, [Define to 1 if you want 'metadata' support.])
+fi
+,
+if test "$enable_libffmpeg" = "yes"
+then
+	enable_metadata=yes
+	AC_DEFINE(ENABLE_METADATA, 1, [Define to 1 if you want 'metadata' support.])
+fi
+)
+
 AC_ARG_ENABLE([controller],
 [  --disable-controller    disable controller application [[default=yes]]],
 if test "$enableval" = "no"
@@ -276,11 +295,8 @@ if test "$enableval" = "no" -o "$enable_libfuse" = "no" -o "$enable_controller" 
 then
 	enable_upnpfs=no
 else
-if test "$enable_libfuse" = "yes" -a "$enable_controller" = "yes"
-then
 	enable_upnpfs=yes
 	AC_DEFINE(ENABLE_UPNPFS, 1, [Define to 1 if you want 'upnpfs' support.])
-fi
 fi
 ,
 if test "$enable_libfuse" = "yes" -a "$enable_controller" = "yes"
@@ -327,6 +343,7 @@ AM_CONDITIONAL(DARWIN, test "$arch" = darwin)
 AM_CONDITIONAL(ENABLE_CONTROLLER, test "$enable_controller" = "yes")
 AM_CONDITIONAL(ENABLE_MEDIASERVER, test "$enable_mediaserver" = "yes")
 AM_CONDITIONAL(ENABLE_UPNPFS, test "$enable_upnpfs" = "yes")
+AM_CONDITIONAL(ENABLE_METADATA, test "$enable_metadata" = "yes")
 
 AM_CONDITIONAL(ENABLE_LIBSDL, test "$enable_libsdl" = "yes")
 AM_CONDITIONAL(ENABLE_LIBCAIRO, test "$enable_libcairo" = "yes")
