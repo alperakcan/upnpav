@@ -1,9 +1,9 @@
 
 SUBDIRS  = ixml
-if ENABLE_LIBFFMPEG
+if ENABLE_CONTROLLER
 SUBDIRS += metadata
 endif
 SUBDIRS += upnpd
-if ENABLE_UPNPFS
+if ENABLE_CONTROLLER
 SUBDIRS += upnpfs
 endif
