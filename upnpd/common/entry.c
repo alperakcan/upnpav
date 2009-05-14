@@ -313,9 +313,12 @@ entry_t * entry_didl (const unsigned int magic, const char *path)
 			if (fnmatch("*.mp3", path, FNM_CASEFOLD) == 0) {
 				mime = "audio/mpeg";
 			} else if (fnmatch("*.mpg", path, FNM_CASEFOLD) == 0) {
-				mime = "video/mpeg";
+				mime = "video/mp2p";
 			} else if (fnmatch("*.avi", path, FNM_CASEFOLD) == 0) {
 				mime = "video/x-msvideo";
+			} else if (fnmatch("*.jpeg", path, FNM_CASEFOLD) == 0 ||
+				   fnmatch("*.jpg", path, FNM_CASEFOLD) == 0) {
+				mime = "image/jpeg";
 			} else {
 				mime = "unknown";
 			}
@@ -368,7 +371,11 @@ entry_t * entry_didl (const unsigned int magic, const char *path)
 			entry->didl.parentid = entryid_parentid_from_path(path);
 			entry->path = strdup(path);
 			entry->mime = strdup(mime);
-			entry->ext_info = strdup("*");
+			if (strcmp(entry->mime, "video/mp2p") == 0) {
+				entry->ext_info = strdup("DLNA.ORG_PN=MPEG_PS_PAL;DLNA.ORG_OP=01;DLNA.ORG_CI=0");
+			} else {
+				entry->ext_info = strdup("*");
+			}
 			entry->didl.childcount = 0;
 			entry->didl.restricted = 1;
 			entry->didl.dc.title = strdup(strrchr(path, '/') + 1);
@@ -397,7 +404,11 @@ entry_t * entry_didl (const unsigned int magic, const char *path)
 			entry->didl.parentid = entryid_parentid_from_path(path);
 			entry->path = strdup(path);
 			entry->mime = strdup(mime);
-			entry->ext_info = strdup("*");
+			if (strcmp(entry->mime, "image/jpeg") == 0){
+				entry->ext_info = strdup("DLNA.ORG_PN=JPEG_MED;DLNA.ORG_OP=01;DLNA.ORG_CI=0");
+			} else {
+				entry->ext_info = strdup("*");
+			}
 			entry->didl.childcount = 0;
 			entry->didl.restricted = 1;
 			entry->didl.dc.title = strdup(strrchr(path, '/') + 1);
