@@ -316,6 +316,8 @@ entry_t * entry_didl (const unsigned int magic, const char *path)
 				mime = "video/mp2p";
 			} else if (fnmatch("*.avi", path, FNM_CASEFOLD) == 0) {
 				mime = "video/x-msvideo";
+			} else if (fnmatch("*.mts", path, FNM_CASEFOLD) == 0) {
+				mime = "video/vnd.dlna.mpeg-tts";
 			} else if (fnmatch("*.jpeg", path, FNM_CASEFOLD) == 0 ||
 				   fnmatch("*.jpg", path, FNM_CASEFOLD) == 0) {
 				mime = "image/jpeg";
@@ -328,6 +330,9 @@ entry_t * entry_didl (const unsigned int magic, const char *path)
 #else
 			mime = "unknown";
 #endif
+		}
+		if (strcmp(mime, "video/unknown") == 0 && fnmatch("*.mts", path, FNM_CASEFOLD) == 0) {
+			mime = "video/vnd.dlna.mpeg-tts";
 		}
 		debugf("mime: '%s' (%s)", mime, path);
 		if (strncmp(mime, "audio/", 6) == 0) {
@@ -373,6 +378,8 @@ entry_t * entry_didl (const unsigned int magic, const char *path)
 			entry->mime = strdup(mime);
 			if (strcmp(entry->mime, "video/mp2p") == 0) {
 				entry->ext_info = strdup("DLNA.ORG_PN=MPEG_PS_PAL;DLNA.ORG_OP=01;DLNA.ORG_CI=0");
+			} else if (strcmp(entry->mime, "video/vnd.dlna.mpeg-tts") == 0) {
+				entry->ext_info = strdup("DLNA.ORG_PN=AVC_TS_HD_60_AC3_T;SONY.COM_PN=AVC_TS_HD_60_AC3_T");
 			} else {
 				entry->ext_info = strdup("*");
 			}
