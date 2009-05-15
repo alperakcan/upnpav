@@ -153,14 +153,6 @@ static int entry_scandir (const char *dir, struct dirent ***namelist, int (*sele
 	return pos;
 }
 
-static int entryid_uninit (char *id)
-{
-	if (id != NULL) {
-		free(id);
-	}
-	return 0;
-}
-
 static char entryid_convert (const char c)
 {
 	switch (c) {
@@ -645,7 +637,7 @@ int entry_uninit (entry_t *root)
 		free(p->path);
 		free(p->ext_info);
 		free(p->metadata);
-		entryid_uninit(p->didl.entryid);
+		free(p->didl.entryid);
 		free(p->didl.parentid);
 		free(p->didl.dc.title);
 		free(p->didl.dc.contributor);
