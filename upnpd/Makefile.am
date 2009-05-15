@@ -31,6 +31,7 @@ upnpd_LDADD += \
 	$(top_builddir)/upnpd/common/libcommon.a \
 	$(top_builddir)/upnpd/common/upnp/libupnp.a \
 	$(top_builddir)/ixml/libixml.a \
+	$(top_builddir)/metadata/libmetadata.a \
 	$(READLINE_LIBS) \
 	$(LIBMAGIC_LIBS) \
 	-lpthread

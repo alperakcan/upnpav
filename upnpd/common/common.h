@@ -541,7 +541,7 @@ device_service_t * device_service_find (device_t *device, char *serviceid);
 
 char * entryid_path_from_id (const char *id);
 char * entryid_id_from_path (const char *path);
-entry_t * entry_didl (const unsigned int magic, const char *path);
+entry_t * entry_didl (const char *path);
 int entry_print (entry_t *file);
 int entry_dump (entry_t *file);
 int entry_normalize_parent (entry_t *entry);

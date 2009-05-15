@@ -115,13 +115,13 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		} else {
 			char *id;
 			if (objectid == NULL || strcmp(objectid, "0") == 0) {
-				entry = entry_didl(0, contentdir->rootpath);
+				entry = entry_didl(contentdir->rootpath);
 				debugf("found entry %p", entry);
 				entry_normalize_root(entry);
 			} else {
 				debugf("looking for '%s'", objectid);
 				id = entryid_path_from_id(objectid);
-				entry = entry_didl(0, id);
+				entry = entry_didl(id);
 				free(id);
 			}
 			if (entry != NULL) {
@@ -324,7 +324,7 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 		entry = entry_id(contentdir->root, (char *) ename);
 	} else {
 		id = entryid_path_from_id((char *) ename);
-		entry = entry_didl(0, id);
+		entry = entry_didl(id);
 		free(id);
 	}
 	if (entry == NULL) {
@@ -367,7 +367,7 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 		entry = entry_id(contentdir->root, (char *) ename);
 	} else {
 		id = entryid_path_from_id((char *) ename);
-		entry = entry_didl(0, id);
+		entry = entry_didl(id);
 		free(id);
 	}
 	if (entry == NULL) {
