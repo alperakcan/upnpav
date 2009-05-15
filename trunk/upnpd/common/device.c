@@ -363,12 +363,14 @@ int device_init (device_t *device)
 	device->ipaddress = upnp_getaddress(device->upnp);
 	debugf("enabling internal web server");
 	uuid_generate(uuid);
-	device->uuid = (char *) malloc(sizeof(char) * (strlen("uuid:") + 44 + 1));
 	if (device->uuid == NULL) {
-		goto out;
+		device->uuid = (char *) malloc(sizeof(char) * (strlen("uuid:") + 44 + 1));
+		if (device->uuid == NULL) {
+			goto out;
+		}
+		sprintf(device->uuid, "uuid:");
+		uuid_unparse_lower(uuid, device->uuid + strlen(device->uuid));
 	}
-	sprintf(device->uuid, "uuid:");
-	uuid_unparse_lower(uuid, device->uuid + strlen(device->uuid));
 	device->expiretime = 100;
 	debugf("generating device '%s' description", device->name);
 	device->description = description_generate_from_device(device);
