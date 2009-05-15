@@ -190,18 +190,6 @@ AC_SUBST(pkgconfigdir)
 
 VL_LIB_READLINE
 
-# - libmagic
-
-AC_CHECK_LIB([magic], [magic_open], [AC_SUBST([HAVE_LIBMAGIC], [yes])], [], [-lz])
-if test "$HAVE_LIBMAGIC" = "yes"
-then
-		enable_libmagic=yes
-		AC_SUBST([LIBMAGIC_LIBS], [-lmagic])
-		AC_DEFINE(HAVE_LIBMAGIC, 1, [Define to 1 if you want 'libmagic' support.])
-else
-		enable_libmagic=no
-fi
-
 # - fuse
 
 PKG_CHECK_MODULES(LIBFUSE, fuse, HAVE_LIBFUSE=yes, HAVE_LIBFUSE=no)
@@ -261,23 +249,6 @@ fi
 #
 # Check extra parameters
 #
-
-AC_ARG_ENABLE([metadata],
-[  --disable-metadata      disable metadata library [[default=yes]]],
-if test "$enableval" = "no" -o "$enable_libffmpeg" = "no"
-then
-	enable_metadata=no
-else
-	enable_metadata=yes
-	AC_DEFINE(ENABLE_METADATA, 1, [Define to 1 if you want 'metadata' support.])
-fi
-,
-if test "$enable_libffmpeg" = "yes"
-then
-	enable_metadata=yes
-	AC_DEFINE(ENABLE_METADATA, 1, [Define to 1 if you want 'metadata' support.])
-fi
-)
 
 AC_ARG_ENABLE([controller],
 [  --disable-controller    disable controller application [[default=yes]]],
@@ -347,7 +318,6 @@ AM_CONDITIONAL(DARWIN, test "$arch" = darwin)
 AM_CONDITIONAL(ENABLE_CONTROLLER, test "$enable_controller" = "yes")
 AM_CONDITIONAL(ENABLE_MEDIASERVER, test "$enable_mediaserver" = "yes")
 AM_CONDITIONAL(ENABLE_UPNPFS, test "$enable_upnpfs" = "yes")
-AM_CONDITIONAL(ENABLE_METADATA, test "$enable_metadata" = "yes")
 
 AM_CONDITIONAL(ENABLE_LIBSDL, test "$enable_libsdl" = "yes")
 AM_CONDITIONAL(ENABLE_LIBCAIRO, test "$enable_libcairo" = "yes")

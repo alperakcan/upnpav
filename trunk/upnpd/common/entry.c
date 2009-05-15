@@ -22,11 +22,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
-#include <fnmatch.h>
-#if defined(HAVE_LIBMAGIC)
-#include <magic.h>
-#endif
 
+#include "metadata.h"
 #include "gena.h"
 #include "upnp.h"
 #include "common.h"
@@ -266,195 +263,129 @@ static char * entryid_parentid_from_path (const char *path)
 	return parentid;
 }
 
-entry_t * entry_didl (const unsigned int magic, const char *path)
+entry_t * entry_didl (const char *path)
 {
-	unsigned int m;
 	entry_t *entry;
-	const char *mime;
-	struct stat stbuf;
-	m = 0;
+	metadata_t *metadata;
+	metadata = metadata_init(path);
+	if (metadata == NULL) {
+		return NULL;
+	}
 	entry = (entry_t *) malloc(sizeof(entry_t));
 	if (entry == NULL) {
+		metadata_uninit(metadata);
 		return NULL;
 	}
 	memset(entry, 0, sizeof(entry_t));
-	if (stat(path, &stbuf) != 0) {
-		debugf("stat(%s); failed", path);
-		goto error;
-	}
-	if (S_ISDIR(stbuf.st_mode)) {
+	if (metadata->type == METADATA_TYPE_CONTAINER) {
 		entry->didl.entryid = entryid_init_value(path);
 		if (entry->didl.entryid == NULL) {
 			goto error;
 		}
 		entry->didl.parentid = entryid_parentid_from_path(path);
-		entry->path = strdup(path);
+		entry->path = strdup(metadata->pathname);
 		entry->didl.childcount = 0;
 		entry->didl.restricted = 1;
-		entry->didl.dc.title = strdup(strrchr(path, '/') + 1);
+		entry->didl.dc.title = strdup(metadata->basename);
 		entry->didl.upnp.type = DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER;
 		entry->didl.upnp.object.class = strdup("object.container.storageFolder");
 		entry->didl.upnp.storagefolder.storageused = 0;
-		return entry;
-	} else if (S_ISREG(stbuf.st_mode)) {
-		if (magic == 0) {
-#if defined(HAVE_LIBMAGIC)
-			m = (unsigned int) magic_open(MAGIC_SYMLINK | MAGIC_MIME | MAGIC_ERROR);
-			if (m != 0) {
-				if (magic_load((magic_t) m, NULL) != 0) {
-					debugf("magic_load() failed");
-					magic_close((magic_t) m);
-					m = 0;
-				}
-			}
-#endif
-		}
-		if (magic == 0 && m == 0) {
-			if (fnmatch("*.mp3", path, FNM_CASEFOLD) == 0) {
-				mime = "audio/mpeg";
-			} else if (fnmatch("*.mpg", path, FNM_CASEFOLD) == 0) {
-				mime = "video/mp2p";
-			} else if (fnmatch("*.avi", path, FNM_CASEFOLD) == 0) {
-				mime = "video/x-msvideo";
-			} else if (fnmatch("*.mts", path, FNM_CASEFOLD) == 0) {
-				mime = "video/vnd.dlna.mpeg-tts";
-			} else if (fnmatch("*.jpeg", path, FNM_CASEFOLD) == 0 ||
-				   fnmatch("*.jpg", path, FNM_CASEFOLD) == 0) {
-				mime = "image/jpeg";
-			} else {
-				mime = "unknown";
-			}
-		} else {
-#if defined(HAVE_LIBMAGIC)
-			mime = magic_file((magic_t) ((magic == 0) ? m : magic), path);
-#else
-			mime = "unknown";
-#endif
-		}
-		if (strcmp(mime, "video/unknown") == 0 && fnmatch("*.mts", path, FNM_CASEFOLD) == 0) {
-			mime = "video/vnd.dlna.mpeg-tts";
-		}
-		debugf("mime: '%s' (%s)", mime, path);
-		if (strncmp(mime, "audio/", 6) == 0) {
-			entry->didl.entryid = entryid_init_value(path);
-			if (entry->didl.entryid == NULL) {
-				goto error;
-			}
-			entry->didl.parentid = entryid_parentid_from_path(path);
-			entry->path = strdup(path);
-			entry->mime = strdup(mime);
-			if (strcmp(entry->mime, "audio/mpeg") == 0) {
-				entry->ext_info = strdup("DLNA.ORG_PS=1;DLNA.ORG_CI=0;DLNA.ORG_OP=01;DLNA.ORG_PN=MP3;DLNA.ORG_FLAGS=01700000000000000000000000000000");
-			} else {
-				entry->ext_info = strdup("*");
-			}
-			entry->didl.childcount = 0;
-			entry->didl.restricted = 1;
-			entry->didl.dc.title = strdup(strrchr(path, '/') + 1);
-			entry->didl.dc.contributor = strdup("");
-			entry->didl.dc.date = strdup("");
-			entry->didl.dc.description = strdup("");
-			entry->didl.dc.publisher = strdup("");
-			entry->didl.dc.language = strdup("");
-			entry->didl.dc.relation = strdup("");
-			entry->didl.dc.rights = strdup("");
-			entry->didl.upnp.type = DIDL_UPNP_OBJECT_TYPE_MUSICTRACK;
-			entry->didl.upnp.object.class = strdup("object.item.audioItem.musicTrack");
-			entry->didl.upnp.musictrack.artist = strdup("");
-			entry->didl.upnp.musictrack.album = strdup("");
-			entry->didl.upnp.musictrack.originaltracknumber = 0;
-			entry->didl.upnp.musictrack.playlist = strdup("");
-			entry->didl.upnp.musictrack.audioitem.genre = strdup("");
-			entry->didl.upnp.musictrack.audioitem.longdescription = strdup("");
-			asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
-			entry->didl.res.size = stbuf.st_size;
-		} else if (strncmp(mime, "video/", 6) == 0) {
-			entry->didl.entryid = entryid_init_value(path);
-			if (entry->didl.entryid == NULL) {
-				goto error;
-			}
-			entry->didl.parentid = entryid_parentid_from_path(path);
-			entry->path = strdup(path);
-			entry->mime = strdup(mime);
-			if (strcmp(entry->mime, "video/mp2p") == 0) {
-				entry->ext_info = strdup("DLNA.ORG_PN=MPEG_PS_PAL;DLNA.ORG_OP=01;DLNA.ORG_CI=0");
-			} else if (strcmp(entry->mime, "video/vnd.dlna.mpeg-tts") == 0) {
-				entry->ext_info = strdup("DLNA.ORG_PN=AVC_TS_HD_60_AC3_T;SONY.COM_PN=AVC_TS_HD_60_AC3_T");
-			} else {
-				entry->ext_info = strdup("*");
-			}
-			entry->didl.childcount = 0;
-			entry->didl.restricted = 1;
-			entry->didl.dc.title = strdup(strrchr(path, '/') + 1);
-			entry->didl.dc.contributor = strdup("");
-			entry->didl.dc.date = strdup("");
-			entry->didl.dc.description = strdup("");
-			entry->didl.dc.publisher = strdup("");
-			entry->didl.dc.language = strdup("");
-			entry->didl.dc.relation = strdup("");
-			entry->didl.dc.rights = strdup("");
-			entry->didl.upnp.type = DIDL_UPNP_OBJECT_TYPE_MOVIE;
-			entry->didl.upnp.object.class = strdup("object.item.videoItem.movie");
-			entry->didl.upnp.movie.videoitem.actor = strdup("");
-			entry->didl.upnp.movie.videoitem.director = strdup("");
-			entry->didl.upnp.movie.videoitem.genre = strdup("");
-			entry->didl.upnp.movie.videoitem.longdescription = strdup("");
-			entry->didl.upnp.movie.videoitem.producer = strdup("");
-			entry->didl.upnp.movie.videoitem.rating = strdup("");
-			asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
-			entry->didl.res.size = stbuf.st_size;
-		} else if (strncmp(mime, "image/", 6) == 0) {
-			entry->didl.entryid = entryid_init_value(path);
-			if (entry->didl.entryid == NULL) {
-				goto error;
-			}
-			entry->didl.parentid = entryid_parentid_from_path(path);
-			entry->path = strdup(path);
-			entry->mime = strdup(mime);
-			if (strcmp(entry->mime, "image/jpeg") == 0){
-				entry->ext_info = strdup("DLNA.ORG_PN=JPEG_MED;DLNA.ORG_OP=01;DLNA.ORG_CI=0");
-			} else {
-				entry->ext_info = strdup("*");
-			}
-			entry->didl.childcount = 0;
-			entry->didl.restricted = 1;
-			entry->didl.dc.title = strdup(strrchr(path, '/') + 1);
-			entry->didl.dc.contributor = strdup("");
-			entry->didl.dc.date = strdup("");
-			entry->didl.dc.description = strdup("");
-			entry->didl.dc.publisher = strdup("");
-			entry->didl.dc.language = strdup("");
-			entry->didl.dc.relation = strdup("");
-			entry->didl.dc.rights = strdup("");
-			entry->didl.upnp.type = DIDL_UPNP_OBJECT_TYPE_PHOTO;
-			entry->didl.upnp.object.class = strdup("object.item.imageItem.photo");
-			entry->didl.upnp.photo.imageitem.longdescription = strdup("");
-			entry->didl.upnp.photo.imageitem.rating = strdup("");
-			entry->didl.upnp.photo.imageitem.storagemedium = strdup("");
-			entry->didl.upnp.photo.album = strdup("");
-			asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
-			entry->didl.res.size = stbuf.st_size;
-		} else {
-			debugf("unknown mime '%s'", mime);
+	} else if (metadata->type == METADATA_TYPE_AUDIO) {
+		entry->didl.entryid = entryid_init_value(path);
+		if (entry->didl.entryid == NULL) {
 			goto error;
 		}
+		entry->didl.parentid = entryid_parentid_from_path(path);
+		entry->path = strdup(metadata->pathname);
+		entry->mime = strdup(metadata->mimetype);
+		entry->ext_info = strdup("*");
+		entry->didl.childcount = 0;
+		entry->didl.restricted = 1;
+		entry->didl.dc.title = strdup(metadata->basename);
+		entry->didl.dc.contributor = strdup("");
+		entry->didl.dc.date = strdup("");
+		entry->didl.dc.description = strdup("");
+		entry->didl.dc.publisher = strdup("");
+		entry->didl.dc.language = strdup("");
+		entry->didl.dc.relation = strdup("");
+		entry->didl.dc.rights = strdup("");
+		entry->didl.upnp.type = DIDL_UPNP_OBJECT_TYPE_MUSICTRACK;
+		entry->didl.upnp.object.class = strdup("object.item.audioItem.musicTrack");
+		entry->didl.upnp.musictrack.artist = strdup("");
+		entry->didl.upnp.musictrack.album = strdup("");
+		entry->didl.upnp.musictrack.originaltracknumber = 0;
+		entry->didl.upnp.musictrack.playlist = strdup("");
+		entry->didl.upnp.musictrack.audioitem.genre = strdup("");
+		entry->didl.upnp.musictrack.audioitem.longdescription = strdup("");
+		asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
+		entry->didl.res.size = metadata->size;
+	} else if (metadata->type == METADATA_TYPE_VIDEO) {
+		entry->didl.entryid = entryid_init_value(path);
+		if (entry->didl.entryid == NULL) {
+			goto error;
+		}
+		entry->didl.parentid = entryid_parentid_from_path(path);
+		entry->path = strdup(metadata->pathname);
+		entry->mime = strdup(metadata->mimetype);
+		entry->ext_info = strdup("*");
+		entry->didl.childcount = 0;
+		entry->didl.restricted = 1;
+		entry->didl.dc.title = strdup(metadata->basename);
+		entry->didl.dc.contributor = strdup("");
+		entry->didl.dc.date = strdup("");
+		entry->didl.dc.description = strdup("");
+		entry->didl.dc.publisher = strdup("");
+		entry->didl.dc.language = strdup("");
+		entry->didl.dc.relation = strdup("");
+		entry->didl.dc.rights = strdup("");
+		entry->didl.upnp.type = DIDL_UPNP_OBJECT_TYPE_MOVIE;
+		entry->didl.upnp.object.class = strdup("object.item.videoItem.movie");
+		entry->didl.upnp.movie.videoitem.actor = strdup("");
+		entry->didl.upnp.movie.videoitem.director = strdup("");
+		entry->didl.upnp.movie.videoitem.genre = strdup("");
+		entry->didl.upnp.movie.videoitem.longdescription = strdup("");
+		entry->didl.upnp.movie.videoitem.producer = strdup("");
+		entry->didl.upnp.movie.videoitem.rating = strdup("");
+		asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
+		entry->didl.res.size = metadata->size;
+	} else if (metadata->type == METADATA_TYPE_IMAGE) {
+		entry->didl.entryid = entryid_init_value(path);
+		if (entry->didl.entryid == NULL) {
+			goto error;
+		}
+		entry->didl.parentid = entryid_parentid_from_path(path);
+		entry->path = strdup(metadata->pathname);
+		entry->mime = strdup(metadata->mimetype);
+		entry->ext_info = strdup("*");
+		entry->didl.childcount = 0;
+		entry->didl.restricted = 1;
+		entry->didl.dc.title = strdup(metadata->basename);
+		entry->didl.dc.contributor = strdup("");
+		entry->didl.dc.date = strdup("");
+		entry->didl.dc.description = strdup("");
+		entry->didl.dc.publisher = strdup("");
+		entry->didl.dc.language = strdup("");
+		entry->didl.dc.relation = strdup("");
+		entry->didl.dc.rights = strdup("");
+		entry->didl.upnp.type = DIDL_UPNP_OBJECT_TYPE_PHOTO;
+		entry->didl.upnp.object.class = strdup("object.item.imageItem.photo");
+		entry->didl.upnp.photo.imageitem.longdescription = strdup("");
+		entry->didl.upnp.photo.imageitem.rating = strdup("");
+		entry->didl.upnp.photo.imageitem.storagemedium = strdup("");
+		entry->didl.upnp.photo.album = strdup("");
+		asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
+		entry->didl.res.size = metadata->size;
+	} else {
+		goto error;
 	}
-#if defined(HAVE_LIBMAGIC)
-	if (m != 0) {
-		magic_close((magic_t) m);
-	}
-#endif
+	metadata_uninit(metadata);
 	return entry;
-error:	free(entry);
-#if defined(HAVE_LIBMAGIC)
-	if (m != 0) {
-		magic_close((magic_t) m);
-	}
-#endif
+error:	entry_uninit(entry);
+	metadata_uninit(metadata);
 	return NULL;
 }
 
-static entry_t * entry_path (const unsigned int magic, const char *path, entry_t *root, int recursive)
+static entry_t * entry_path (const char *path, entry_t *root, int recursive)
 {
 	int i;
 	int n;
@@ -475,7 +406,7 @@ static entry_t * entry_path (const unsigned int magic, const char *path, entry_t
 		goto error;
 	} else {
 		if (root == NULL) {
-			entry = entry_didl((unsigned int) magic, path);
+			entry = entry_didl(path);
 			if (entry == NULL) {
 				debugf("entry_didl(%s) failed", path);
 				goto error;
@@ -487,7 +418,7 @@ static entry_t * entry_path (const unsigned int magic, const char *path, entry_t
 			if (asprintf(&ptr, "%s/%s", path, namelist[i]->d_name) < 0) {
 				continue;
 			}
-			next = entry_didl((unsigned int) magic, ptr);
+			next = entry_didl(ptr);
 			if (next == NULL) {
 				debugf("entry_didl(%s, %s) failed", ptr, entry->didl.entryid);
 				free(ptr);
@@ -510,7 +441,7 @@ static entry_t * entry_path (const unsigned int magic, const char *path, entry_t
 				parent = parent->parent;
 			}
 			if (recursive != 0) {
-				entry_path(magic, ptr, next, recursive);
+				entry_path(ptr, next, recursive);
 			}
 			free(ptr);
 		}
@@ -692,28 +623,8 @@ int entry_normalize_root (entry_t *entry)
 entry_t * entry_init (const char *path, int recursive)
 {
 	entry_t *root;
-	unsigned int m;
-#if defined(HAVE_LIBMAGIC)
-	magic_t magic;
-	magic = magic_open(MAGIC_SYMLINK | MAGIC_MIME | MAGIC_ERROR);
-	if (magic == NULL) {
-		debugf("magic_open() failed");
-		return NULL;
-	}
-	if (magic_load(magic, NULL) != 0) {
-		debugf("magic_load() failed");
-		magic_close(magic);
-		return NULL;
-	}
-	m = (unsigned int) magic;
-#else
-	m = 0;
-#endif
-	root = entry_path(m, path, NULL, recursive);
+	root = entry_path(path, NULL, recursive);
 	//entry_dump(root);
-#if defined(HAVE_LIBMAGIC)
-	magic_close(magic);
-#endif
 	return root;
 }
 
