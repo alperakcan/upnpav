@@ -55,7 +55,7 @@ static int metadata_audio (metadata_t *metadata)
 {
 	metadata->type = METADATA_TYPE_AUDIO;
 	metadata->title = strdup(metadata->basename);
-	if (fnmatch("*.mp3", path, FNM_CASEFOLD) == 0) {
+	if (fnmatch("*.mp3", metadata->pathname, FNM_CASEFOLD) == 0) {
 		metadata->mimetype = strdup("audio/mpeg");
 	}
 	if (metadata->title == NULL ||
@@ -69,9 +69,9 @@ static int metadata_video (metadata_t *metadata)
 {
 	metadata->type = METADATA_TYPE_VIDEO;
 	metadata->title = strdup(metadata->basename);
-	if (fnmatch("*.avi", path, FNM_CASEFOLD) == 0) {
+	if (fnmatch("*.avi", metadata->pathname, FNM_CASEFOLD) == 0) {
 		metadata->mimetype = strdup("video/x-msvideo");
-	} else if (fnmatch("*.mts", path, FNM_CASEFOLD) == 0) {
+	} else if (fnmatch("*.mts", metadata->pathname, FNM_CASEFOLD) == 0) {
 		metadata->mimetype = strdup("video/vnd.dlna.mpeg-tts");
 	}
 	if (metadata->title == NULL ||
@@ -85,8 +85,8 @@ static int metadata_image (metadata_t *metadata)
 {
 	metadata->type = METADATA_TYPE_IMAGE;
 	metadata->title = strdup(metadata->basename);
-	if (fnmatch("*.jpg", path, FNM_CASEFOLD) == 0 ||
-	    fnmatch("*.jpeg", path, FNM_CASEFOLD) == 0) {
+	if (fnmatch("*.jpg", metadata->pathname, FNM_CASEFOLD) == 0 ||
+	    fnmatch("*.jpeg", metadata->pathname, FNM_CASEFOLD) == 0) {
 		metadata->mimetype = strdup("image/jpeg");
 	}
 	if (metadata->title == NULL ||

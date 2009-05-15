@@ -31,7 +31,8 @@ typedef enum {
 	OPT_CACHED       = 2,
 	OPT_FRIENDLYNAME = 3,
 	OPT_DAEMONIZE    = 4,
-	OPT_HELP         = 5,
+	OPT_UUID         = 5,
+	OPT_HELP         = 6,
 } mediaserver_options_t;
 
 static char *mediaserver_options[] = {
@@ -40,6 +41,7 @@ static char *mediaserver_options[] = {
 	[OPT_CACHED]       = "cached",
 	[OPT_FRIENDLYNAME] = "friendlyname",
 	[OPT_DAEMONIZE]    = "daemonize",
+	[OPT_UUID]         = "uuid",
 	[OPT_HELP]         = "help",
 	NULL,
 };
@@ -52,6 +54,7 @@ static int mediaserver_help (void)
 	       "\tdirectory=<content directory service directory>\n"
 	       "\tfriendlyname=<device friendlyname>\n"
 	       "\tdaemonize=<1, 0>\n"
+	       "\tuuid=<uuid:xxxx>\n"
 	       "\thelp\n");
 	return 0;
 }
@@ -62,6 +65,7 @@ device_t * mediaserver_init (char *options)
 	int cached;
 	char *value;
 	int daemonize;
+	char *uuid;
 	char *directory;
 	char *interface;
 	char *friendlyname;
@@ -74,6 +78,7 @@ device_t * mediaserver_init (char *options)
 	err = 0;
 	cached = 0;
 	daemonize = 0;
+	uuid = NULL;
 	interface = NULL;
 	directory = NULL;
 	friendlyname = NULL;
@@ -120,6 +125,13 @@ device_t * mediaserver_init (char *options)
 				}
 				daemonize = atoi(value);
 				break;
+			case OPT_UUID:
+				if (value == NULL) {
+					debugf("value is missing for uuid option");
+					err = 1;
+					continue;
+				}
+				uuid = value;
 			default:
 			case OPT_HELP:
 				mediaserver_help();
@@ -128,11 +140,13 @@ device_t * mediaserver_init (char *options)
 	}
 
 	debugf("starting mediaserver;\n"
+	       "\tuuid        : %s\n"
 	       "\tdaemonize   : %s\n"
 	       "\tinterface   : %s\n"
 	       "\tdirectory   : %s\n"
 	       "\tcached      : %d\n"
 	       "\tfriendlyname: %s\n",
+	       (uuid) ? uuid : "(default)",
 	       (daemonize) ? "yes" : "no",
 	       (interface) ? interface : "null",
 	       (directory) ? directory : "null",
