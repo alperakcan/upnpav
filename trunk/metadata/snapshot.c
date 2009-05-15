@@ -13,6 +13,7 @@
  *                                                                         *
  ***************************************************************************/
 
+#if 0
 #include <config.h>
 
 #include <stdlib.h>
@@ -227,3 +228,4 @@ int metadata_snapshot_obtain (metadata_snapshot_t *snapshot, unsigned int second
 	av_free_packet(&packet);
 	return -1;
 }
+#endif
