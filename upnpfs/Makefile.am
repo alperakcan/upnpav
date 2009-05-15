@@ -32,4 +32,5 @@ upnpfs_LDADD = \
 	$(top_builddir)/upnpd/common/libcommon.a \
 	$(top_builddir)/upnpd/common/upnp/libupnp.a \
 	$(top_builddir)/ixml/libixml.a \
+	$(LIBMAGIC_LIBS) \
 	$(LIBFUSE_LIBS)

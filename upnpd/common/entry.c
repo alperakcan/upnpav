@@ -23,7 +23,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <fnmatch.h>
-#if defined(HAVE_MAGIC)
+#if defined(HAVE_LIBMAGIC)
 #include <magic.h>
 #endif
 
@@ -298,7 +298,7 @@ entry_t * entry_didl (const unsigned int magic, const char *path)
 		return entry;
 	} else if (S_ISREG(stbuf.st_mode)) {
 		if (magic == 0) {
-#if defined(HAVE_MAGIC)
+#if defined(HAVE_LIBMAGIC)
 			m = (unsigned int) magic_open(MAGIC_SYMLINK | MAGIC_MIME | MAGIC_ERROR);
 			if (m != 0) {
 				if (magic_load((magic_t) m, NULL) != 0) {
@@ -325,7 +325,7 @@ entry_t * entry_didl (const unsigned int magic, const char *path)
 				mime = "unknown";
 			}
 		} else {
-#if defined(HAVE_MAGIC)
+#if defined(HAVE_LIBMAGIC)
 			mime = magic_file((magic_t) ((magic == 0) ? m : magic), path);
 #else
 			mime = "unknown";
@@ -439,14 +439,14 @@ entry_t * entry_didl (const unsigned int magic, const char *path)
 			goto error;
 		}
 	}
-#if defined(HAVE_MAGIC)
+#if defined(HAVE_LIBMAGIC)
 	if (m != 0) {
 		magic_close((magic_t) m);
 	}
 #endif
 	return entry;
 error:	free(entry);
-#if defined(HAVE_MAGIC)
+#if defined(HAVE_LIBMAGIC)
 	if (m != 0) {
 		magic_close((magic_t) m);
 	}
@@ -693,7 +693,7 @@ entry_t * entry_init (const char *path, int recursive)
 {
 	entry_t *root;
 	unsigned int m;
-#if defined(HAVE_MAGIC)
+#if defined(HAVE_LIBMAGIC)
 	magic_t magic;
 	magic = magic_open(MAGIC_SYMLINK | MAGIC_MIME | MAGIC_ERROR);
 	if (magic == NULL) {
@@ -711,7 +711,7 @@ entry_t * entry_init (const char *path, int recursive)
 #endif
 	root = entry_path(m, path, NULL, recursive);
 	//entry_dump(root);
-#if defined(HAVE_MAGIC)
+#if defined(HAVE_LIBMAGIC)
 	magic_close(magic);
 #endif
 	return root;
