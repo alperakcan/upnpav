@@ -54,7 +54,7 @@ static int mediaserver_help (void)
 	       "\tdirectory=<content directory service directory>\n"
 	       "\tfriendlyname=<device friendlyname>\n"
 	       "\tdaemonize=<1, 0>\n"
-	       "\tuuid=<uuid:xxxx>\n"
+	       "\tuuid=<xxxx>\n"
 	       "\thelp\n");
 	return 0;
 }
@@ -126,7 +126,7 @@ device_t * mediaserver_init (char *options)
 				daemonize = atoi(value);
 				break;
 			case OPT_UUID:
-				if (value == NULL || strncmp(value, "uuid:", 5) != 0) {
+				if (value == NULL) {
 					debugf("value is missing for uuid option");
 					err = 1;
 					continue;
@@ -176,7 +176,7 @@ device_t * mediaserver_init (char *options)
 	device->presentationurl = "";
 	device->icons = NULL;
 	device->daemonize = daemonize;
-	device->uuid = (uuid) ? strdup(uuid) : NULL;
+	device->uuid = uuid;
 
 	service = contentdirectory_init(directory, cached);
 	if (service == NULL) {

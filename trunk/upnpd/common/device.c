@@ -345,6 +345,7 @@ static int device_event_handler (void *cookie, upnp_event_t *event)
 int device_init (device_t *device)
 {
 	int ret;
+	char *tmp;
 	uuid_t uuid;
 	ret = -1;
 	debugf("initializing device '%s'", device->name);
@@ -370,6 +371,13 @@ int device_init (device_t *device)
 		}
 		sprintf(device->uuid, "uuid:");
 		uuid_unparse_lower(uuid, device->uuid + strlen(device->uuid));
+	} else {
+		tmp = device->uuid;
+		device->uuid = (char *) malloc(sizeof(char) * (strlen("uuid:") + 44 + 1));
+		if (device->uuid == NULL) {
+			goto out;
+		}
+		snprintf(device->uuid, (strlen("uuid:") + 44 + 1), "uuid:%s", tmp);
 	}
 	device->expiretime = 100;
 	debugf("generating device '%s' description", device->name);
