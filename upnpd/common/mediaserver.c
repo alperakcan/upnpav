@@ -126,12 +126,13 @@ device_t * mediaserver_init (char *options)
 				daemonize = atoi(value);
 				break;
 			case OPT_UUID:
-				if (value == NULL) {
+				if (value == NULL || strncmp(value, "uuid:", 5) != 0) {
 					debugf("value is missing for uuid option");
 					err = 1;
 					continue;
 				}
 				uuid = value;
+				break;
 			default:
 			case OPT_HELP:
 				mediaserver_help();
@@ -175,6 +176,7 @@ device_t * mediaserver_init (char *options)
 	device->presentationurl = "";
 	device->icons = NULL;
 	device->daemonize = daemonize;
+	device->uuid = (uuid) ? strdup(uuid) : NULL;
 
 	service = contentdirectory_init(directory, cached);
 	if (service == NULL) {
