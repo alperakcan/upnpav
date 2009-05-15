@@ -192,19 +192,22 @@ VL_LIB_READLINE
 
 # - libmagic
 
-AC_CHECK_HEADERS([magic.h], [AC_SUBST([MAGIC_CFLAGS], [-DHAVE_MAGIC=1])], [])
-AC_CHECK_LIB([magic], [magic_open], [AC_SUBST([MAGIC_LIBS], [-lmagic])], [], [-lz])
-LIBS="$LIBS $MAGIC_LIBS"
-CFLAGS="$CFLAGS $MAGIC_CFLAGS"
+AC_CHECK_LIB([magic], [magic_open], [AC_SUBST([HAVE_LIBMAGIC], [yes])], [], [-lz])
+if test "$HAVE_LIBMAGIC" = "yes"
+then
+		enable_libmagic=yes
+		AC_SUBST([LIBMAGIC_LIBS], [-lmagic])
+		AC_DEFINE(HAVE_LIBMAGIC, 1, [Define to 1 if you want 'libmagic' support.])
+else
+		enable_libmagic=no
+fi
 
 # - fuse
 
-AC_CHECK_LIB([fuse], [fuse_main], [AC_SUBST([HAVE_LIBFUSE], [yes])], [])
+PKG_CHECK_MODULES(LIBFUSE, fuse, HAVE_LIBFUSE=yes, HAVE_LIBFUSE=no)
 if test "$HAVE_LIBFUSE" = "yes"
 then
 	enable_libfuse=yes
-	AC_SUBST([LIBFUSE_LIBS], [-lfuse])
-	AC_SUBST([LIBFUSE_CFLAGS], [-D_FILE_OFFSET_BITS=64])
 	AC_DEFINE(HAVE_LIBFUSE, 1, [Define to 1 if you want 'libfuse' support.])
 else
 	enable_libfuse=no
@@ -227,6 +230,7 @@ PKG_CHECK_MODULES(LIBFFMPEG, libavformat libavcodec libswscale libavutil, HAVE_L
 if test "$HAVE_LIBFFMPEG" = "yes"
 then
 	enable_libffmpeg=yes
+	LIBFFMPEG_LIBS="$LIBFFMPEG_LIBS -lz -lbz2 -lm"
 	AC_DEFINE(HAVE_LIBFFMPEG, 1, [Define to 1 if you want 'libffmpeg' support.])
 else
 	enable_libffmpeg=no
