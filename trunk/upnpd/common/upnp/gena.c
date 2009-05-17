@@ -1142,7 +1142,6 @@ char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port
 		}
 	}
 	debugf("request sent, waiting response");
-
 	length = 0;
 	buffer = malloc(GENA_HEADER_SIZE);
 	while (1) {
