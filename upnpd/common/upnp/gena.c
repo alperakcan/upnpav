@@ -20,6 +20,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <pthread.h>
+#include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <poll.h>
@@ -127,6 +128,42 @@ static char * gena_trim (char *buffer)
 		}
 	}
 	return out;
+}
+
+static int gena_connect (int fd, int timeout, const char *host, const unsigned short port)
+{
+	long flags;
+	struct pollfd pfd;
+	struct sockaddr_in server;
+	server.sin_family = AF_INET;
+	server.sin_addr.s_addr = inet_addr(host);
+	server.sin_port = htons(port);
+	flags = fcntl(fd, F_GETFL);
+	if (flags < 0) {
+		debugf("connect failed for '%s:%d'", host, port);
+		return -1;
+	}
+	flags |= O_NONBLOCK;
+	if (fcntl(fd, F_SETFL, flags) < 0) {
+		debugf("connect failed for '%s:%d'", host, port);
+		return -1;
+	}
+	if (connect(fd, (struct sockaddr *) &server, sizeof(server)) == -1) {
+		memset(&pfd, 0, sizeof(struct pollfd));
+		pfd.fd = fd;
+		pfd.events = POLLOUT;
+		if (poll(&pfd, 1, timeout) <= 0) {
+			debugf("connect failed for '%s:%d'", host, port);
+			return -1;
+		}
+	}
+	flags &= ~O_NONBLOCK;
+	if (fcntl(fd, F_SETFL, flags) < 0) {
+		debugf("connect failed for '%s:%d'", host, port);
+		return -1;
+	}
+	debugf("connected to '%s:%d'", host, port);
+	return 0;
 }
 
 static int gena_send (int fd, int timeout, const void *buf, unsigned int len)
@@ -1084,16 +1121,11 @@ char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port
 	char *buffer;
 	struct pollfd pfd;
 	unsigned int length;
-	struct sockaddr_in server;
-	server.sin_family = AF_INET;
-	server.sin_addr.s_addr = inet_addr(host);
-	server.sin_port = htons(port);
-
-        fd = socket(AF_INET, SOCK_STREAM, 0);
-        if (fd < 0) {
-        	return NULL;
+	fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (fd < 0) {
+		return NULL;
 	}
-	if (connect(fd, (struct sockaddr *) &server, sizeof(server)) == -1) {
+	if (gena_connect(fd, GENA_SOCKET_TIMEOUT, host, port) != 0) {
 		close(fd);
 		return NULL;
 	}
