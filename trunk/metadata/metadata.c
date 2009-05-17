@@ -25,41 +25,34 @@
 
 #include "metadata.h"
 
-static int metadata_file_is_audio (const char *path)
-{
-	if (fnmatch("*.mp3", path, FNM_CASEFOLD) == 0) {
-		return 0;
-	}
-	return -1;
-}
+typedef struct metadata_info_s {
+	metadata_type_t type;
+	char *extension;
+	char *mimetype;
+} metadata_info_t;
 
-static int metadata_file_is_video (const char *path)
-{
-	if (fnmatch("*.avi", path, FNM_CASEFOLD) == 0 ||
-	    fnmatch("*.mts", path, FNM_CASEFOLD) == 0) {
-		return 0;
-	}
-	return -1;
-}
-
-static int metadata_file_is_image (const char *path)
-{
-	if (fnmatch("*.jpg", path, FNM_CASEFOLD) == 0 ||
-	    fnmatch("*.jpeg", path, FNM_CASEFOLD) == 0) {
-		return 0;
-	}
-	return -1;
-}
+static metadata_info_t *metadata_info[] = {
+	/* video */
+	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mpg", "video/mpeg"},
+	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mpeg", "video/mpeg"},
+	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.avi", "video/x-msvideo"},
+	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mts", "video/vnd.dlna.mpeg-tts"},
+	/* audio */
+	& (metadata_info_t) {METADATA_TYPE_AUDIO, "*.mp3", "audio/mpeg"},
+	/* image */
+	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.bmp", "image/bmp"},
+	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.jpg", "image/jpeg"},
+	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.jpeg", "image/jpeg"},
+	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.png", "image/png"},
+	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.tiff", "image/tiff"},
+	NULL,
+};
 
 static int metadata_audio (metadata_t *metadata)
 {
 	metadata->type = METADATA_TYPE_AUDIO;
 	metadata->title = strdup(metadata->basename);
-	if (fnmatch("*.mp3", metadata->pathname, FNM_CASEFOLD) == 0) {
-		metadata->mimetype = strdup("audio/mpeg");
-	}
-	if (metadata->title == NULL ||
-	    metadata->mimetype == NULL) {
+	if (metadata->title == NULL) {
 		return -1;
 	}
 	return 0;
@@ -69,13 +62,7 @@ static int metadata_video (metadata_t *metadata)
 {
 	metadata->type = METADATA_TYPE_VIDEO;
 	metadata->title = strdup(metadata->basename);
-	if (fnmatch("*.avi", metadata->pathname, FNM_CASEFOLD) == 0) {
-		metadata->mimetype = strdup("video/x-msvideo");
-	} else if (fnmatch("*.mts", metadata->pathname, FNM_CASEFOLD) == 0) {
-		metadata->mimetype = strdup("video/vnd.dlna.mpeg-tts");
-	}
-	if (metadata->title == NULL ||
-	    metadata->mimetype == NULL) {
+	if (metadata->title == NULL) {
 		return -1;
 	}
 	return 0;
@@ -85,12 +72,7 @@ static int metadata_image (metadata_t *metadata)
 {
 	metadata->type = METADATA_TYPE_IMAGE;
 	metadata->title = strdup(metadata->basename);
-	if (fnmatch("*.jpg", metadata->pathname, FNM_CASEFOLD) == 0 ||
-	    fnmatch("*.jpeg", metadata->pathname, FNM_CASEFOLD) == 0) {
-		metadata->mimetype = strdup("image/jpeg");
-	}
-	if (metadata->title == NULL ||
-	    metadata->mimetype == NULL) {
+	if (metadata->title == NULL) {
 		return -1;
 	}
 	return 0;
@@ -101,6 +83,7 @@ metadata_t * metadata_init (const char *path)
 	char *p;
 	struct stat stbuf;
 	metadata_t *m;
+	metadata_info_t **info;
 
 	if (access(path, R_OK) != 0) {
 		return NULL;
@@ -122,19 +105,28 @@ metadata_t * metadata_init (const char *path)
 		m->pathname = strdup(path);
 		m->basename = (p == NULL) ? strdup(path) : strdup(p + 1);
 		m->size = stbuf.st_size;
-		if (m->pathname == NULL || m->basename == NULL) {
+		for (info = metadata_info; *info != NULL; info++) {
+			if (fnmatch((*info)->extension, m->basename, FNM_CASEFOLD) == 0) {
+				m->type = (*info)->type;
+				m->mimetype = strdup((*info)->mimetype);
+				break;
+			}
+		}
+		if (m->type == METADATA_TYPE_UNKNOWN ||
+		    m->pathname == NULL ||
+		    m->basename == NULL ||
+		    m->mimetype == NULL) {
 			goto error;
 		}
-
-		if (metadata_file_is_video(path) == 0) {
+		if (m->type == METADATA_TYPE_VIDEO) {
 			if (metadata_video(m) != 0) {
 				goto error;
 			}
-		} else if (metadata_file_is_audio(path) == 0) {
+		} else if (m->type == METADATA_TYPE_AUDIO) {
 			if (metadata_audio(m) != 0) {
 				goto error;
 			}
-		} else if (metadata_file_is_image(path) == 0) {
+		} else if (m->type == METADATA_TYPE_IMAGE) {
 			if (metadata_image(m) != 0) {
 				goto error;
 			}
