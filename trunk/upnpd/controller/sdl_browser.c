@@ -24,7 +24,7 @@
 #include <sys/stat.h>
 
 #include "metadata.h"
-#include "sdl.h"
+#include "sdl_gui.h"
 
 typedef struct item_browser_s {
 	sdl_item_t item;

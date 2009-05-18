@@ -23,7 +23,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "sdl.h"
+#include "sdl_gui.h"
 
 static int item_setup_uninit (sdl_item_t *item)
 {
