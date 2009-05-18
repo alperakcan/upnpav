@@ -45,6 +45,8 @@ typedef struct sdl_s {
 	sdl_item_t **items;
 
 	int selected;
+
+	int button_yoffsey;
 } sdl_t;
 
 typedef struct cairogui_s {
@@ -205,7 +207,6 @@ static cairogui_t * cairogui_create_button (int width, int height, int radius)
 	return cairogui;
 }
 
-static double button_y = 0;
 static cairogui_t * cairogui_create_list (int width, int height)
 {
 	int i;
@@ -266,7 +267,7 @@ static cairogui_t * cairogui_create_list (int width, int height)
 		}
 
 		if (sdl.selected == i) {
-			button_y = y - extents.ascent - 36;
+			sdl.button_yoffsey = y - extents.ascent - 36;
 		}
 		y += 38.0;
 		if (c >= 11) {
@@ -311,9 +312,9 @@ static int cairogui_update (void)
 
 	cairo_set_source_surface(sdl.cairo_cairo, background->surface, 0, 0);
 	cairo_paint(sdl.cairo_cairo);
-	cairo_set_source_surface(sdl.cairo_cairo, list->surface, 340, 100);
+	cairo_set_source_surface(sdl.cairo_cairo, list->surface, 340, 110);
 	cairo_paint(sdl.cairo_cairo);
-	cairo_set_source_surface(sdl.cairo_cairo, button->surface, 320, 100 + button_y);
+	cairo_set_source_surface(sdl.cairo_cairo, button->surface, 320, 110 + sdl.button_yoffsey);
 	cairo_paint(sdl.cairo_cairo);
 
 	SDL_BlitSurface(sdl.sdl_surface, NULL, sdl.screen, NULL);
