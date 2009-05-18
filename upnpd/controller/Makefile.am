@@ -7,10 +7,10 @@ libcontroller_a_SOURCES = \
 
 if ENABLE_LIBSDL
 libcontroller_a_SOURCES += \
-	sdl.c \
+	sdl_gui.c \
 	sdl_browser.c \
 	sdl_setup.c \
-	sdl.h
+	sdl_gui.h
 endif
 
 libcontroller_a_CFLAGS = \
