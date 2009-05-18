@@ -29,38 +29,37 @@ typedef struct metadata_info_s {
 	metadata_type_t type;
 	char *extension;
 	char *mimetype;
+	int (*metadata) (metadata_t *metadata);
 } metadata_info_t;
 
-static metadata_info_t *metadata_info[] = {
-	/* video */
-	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mpg", "video/mpeg"},
-	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mpeg", "video/mpeg"},
-	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.avi", "video/x-msvideo"},
-	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mts", "video/vnd.dlna.mpeg-tts"},
-	/* audio */
-	& (metadata_info_t) {METADATA_TYPE_AUDIO, "*.mp3", "audio/mpeg"},
-	/* image */
-	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.bmp", "image/bmp"},
-	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.jpg", "image/jpeg"},
-	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.jpeg", "image/jpeg"},
-	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.png", "image/png"},
-	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.tiff", "image/tiff"},
-	NULL,
-};
-
-static int metadata_audio (metadata_t *metadata)
+static int metadata_video (metadata_t *metadata)
 {
-	metadata->type = METADATA_TYPE_AUDIO;
+	unsigned char *buffer;
+	metadata_snapshot_t *snapshot;
+	metadata->type = METADATA_TYPE_VIDEO;
 	metadata->title = strdup(metadata->basename);
 	if (metadata->title == NULL) {
 		return -1;
 	}
+	snapshot = metadata_snapshot_init(metadata->pathname, 320, 240);
+	if (snapshot == NULL) {
+		return 0;
+	}
+	buffer = metadata_snapshot_obtain(snapshot, 5);
+	if (buffer == NULL) {
+		metadata_snapshot_uninit(snapshot);
+		return 0;
+	}
+	metadata->image_width = 320;
+	metadata->image_height = 240;
+	metadata->image = buffer;
+	metadata_snapshot_uninit(snapshot);
 	return 0;
 }
 
-static int metadata_video (metadata_t *metadata)
+static int metadata_audio (metadata_t *metadata)
 {
-	metadata->type = METADATA_TYPE_VIDEO;
+	metadata->type = METADATA_TYPE_AUDIO;
 	metadata->title = strdup(metadata->basename);
 	if (metadata->title == NULL) {
 		return -1;
@@ -77,6 +76,24 @@ static int metadata_image (metadata_t *metadata)
 	}
 	return 0;
 }
+
+static metadata_info_t *metadata_info[] = {
+	/* video */
+	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mpg", "video/mpeg", metadata_video},
+	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mpeg", "video/mpeg", metadata_video},
+	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.avi", "video/x-msvideo", metadata_video},
+	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mts", "video/vnd.dlna.mpeg-tts", metadata_video},
+	/* audio */
+	& (metadata_info_t) {METADATA_TYPE_AUDIO, "*.mp3", "audio/mpeg", metadata_audio},
+	& (metadata_info_t) {METADATA_TYPE_AUDIO, "*.ogg", "audio/ogg", metadata_audio},
+	/* image */
+	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.bmp", "image/bmp", metadata_image},
+	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.jpg", "image/jpeg", metadata_image},
+	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.jpeg", "image/jpeg", metadata_image},
+	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.png", "image/png", metadata_image},
+	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.tiff", "image/tiff", metadata_image},
+	NULL,
+};
 
 metadata_t * metadata_init (const char *path)
 {
@@ -118,19 +135,7 @@ metadata_t * metadata_init (const char *path)
 		    m->mimetype == NULL) {
 			goto error;
 		}
-		if (m->type == METADATA_TYPE_VIDEO) {
-			if (metadata_video(m) != 0) {
-				goto error;
-			}
-		} else if (m->type == METADATA_TYPE_AUDIO) {
-			if (metadata_audio(m) != 0) {
-				goto error;
-			}
-		} else if (m->type == METADATA_TYPE_IMAGE) {
-			if (metadata_image(m) != 0) {
-				goto error;
-			}
-		} else {
+		if ((*info)->metadata(m) != 0) {
 			goto error;
 		}
 		return m;
@@ -171,6 +176,7 @@ int metadata_uninit (metadata_t *metadata)
 	free(metadata->album);
 	free(metadata->genre);
 	free(metadata->duration);
+	free(metadata->image);
 	free(metadata);
 	return 0;
 }

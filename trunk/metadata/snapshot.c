@@ -13,7 +13,6 @@
  *                                                                         *
  ***************************************************************************/
 
-#if 0
 #include <config.h>
 
 #include <stdlib.h>
@@ -105,12 +104,12 @@ metadata_snapshot_t * metadata_snapshot_init (const char *path, int width, int h
 		return NULL;
 	}
 
-	snapshot->convertctx = sws_getContext(snapshot->codecctx->width, snapshot->codecctx->height, snapshot->codecctx->pix_fmt, width, height, PIX_FMT_RGB24, SWS_BICUBIC, NULL, NULL, NULL);
+	snapshot->convertctx = sws_getContext(snapshot->codecctx->width, snapshot->codecctx->height, snapshot->codecctx->pix_fmt, width, height, PIX_FMT_BGRA, SWS_BICUBIC, NULL, NULL, NULL);
 
 	snapshot->frame = avcodec_alloc_frame();
 	snapshot->framergb = avcodec_alloc_frame();
 
-	s = avpicture_get_size(PIX_FMT_RGB24, width, height);
+	s = avpicture_get_size(PIX_FMT_BGRA, width, height);
 	snapshot->buffer = (unsigned char *) malloc(sizeof(unsigned char) * s);
 	if (snapshot->buffer == NULL) {
 		av_free(snapshot->frame);
@@ -125,7 +124,7 @@ metadata_snapshot_t * metadata_snapshot_init (const char *path, int width, int h
 
 	snapshot->width = width;
 	snapshot->height = height;
-	avpicture_fill((AVPicture *)snapshot->framergb, snapshot->buffer, PIX_FMT_RGB24, width, height);
+	avpicture_fill((AVPicture *)snapshot->framergb, snapshot->buffer, PIX_FMT_BGRA, width, height);
 
 	printf("file: %s\n", snapshot->path);
 	printf("picture size: %d\n", s);
@@ -155,13 +154,14 @@ int metadata_snapshot_uninit (metadata_snapshot_t *snapshot)
 	return 0;
 }
 
-int metadata_snapshot_obtain (metadata_snapshot_t *snapshot, unsigned int seconds)
+unsigned char * metadata_snapshot_obtain (metadata_snapshot_t *snapshot, unsigned int seconds)
 {
 	double pts;
 	int finished;
+	AVPacket packet;
 	int64_t starttime;
 	int64_t timestamp;
-	AVPacket packet;
+	unsigned char *buffer;
 	timestamp = (int64_t) (seconds * 1000000);
 	if (snapshot->formatctx->start_time != AV_NOPTS_VALUE) {
 		starttime = snapshot->formatctx->start_time;
@@ -173,12 +173,12 @@ int metadata_snapshot_obtain (metadata_snapshot_t *snapshot, unsigned int second
 #if 1
 	if (av_seek_frame(snapshot->formatctx, -1, timestamp, 0) < 0) {
 		printf("could not seek position: %0.03f\n", (double) (timestamp / AV_TIME_BASE));
-		return -1;
+		return NULL;
 	}
 #else
 	if (avformat_seek_file(snapshot->formatctx, -1, INT64_MIN, timestamp, snapshot->formatctx->duration + starttime, 0) < 0) {
 		printf("could not seek position: %0.03f\n", (double) (timestamp / AV_TIME_BASE));
-		return -1;
+		return NULL;
 	}
 #endif
 	while (av_read_frame(snapshot->formatctx, &packet) >= 0) {
@@ -200,32 +200,12 @@ int metadata_snapshot_obtain (metadata_snapshot_t *snapshot, unsigned int second
 		if (finished != 0) {
 			printf("got frame %0.03f\n", pts);
 			sws_scale(snapshot->convertctx, snapshot->frame->data, snapshot->frame->linesize, 0, snapshot->codecctx->height, snapshot->framergb->data, snapshot->framergb->linesize);
-			{
-				int x;
-				int y;
-				FILE *file;
-				static int n = 0;
-				char name[100];
-				unsigned char *ptr;
-				sprintf(name, "ss_%03d.pnm", n++);
-				file = fopen(name, "w");
-				fprintf(file, "P3\n");
-				fprintf(file, "%d %d\n", snapshot->width, snapshot->height);
-				fprintf(file, "255\n");
-				ptr = snapshot->buffer;
-				for (y = 0; y < snapshot->height; y++) {
-					for (x = 0; x < snapshot->width; x++) {
-						fprintf(file, "%d\n%d\n%d\n", *ptr, *(ptr + 1), *(ptr + 2));
-						ptr += 3;
-					}
-				}
-				fclose(file);
-			}
 			av_free_packet(&packet);
-			return 0;
+			buffer = snapshot->buffer;
+			snapshot->buffer = NULL;
+			return buffer;
 		}
 	}
 	av_free_packet(&packet);
-	return -1;
+	return NULL;
 }
-#endif

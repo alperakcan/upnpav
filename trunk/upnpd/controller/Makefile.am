@@ -14,6 +14,7 @@ libcontroller_a_SOURCES += \
 endif
 
 libcontroller_a_CFLAGS = \
+	-I$(top_srcdir)/metadata \
 	-I$(top_srcdir)/ixml/inc \
 	-I$(top_srcdir)/upnpd \
 	-I$(top_srcdir)/upnpd/common \

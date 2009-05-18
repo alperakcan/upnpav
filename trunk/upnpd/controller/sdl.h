@@ -29,16 +29,15 @@ typedef enum {
 	SDL_IMAGE_TYPE_UNKNWON,
 	SDL_IMAGE_TYPE_FILE,
 	SDL_IMAGE_TYPE_RGB24,
+	SDL_IMAGE_TYPE_RGBA32,
+	SDL_IMAGE_TYPE_ARGB32,
 } sdl_item_image_type_t;
 
-struct sdl_item_image_t {
-	int nimages;
-	struct {
-		sdl_item_image_type_t type;
-		unsigned char *buffer;
-		unsigned int width;
-		unsigned int height;
-	} **images;
+struct sdl_item_image_s {
+	sdl_item_image_type_t type;
+	unsigned char *buffer;
+	int width;
+	int height;
 };
 
 struct sdl_item_info_s {

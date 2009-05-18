@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "metadata.h"
 #include "sdl.h"
 
 typedef struct item_browser_s {
@@ -49,8 +50,35 @@ static int item_browser_info (sdl_item_t *item, sdl_item_info_t *info)
 
 static int item_browser_image (sdl_item_t *item, sdl_item_image_t *image)
 {
+	metadata_t *metadata;
 	item_browser_t *browser;
 	browser = (item_browser_t *) item;
+	if (browser->item.type == SDL_ITEM_TYPE_CONTAINER) {
+		image->type = SDL_IMAGE_TYPE_FILE;
+		image->buffer = (unsigned char *) strdup("folder.png");
+		image->width = -1;
+		image->height = -1;
+		return 0;
+	} else if (browser->item.type == SDL_ITEM_TYPE_OBJECT) {
+		metadata = metadata_init(browser->path);
+		if (metadata == NULL) {
+			return -1;
+		}
+		if (metadata->image != NULL &&
+		    metadata->image_width > 0 &&
+		    metadata->image_height > 0) {
+			image->type = SDL_IMAGE_TYPE_ARGB32;
+			image->buffer = metadata->image;
+			image->width = metadata->image_width;
+			image->height = metadata->image_height;
+			metadata->image = NULL;
+			metadata_uninit(metadata);
+			return 0;
+		} else {
+			metadata_uninit(metadata);
+			return -1;
+		}
+	}
 	return -1;
 }
 

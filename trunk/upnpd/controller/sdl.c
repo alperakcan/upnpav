@@ -311,9 +311,6 @@ static cairogui_t * cairogui_create_head (int width, int height)
 	}
 	item = sdl.prevs[sdl.nprevs - 1];
 
-//	cairo_set_source_rgb(cairogui->cairo, 0.0, 0.0, 1.0);
-//	cairo_paint(cairogui->cairo);
-
 	cairo_set_source_rgb(cairogui->cairo, 1.0, 1.0, 1.0);
 	cairo_select_font_face(cairogui->cairo, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
 	cairo_set_font_size(cairogui->cairo, 22.00);
@@ -340,17 +337,74 @@ static cairogui_t * cairogui_create_head (int width, int height)
 	return cairogui;
 }
 
+static cairogui_t * cairogui_create_preview (int width, int height)
+{
+	double scale;
+	double scalex;
+	double scaley;
+	double xoffset;
+	double yoffset;
+	sdl_item_t *item;
+	sdl_item_image_t image;
+	cairo_matrix_t matrix;
+	cairo_surface_t *surface;
+	cairogui_t *cairogui;
+	cairogui = cairogui_create(width, height);
+	if (cairogui == NULL) {
+		return NULL;
+	}
+
+	item = sdl.items[sdl.selected];
+	if (item->image == NULL) {
+		return cairogui;
+	}
+	if (item->image(item, &image) !=  0) {
+		return cairogui;
+	}
+	if (image.type == SDL_IMAGE_TYPE_FILE) {
+		surface = cairo_image_surface_create_from_png((char *) image.buffer);
+		if (surface == NULL) {
+			return cairogui;
+		}
+		image.width = cairo_image_surface_get_width(surface);
+		image.height = cairo_image_surface_get_height(surface);
+	} else if (image.type == SDL_IMAGE_TYPE_ARGB32) {
+		surface = cairo_image_surface_create_for_data((unsigned char *) image.buffer, CAIRO_FORMAT_ARGB32, image.width, image.height, image.width * 4);
+		image.width = cairo_image_surface_get_width(surface);
+		image.height = cairo_image_surface_get_height(surface);
+	} else {
+		return cairogui;
+	}
+
+	scalex = (double) ((double) (width)) / ((double) image.width);
+	scaley = (double) ((double) (height )) / ((double) image.height);
+	scale = MIN(scalex, scaley);
+	xoffset = (((double) (width )) - (((double) image.width) * scale)) / 2.0;
+	yoffset = (((double) (height )) - (((double) image.height) * scale)) / 2.0;
+
+	cairo_matrix_init(&matrix, scale, 0.0, 0.0, scale, xoffset, yoffset);
+	cairo_transform(cairogui->cairo, &matrix);
+	cairo_set_source_surface(cairogui->cairo, surface, 0, 0);
+	cairo_rectangle(cairogui->cairo, 0, 0, image.width, image.height);
+	cairo_paint(cairogui->cairo);
+	cairo_surface_destroy(surface);
+
+	return cairogui;
+}
+
 static int cairogui_update (void)
 {
 	cairogui_t *background;
 	cairogui_t *head;
 	cairogui_t *list;
 	cairogui_t *button;
+	cairogui_t *preview;
 
 	background = cairogui_create_background(sdl.width, sdl.height);
 	head = cairogui_create_head(370, 50);
 	list = cairogui_create_list(370, 420);
 	button = cairogui_create_button(400, 58, 20);
+	preview = cairogui_create_preview(300, 420);
 
 	cairo_set_source_rgba(sdl.cairo_cairo, 0.0, 0.0, 0.0, 1.0);
 	cairo_fill(sdl.cairo_cairo);
@@ -362,6 +416,8 @@ static int cairogui_update (void)
 	cairo_paint(sdl.cairo_cairo);
 	cairo_set_source_surface(sdl.cairo_cairo, head->surface, 340, 50);
 	cairo_paint(sdl.cairo_cairo);
+	cairo_set_source_surface(sdl.cairo_cairo, preview->surface, 10, 110);
+	cairo_paint(sdl.cairo_cairo);
 	cairo_set_source_surface(sdl.cairo_cairo, button->surface, 320, 110 + sdl.button_yoffsey);
 	cairo_paint(sdl.cairo_cairo);
 
@@ -370,6 +426,8 @@ static int cairogui_update (void)
 
 	cairogui_destroy(button);
 	cairogui_destroy(list);
+	cairogui_destroy(preview);
+	cairogui_destroy(head);
 	cairogui_destroy(background);
 
 	return 0;
