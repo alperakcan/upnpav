@@ -34,3 +34,5 @@ upnpfs_LDADD = \
 	$(top_builddir)/ixml/libixml.a \
 	$(top_builddir)/metadata/libmetadata.a \
 	$(LIBFUSE_LIBS)
+
+upnpfs_LDADD += $(LIBSDL_LIBS) $(LIBCAIRO_LIBS) $(LIBFFMPEG_LIBS)

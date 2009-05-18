@@ -38,6 +38,9 @@ struct metadata_s {
 	char *album;
 	char *genre;
 	char *duration;
+	int image_width;
+	int image_height;
+	unsigned char *image;
 	size_t size;
 };
 
@@ -46,4 +49,4 @@ int metadata_uninit (metadata_t *metadata);
 
 metadata_snapshot_t * metadata_snapshot_init (const char *path, int width, int height);
 int metadata_snapshot_uninit (metadata_snapshot_t *snapshot);
-int metadata_snapshot_obtain (metadata_snapshot_t *snapshot, unsigned int seconds);
+unsigned char * metadata_snapshot_obtain (metadata_snapshot_t *snapshot, unsigned int seconds);
