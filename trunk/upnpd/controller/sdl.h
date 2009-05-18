@@ -13,18 +13,10 @@
  *                                                                         *
  ***************************************************************************/
 
-typedef struct sdl_rect_s sdl_rect_t;
 typedef struct sdl_item_s sdl_item_t;
 typedef struct sdl_item_info_s sdl_item_info_t;
 typedef struct sdl_item_image_s sdl_item_image_t;
 typedef struct sdl_item_status_s sdl_item_status_t;
-
-struct sdl_rect_s {
-	int x;
-	int y;
-	int w;
-	int h;
-};
 
 typedef enum {
 	SDL_ITEM_TYPE_UNKNOWN,
