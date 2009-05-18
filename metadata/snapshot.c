@@ -18,11 +18,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "metadata.h"
+
+#if defined(ENABLE_LIBFFMPEG)
+
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
-
-#include "metadata.h"
 
 struct metadata_snapshot_s {
 	char *path;
@@ -209,3 +211,22 @@ unsigned char * metadata_snapshot_obtain (metadata_snapshot_t *snapshot, unsigne
 	av_free_packet(&packet);
 	return NULL;
 }
+
+#else
+
+metadata_snapshot_t * metadata_snapshot_init (const char *path, int width, int height)
+{
+	return NULL;
+}
+
+int metadata_snapshot_uninit (metadata_snapshot_t *snapshot)
+{
+	return 0;
+}
+
+unsigned char * metadata_snapshot_obtain (metadata_snapshot_t *snapshot, unsigned int seconds)
+{
+	return NULL;
+}
+
+#endif
