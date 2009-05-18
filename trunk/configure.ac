@@ -192,10 +192,14 @@ VL_LIB_READLINE
 
 # - fuse
 
-PKG_CHECK_MODULES(LIBFUSE, fuse, HAVE_LIBFUSE=yes, HAVE_LIBFUSE=no)
+AC_CHECK_LIB([fuse], [fuse_main], HAVE_LIBFUSE=yes, HAVE_LIBFUSE=no)
 if test "$HAVE_LIBFUSE" = "yes"
 then
 	enable_libfuse=yes
+	LIBFUSE_CFLAGS="-D_FILE_OFFSET_BITS=64"
+	LIBFUSE_LIBS="-lfuse"
+	AC_SUBST(LIBFUSE_CFLAGS)
+	AC_SUBST(LIBFUSE_LIBS)
 	AC_DEFINE(HAVE_LIBFUSE, 1, [Define to 1 if you want 'libfuse' support.])
 else
 	enable_libfuse=no
