@@ -296,14 +296,60 @@ static cairogui_t * cairogui_create_list (int width, int height)
 	return cairogui;
 }
 
+static cairogui_t * cairogui_create_head (int width, int height)
+{
+	sdl_item_t *item;
+	cairogui_t *cairogui;
+	cairo_pattern_t *pattern;
+	cairo_font_extents_t extents;
+	cairogui = cairogui_create(width, height);
+	if (cairogui == NULL) {
+		return NULL;
+	}
+	if (sdl.nprevs <= 0) {
+		return cairogui;
+	}
+	item = sdl.prevs[sdl.nprevs - 1];
+
+//	cairo_set_source_rgb(cairogui->cairo, 0.0, 0.0, 1.0);
+//	cairo_paint(cairogui->cairo);
+
+	cairo_set_source_rgb(cairogui->cairo, 1.0, 1.0, 1.0);
+	cairo_select_font_face(cairogui->cairo, "Sans", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+	cairo_set_font_size(cairogui->cairo, 22.00);
+	cairo_font_extents(cairogui->cairo, &extents);
+
+	pattern = cairo_pattern_create_linear(0, 0, width, 0);
+	cairo_pattern_add_color_stop_rgba(pattern, 0.0, 1.0, 1.0, 1.0, 1.0);
+	cairo_pattern_add_color_stop_rgba(pattern, 0.7, 1.0, 1.0, 1.0, 1.0);
+	cairo_pattern_add_color_stop_rgba(pattern, 0.9, 1.0, 1.0, 1.0, 0.0);
+	cairo_set_source(cairogui->cairo, pattern);
+	cairo_move_to(cairogui->cairo, 0.0, 30.0);
+	cairo_show_text(cairogui->cairo, item->name);
+	cairo_stroke(cairogui->cairo);
+	cairo_pattern_destroy(pattern);
+
+	cairo_set_source_rgba(cairogui->cairo, 0.5, 0.5, 0.5, 1.0);
+	cairo_set_line_width(cairogui->cairo, 2.00);
+	cairo_set_line_cap(cairogui->cairo, CAIRO_LINE_CAP_ROUND);
+	cairo_set_line_join(cairogui->cairo, CAIRO_LINE_JOIN_ROUND);
+	cairo_move_to(cairogui->cairo, 1, height - 3);
+	cairo_rel_line_to(cairogui->cairo, width - 2, 0);
+	cairo_stroke(cairogui->cairo);
+
+	return cairogui;
+}
+
 static int cairogui_update (void)
 {
 	cairogui_t *background;
+	cairogui_t *head;
 	cairogui_t *list;
 	cairogui_t *button;
 
 	background = cairogui_create_background(sdl.width, sdl.height);
-	list = cairogui_create_list(370, 410);
+	head = cairogui_create_head(370, 50);
+	list = cairogui_create_list(370, 420);
 	button = cairogui_create_button(400, 58, 20);
 
 	cairo_set_source_rgba(sdl.cairo_cairo, 0.0, 0.0, 0.0, 1.0);
@@ -313,6 +359,8 @@ static int cairogui_update (void)
 	cairo_set_source_surface(sdl.cairo_cairo, background->surface, 0, 0);
 	cairo_paint(sdl.cairo_cairo);
 	cairo_set_source_surface(sdl.cairo_cairo, list->surface, 340, 110);
+	cairo_paint(sdl.cairo_cairo);
+	cairo_set_source_surface(sdl.cairo_cairo, head->surface, 340, 50);
 	cairo_paint(sdl.cairo_cairo);
 	cairo_set_source_surface(sdl.cairo_cairo, button->surface, 320, 110 + sdl.button_yoffsey);
 	cairo_paint(sdl.cairo_cairo);
