@@ -27,7 +27,7 @@ struct private_s priv;
 static const char *HOME = "http://sourceforge.net/projects/upnpavd/";
 
 #if __FreeBSD__ == 10
-static char def_opts[] = "allow_other,local,";
+static char def_opts[] = "allow_other,local,noappledouble,";
 #else
 static char def_opts[] = "";
 #endif
