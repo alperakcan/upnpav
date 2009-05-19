@@ -38,7 +38,7 @@ static const char *usage_msg =
 "\n"
 "Copyright (C) 2009 Alper Akcan <alper.akcan@gmail.com>\n"
 "\n"
-"Usage:    %s <path to share> <mount point> [-o option[,...]]\n"
+"Usage:    %s <mount point> [-o option[,...]]\n"
 "\n"
 "Options:  ro, force, allow_others\n"
 "          Please see details in the manual.\n"
