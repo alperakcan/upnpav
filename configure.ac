@@ -228,28 +228,6 @@ else
 	enable_libffmpeg=no
 fi
 
-# - cairo
-
-PKG_CHECK_MODULES(LIBCAIRO, cairo, HAVE_LIBCAIRO=yes, HAVE_LIBCAIRO=no)
-if test "$HAVE_LIBCAIRO" = "yes"
-then
-	enable_libcairo=yes
-	AC_DEFINE(HAVE_LIBCAIRO, 1, [Define to 1 if you want 'libcairo' support.])
-else
-	enable_libcairo=no
-fi
-
-# - sdl
-
-PKG_CHECK_MODULES(LIBSDL, sdl, HAVE_LIBSDL=yes, HAVE_LIBSDL=no)
-if test "$HAVE_LIBSDL" = "yes"
-then
-	enable_libsdl=yes
-	AC_DEFINE(HAVE_LIBSDL, 1, [Define to 1 if you want 'libsdl' support.])
-else
-	enable_libsdl=no
-fi
-
 #
 # Check extra parameters
 #

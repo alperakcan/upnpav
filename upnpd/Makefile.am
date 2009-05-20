@@ -34,5 +34,3 @@ upnpd_LDADD += \
 	$(READLINE_LIBS) \
 	$(LIBMAGIC_LIBS) \
 	-lpthread
-
-upnpd_LDADD  += $(LIBSDL_LIBS) $(LIBCAIRO_LIBS) $(LIBFFMPEG_LIBS)
