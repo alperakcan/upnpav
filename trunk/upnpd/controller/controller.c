@@ -28,15 +28,9 @@
 #include "controller.h"
 
 extern controller_gui_t controller_console;
-#if defined(HAVE_LIBSDL)
-extern controller_gui_t controller_sdl;
-#endif
 
 static controller_gui_t *controller_gui[] = {
 	&controller_console,
-#if defined(HAVE_LIBSDL)
-	&controller_sdl,
-#endif
 	NULL,
 };
 
