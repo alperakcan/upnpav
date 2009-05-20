@@ -34,26 +34,11 @@ typedef struct metadata_info_s {
 
 static int metadata_video (metadata_t *metadata)
 {
-	unsigned char *buffer;
-	metadata_snapshot_t *snapshot;
 	metadata->type = METADATA_TYPE_VIDEO;
 	metadata->title = strdup(metadata->basename);
 	if (metadata->title == NULL) {
 		return -1;
 	}
-	snapshot = metadata_snapshot_init(metadata->pathname, 320, 240);
-	if (snapshot == NULL) {
-		return 0;
-	}
-	buffer = metadata_snapshot_obtain(snapshot, 5);
-	if (buffer == NULL) {
-		metadata_snapshot_uninit(snapshot);
-		return 0;
-	}
-	metadata->image_width = 320;
-	metadata->image_height = 240;
-	metadata->image = buffer;
-	metadata_snapshot_uninit(snapshot);
 	return 0;
 }
 
