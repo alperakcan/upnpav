@@ -285,8 +285,8 @@ entry_t * controller_browse_metadata (client_t *controller, const char *device, 
 		debugf("entry_from_result() failed");
 		goto out;
 	}
-	entry->metadata = result;
 
+	free(result);
 out:	ixmlDocument_free(response);
 	return entry;
 }
