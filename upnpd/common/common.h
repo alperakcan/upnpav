@@ -230,9 +230,13 @@ typedef union didl_upnp_s {
 /**
   */
 typedef struct didl_res_s {
+	/** */
 	char *protocolinfo;
+	/** */
 	char *duration;
+	/** */
 	uint32_t size;
+	/** */
 	char *path;
 } didl_res_t;
 
