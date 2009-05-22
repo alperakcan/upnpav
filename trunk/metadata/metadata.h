@@ -33,6 +33,7 @@ struct metadata_s {
 	char *basename;
 	char *mimetype;
 	char *dlnainfo;
+	char *date;
 	char *title;
 	char *artist;
 	char *album;

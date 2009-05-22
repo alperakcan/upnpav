@@ -22,6 +22,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "metadata.h"
 
@@ -83,8 +84,9 @@ static metadata_info_t *metadata_info[] = {
 metadata_t * metadata_init (const char *path)
 {
 	char *p;
-	struct stat stbuf;
 	metadata_t *m;
+	struct stat stbuf;
+	struct tm modtime;
 	metadata_info_t **info;
 
 	if (access(path, R_OK) != 0) {
@@ -107,6 +109,11 @@ metadata_t * metadata_init (const char *path)
 		m->pathname = strdup(path);
 		m->basename = (p == NULL) ? strdup(path) : strdup(p + 1);
 		m->size = stbuf.st_size;
+		m->date = (char *) malloc(sizeof(char) * 30);
+		if (m->date != NULL) {
+			localtime_r(&stbuf.st_mtime, &modtime);
+			strftime(m->date, 30, "%F %T", &modtime);
+		}
 		for (info = metadata_info; *info != NULL; info++) {
 			if (fnmatch((*info)->extension, m->basename, FNM_CASEFOLD) == 0) {
 				m->type = (*info)->type;
@@ -117,7 +124,8 @@ metadata_t * metadata_init (const char *path)
 		if (m->type == METADATA_TYPE_UNKNOWN ||
 		    m->pathname == NULL ||
 		    m->basename == NULL ||
-		    m->mimetype == NULL) {
+		    m->mimetype == NULL ||
+		    m->date == NULL) {
 			goto error;
 		}
 		if ((*info)->metadata(m) != 0) {
@@ -156,6 +164,7 @@ int metadata_uninit (metadata_t *metadata)
 	free(metadata->basename);
 	free(metadata->mimetype);
 	free(metadata->dlnainfo);
+	free(metadata->date);
 	free(metadata->title);
 	free(metadata->artist);
 	free(metadata->album);
