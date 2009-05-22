@@ -723,6 +723,7 @@ static entry_t * entry_from_element (IXML_Element *elem, int container)
 		return NULL;
 	}
 	memset(entry, 0, sizeof(entry_t));
+	entry->metadata = ixmlDocumenttoString((IXML_Document *)elem);
 	entry->didl.entryid = entryid_init_string(ixmlElement_getAttribute(elem, "id"));
 	entry->didl.parentid = strdup(ixmlElement_getAttribute(elem, "parentID"));
 	entry->didl.childcount = strtouint32(ixmlElement_getAttribute(elem, "childCount"));
