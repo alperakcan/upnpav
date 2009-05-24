@@ -195,7 +195,6 @@ entry_t * controller_browse_children (client_t *controller, const char *device, 
 			while (1) {
 				if (pentry->next == NULL) {
 					pentry->next = tentry;
-					pentry->next->prev = pentry;
 					break;
 				}
 				pentry = pentry->next;

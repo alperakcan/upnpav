@@ -69,6 +69,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 {
 	char *id;
 	char str[23];
+	entry_t *tmp;
 	entry_t *entry;
 	contentdir_t *contentdir;
 
@@ -112,7 +113,20 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		if (objectid == NULL || strcmp(objectid, "0") == 0) {
 			entry = entry_didl(contentdir->rootpath);
 			debugf("found entry %p", entry);
-			entry_normalize_root(entry);
+			free(entry->didl.entryid);
+			free(entry->didl.parentid);
+			entry->didl.entryid = strdup("0");
+			entry->didl.parentid = strdup("-1");
+			if (entry->didl.entryid == NULL ||
+			    entry->didl.parentid == NULL) {
+				debugf("strdup('0') failed");
+				free(objectid);
+				free(browseflag);
+				free(filter);
+				free(sortcriteria);
+				entry_uninit(entry);
+				return -1;
+			}
 		} else {
 			debugf("looking for '%s'", objectid);
 			id = entryid_path_from_id(objectid);
@@ -122,7 +136,17 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		if (entry != NULL) {
 			id = entryid_id_from_path(contentdir->rootpath);
 			if (strcmp(entry->didl.parentid, id) == 0) {
-				entry_normalize_parent(entry);
+				free(entry->didl.parentid);
+				entry->didl.parentid = strdup("0");
+				if (entry->didl.parentid == NULL) {
+					debugf("strdup('0') failed");
+					free(objectid);
+					free(browseflag);
+					free(filter);
+					free(sortcriteria);
+					entry_uninit(entry);
+					return -1;
+				}
 			}
 			free(id);
 		} else {
@@ -163,11 +187,24 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		return 0;
 	} else if (strcmp(browseflag, "BrowseDirectChildren") == 0) {
 		if (objectid == NULL || strcmp(objectid, "0") == 0) {
-			entry = entry_init(contentdir->rootpath, 0);
-			entry_normalize_root(entry);
+			entry = entry_init(contentdir->rootpath, startingindex, requestedcount, &numberreturned, &totalmatches);
+			tmp = entry;
+			while (tmp != NULL) {
+				free(tmp->didl.parentid);
+				tmp->didl.parentid = strdup("0");
+				if (entry->didl.parentid == NULL) {
+					free(objectid);
+					free(browseflag);
+					free(filter);
+					free(sortcriteria);
+					entry_uninit(entry);
+					return -1;
+				}
+				tmp = tmp->next;
+			}
 		} else {
 			id = entryid_path_from_id(objectid);
-			entry = entry_init(id, 0);
+			entry = entry_init(id, startingindex, requestedcount, &numberreturned, &totalmatches);
 			free(id);
 		}
 		if (entry == NULL) {
@@ -191,7 +228,6 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 			return -1;
 		}
 #endif
-		totalmatches = entry->didl.childcount;
 		updateid = contentdir->updateid;
 		result = entry_to_result(service, entry, 0, startingindex, requestedcount, &numberreturned);
 		if (result == NULL) {
