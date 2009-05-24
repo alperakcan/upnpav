@@ -28,131 +28,6 @@
 #include "upnp.h"
 #include "common.h"
 
-static int entry_filter (const struct dirent *entry)
-{
-	if (strcmp(entry->d_name, ".") == 0) {
-		/* self */
-		return 0;
-	} else if (strcmp(entry->d_name, "..")  == 0) {
-		/* parent */
-		return 0;
-	} else if (strncmp(entry->d_name, ".", 1) == 0) {
-		/* hidden */
-		return 0;
-	}
-	return 1;
-}
-
-static int entry_compare (const void *a, const void *b)
-{
-	return strcmp((*(const struct dirent **) a)->d_name, (*(const struct dirent **) b)->d_name);
-}
-
-static void entry_qsort (void *base, size_t nel, size_t width, int (*comp) (const void *, const void *))
-{
-	char tmp;
-	size_t i;
-	size_t j;
-	size_t k;
-	size_t wgap;
-	if ((nel > 1) && (width > 0)) {
-		assert(nel <= ((size_t) (-1)) / width); /* check for overflow */
-		wgap = 0;
-		do {
-			wgap = 3 * wgap + 1;
-		} while (wgap < (nel - 1) / 3);
-		/* From the above, we know that either wgap == 1 < nel or */
-		/* ((wgap-1)/3 < (int) ((nel-1)/3) <= (nel-1)/3 ==> wgap <  nel. */
-		wgap *= width;	/* So this can not overflow if wnel doesn't. */
-		nel *= width;	/* Convert nel to 'wnel' */
-		do {
-			i = wgap;
-			do {
-				j = i;
-				do {
-					register char *a;
-					register char *b;
-					j -= wgap;
-					a = j + ((char *) base);
-					b = a + wgap;
-					if ((*comp)(a, b) <= 0) {
-						break;
-					}
-					k = width;
-					do {
-						tmp = *a;
-						*a++ = *b;
-						*b++ = tmp;
-					} while (--k);
-				} while (j >= wgap);
-				i += width;
-			} while (i < nel);
-			wgap = (wgap - width) / 3;
-		} while (wgap);
-	}
-}
-
-static int entry_scandir (const char *dir, struct dirent ***namelist, int (*selector) (const struct dirent *), int (*compar) (const void *, const void *))
-{
-	DIR *dp;
-	int error;
-	size_t pos;
-	size_t names_size;
-	struct dirent **names;
-	struct dirent *current;
-	dp = opendir(dir);
-	if (dp == NULL) {
-		return -1;
-	}
-	pos = 0;
-	error = 0;
-	names = NULL;
-	names_size = 0;
-	*namelist = NULL;
-	while ((current = readdir(dp)) != NULL) {
-		if (selector == NULL || (*selector)(current)) {
-			struct dirent *vnew;
-			size_t dsize;
-			if (pos == names_size) {
-				struct dirent **new;
-				if (names_size == 0) {
-					names_size = 10;
-				} else {
-					names_size *= 2;
-				}
-				new = (struct dirent **) realloc(names, names_size * sizeof (struct dirent *));
-				if (new == NULL) {
-					error = 1;
-					break;
-				}
-				names = new;
-			}
-			dsize = &current->d_name[strlen(current->d_name) + 1] - (char *) current;
-			vnew = (struct dirent *) malloc(dsize);
-			if (vnew == NULL) {
-				error = 2;
-				break;
-			}
-			names[pos++] = (struct dirent *) memcpy(vnew, current, dsize);
-		}
-	}
-	if (error != 0) {
-		closedir(dp);
-		while (pos > 0) {
-			free(names[--pos]);
-		}
-		free(names);
-		return -1;
-	}
-	closedir(dp);
-
-	if (compar != NULL) {
-		entry_qsort(names, pos, sizeof(struct dirent *), compar);
-	}
-	*namelist = names;
-	return pos;
-}
-
 static char entryid_convert (const char c)
 {
 	switch (c) {
@@ -221,17 +96,6 @@ static char * entryid_init_value (const char *path)
 	id = entryid_id_from_path(path);
 	if (id == NULL) {
 		debugf("etnryid_id_from_path(); failed");
-		return NULL;
-	}
-	return id;
-}
-
-static char * entryid_init_string (const char *str)
-{
-	char *id;
-	id = strdup(str);
-	if (id == NULL) {
-		debugf("strdup(); failed");
 		return NULL;
 	}
 	return id;
@@ -377,118 +241,95 @@ error:	entry_uninit(entry);
 	return NULL;
 }
 
-static entry_t * entry_path (const char *path, entry_t *root, int recursive)
+static entry_t * entry_path (const char *path, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total)
 {
-	int i;
-	int n;
 	char *ptr;
+	entry_t *tmp;
 	entry_t *next;
 	entry_t *prev;
 	entry_t *entry;
-	entry_t *parent;
-	struct dirent **namelist;
 
 	next = NULL;
-	prev = NULL;
 	entry = NULL;
-	namelist = NULL;
+	*total = 0;
 
-	n = entry_scandir(path, &namelist, entry_filter, entry_compare);
-	if (n < 0) {
-		goto error;
-	} else {
-		if (root == NULL) {
-			entry = entry_didl(path);
-			if (entry == NULL) {
-				debugf("entry_didl(%s) failed", path);
-				goto error;
-			}
-		} else {
-			entry = root;
+	DIR *dp;
+	struct dirent *current;
+	dp = opendir(path);
+	if (dp == NULL) {
+		return NULL;
+	}
+	printf("looking into: %s\n", path);
+	while ((current = readdir(dp)) != NULL) {
+		if (strncmp(current->d_name, ".", 1) == 0) {
+			/* will cover parent, self, hidden */
+			continue;
 		}
-		for (i = 0; i < n; i++) {
-			if (asprintf(&ptr, "%s/%s", path, namelist[i]->d_name) < 0) {
-				continue;
-			}
-			next = entry_didl(ptr);
-			if (next == NULL) {
-				debugf("entry_didl(%s, %s) failed", ptr, entry->didl.entryid);
-				free(ptr);
-				continue;
-			}
-			next->parent = entry;
-			if (prev == NULL) {
-				entry->child = next;
-			} else {
-				prev->next = next;
-				next->prev = prev;
-			}
-			prev = next;
-
-			entry->didl.childcount++;
-
-			parent = entry;
-			while (parent) {
-				parent->didl.upnp.storagefolder.storageused += next->didl.res.size;
-				parent = parent->parent;
-			}
-			if (recursive != 0) {
-				entry_path(ptr, next, recursive);
-			}
+		if (asprintf(&ptr, "%s/%s", path, current->d_name) < 0) {
+			continue;
+		}
+		next = entry_didl(ptr);
+		if (next == NULL) {
+			debugf("entry_didl(%s, %s) failed", ptr, path);
 			free(ptr);
+			continue;
 		}
-		for (i = 0; i < n; i++) {
-			free(namelist[i]);
+		printf("found: %s, %s\n", next->didl.dc.title, next->didl.entryid);
+		if (entry == NULL) {
+			entry = next;
+		} else {
+			tmp = entry;
+			prev = NULL;
+			while (tmp != NULL) {
+				if (strcmp(next->didl.dc.title, tmp->didl.dc.title) < 0) {
+					if (tmp == entry) {
+						next->next = entry;
+						entry = next;
+					} else {
+						next->next = tmp;
+						prev->next = next;
+					}
+					goto found;
+				}
+				prev = tmp;
+				tmp = tmp->next;
+			}
+			prev->next = next;
 		}
-		free(namelist);
+found:
+		free(ptr);
+		*total = *total + 1;
 	}
+	closedir(dp);
 	return entry;
-error:	for (i = 0; i < n; i++) {
-		free(namelist[i]);
-	}
-	free(namelist);
-	return NULL;
 }
 
-static int entry_print_actual (entry_t *entry, uint32_t *off)
+static int entry_print_actual (entry_t *entry)
 {
-	uint32_t o;
 	entry_t *c;
 	if (entry == NULL) {
 		return 0;
 	}
 	c = entry;
 	while (c) {
-		o = *off;
-		while (o--) {
-			printf("  ");
-		}
 		if (c->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER) {
 			printf("%s - %s (class: %s, size:%u, childs: %u)\n", c->didl.entryid, c->didl.dc.title, c->didl.upnp.object.class, c->didl.upnp.storagefolder.storageused, c->didl.childcount);
 		} else {
 			printf("%s - %s (class: %s, size:%u)\n", c->didl.entryid, c->didl.dc.title, c->didl.upnp.object.class, c->didl.res.size);
 		}
-		(*off)++;
-		entry_print_actual(c->child, off);
-		(*off)--;
 		c = c->next;
 	}
 	return 0;
 }
 
-static int entry_dump_actual (entry_t *entry, uint32_t *off)
+static int entry_dump_actual (entry_t *entry)
 {
-	uint32_t o;
 	entry_t *c;
 	if (entry == NULL) {
 		return 0;
 	}
 	c = entry;
 	while (c) {
-		o = *off;
-		while (o--) {
-			printf("  ");
-		}
 		printf("%s - %s\n", c->didl.entryid, c->didl.dc.title);
 		printf("  didl.id        : %s\n", c->didl.entryid);
 		printf("  didl.parentid  : %s\n", c->didl.parentid);
@@ -545,9 +386,6 @@ static int entry_dump_actual (entry_t *entry, uint32_t *off)
 		printf("  didl.res.protocolinfo: %s\n", c->didl.res.protocolinfo);
 		printf("  didl.res.size        : %u\n", c->didl.res.size);
 		printf("  didl.res.path        : %s\n", c->didl.res.path);
-		(*off)++;
-		entry_dump_actual(c->child, off);
-		(*off)--;
 		c = c->next;
 	}
 	return 0;
@@ -555,7 +393,6 @@ static int entry_dump_actual (entry_t *entry, uint32_t *off)
 
 entry_t * entry_id (entry_t *root, char *id)
 {
-	entry_t *file;
 	if (strcmp(id, "0") == 0) {
 		return root;
 	}
@@ -563,60 +400,25 @@ entry_t * entry_id (entry_t *root, char *id)
 		if (strcmp(root->didl.entryid, id) == 0) {
 			return root;
 		}
-		file = entry_id(root->child, id);
-		if (file != NULL) {
-			return file;
-		} else {
-			root = root->next;
-		}
+		root = root->next;
 	}
 	return NULL;
 }
 
 int entry_print (entry_t *file)
 {
-	uint32_t o = 0;
-	return entry_print_actual(file, &o);
+	return entry_print_actual(file);
 }
 
 int entry_dump (entry_t *file)
 {
-	uint32_t o = 0;
-	return entry_dump_actual(file, &o);
+	return entry_dump_actual(file);
 }
 
-int entry_normalize_parent (entry_t *entry)
-{
-	while (entry != NULL) {
-		free(entry->didl.parentid);
-		entry->didl.parentid = strdup("0");
-		entry = entry->next;
-	}
-	return 0;
-}
-
-int entry_normalize_root (entry_t *entry)
+entry_t * entry_init (const char *path, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total)
 {
 	entry_t *root;
-	root = entry;
-	while (root && root->parent) {
-		root = root->parent;
-	}
-	if (root != NULL) {
-		free(root->didl.entryid);
-		free(root->didl.parentid);
-		root->didl.entryid = strdup("0");
-		root->didl.parentid = strdup("-1");
-		entry_normalize_parent(root->child);
-	}
-	return 0;
-}
-
-entry_t * entry_init (const char *path, int recursive)
-{
-	entry_t *root;
-	root = entry_path(path, NULL, recursive);
-	//entry_dump(root);
+	root = entry_path(path, start, count, returned, total);
 	return root;
 }
 
@@ -631,8 +433,6 @@ int entry_uninit (entry_t *root)
 	while (n) {
 		p = n;
 		n = n->next;
-		entry_uninit(p->child);
-		p->child = NULL;
 		free(p->mime);
 		free(p->path);
 		free(p->ext_info);
@@ -724,7 +524,7 @@ static entry_t * entry_from_element (IXML_Element *elem, int container)
 	}
 	memset(entry, 0, sizeof(entry_t));
 	entry->metadata = ixmlDocumenttoString((IXML_Document *)elem);
-	entry->didl.entryid = entryid_init_string(ixmlElement_getAttribute(elem, "id"));
+	entry->didl.entryid = strdup(ixmlElement_getAttribute(elem, "id"));
 	entry->didl.parentid = strdup(ixmlElement_getAttribute(elem, "parentID"));
 	entry->didl.childcount = strtouint32(ixmlElement_getAttribute(elem, "childCount"));
 	entry->didl.restricted = strtouint32(ixmlElement_getAttribute(elem, "restricted"));
@@ -858,7 +658,6 @@ entry_t * entry_from_result (char *result)
 			entry = tmp;
 		} else {
 			prev->next = tmp;
-			tmp->prev = prev;
 		}
 		prev = tmp;
 	}
@@ -872,7 +671,6 @@ entry_t * entry_from_result (char *result)
 			entry = tmp;
 		} else {
 			prev->next = tmp;
-			tmp->prev = prev;
 		}
 		prev = tmp;
 	}
@@ -916,7 +714,6 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata,
 		return NULL;
 	}
 	if (metadata == 0) {
-		entry = entry->child;
 		if (offset > 0) {
 			for (; offset != 0 && entry; offset--) {
 				entry = entry->next;

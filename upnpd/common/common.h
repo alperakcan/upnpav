@@ -275,12 +275,6 @@ struct entry_s {
 
 	/** */
 	entry_t *next;
-	/** */
-	entry_t *prev;
-	/** */
-	entry_t *child;
-	/** */
-	entry_t *parent;
 };
 
 /** icon struct
@@ -550,7 +544,7 @@ int entry_print (entry_t *file);
 int entry_dump (entry_t *file);
 int entry_normalize_parent (entry_t *entry);
 int entry_normalize_root (entry_t *entry);
-entry_t * entry_init (const char *path, int recursive);
+entry_t * entry_init (const char *path, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total);
 int entry_uninit (entry_t *root);
 entry_t * entry_id (entry_t *root, char *id);
 entry_t * entry_from_result (char *result);
