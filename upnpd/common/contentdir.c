@@ -38,8 +38,6 @@ typedef struct contentdir_s {
 	entry_t *root;
 	/** */
 	char *rootpath;
-	/** */
-	int cached;
 } contentdir_t;
 
 static int contentdirectory_get_search_capabilities (device_service_t *service, upnp_event_action_t *request)
@@ -69,6 +67,7 @@ static int contentdirectory_get_system_update_id (device_service_t *service, upn
 
 static int contentdirectory_browse (device_service_t *service, upnp_event_action_t *request)
 {
+	char *id;
 	char str[23];
 	entry_t *entry;
 	contentdir_t *contentdir;
@@ -110,29 +109,24 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		sortcriteria);
 
 	if (strcmp(browseflag, "BrowseMetadata") == 0) {
-		if (contentdir->cached) {
-			entry = entry_id(contentdir->root, (objectid != NULL) ? objectid : "0");
+		if (objectid == NULL || strcmp(objectid, "0") == 0) {
+			entry = entry_didl(contentdir->rootpath);
+			debugf("found entry %p", entry);
+			entry_normalize_root(entry);
 		} else {
-			char *id;
-			if (objectid == NULL || strcmp(objectid, "0") == 0) {
-				entry = entry_didl(contentdir->rootpath);
-				debugf("found entry %p", entry);
-				entry_normalize_root(entry);
-			} else {
-				debugf("looking for '%s'", objectid);
-				id = entryid_path_from_id(objectid);
-				entry = entry_didl(id);
-				free(id);
+			debugf("looking for '%s'", objectid);
+			id = entryid_path_from_id(objectid);
+			entry = entry_didl(id);
+			free(id);
+		}
+		if (entry != NULL) {
+			id = entryid_id_from_path(contentdir->rootpath);
+			if (strcmp(entry->didl.parentid, id) == 0) {
+				entry_normalize_parent(entry);
 			}
-			if (entry != NULL) {
-				id = entryid_id_from_path(contentdir->rootpath);
-				if (strcmp(entry->didl.parentid, id) == 0) {
-					entry_normalize_parent(entry);
-				}
-				free(id);
-			} else {
-				debugf("could not find object '%s'",objectid);
-			}
+			free(id);
+		} else {
+			debugf("could not find object '%s'",objectid);
 		}
 		if (entry == NULL) {
 			request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
@@ -140,9 +134,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 			free(browseflag);
 			free(filter);
 			free(sortcriteria);
-			if (contentdir->cached == 0) {
-				entry_uninit(entry);
-			}
+			entry_uninit(entry);
 			return -1;
 		}
 		totalmatches = 1;
@@ -155,9 +147,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 			free(browseflag);
 			free(filter);
 			free(sortcriteria);
-			if (contentdir->cached == 0) {
-				entry_uninit(entry);
-			}
+			entry_uninit(entry);
 			return -1;
 		}
 		upnp_add_response(request, service->type, "Result", result);
@@ -169,23 +159,16 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		free(browseflag);
 		free(filter);
 		free(sortcriteria);
-		if (contentdir->cached == 0) {
-			entry_uninit(entry);
-		}
+		entry_uninit(entry);
 		return 0;
 	} else if (strcmp(browseflag, "BrowseDirectChildren") == 0) {
-		if (contentdir->cached) {
-			entry = entry_id(contentdir->root, (objectid != NULL) ? objectid : "0");
+		if (objectid == NULL || strcmp(objectid, "0") == 0) {
+			entry = entry_init(contentdir->rootpath, 0);
+			entry_normalize_root(entry);
 		} else {
-			char *id;
-			if (objectid == NULL || strcmp(objectid, "0") == 0) {
-				entry = entry_init(contentdir->rootpath, 0);
-				entry_normalize_root(entry);
-			} else {
-				id = entryid_path_from_id(objectid);
-				entry = entry_init(id, 0);
-				free(id);
-			}
+			id = entryid_path_from_id(objectid);
+			entry = entry_init(id, 0);
+			free(id);
 		}
 		if (entry == NULL) {
 			request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
@@ -217,9 +200,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 			free(browseflag);
 			free(filter);
 			free(sortcriteria);
-			if (contentdir->cached == 0) {
-				entry_uninit(entry);
-			}
+			entry_uninit(entry);
 			return -1;
 		}
 		upnp_add_response(request, service->type, "Result", result);
@@ -231,9 +212,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		free(browseflag);
 		free(filter);
 		free(sortcriteria);
-		if (contentdir->cached == 0) {
-			entry_uninit(entry);
-		}
+		entry_uninit(entry);
 		return 0;
 	} else {
 		request->errcode = UPNP_ERROR_INVALIG_ARGS;
@@ -320,13 +299,9 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 	}
 	ename = path + strlen("/upnp/contentdirectory?id=");
 	debugf("entry name is '%s'", ename);
-	if (contentdir->cached) {
-		entry = entry_id(contentdir->root, (char *) ename);
-	} else {
-		id = entryid_path_from_id((char *) ename);
-		entry = entry_didl(id);
-		free(id);
-	}
+	id = entryid_path_from_id((char *) ename);
+	entry = entry_didl(id);
+	free(id);
 	if (entry == NULL) {
 		debugf("no entry found '%s'", ename);
 		return -1;
@@ -336,14 +311,10 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 		info->size = stbuf.st_size;
 		info->mtime = stbuf.st_mtime;
 		info->mimetype = strdup(entry->mime);
-		if (contentdir->cached == 0) {
-			entry_uninit(entry);
-		}
+		entry_uninit(entry);
 		return 0;
 	}
-	if (contentdir->cached == 0) {
-		entry_uninit(entry);
-	}
+	entry_uninit(entry);
 	debugf("no file found");
 	return -1;
 }
@@ -363,13 +334,9 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 	}
 	ename = path + strlen("/upnp/contentdirectory?id=");
 	debugf("entry name is '%s'", ename);
-	if (contentdir->cached) {
-		entry = entry_id(contentdir->root, (char *) ename);
-	} else {
-		id = entryid_path_from_id((char *) ename);
-		entry = entry_didl(id);
-		free(id);
-	}
+	id = entryid_path_from_id((char *) ename);
+	entry = entry_didl(id);
+	free(id);
 	if (entry == NULL) {
 		debugf("no entry found '%s'", ename);
 		return NULL;
@@ -378,9 +345,7 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 	file = (file_t *) malloc(sizeof(file_t));
 	if (file == NULL) {
 		debugf("malloc failed");
-		if (contentdir->cached == 0) {
-			entry_uninit(entry);
-		}
+		entry_uninit(entry);
 		return NULL;
 	}
 	memset(file, 0, sizeof(file_t));
@@ -390,14 +355,10 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 	if (file->fd < 0) {
 		debugf("open(%s, O_RDONLY); failed", ename);
 		free(file);
-		if (contentdir->cached == 0) {
-			entry_uninit(entry);
-		}
+		entry_uninit(entry);
 		return NULL;
 	}
-	if (contentdir->cached == 0) {
-		entry_uninit(entry);
-	}
+	entry_uninit(entry);
 	return file;
 }
 
@@ -470,7 +431,7 @@ int contentdirectory_uninit (device_service_t *contentdir)
 	return 0;
 }
 
-device_service_t * contentdirectory_init (char *directory, int cached)
+device_service_t * contentdirectory_init (char *directory)
 {
 	contentdir_t *contentdir;
 	service_variable_t *variable;
@@ -497,7 +458,6 @@ device_service_t * contentdirectory_init (char *directory, int cached)
 	contentdir->service.vfscallbacks = &contentdir_vfscallbacks;
 	contentdir->service.uninit = contentdirectory_uninit;
 	contentdir->updateid = 0;
-	contentdir->cached = cached;
 
 	debugf("initializing content directory service");
 	if (service_init(&contentdir->service) != 0) {
@@ -512,10 +472,6 @@ device_service_t * contentdirectory_init (char *directory, int cached)
 	}
 	debugf("initializing entry database");
 	contentdir->rootpath = strdup(directory);
-	if (contentdir->cached) {
-		contentdir->root = entry_init(directory, 1);
-		entry_normalize_root(contentdir->root);
-	}
 
 	debugf("initialized content directory service");
 out:	return &contentdir->service;

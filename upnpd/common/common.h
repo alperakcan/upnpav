@@ -559,7 +559,7 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata,
 /* contentdir.c */
 
 int contentdirectory_uninit (device_service_t *cotentdir);
-device_service_t * contentdirectory_init (char *directory, int cached);
+device_service_t * contentdirectory_init (char *directory);
 
 /* connection.c */
 
