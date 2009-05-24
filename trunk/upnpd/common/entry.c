@@ -243,18 +243,18 @@ error:	entry_uninit(entry);
 
 static entry_t * entry_path (const char *path, unsigned int *total)
 {
+	DIR *dp;
 	char *ptr;
 	entry_t *tmp;
 	entry_t *next;
 	entry_t *prev;
 	entry_t *entry;
+	struct dirent *current;
 
 	next = NULL;
 	entry = NULL;
 	*total = 0;
 
-	DIR *dp;
-	struct dirent *current;
 	dp = opendir(path);
 	if (dp == NULL) {
 		return NULL;
