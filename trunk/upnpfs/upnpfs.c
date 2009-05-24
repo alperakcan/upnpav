@@ -40,7 +40,7 @@ static const char *usage_msg =
 "\n"
 "Usage:    %s <mount point> [-o option[,...]]\n"
 "\n"
-"Options:  ro, force, allow_others\n"
+"Options:  debug, cache=n (1000)\n"
 "          Please see details in the manual.\n"
 "\n"
 "Example:  upnpfs /mnt/upnpfs\n"
