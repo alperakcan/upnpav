@@ -401,8 +401,9 @@ static char * self_strndup (const char *s, size_t n)
 	char *new = malloc(len + 1);
 	if (new == NULL)
 		return NULL;
-	new[len] = '\0';
-	return memcpy(new, s, len);
+	memset(new, 0, len + 1);
+	memcpy(new, s, len);
+	return new;
 }
 
 int upnp_url_uninit (upnp_url_t *url)
