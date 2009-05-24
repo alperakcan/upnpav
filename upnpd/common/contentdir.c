@@ -113,19 +113,23 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		if (objectid == NULL || strcmp(objectid, "0") == 0) {
 			entry = entry_didl(contentdir->rootpath);
 			debugf("found entry %p", entry);
-			free(entry->didl.entryid);
-			free(entry->didl.parentid);
-			entry->didl.entryid = strdup("0");
-			entry->didl.parentid = strdup("-1");
-			if (entry->didl.entryid == NULL ||
-			    entry->didl.parentid == NULL) {
-				debugf("strdup('0') failed");
-				free(objectid);
-				free(browseflag);
-				free(filter);
-				free(sortcriteria);
-				entry_uninit(entry);
-				return -1;
+			tmp = entry;
+			while (tmp != NULL) {
+				free(entry->didl.entryid);
+				free(entry->didl.parentid);
+				entry->didl.entryid = strdup("0");
+				entry->didl.parentid = strdup("-1");
+				if (entry->didl.entryid == NULL ||
+				    entry->didl.parentid == NULL) {
+					debugf("strdup('0') failed");
+					free(objectid);
+					free(browseflag);
+					free(filter);
+					free(sortcriteria);
+					entry_uninit(entry);
+					return -1;
+				}
+				tmp = tmp->next;
 			}
 		} else {
 			debugf("looking for '%s'", objectid);
