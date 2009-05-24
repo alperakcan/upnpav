@@ -187,7 +187,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		return 0;
 	} else if (strcmp(browseflag, "BrowseDirectChildren") == 0) {
 		if (objectid == NULL || strcmp(objectid, "0") == 0) {
-			entry = entry_init(contentdir->rootpath, startingindex, requestedcount, &numberreturned, &totalmatches);
+			entry = entry_init(contentdir->rootpath, &totalmatches);
 			tmp = entry;
 			while (tmp != NULL) {
 				free(tmp->didl.parentid);
@@ -204,7 +204,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 			}
 		} else {
 			id = entryid_path_from_id(objectid);
-			entry = entry_init(id, startingindex, requestedcount, &numberreturned, &totalmatches);
+			entry = entry_init(id, &totalmatches);
 			free(id);
 		}
 		if (entry == NULL) {

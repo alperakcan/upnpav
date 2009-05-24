@@ -241,7 +241,7 @@ error:	entry_uninit(entry);
 	return NULL;
 }
 
-static entry_t * entry_path (const char *path, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total)
+static entry_t * entry_path (const char *path, unsigned int *total)
 {
 	char *ptr;
 	entry_t *tmp;
@@ -415,10 +415,10 @@ int entry_dump (entry_t *file)
 	return entry_dump_actual(file);
 }
 
-entry_t * entry_init (const char *path, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total)
+entry_t * entry_init (const char *path, unsigned int *total)
 {
 	entry_t *root;
-	root = entry_path(path, start, count, returned, total);
+	root = entry_path(path, total);
 	return root;
 }
 
