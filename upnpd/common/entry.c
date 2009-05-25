@@ -241,69 +241,6 @@ error:	entry_uninit(entry);
 	return NULL;
 }
 
-static entry_t * entry_path (const char *path, unsigned int *total)
-{
-	DIR *dp;
-	char *ptr;
-	entry_t *tmp;
-	entry_t *next;
-	entry_t *prev;
-	entry_t *entry;
-	struct dirent *current;
-
-	next = NULL;
-	entry = NULL;
-	*total = 0;
-
-	dp = opendir(path);
-	if (dp == NULL) {
-		return NULL;
-	}
-	printf("looking into: %s\n", path);
-	while ((current = readdir(dp)) != NULL) {
-		if (strncmp(current->d_name, ".", 1) == 0) {
-			/* will cover parent, self, hidden */
-			continue;
-		}
-		if (asprintf(&ptr, "%s/%s", path, current->d_name) < 0) {
-			continue;
-		}
-		next = entry_didl(ptr);
-		if (next == NULL) {
-			debugf("entry_didl(%s, %s) failed", ptr, path);
-			free(ptr);
-			continue;
-		}
-		printf("found: %s, %s\n", next->didl.dc.title, next->didl.entryid);
-		if (entry == NULL) {
-			entry = next;
-		} else {
-			tmp = entry;
-			prev = NULL;
-			while (tmp != NULL) {
-				if (strcmp(next->didl.dc.title, tmp->didl.dc.title) < 0) {
-					if (tmp == entry) {
-						next->next = entry;
-						entry = next;
-					} else {
-						next->next = tmp;
-						prev->next = next;
-					}
-					goto found;
-				}
-				prev = tmp;
-				tmp = tmp->next;
-			}
-			prev->next = next;
-		}
-found:
-		free(ptr);
-		*total = *total + 1;
-	}
-	closedir(dp);
-	return entry;
-}
-
 static int entry_print_actual (entry_t *entry)
 {
 	entry_t *c;
@@ -415,11 +352,107 @@ int entry_dump (entry_t *file)
 	return entry_dump_actual(file);
 }
 
+int entry_scan (const char *path)
+{
+	DIR *dp;
+	char *ptr;
+	entry_t *entry;
+	struct dirent *current;
+
+	dp = opendir(path);
+	if (dp == NULL) {
+		return -1;
+	}
+	printf("looking into: %s\n", path);
+	while ((current = readdir(dp)) != NULL) {
+		if (strncmp(current->d_name, ".", 1) == 0) {
+			/* will cover parent, self, hidden */
+			continue;
+		}
+		if (asprintf(&ptr, "%s/%s", path, current->d_name) < 0) {
+			continue;
+		}
+		entry = entry_didl(ptr);
+		if (entry == NULL) {
+			debugf("entry_didl(%s, %s) failed", ptr, path);
+			free(ptr);
+			continue;
+		}
+		printf("found: %s\n", entry->path);
+		if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER) {
+			entry_scan(entry->path);
+		} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_MUSICTRACK) {
+		} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_MOVIE) {
+		} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_PHOTO) {
+		}
+		entry_uninit(entry);
+		free(ptr);
+	}
+	closedir(dp);
+	return 0;
+}
+
 entry_t * entry_init (const char *path, unsigned int *total)
 {
-	entry_t *root;
-	root = entry_path(path, total);
-	return root;
+	DIR *dp;
+	char *ptr;
+	entry_t *tmp;
+	entry_t *next;
+	entry_t *prev;
+	entry_t *entry;
+	struct dirent *current;
+
+	next = NULL;
+	entry = NULL;
+	*total = 0;
+
+	dp = opendir(path);
+	if (dp == NULL) {
+		return NULL;
+	}
+	printf("looking into: %s\n", path);
+	while ((current = readdir(dp)) != NULL) {
+		if (strncmp(current->d_name, ".", 1) == 0) {
+			/* will cover parent, self, hidden */
+			continue;
+		}
+		if (asprintf(&ptr, "%s/%s", path, current->d_name) < 0) {
+			continue;
+		}
+		next = entry_didl(ptr);
+		if (next == NULL) {
+			debugf("entry_didl(%s, %s) failed", ptr, path);
+			free(ptr);
+			continue;
+		}
+		printf("found: %s, %s\n", next->didl.dc.title, next->didl.entryid);
+		if (entry == NULL) {
+			entry = next;
+		} else {
+			tmp = entry;
+			prev = NULL;
+			while (tmp != NULL) {
+				if (strcmp(next->didl.dc.title, tmp->didl.dc.title) < 0) {
+					if (tmp == entry) {
+						next->next = entry;
+						entry = next;
+					} else {
+						next->next = tmp;
+						prev->next = next;
+					}
+					goto found;
+				}
+				prev = tmp;
+				tmp = tmp->next;
+			}
+			prev->next = next;
+		}
+found:
+		free(ptr);
+		*total = *total + 1;
+	}
+	closedir(dp);
+	return entry;
 }
 
 int entry_uninit (entry_t *root)
