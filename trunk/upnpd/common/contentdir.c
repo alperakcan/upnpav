@@ -88,6 +88,8 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 
 	contentdir = (contentdir_t *) service;
 
+	entry = NULL;
+
 	objectid = xml_get_string(request->request, "ObjectID");
 	browseflag = xml_get_string(request->request, "BrowseFlag");
 	filter = xml_get_string(request->request, "Filter");
@@ -122,12 +124,8 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 				if (entry->didl.entryid == NULL ||
 				    entry->didl.parentid == NULL) {
 					debugf("strdup('0') failed");
-					free(objectid);
-					free(browseflag);
-					free(filter);
-					free(sortcriteria);
-					entry_uninit(entry);
-					return -1;
+					request->errcode = UPNP_ERROR_CANNOT_PROCESS;
+					goto error;
 				}
 				tmp = tmp->next;
 			}
@@ -144,13 +142,8 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 				entry->didl.parentid = strdup("0");
 				if (entry->didl.parentid == NULL) {
 					debugf("strdup('0') failed");
-					free(objectid);
-					free(browseflag);
-					free(filter);
-					free(sortcriteria);
-					entry_uninit(entry);
-					return -1;
-				}
+					request->errcode = UPNP_ERROR_CANNOT_PROCESS;
+					goto error;				}
 			}
 			free(id);
 		} else {
@@ -158,12 +151,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		}
 		if (entry == NULL) {
 			request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
-			free(objectid);
-			free(browseflag);
-			free(filter);
-			free(sortcriteria);
-			entry_uninit(entry);
-			return -1;
+			goto error;
 		}
 		totalmatches = 1;
 		numberreturned = 1;
@@ -171,12 +159,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		result = entry_to_result(service, entry, 1, startingindex, requestedcount, &numberreturned);
 		if (result == NULL) {
 			request->errcode = UPNP_ERROR_CANNOT_PROCESS;
-			free(objectid);
-			free(browseflag);
-			free(filter);
-			free(sortcriteria);
-			entry_uninit(entry);
-			return -1;
+			goto error;
 		}
 		upnp_add_response(request, service->type, "Result", result);
 		upnp_add_response(request, service->type, "NumberReturned", uint32tostr(str, numberreturned));
@@ -197,12 +180,9 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 				free(tmp->didl.parentid);
 				tmp->didl.parentid = strdup("0");
 				if (entry->didl.parentid == NULL) {
-					free(objectid);
-					free(browseflag);
-					free(filter);
-					free(sortcriteria);
-					entry_uninit(entry);
-					return -1;
+					debugf("strdup('0') failed");
+					request->errcode = UPNP_ERROR_CANNOT_PROCESS;
+					goto error;
 				}
 				tmp = tmp->next;
 			}
@@ -213,35 +193,19 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		}
 		if (entry == NULL) {
 			request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
-			free(objectid);
-			free(browseflag);
-			free(filter);
-			free(sortcriteria);
-			return -1;
+			goto error;
 		}
 #if 0
 		if (entry->didl.childcount == 0) {
 			request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
-			free(objectid);
-			free(browseflag);
-			free(filter);
-			free(sortcriteria);
-			if (contentdir->cached == 0) {
-				entry_uninit(entry);
-			}
-			return -1;
+			goto error;
 		}
 #endif
 		updateid = contentdir->updateid;
 		result = entry_to_result(service, entry, 0, startingindex, requestedcount, &numberreturned);
 		if (result == NULL) {
 			request->errcode = UPNP_ERROR_CANNOT_PROCESS;
-			free(objectid);
-			free(browseflag);
-			free(filter);
-			free(sortcriteria);
-			entry_uninit(entry);
-			return -1;
+			goto error;
 		}
 		upnp_add_response(request, service->type, "Result", result);
 		upnp_add_response(request, service->type, "NumberReturned", uint32tostr(str, numberreturned));
@@ -256,10 +220,12 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		return 0;
 	} else {
 		request->errcode = UPNP_ERROR_INVALIG_ARGS;
+error:
 		free(objectid);
 		free(browseflag);
 		free(filter);
 		free(sortcriteria);
+		entry_uninit(entry);
 		return -1;
 	}
 }
