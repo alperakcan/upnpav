@@ -539,22 +539,23 @@ device_service_t * device_service_find (device_t *device, char *serviceid);
 
 char * entryid_path_from_id (const char *id);
 char * entryid_id_from_path (const char *path);
-entry_t * entry_didl (const char *path);
+entry_t * entry_didl_from_id (int cached, const char *id);
+entry_t * entry_didl_from_path (const char *path);
 int entry_print (entry_t *file);
 int entry_dump (entry_t *file);
 int entry_normalize_parent (entry_t *entry);
 int entry_normalize_root (entry_t *entry);
 int entry_scan (const char *path);
-entry_t * entry_init (const char *path, unsigned int *total);
+entry_t * entry_init_from_id (int cached, const char *id, unsigned int *total);
+entry_t * entry_init_from_path (const char *path, unsigned int *total);
 int entry_uninit (entry_t *root);
-entry_t * entry_id (entry_t *root, char *id);
 entry_t * entry_from_result (char *result);
 char * entry_to_result (device_service_t *service, entry_t *entry, int metadata, unsigned int offset, unsigned int count, unsigned int *numberreturned);
 
 /* contentdir.c */
 
 int contentdirectory_uninit (device_service_t *cotentdir);
-device_service_t * contentdirectory_init (char *directory);
+device_service_t * contentdirectory_init (char *directory, int cached);
 
 /* connection.c */
 

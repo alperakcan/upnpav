@@ -178,7 +178,7 @@ device_t * mediaserver_init (char *options)
 	device->daemonize = daemonize;
 	device->uuid = uuid;
 
-	service = contentdirectory_init(directory);
+	service = contentdirectory_init(directory, cached);
 	if (service == NULL) {
 		debugf("contendirectory_init() failed");
 		goto error;

@@ -38,6 +38,8 @@ typedef struct contentdir_s {
 	entry_t *root;
 	/** */
 	char *rootpath;
+	/** */
+	int cached;
 } contentdir_t;
 
 static int contentdirectory_get_search_capabilities (device_service_t *service, upnp_event_action_t *request)
@@ -113,7 +115,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 
 	if (strcmp(browseflag, "BrowseMetadata") == 0) {
 		if (objectid == NULL || strcmp(objectid, "0") == 0) {
-			entry = entry_didl(contentdir->rootpath);
+			entry = entry_didl_from_path(contentdir->rootpath);
 			debugf("found entry %p", entry);
 			tmp = entry;
 			while (tmp != NULL) {
@@ -131,21 +133,21 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 			}
 		} else {
 			debugf("looking for '%s'", objectid);
-			id = entryid_path_from_id(objectid);
-			entry = entry_didl(id);
-			free(id);
+			entry = entry_didl_from_id(contentdir->cached, objectid);
 		}
 		if (entry != NULL) {
-			id = entryid_id_from_path(contentdir->rootpath);
-			if (strcmp(entry->didl.parentid, id) == 0) {
-				free(entry->didl.parentid);
-				entry->didl.parentid = strdup("0");
-				if (entry->didl.parentid == NULL) {
-					debugf("strdup('0') failed");
-					request->errcode = UPNP_ERROR_CANNOT_PROCESS;
-					goto error;				}
+			if (contentdir->cached == 0) {
+				id = entryid_id_from_path(contentdir->rootpath);
+				if (strcmp(entry->didl.parentid, id) == 0) {
+					free(entry->didl.parentid);
+					entry->didl.parentid = strdup("0");
+					if (entry->didl.parentid == NULL) {
+						debugf("strdup('0') failed");
+						request->errcode = UPNP_ERROR_CANNOT_PROCESS;
+						goto error;				}
+				}
+				free(id);
 			}
-			free(id);
 		} else {
 			debugf("could not find object '%s'",objectid);
 		}
@@ -173,8 +175,8 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		entry_uninit(entry);
 		return 0;
 	} else if (strcmp(browseflag, "BrowseDirectChildren") == 0) {
-		if (objectid == NULL || strcmp(objectid, "0") == 0) {
-			entry = entry_init(contentdir->rootpath, &totalmatches);
+		if (contentdir->cached == 0 && (objectid == NULL || strcmp(objectid, "0") == 0)) {
+			entry = entry_init_from_path(contentdir->rootpath, &totalmatches);
 			tmp = entry;
 			while (tmp != NULL) {
 				free(tmp->didl.parentid);
@@ -187,20 +189,12 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 				tmp = tmp->next;
 			}
 		} else {
-			id = entryid_path_from_id(objectid);
-			entry = entry_init(id, &totalmatches);
-			free(id);
+			entry = entry_init_from_id(contentdir->cached, objectid, &totalmatches);
 		}
 		if (entry == NULL) {
 			request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
 			goto error;
 		}
-#if 0
-		if (entry->didl.childcount == 0) {
-			request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
-			goto error;
-		}
-#endif
 		updateid = contentdir->updateid;
 		result = entry_to_result(service, entry, 0, startingindex, requestedcount, &numberreturned);
 		if (result == NULL) {
@@ -292,7 +286,6 @@ static service_action_t *contentdirectory_actions[] = {
 
 static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_t *info)
 {
-	char *id;
 	entry_t *entry;
 	struct stat stbuf;
 	const char *ename;
@@ -305,9 +298,7 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 	}
 	ename = path + strlen("/upnp/contentdirectory?id=");
 	debugf("entry name is '%s'", ename);
-	id = entryid_path_from_id((char *) ename);
-	entry = entry_didl(id);
-	free(id);
+	entry = entry_didl_from_id(contentdir->cached, (char *) ename);
 	if (entry == NULL) {
 		debugf("no entry found '%s'", ename);
 		return -1;
@@ -327,7 +318,6 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 
 static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_t mode)
 {
-	char *id;
 	file_t *file;
 	entry_t *entry;
 	const char *ename;
@@ -340,9 +330,7 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 	}
 	ename = path + strlen("/upnp/contentdirectory?id=");
 	debugf("entry name is '%s'", ename);
-	id = entryid_path_from_id((char *) ename);
-	entry = entry_didl(id);
-	free(id);
+	entry = entry_didl_from_id(contentdir->cached, (char *) ename);
 	if (entry == NULL) {
 		debugf("no entry found '%s'", ename);
 		return NULL;
@@ -437,7 +425,7 @@ int contentdirectory_uninit (device_service_t *contentdir)
 	return 0;
 }
 
-device_service_t * contentdirectory_init (char *directory)
+device_service_t * contentdirectory_init (char *directory, int cached)
 {
 	contentdir_t *contentdir;
 	service_variable_t *variable;
@@ -478,6 +466,11 @@ device_service_t * contentdirectory_init (char *directory)
 	}
 	debugf("initializing entry database");
 	contentdir->rootpath = strdup(directory);
+	contentdir->cached = cached;
+
+	if (contentdir->cached) {
+		entry_scan(contentdir->rootpath);
+	}
 
 	debugf("initialized content directory service");
 out:	return &contentdir->service;

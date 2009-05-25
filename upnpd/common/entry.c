@@ -119,7 +119,192 @@ static char * entryid_parentid_from_path (const char *path)
 	return parentid;
 }
 
-entry_t * entry_didl (const char *path)
+#include "sqlite3.h"
+static sqlite3 *upnpavdb;
+
+static int dbcallback_total (void *args, int argc, char **argv, char **azColName)
+{
+	unsigned int *total;
+	total = (unsigned int *) args;
+	if (argc < 1) {
+		*total = 0;
+	} else {
+		*total = atol(argv[0]);
+	}
+	return 0;
+}
+
+static int dbcallback (void *args, int argc, char **argv, char **azColName)
+{
+	char *id;
+	char *class;
+	char *parent;
+	char *path;
+	char *title;
+	char *size;
+	char *date;
+	char *mime;
+	char *dlna;
+	entry_t *tmp;
+	entry_t *prev;
+	entry_t *entry;
+	entry_t **root;
+	didl_upnp_object_type_t type;
+
+	root = (entry_t **) args;
+
+	id = argv[0];
+	class = argv[1];
+	parent = argv[2];
+	path = argv[3];
+	title = argv[4];
+	size = argv[5];
+	date = argv[6];
+	mime = argv[7];
+	dlna = argv[8];
+
+	type = atoi(class);
+	entry = (entry_t *) malloc(sizeof(entry_t));
+	if (entry == NULL) {
+		return 0;
+	}
+	memset(entry, 0, sizeof(entry_t));
+	if (type == DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER) {
+		entry->didl.entryid = strdup(id);
+		entry->didl.parentid = strdup(parent);
+		entry->path = strdup(path);
+		entry->didl.childcount = 0;
+		entry->didl.restricted = 1;
+		entry->didl.dc.title = strdup(title);
+		entry->didl.upnp.type = DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER;
+		entry->didl.upnp.object.class = strdup("object.container.storageFolder");
+		entry->didl.upnp.storagefolder.storageused = 0;
+	} else if (type == DIDL_UPNP_OBJECT_TYPE_MUSICTRACK) {
+		entry->didl.entryid = strdup(id);
+		entry->didl.parentid = strdup(parent);
+		entry->path = strdup(path);
+		entry->mime = strdup(mime);
+		entry->ext_info = strdup(dlna);
+		entry->didl.childcount = 0;
+		entry->didl.restricted = 1;
+		entry->didl.dc.title = strdup(title);
+		entry->didl.dc.contributor = NULL;
+		entry->didl.dc.date = strdup(date);
+		entry->didl.dc.description = NULL;
+		entry->didl.dc.publisher = NULL;
+		entry->didl.dc.language = NULL;
+		entry->didl.dc.relation = NULL;
+		entry->didl.dc.rights = NULL;
+		entry->didl.upnp.type = DIDL_UPNP_OBJECT_TYPE_MUSICTRACK;
+		entry->didl.upnp.object.class = strdup("object.item.audioItem.musicTrack");
+		entry->didl.upnp.musictrack.artist = NULL;
+		entry->didl.upnp.musictrack.album = NULL;
+		entry->didl.upnp.musictrack.originaltracknumber = 0;
+		entry->didl.upnp.musictrack.playlist = NULL;
+		entry->didl.upnp.musictrack.audioitem.genre = NULL;
+		entry->didl.upnp.musictrack.audioitem.longdescription = NULL;
+		asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
+		entry->didl.res.size = atol(size);
+	} else if (type == DIDL_UPNP_OBJECT_TYPE_MOVIE) {
+		entry->didl.entryid = strdup(id);
+		entry->didl.parentid = strdup(parent);
+		entry->path = strdup(path);
+		entry->mime = strdup(mime);
+		entry->ext_info = strdup(dlna);
+		entry->didl.childcount = 0;
+		entry->didl.restricted = 1;
+		entry->didl.dc.title = strdup(title);
+		entry->didl.dc.contributor = NULL;
+		entry->didl.dc.date = strdup(date);
+		entry->didl.dc.description = NULL;
+		entry->didl.dc.publisher = NULL;
+		entry->didl.dc.language = NULL;
+		entry->didl.dc.relation = NULL;
+		entry->didl.dc.rights = NULL;
+		entry->didl.upnp.type = DIDL_UPNP_OBJECT_TYPE_MOVIE;
+		entry->didl.upnp.object.class = strdup("object.item.videoItem.movie");
+		entry->didl.upnp.movie.videoitem.actor = NULL;
+		entry->didl.upnp.movie.videoitem.director = NULL;
+		entry->didl.upnp.movie.videoitem.genre = NULL;
+		entry->didl.upnp.movie.videoitem.longdescription = NULL;
+		entry->didl.upnp.movie.videoitem.producer = NULL;
+		entry->didl.upnp.movie.videoitem.rating = NULL;
+		asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
+		entry->didl.res.size = atol(size);
+	} else if (type == DIDL_UPNP_OBJECT_TYPE_PHOTO) {
+		entry->didl.entryid = strdup(id);
+		entry->didl.parentid = strdup(parent);
+		entry->path = strdup(path);
+		entry->mime = strdup(mime);
+		entry->ext_info = strdup(dlna);
+		entry->didl.childcount = 0;
+		entry->didl.restricted = 1;
+		entry->didl.dc.title = strdup(title);
+		entry->didl.dc.contributor = NULL;
+		entry->didl.dc.date = strdup(date);
+		entry->didl.dc.description = NULL;
+		entry->didl.dc.publisher = NULL;
+		entry->didl.dc.language = NULL;
+		entry->didl.dc.relation = NULL;
+		entry->didl.dc.rights = NULL;
+		entry->didl.upnp.type = DIDL_UPNP_OBJECT_TYPE_PHOTO;
+		entry->didl.upnp.object.class = strdup("object.item.imageItem.photo");
+		entry->didl.upnp.photo.imageitem.longdescription = NULL;
+		entry->didl.upnp.photo.imageitem.rating = NULL;
+		entry->didl.upnp.photo.imageitem.storagemedium = NULL;
+		entry->didl.upnp.photo.album = NULL;
+		asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
+		entry->didl.res.size = atol(size);
+	}
+
+	if (*root == NULL) {
+		*root = entry;
+	} else {
+		tmp = *root;
+		prev = NULL;
+		while (tmp != NULL) {
+			prev = tmp;
+			tmp = tmp->next;
+		}
+		prev->next = entry;
+	}
+
+	return 0;
+}
+
+entry_t * entry_didl_from_id (int cached, const char *id)
+{
+	if (cached == 0) {
+		char *path;
+		entry_t *entry;
+		path = entryid_path_from_id(id);
+		entry = entry_didl_from_path(path);
+		free(path);
+		return entry;
+	} else {
+		char *sql;
+		entry_t *entry;
+		entry = NULL;
+		sql = sqlite3_mprintf(
+				"SELECT o.ID,"
+				"       o.CLASS,"
+				"       o.PARENT,"
+				"       d.PATH,"
+				"       d.TITLE,"
+				"       d.SIZE,"
+				"       d.DATE,"
+				"       d.MIME,"
+				"       d.DLNA"
+				"  from OBJECT o left join DETAIL d on (d.ID = o.DETAIL)"
+				"  where o.ID = %s order by d.TITLE;",
+				id);
+		sqlite3_exec(upnpavdb, sql, dbcallback, (void *) &entry, 0);
+		sqlite3_free(sql);
+		return entry;
+	}
+}
+
+entry_t * entry_didl_from_path (const char *path)
 {
 	entry_t *entry;
 	metadata_t *metadata;
@@ -241,7 +426,7 @@ error:	entry_uninit(entry);
 	return NULL;
 }
 
-static int entry_print_actual (entry_t *entry)
+int entry_print (entry_t *entry)
 {
 	entry_t *c;
 	if (entry == NULL) {
@@ -259,7 +444,7 @@ static int entry_print_actual (entry_t *entry)
 	return 0;
 }
 
-static int entry_dump_actual (entry_t *entry)
+int entry_dump (entry_t *entry)
 {
 	entry_t *c;
 	if (entry == NULL) {
@@ -328,36 +513,16 @@ static int entry_dump_actual (entry_t *entry)
 	return 0;
 }
 
-entry_t * entry_id (entry_t *root, char *id)
-{
-	if (strcmp(id, "0") == 0) {
-		return root;
-	}
-	while (root != NULL) {
-		if (strcmp(root->didl.entryid, id) == 0) {
-			return root;
-		}
-		root = root->next;
-	}
-	return NULL;
-}
-
-int entry_print (entry_t *file)
-{
-	return entry_print_actual(file);
-}
-
-int entry_dump (entry_t *file)
-{
-	return entry_dump_actual(file);
-}
-
-int entry_scan (const char *path)
+static int entry_scan_path (const char *path, unsigned long long parentid)
 {
 	DIR *dp;
 	char *ptr;
+	char *sql;
 	entry_t *entry;
 	struct dirent *current;
+	unsigned long long size;
+	unsigned long long objectid;
+	unsigned long long detailid;
 
 	dp = opendir(path);
 	if (dp == NULL) {
@@ -372,18 +537,127 @@ int entry_scan (const char *path)
 		if (asprintf(&ptr, "%s/%s", path, current->d_name) < 0) {
 			continue;
 		}
-		entry = entry_didl(ptr);
+		entry = entry_didl_from_path(ptr);
 		if (entry == NULL) {
-			debugf("entry_didl(%s, %s) failed", ptr, path);
+			debugf("entry_didl_from_path(%s, %s) failed", ptr, path);
 			free(ptr);
 			continue;
 		}
 		printf("found: %s\n", entry->path);
 		if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER) {
-			entry_scan(entry->path);
+			size = entry->didl.res.size;
+			detailid = 0;
+			sql = sqlite3_mprintf(
+					"INSERT into DETAIL"
+					"  (PATH, TITLE, SIZE, DATE, MIME, DLNA, DETAIL)"
+					"  values"
+					"  ('%s', '%s', '%s', '%s', '%s', '%s', %llu)",
+					entry->path,
+					entry->didl.dc.title,
+					size,
+					entry->didl.dc.date,
+					"*",
+					"*",
+					detailid);
+			sqlite3_exec(upnpavdb, sql, 0, 0, 0);
+			sqlite3_free(sql);
+			detailid = sqlite3_last_insert_rowid(upnpavdb);
+			sql = sqlite3_mprintf(
+					"INSERT into OBJECT"
+					"  (CLASS, PARENT, DETAIL)"
+					"  values"
+					"  (%u, %lld, %llu)",
+					entry->didl.upnp.type,
+					parentid,
+					detailid);
+			sqlite3_exec(upnpavdb, sql, 0, 0, 0);
+			sqlite3_free(sql);
+			objectid = sqlite3_last_insert_rowid(upnpavdb);
+			entry_scan_path(entry->path, objectid);
 		} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_MUSICTRACK) {
+			size = entry->didl.res.size;
+			detailid = 0;
+			sql = sqlite3_mprintf(
+					"INSERT into DETAIL"
+					"  (PATH, TITLE, SIZE, DATE, MIME, DLNA, DETAIL)"
+					"  values"
+					"  ('%s', '%s', %llu, '%s', '%s', '%s', %llu)",
+					entry->path,
+					entry->didl.dc.title,
+					size,
+					entry->didl.dc.date,
+					"*",
+					"*",
+					detailid);
+			sqlite3_exec(upnpavdb, sql, 0, 0, 0);
+			sqlite3_free(sql);
+			detailid = sqlite3_last_insert_rowid(upnpavdb);
+			sql = sqlite3_mprintf(
+					"INSERT into OBJECT"
+					"  (CLASS, PARENT, DETAIL)"
+					"  values"
+					"  (%u, %lld, %llu)",
+					entry->didl.upnp.type,
+					parentid,
+					detailid);
+			sqlite3_exec(upnpavdb, sql, 0, 0, 0);
+			sqlite3_free(sql);
 		} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_MOVIE) {
+			size = entry->didl.res.size;
+			detailid = 0;
+			sql = sqlite3_mprintf(
+					"INSERT into DETAIL"
+					"  (PATH, TITLE, SIZE, DATE, MIME, DLNA, DETAIL)"
+					"  values"
+					"  ('%s', '%s', %llu, '%s', '%s', '%s', %llu)",
+					entry->path,
+					entry->didl.dc.title,
+					size,
+					entry->didl.dc.date,
+					"*",
+					"*",
+					detailid);
+			sqlite3_exec(upnpavdb, sql, 0, 0, 0);
+			sqlite3_free(sql);
+			detailid = sqlite3_last_insert_rowid(upnpavdb);
+			sql = sqlite3_mprintf(
+					"INSERT into OBJECT"
+					"  (CLASS, PARENT, DETAIL)"
+					"  values"
+					"  (%u, %lld, %llu)",
+					entry->didl.upnp.type,
+					parentid,
+					detailid);
+			sqlite3_exec(upnpavdb, sql, 0, 0, 0);
+			sqlite3_free(sql);
 		} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_PHOTO) {
+			size = entry->didl.res.size;
+			detailid = 0;
+			sql = sqlite3_mprintf(
+					"INSERT into DETAIL"
+					"  (PATH, TITLE, SIZE, DATE, MIME, DLNA, DETAIL)"
+					"  values"
+					"  ('%s', '%s', %llu, '%s', '%s', '%s', %llu)",
+					entry->path,
+					entry->didl.dc.title,
+					size,
+					entry->didl.dc.date,
+					"*",
+					"*",
+					detailid);
+			sqlite3_exec(upnpavdb, sql, 0, 0, 0);
+			sqlite3_free(sql);
+			detailid = sqlite3_last_insert_rowid(upnpavdb);
+			sql = sqlite3_mprintf(
+					"INSERT into OBJECT"
+					"  (CLASS, PARENT, DETAIL)"
+					"  values"
+					"  (%u, %lld, %llu)",
+					entry->didl.upnp.type,
+					parentid,
+					detailid);
+			sqlite3_exec(upnpavdb, sql, 0, 0, 0);
+			sqlite3_free(sql);
 		}
 		entry_uninit(entry);
 		free(ptr);
@@ -392,7 +666,89 @@ int entry_scan (const char *path)
 	return 0;
 }
 
-entry_t * entry_init (const char *path, unsigned int *total)
+int entry_scan (const char *path)
+{
+	int ret;
+
+	unlink("upnpavd.db");
+
+	sqlite3_open("upnpavd.db", &upnpavdb);
+	sqlite3_busy_timeout(upnpavdb, 5000);
+
+	sqlite3_exec(upnpavdb,
+		"CREATE TABLE OBJECT ("
+		"  ID INTEGER PRIMARY KEY AUTOINCREMENT,"
+		"  CLASS INTEGER NOT NULL,"
+		"  PARENT INTEGER NOT NULL,"
+		" DETAIL INTEGER NOT NULL );",
+		0, 0, 0);
+
+	sqlite3_exec(upnpavdb,
+		"CREATE TABLE DETAIL ("
+		"  ID INTEGER PRIMARY KEY AUTOINCREMENT,"
+		"  PATH TEXT NOT NULL,"
+		"  TITLE TEXT NOT NULL,"
+		"  SIZE TEXT NOT NULL,"
+		"  DATE TEXT NOT NULL,"
+		"  MIME TEXT NOT NULL,"
+		"  DLNA TEXT NOT NULL,"
+		"  DETAIL INTEGER NOT NULL );",
+		0, 0, 0);
+
+	ret = entry_scan_path(path, 0);
+
+	sqlite3_exec(upnpavdb, "CREATE INDEX INDEX_OBJECT on OBJECT(ID);", 0, 0, 0);
+	sqlite3_exec(upnpavdb, "CREATE INDEX INDEX_OBJECT on DETAIL(ID);", 0, 0, 0);
+	sqlite3_exec(upnpavdb, "CREATE INDEX INDEX_OBJECT on OBJECT(ID, PARENT);", 0, 0, 0);
+	sqlite3_exec(upnpavdb, "CREATE INDEX INDEX_OBJECT on OBJECT(ID, DETAIL);", 0, 0, 0);
+
+	return 0;
+}
+
+entry_t * entry_init_from_id (int cached, const char *id, unsigned int *total)
+{
+	if (cached == 0) {
+		char *path;
+		entry_t *entry;
+		path = entryid_path_from_id(id);
+		entry = entry_init_from_path(path, total);
+		free(path);
+		return entry;
+	} else {
+		char *sql;
+		entry_t *entry;
+		entry = NULL;
+		*total = 0;
+		sql = sqlite3_mprintf(
+				"SELECT count(*)"
+				"  from OBJECT o left join DETAIL d on (d.ID = o.DETAIL)"
+				"  where o.PARENT = %s;",
+				id);
+		sqlite3_exec(upnpavdb, sql, dbcallback_total, (void *) total, 0);
+		sqlite3_free(sql);
+		if (*total == 0) {
+			return NULL;
+		}
+		sql = sqlite3_mprintf(
+				"SELECT o.ID,"
+				"       o.CLASS,"
+				"       o.PARENT,"
+				"       d.PATH,"
+				"       d.TITLE,"
+				"       d.SIZE,"
+				"       d.DATE,"
+				"       d.MIME,"
+				"       d.DLNA"
+				"  from OBJECT o left join DETAIL d on (d.ID = o.DETAIL)"
+				"  where o.PARENT = %s order by d.TITLE;",
+				id);
+		sqlite3_exec(upnpavdb, sql, dbcallback, (void *) &entry, 0);
+		sqlite3_free(sql);
+		return entry;
+	}
+}
+
+entry_t * entry_init_from_path (const char *path, unsigned int *total)
 {
 	DIR *dp;
 	char *ptr;
@@ -419,9 +775,9 @@ entry_t * entry_init (const char *path, unsigned int *total)
 		if (asprintf(&ptr, "%s/%s", path, current->d_name) < 0) {
 			continue;
 		}
-		next = entry_didl(ptr);
+		next = entry_didl_from_path(ptr);
 		if (next == NULL) {
-			debugf("entry_didl(%s, %s) failed", ptr, path);
+			debugf("entry_didl_from_path(%s, %s) failed", ptr, path);
 			free(ptr);
 			continue;
 		}
