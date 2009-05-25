@@ -15,10 +15,13 @@ libcommon_a_SOURCES = \
 	xml.c \
 	uri.c \
 	interface.c \
+	sqlite3.c \
+	sqlite3.h \
 	common.h
 
 libcommon_a_CFLAGS =	\
 	-Wall \
+	-DSQLITE_OMIT_LOAD_EXTENSION \
 	-I$(top_srcdir)/ixml/inc \
 	-I$(top_srcdir)/metadata \
 	-I$(top_srcdir)/upnpd \
