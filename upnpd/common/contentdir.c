@@ -189,14 +189,18 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 				tmp = tmp->next;
 			}
 		} else {
-			entry = entry_init_from_id(contentdir->cached, objectid, &totalmatches);
+			entry = entry_init_from_id(contentdir->cached, objectid, startingindex, requestedcount, &numberreturned, &totalmatches);
 		}
 		if (entry == NULL) {
 			request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
 			goto error;
 		}
 		updateid = contentdir->updateid;
-		result = entry_to_result(service, entry, 0, startingindex, requestedcount, &numberreturned);
+		if (contentdir->cached == 0) {
+			result = entry_to_result(service, entry, 0, startingindex, requestedcount, &numberreturned);
+		} else {
+			result = entry_to_result(service, entry, 0, 0, numberreturned, &numberreturned);
+		}
 		if (result == NULL) {
 			request->errcode = UPNP_ERROR_CANNOT_PROCESS;
 			goto error;

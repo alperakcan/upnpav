@@ -296,7 +296,7 @@ entry_t * entry_didl_from_id (int cached, const char *id)
 				"       d.MIME,"
 				"       d.DLNA"
 				"  from OBJECT o left join DETAIL d on (d.ID = o.DETAIL)"
-				"  where o.ID = %s order by d.TITLE;",
+				"  where o.ID = %s;",
 				id);
 		sqlite3_exec(upnpavdb, sql, dbcallback, (void *) &entry, 0);
 		sqlite3_free(sql);
@@ -556,7 +556,7 @@ static int entry_scan_path (const char *path, unsigned long long parentid)
 					entry->didl.dc.title,
 					size,
 					entry->didl.dc.date,
-					"*",
+					entry->mime,
 					"*",
 					detailid);
 			sqlite3_exec(upnpavdb, sql, 0, 0, 0);
@@ -586,7 +586,7 @@ static int entry_scan_path (const char *path, unsigned long long parentid)
 					entry->didl.dc.title,
 					size,
 					entry->didl.dc.date,
-					"*",
+					entry->mime,
 					"*",
 					detailid);
 			sqlite3_exec(upnpavdb, sql, 0, 0, 0);
@@ -614,7 +614,7 @@ static int entry_scan_path (const char *path, unsigned long long parentid)
 					entry->didl.dc.title,
 					size,
 					entry->didl.dc.date,
-					"*",
+					entry->mime,
 					"*",
 					detailid);
 			sqlite3_exec(upnpavdb, sql, 0, 0, 0);
@@ -642,7 +642,7 @@ static int entry_scan_path (const char *path, unsigned long long parentid)
 					entry->didl.dc.title,
 					size,
 					entry->didl.dc.date,
-					"*",
+					entry->mime,
 					"*",
 					detailid);
 			sqlite3_exec(upnpavdb, sql, 0, 0, 0);
@@ -705,7 +705,7 @@ int entry_scan (const char *path)
 	return 0;
 }
 
-entry_t * entry_init_from_id (int cached, const char *id, unsigned int *total)
+entry_t * entry_init_from_id (int cached, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total)
 {
 	if (cached == 0) {
 		char *path;
@@ -716,6 +716,7 @@ entry_t * entry_init_from_id (int cached, const char *id, unsigned int *total)
 		return entry;
 	} else {
 		char *sql;
+		entry_t *tmp;
 		entry_t *entry;
 		entry = NULL;
 		*total = 0;
@@ -740,9 +741,17 @@ entry_t * entry_init_from_id (int cached, const char *id, unsigned int *total)
 				"       d.MIME,"
 				"       d.DLNA"
 				"  from OBJECT o left join DETAIL d on (d.ID = o.DETAIL)"
-				"  where o.PARENT = %s order by d.TITLE;",
-				id);
+				"  where o.PARENT = %s order by d.TITLE limit %d, %d;",
+				id,
+				start,
+				count);
 		sqlite3_exec(upnpavdb, sql, dbcallback, (void *) &entry, 0);
+		*returned = 0;
+		tmp = entry;
+		while (tmp != NULL) {
+			*returned = *returned + 1;
+			tmp = tmp->next;
+		}
 		sqlite3_free(sql);
 		return entry;
 	}
