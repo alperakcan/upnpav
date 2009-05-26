@@ -711,7 +711,7 @@ entry_t * entry_init_from_id (int cached, const char *id, unsigned int start, un
 		char *path;
 		entry_t *entry;
 		path = entryid_path_from_id(id);
-		entry = entry_init_from_path(path, total);
+		entry = entry_init_from_path(path, start, count, returned, total);
 		free(path);
 		return entry;
 	} else {
@@ -757,7 +757,7 @@ entry_t * entry_init_from_id (int cached, const char *id, unsigned int start, un
 	}
 }
 
-entry_t * entry_init_from_path (const char *path, unsigned int *total)
+entry_t * entry_init_from_path (const char *path, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total)
 {
 	DIR *dp;
 	char *ptr;
@@ -817,6 +817,30 @@ found:
 		*total = *total + 1;
 	}
 	closedir(dp);
+
+	while (entry != NULL && start > 0) {
+		tmp = entry;
+		entry = tmp->next;
+		tmp->next = NULL;
+		entry_uninit(tmp);
+		start--;
+	}
+	tmp = entry;
+	prev = NULL;
+	*returned = 0;
+	while (tmp != NULL && count > 0) {
+		prev = tmp;
+		tmp = tmp->next;
+		count--;
+		*returned = *returned + 1;
+	}
+	if (prev != NULL) {
+		prev->next = NULL;
+	}
+	if (tmp != NULL) {
+		entry_uninit(tmp);
+	}
+
 	return entry;
 }
 
@@ -908,6 +932,7 @@ static didl_upnp_object_type_t entry_upnp_type_from_class (const char *class)
 		return DIDL_UPNP_OBJECT_TYPE_UNKNOWN;
 	}
 }
+
 static entry_t * entry_from_element (IXML_Element *elem, int container)
 {
 	int i;
@@ -1085,7 +1110,7 @@ out:	if (containers) {
 	return entry;
 }
 
-char * entry_to_result (device_service_t *service, entry_t *entry, int metadata, unsigned int offset, unsigned int count, unsigned int *numberreturned)
+char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)
 {
 	int rc;
 	char *out;
@@ -1111,14 +1136,6 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata,
 	if (rc < 0) {
 		return NULL;
 	}
-	if (metadata == 0) {
-		if (offset > 0) {
-			for (; offset != 0 && entry; offset--) {
-				entry = entry->next;
-			}
-		}
-	}
-	offset = 0;
 	while (entry) {
 		//entry_dump(entry);
 		id = xml_escape(entry->didl.entryid, 1);
@@ -1280,14 +1297,9 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata,
 			return NULL;
 		}
 		if (metadata == 1) {
-			offset = 1;
 			break;
 		} else {
 			entry = entry->next;
-		}
-		offset++;
-		if (count != 0 && count == offset) {
-			break;
 		}
 	}
 	ptr = out;
@@ -1297,6 +1309,5 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata,
 		debugf("asprintf(); failed");
 		return NULL;
 	}
-	*numberreturned = offset;
 	return out;
 }

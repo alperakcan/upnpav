@@ -1118,8 +1118,10 @@ char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port
 	int r;
 	int t;
 	int fd;
+	char *tmp;
 	char *buffer;
 	struct pollfd pfd;
+	int contentlength;
 	unsigned int length;
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0) {
@@ -1143,6 +1145,7 @@ char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port
 	}
 	debugf("request sent, waiting response");
 	length = 0;
+	contentlength = 0;
 	buffer = malloc(GENA_HEADER_SIZE);
 	while (1) {
 		if (gena_getline(fd, 100000, buffer, GENA_HEADER_SIZE) <= 0) {
@@ -1150,39 +1153,73 @@ char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port
 		}
 		if (strncasecmp(buffer, "Content-length:", strlen("Content-length:")) == 0) {
 			length = atol(gena_trim(buffer + strlen("Content-length:")));
+			contentlength = 1;
 		}
 	}
 	free(buffer);
-	if (length <= 0) {
-		close(fd);
-		debugf("no data received %d", length);
-		return NULL;
-	}
-	buffer = malloc(sizeof(char) * (length + 1));
-	if (buffer == NULL) {
-		close(fd);
-		debugf("no data received %d", length);
-		return NULL;
-	}
-	t = 0;
-	while (t < length) {
-		memset(&pfd, 0, sizeof(struct pollfd));
-		pfd.fd = fd;
-		pfd.events = POLLIN;
-		r = poll(&pfd, 1, GENA_SOCKET_TIMEOUT);
-		if (r <= 0 || (pfd.revents & POLLIN) == 0) {
-			break;
+	if (contentlength == 1) {
+		if (length <= 0) {
+			close(fd);
+			debugf("no data received %d", length);
+			return NULL;
 		}
-		r = recv(fd, buffer + t, length - t, MSG_DONTWAIT);
-		if (r <= 0) {
-			break;
+		buffer = malloc(sizeof(char) * (length + 1));
+		if (buffer == NULL) {
+			close(fd);
+			debugf("no data received %d", length);
+			return NULL;
 		}
-		t += r;
-	}
-	buffer[length] = '\0';
-	if (t != length) {
-		free(buffer);
+		t = 0;
+		while (t < length) {
+			memset(&pfd, 0, sizeof(struct pollfd));
+			pfd.fd = fd;
+			pfd.events = POLLIN;
+			r = poll(&pfd, 1, GENA_SOCKET_TIMEOUT);
+			if (r <= 0 || (pfd.revents & POLLIN) == 0) {
+				break;
+			}
+			r = recv(fd, buffer + t, length - t, MSG_DONTWAIT);
+			if (r <= 0) {
+				break;
+			}
+			t += r;
+		}
+		buffer[length] = '\0';
+		if (t != length) {
+			free(buffer);
+			buffer = NULL;
+		}
+	} else {
+		length = 0;
 		buffer = NULL;
+again:
+		length += 512;
+		tmp = realloc(buffer, sizeof(char) * (length + 1));
+		if (tmp == NULL) {
+			close(fd);
+			free(buffer);
+			debugf("no data received %d", length);
+			return NULL;
+		}
+		buffer = tmp;
+		t = length - 512;
+		while (t < length) {
+			memset(&pfd, 0, sizeof(struct pollfd));
+			pfd.fd = fd;
+			pfd.events = POLLIN;
+			r = poll(&pfd, 1, GENA_SOCKET_TIMEOUT);
+			if (r <= 0 || (pfd.revents & POLLIN) == 0) {
+				break;
+			}
+			r = recv(fd, buffer + t, length - t, MSG_DONTWAIT);
+			if (r <= 0) {
+				goto done;
+			}
+			t += r;
+		}
+		goto again;
+done:
+		buffer[t] = '\0';
 	}
 	close(fd);
 	return buffer;
@@ -1199,7 +1236,7 @@ char * gena_download (gena_t *gena, const char *host, const unsigned short port,
 		"Connection: keep-alive\r\n"
 		"Cache-Control: max-age=0\r\n"
 		"\r\n";
-	debugf("downloading '%s' from '%s:%u'", path, host, port);
+	debugf("downloading '/%s' from '%s:%u'", path, host, port);
 	if (asprintf(&buffer, format_get, path, host, port) < 0) {
 		return NULL;
 	}

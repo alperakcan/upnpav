@@ -158,11 +158,13 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		totalmatches = 1;
 		numberreturned = 1;
 		updateid = contentdir->updateid;
-		result = entry_to_result(service, entry, 1, startingindex, requestedcount, &numberreturned);
+		result = entry_to_result(service, entry, 1);
 		if (result == NULL) {
 			request->errcode = UPNP_ERROR_CANNOT_PROCESS;
 			goto error;
 		}
+		numberreturned = 1;
+		totalmatches = 1;
 		upnp_add_response(request, service->type, "Result", result);
 		upnp_add_response(request, service->type, "NumberReturned", uint32tostr(str, numberreturned));
 		upnp_add_response(request, service->type, "TotalMatches", uint32tostr(str, totalmatches));
@@ -176,7 +178,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		return 0;
 	} else if (strcmp(browseflag, "BrowseDirectChildren") == 0) {
 		if (contentdir->cached == 0 && (objectid == NULL || strcmp(objectid, "0") == 0)) {
-			entry = entry_init_from_path(contentdir->rootpath, &totalmatches);
+			entry = entry_init_from_path(contentdir->rootpath, startingindex, requestedcount, &numberreturned, &totalmatches);
 			tmp = entry;
 			while (tmp != NULL) {
 				free(tmp->didl.parentid);
@@ -196,11 +198,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 			goto error;
 		}
 		updateid = contentdir->updateid;
-		if (contentdir->cached == 0) {
-			result = entry_to_result(service, entry, 0, startingindex, requestedcount, &numberreturned);
-		} else {
-			result = entry_to_result(service, entry, 0, 0, numberreturned, &numberreturned);
-		}
+		result = entry_to_result(service, entry, 0);
 		if (result == NULL) {
 			request->errcode = UPNP_ERROR_CANNOT_PROCESS;
 			goto error;

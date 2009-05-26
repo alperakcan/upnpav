@@ -547,10 +547,10 @@ int entry_normalize_parent (entry_t *entry);
 int entry_normalize_root (entry_t *entry);
 int entry_scan (const char *path);
 entry_t * entry_init_from_id (int cached, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total);
-entry_t * entry_init_from_path (const char *path, unsigned int *total);
+entry_t * entry_init_from_path (const char *path, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total);
 int entry_uninit (entry_t *root);
 entry_t * entry_from_result (char *result);
-char * entry_to_result (device_service_t *service, entry_t *entry, int metadata, unsigned int offset, unsigned int count, unsigned int *numberreturned);
+char * entry_to_result (device_service_t *service, entry_t *entry, int metadata);
 
 /* contentdir.c */
 
