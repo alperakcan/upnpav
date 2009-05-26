@@ -854,13 +854,18 @@ int ssdp_uninit (ssdp_t *ssdp)
 {
 	ssdp_device_t *d, *dn;
 	ssdp_request_t *r, *rn;
+	debugf("sending ssdp:byebye");
 	ssdp_byebye(ssdp);
+	debugf("setting ssdp->running to 0");
 	pthread_mutex_lock(&ssdp->mutex);
 	ssdp->running = 0;
+	debugf("signalling ssdp->cond");
 	pthread_cond_signal(&ssdp->cond);
 	while (ssdp->stopped == 0) {
+		debugf("waiting for ssdp->stopped");
 		pthread_cond_wait(&ssdp->cond, &ssdp->mutex);
 	}
+	debugf("joining ssdp->thread");
 	pthread_join(ssdp->thread, NULL);
 	list_for_each_entry_safe(d, dn, &ssdp->devices, head) {
 		list_del(&d->head);
