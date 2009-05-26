@@ -528,7 +528,7 @@ static int entry_scan_path (const char *path, unsigned long long parentid)
 	if (dp == NULL) {
 		return -1;
 	}
-	printf("looking into: %s\n", path);
+	debugf("looking into: %s", path);
 	while ((current = readdir(dp)) != NULL) {
 		if (strncmp(current->d_name, ".", 1) == 0) {
 			/* will cover parent, self, hidden */
@@ -543,7 +543,7 @@ static int entry_scan_path (const char *path, unsigned long long parentid)
 			free(ptr);
 			continue;
 		}
-		printf("found: %s\n", entry->path);
+		debugf("found: %s", entry->path);
 		if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER) {
 			size = entry->didl.res.size;
 			detailid = 0;
@@ -775,7 +775,7 @@ entry_t * entry_init_from_path (const char *path, unsigned int start, unsigned i
 	if (dp == NULL) {
 		return NULL;
 	}
-	printf("looking into: %s\n", path);
+	debugf("looking into: %s", path);
 	while ((current = readdir(dp)) != NULL) {
 		if (strncmp(current->d_name, ".", 1) == 0) {
 			/* will cover parent, self, hidden */
@@ -790,7 +790,7 @@ entry_t * entry_init_from_path (const char *path, unsigned int start, unsigned i
 			free(ptr);
 			continue;
 		}
-		printf("found: %s, %s\n", next->didl.dc.title, next->didl.entryid);
+		debugf("found: %s, %s", next->didl.dc.title, next->didl.entryid);
 		if (entry == NULL) {
 			entry = next;
 		} else {
