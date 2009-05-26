@@ -148,7 +148,7 @@ entry_t * controller_browse_children (client_t *controller, const char *device, 
 		values[1] = "BrowseDirectChildren";
 		values[2] = "*";
 		sprintf(values[3], "%u", count);
-		values[4] = "5";
+		values[4] = "500";
 		values[5] = "+dc:title";
 
 		debugf("browsing '%s':'%s'", device, object);
