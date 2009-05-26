@@ -227,6 +227,7 @@ found:
 			return 0;
 		}
 	}
+	debugf("downloading device description");
 	buffer = upnp_download(upnp, advertisement->location);
 	if (buffer == NULL) {
 		debugf("upnp_download('%s') failed", advertisement->location);
@@ -437,6 +438,7 @@ int client_uninit (client_t *client)
 	client_device_t *devicen;
 	ret = -1;
 	debugf("uninitializing client '%s'", client->name);
+	upnp_uninit(upnp);
 	pthread_mutex_lock(&client->mutex);
 	client->running = 0;
 	pthread_cond_broadcast(&client->cond);
@@ -453,7 +455,6 @@ int client_uninit (client_t *client)
 		client_device_uninit(device);
 	}
 	debugf("unregistering client '%s'", client->name);
-	upnp_uninit(upnp);
 	pthread_mutex_unlock(&client->mutex);
 	pthread_cond_destroy(&client->cond);
 	pthread_mutex_destroy(&client->mutex);
