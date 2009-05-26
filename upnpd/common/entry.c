@@ -310,6 +310,7 @@ entry_t * entry_didl_from_path (const char *path)
 	metadata_t *metadata;
 	metadata = metadata_init(path);
 	if (metadata == NULL) {
+		debugf("metadata_init('%s') failed", path);
 		return NULL;
 	}
 	entry = (entry_t *) malloc(sizeof(entry_t));
