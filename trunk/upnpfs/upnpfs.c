@@ -270,7 +270,7 @@ int main (int argc, char *argv[])
 	memset(&opts, 0, sizeof(opts));
 	memset(&priv, 0, sizeof(priv));
 
-	opts.cache_size = 1000;
+	opts.cache_size = 10000;
 
 	if (parse_options(argc, argv)) {
 		usage();
