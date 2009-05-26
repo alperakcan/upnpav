@@ -997,6 +997,9 @@ int upnp_uninit (upnp_t *upnp)
 	upnp_service_t *sn;
 	upnp_subscribe_t *c;
 	upnp_subscribe_t *cn;
+	if (upnp == NULL) {
+		return 0;
+	}
 	debugf("calling ssdp_uninit");
 	ssdp_uninit(upnp->ssdp);
 	debugf("calling gena_uninit");
