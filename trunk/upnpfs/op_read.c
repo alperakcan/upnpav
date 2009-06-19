@@ -211,6 +211,7 @@ static int http_process (upnpfs_http_t *http, char *line, int line_count)
 static int http_open (upnpfs_http_t *http, unsigned int offset)
 {
 	int err;
+	int line;
 	struct sockaddr_in server;
 
 	server.sin_family = AF_INET;
@@ -264,11 +265,12 @@ static int http_open (upnpfs_http_t *http, unsigned int offset)
 		goto error;
 	}
 
+	line = 0;
 	while (1) {
 		if (http_getline(http->file, 1000, http->lines, http->lines_length) <= 0) {
 			break;
 		}
-        	err = http_process(http, http->lines, 1);
+        	err = http_process(http, http->lines, line);
         	if (err < 0) {
         		debugfs("http_process() failed");
         		return err;
@@ -276,6 +278,7 @@ static int http_open (upnpfs_http_t *http, unsigned int offset)
         	if (err == 0) {
         		break;
         	}
+        	line++;
 	}
 
 	return (offset == http->offset) ? 0 : -1;
