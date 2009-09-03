@@ -136,3 +136,8 @@ unsigned long long time_gettimeofday (void);
 
 char * interface_getaddr (char *ifname);
 int interface_printall (void);
+
+extern int platform_debug;
+#define debugf(fmt...) debug_debugf(__FILE__, __LINE__, __FUNCTION__, fmt);
+void debug_debugf (char *file, int line, const char *func, char *fmt, ...);
+

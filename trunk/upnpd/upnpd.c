@@ -41,8 +41,6 @@
 #include "upnpd.h"
 #include "common.h"
 
-extern unsigned char upnp_debug;
-
 #if defined(ENABLE_CONTROLLER)
 extern upnpd_application_t controller;
 #endif
@@ -147,7 +145,7 @@ int main (int argc, char *argv[])
 				options = optarg;
 				break;
 			case 'v':
-				upnp_debug = 1;
+				platform_debug = 1;
 				break;
 			case 'b':
 				daemonize = 1;
