@@ -1140,6 +1140,7 @@ int upnp_search (upnp_t *upnp, int timeout, const char *uuid)
 
 int upnp_subscribe (upnp_t *upnp, const char *serviceurl, int *timeout, char **sid)
 {
+	debugf("upnp subscribe is not supported, yet");
 	return 0;
 }
 
