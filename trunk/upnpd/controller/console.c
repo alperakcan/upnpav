@@ -1,17 +1,29 @@
-/***************************************************************************
-    begin                : Sun Jun 01 2008
-    copyright            : (C) 2008 - 2009 by Alper Akcan
-    email                : alper.akcan@gmail.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU Lesser General Public License as        *
- *   published by the Free Software Foundation; either version 2.1 of the  *
- *   License, or (at your option) any later version.                       *
- *                                                                         *
- ***************************************************************************/
+/*
+ * upnpavd - UPNP AV Daemon
+ *
+ * Copyright (C) 2009 Alper Akcan, alper.akcan@gmail.com
+ * Copyright (C) 2009 CoreCodec, Inc., http://www.CoreCodec.com
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * Any non-LGPL usage of this software or parts of this software is strictly
+ * forbidden.
+ *
+ * Commercial non-LGPL licensing of this software is possible.
+ * For more info contact CoreCodec through info@corecodec.com
+ */
 
 #include <config.h>
 
@@ -19,13 +31,13 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <inttypes.h>
-#include <pthread.h>
 
 #if HAVE_LIBREADLINE
 #include <readline/readline.h>
 #include <readline/history.h>
 #endif
 
+#include "platform.h"
 #include "gena.h"
 #include "upnp.h"
 #include "upnpd.h"
@@ -63,14 +75,14 @@ static int refresh_devices (client_t *client)
 static int list_devices (client_t *client)
 {
 	client_device_t *device;
-	pthread_mutex_lock(&client->mutex);
+	thread_mutex_lock(client->mutex);
 	list_for_each_entry(device, &client->devices, head) {
 		printf("-- %s\n", device->name);
 		printf("  type         : %s\n", device->type);
 		printf("  uuid         : %s\n", device->uuid);
 		printf("  expiretime   : %d\n", device->expiretime);
 	}
-	pthread_mutex_unlock(&client->mutex);
+	thread_mutex_unlock(client->mutex);
 	return 0;
 }
 
@@ -79,7 +91,7 @@ static int print_device (client_t *client, char *name)
 	client_device_t *device;
 	client_service_t *service;
 	client_variable_t *variable;
-	pthread_mutex_lock(&client->mutex);
+	thread_mutex_lock(client->mutex);
 	list_for_each_entry(device, &client->devices, head) {
 		if (strcmp(name, device->name) == 0) {
 			printf("-- %s\n", device->name);
@@ -99,7 +111,7 @@ static int print_device (client_t *client, char *name)
 			}
 		}
 	}
-	pthread_mutex_unlock(&client->mutex);
+	thread_mutex_unlock(client->mutex);
 	return 0;
 }
 
@@ -108,7 +120,7 @@ static int print_devices (client_t *client)
 	client_device_t *device;
 	client_service_t *service;
 	client_variable_t *variable;
-	pthread_mutex_lock(&client->mutex);
+	thread_mutex_lock(client->mutex);
 	list_for_each_entry(device, &client->devices, head) {
 		printf("-- %s\n", device->name);
 		printf("  type         : %s\n", device->type);
@@ -126,7 +138,7 @@ static int print_devices (client_t *client)
 			}
 		}
 	}
-	pthread_mutex_unlock(&client->mutex);
+	thread_mutex_unlock(client->mutex);
 	return 0;
 }
 

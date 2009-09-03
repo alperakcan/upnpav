@@ -1,0 +1,18 @@
+LIB upnpd_upnp
+{
+  USE ixml
+  USE upnpd_platform
+
+  EXPINCLUDE .
+
+  SOURCE gena.c
+  SOURCE ssdp.c
+  SOURCE upnp.c
+  SOURCE uuid.c
+  SOURCE debug.c
+
+  HEADER upnp.h
+  HEADER ssdp.h
+  HEADER gena.h
+  HEADER uuid.h
+}

@@ -1,0 +1,32 @@
+#include "*/*.proj"
+
+LIB upnpd_common
+{
+  USE upnpd_upnp
+  USE upnpd_metadata
+  USE upnpd_platform
+
+  DEFINE SQLITE_OMIT_LOAD_EXTENSION
+  
+  EXPINCLUDE .
+
+  SOURCE entry.c
+  SOURCE device.c
+  SOURCE upnp.c
+  SOURCE connection.c
+  SOURCE contentdir.c
+  SOURCE service.c
+  SOURCE inttool.c
+  SOURCE xml.c
+  SOURCE uri.c
+  SOURCE interface.c
+  SOURCE sqlite3.c
+  SOURCE(ENABLE_MEDIASERVER) mediaserver.c
+  IF ENABLE_CONTROLLER
+    SOURCE client.c
+    SOURCE controller.c
+  ENDIF
+  
+  HEADER sqlite3.h
+  HEADER common.h
+}

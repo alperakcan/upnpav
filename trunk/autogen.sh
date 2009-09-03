@@ -22,4 +22,4 @@ echo Running autoreconf --verbose --install --force
 autoreconf --verbose --install --force
 
 echo Removing autom4te.cache
-rm -rf autom4te.cache libupnp/autom4te.cache
+rm -rf autom4te.cache

@@ -1,0 +1,17 @@
+
+LIB upnpd_platform
+{
+  EXPINCLUDE .
+
+  IF ENABLE_PLATFORM_POSIX
+  SOURCE posix/thread.c
+  SOURCE posix/socket.c
+  SOURCE posix/file.c
+  SOURCE posix/time.c
+  SOURCE posix/rand.c
+  ENDIF
+
+  HEADER platform.h
+  
+  LIBS pthread
+}

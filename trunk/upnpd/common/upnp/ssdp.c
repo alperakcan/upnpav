@@ -1,17 +1,29 @@
-/***************************************************************************
-    begin                : Mon Mar 02 2009
-    copyright            : (C) 2009 by Alper Akcan
-    email                : alper.akcan@gmail.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU Lesser General Public License as        *
- *   published by the Free Software Foundation; either version 2.1 of the  *
- *   License, or (at your option) any later version.                       *
- *                                                                         *
- ***************************************************************************/
+/*
+ * upnpavd - UPNP AV Daemon
+ *
+ * Copyright (C) 2009 Alper Akcan, alper.akcan@gmail.com
+ * Copyright (C) 2009 CoreCodec, Inc., http://www.CoreCodec.com
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * Any non-LGPL usage of this software or parts of this software is strictly
+ * forbidden.
+ *
+ * Commercial non-LGPL licensing of this software is possible.
+ * For more info contact CoreCodec through info@corecodec.com
+ */
 
 #include <config.h>
 
@@ -19,29 +31,22 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <pthread.h>
+#include <inttypes.h>
 
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <sys/poll.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-
+#include "platform.h"
 #include "ssdp.h"
 #include "gena.h"
 #include "upnp.h"
 #include "list.h"
 
 struct ssdp_s {
-	int socket;
 	int started;
 	int stopped;
 	int running;
-	pthread_t thread;
-	pthread_cond_t cond;
-	pthread_mutex_t mutex;
+	socket_t *socket;
+	thread_t *thread;
+	thread_cond_t *cond;
+	thread_mutex_t *mutex;
 	list_t devices;
 	list_t requests;
 	int (*callback) (void *cookie, ssdp_event_t *event);
@@ -109,7 +114,7 @@ static const unsigned int ssdp_recv_timeout = 2000;
 static const unsigned int ssdp_ttl = 4;
 static const unsigned int ssdp_pause = 100;
 
-static int ssdp_advertise_send (const char *buffer, struct sockaddr_in *dest);
+static int ssdp_advertise_send (const char *buffer, const char *address, int port);
 static char * ssdp_advertise_buffer (ssdp_device_t *device, int answer);
 
 static char * ssdp_trim (char *buffer)
@@ -355,21 +360,21 @@ static ssdp_request_t * ssdp_parse (char *buffer, int length)
 	return request;
 }
 
-static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, struct sockaddr_in *sender)
+static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, const char *address, int port)
 {
 	char *ptr;
 	char *buffer;
 	ssdp_event_t e;
 	ssdp_device_t *d;
 	memset(&e, 0, sizeof(ssdp_event_t));
-	pthread_mutex_lock(&ssdp->mutex);
+	thread_mutex_lock(ssdp->mutex);
 	switch (request->type) {
 		case SSDP_TYPE_MSEARCH:
 			if (strcasecmp(request->request.search.st, "upnp:rootdevice") == 0) {
 				list_for_each_entry(d, &ssdp->devices, head) {
 					buffer = ssdp_advertise_buffer(d, 1);
 					if (buffer != NULL) {
-						ssdp_advertise_send(buffer, sender);
+						ssdp_advertise_send(buffer, address, port);
 						free(buffer);
 					}
 				}
@@ -378,7 +383,7 @@ static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, struct s
 					if (strncasecmp(d->nt, request->request.search.st, strlen(request->request.search.st)) == 0) {
 						buffer = ssdp_advertise_buffer(d, 1);
 						if (buffer != NULL) {
-							ssdp_advertise_send(buffer, sender);
+							ssdp_advertise_send(buffer, address, port);
 							free(buffer);
 						}
 					}
@@ -399,11 +404,11 @@ static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, struct s
 				*ptr = '\0';
 			}
 			e.uuid = request->request.notify.usn;
-			pthread_mutex_unlock(&ssdp->mutex);
+			thread_mutex_unlock(ssdp->mutex);
 			if (ssdp->callback != NULL) {
 				ssdp->callback(ssdp->cookie, &e);
 			}
-			pthread_mutex_lock(&ssdp->mutex);
+			thread_mutex_lock(ssdp->mutex);
 			break;
 		case SSDP_TYPE_ANSWER:
 			e.type = SSDP_EVENT_TYPE_NOTIFY;
@@ -415,30 +420,17 @@ static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, struct s
 				*ptr = '\0';
 			}
 			e.uuid = request->request.answer.usn;
-			pthread_mutex_unlock(&ssdp->mutex);
+			thread_mutex_unlock(ssdp->mutex);
 			if (ssdp->callback != NULL) {
 				ssdp->callback(ssdp->cookie, &e);
 			}
-			pthread_mutex_lock(&ssdp->mutex);
+			thread_mutex_lock(ssdp->mutex);
 			break;
 		case SSDP_TYPE_UNKNOWN:
 			break;
 	}
-	pthread_mutex_unlock(&ssdp->mutex);
+	thread_mutex_unlock(ssdp->mutex);
 	return 0;
-}
-
-static unsigned long long __gettimeofday (void)
-{
-	unsigned long long tsec;
-	unsigned long long tusec;
-	struct timeval tv;
-	if (gettimeofday(&tv, NULL) < 0) {
-		return -1;
-	}
-	tsec = ((unsigned long long) tv.tv_sec) * 1000;
-	tusec = ((unsigned long long) tv.tv_usec) / 1000;
-	return tsec + tusec;
 }
 
 static void * ssdp_thread_loop (void *arg)
@@ -450,167 +442,133 @@ static void * ssdp_thread_loop (void *arg)
 	ssdp_t *ssdp;
 	ssdp_device_t *d;
 	ssdp_request_t *r;
-	struct pollfd pfd;
-	socklen_t sender_length;
 	ssdp_request_t *request;
-	struct sockaddr_in sender;
 	unsigned long long times[2];
 
-	struct sockaddr_in dest;
-	memset(&dest, 0, sizeof(dest));
-	dest.sin_family = AF_INET;
-	dest.sin_addr.s_addr = inet_addr(ssdp_ip);
-	dest.sin_port = htons(ssdp_port);
+	socket_event_t presult;
+	char senderip[SOCKET_IP_LENGTH];
+	int senderport;
 
 	ssdp = (ssdp_t *) arg;
 
-	pthread_mutex_lock(&ssdp->mutex);
+	thread_mutex_lock(ssdp->mutex);
 	ssdp->started = 1;
 	ssdp->running = 1;
-	pthread_cond_signal(&ssdp->cond);
-	pthread_mutex_unlock(&ssdp->mutex);
+	thread_mutex_unlock(ssdp->mutex);
+	thread_cond_signal(ssdp->cond);
 
 	buffer = (char *) malloc(sizeof(char) * (ssdp_buffer_length + 1));
 	if (buffer == NULL) {
 		goto out;
 	}
 
-	times[0] = __gettimeofday();
+	times[0] = time_gettimeofday();
 
 	while (1) {
-		times[1] = __gettimeofday();
+		times[1] = time_gettimeofday();
 		list_for_each_entry(d, &ssdp->devices, head) {
 			d->interval -= (times[1] - times[0]);
 			if (d->interval < (d->age / 2) || d->interval > d->age) {
 				buf = ssdp_advertise_buffer(d, 0);
-				ssdp_advertise_send(buf, &dest);
+				ssdp_advertise_send(buf, ssdp_ip, ssdp_port);
 				free(buf);
 				d->interval = d->age;
 			}
 		}
-		times[0] = __gettimeofday();
-		pthread_mutex_lock(&ssdp->mutex);
+		times[0] = time_gettimeofday();
+		thread_mutex_lock(ssdp->mutex);
 		while (list_count(&ssdp->requests) != 0) {
 			r = list_first_entry(&ssdp->requests, ssdp_request_t, head);
 			list_del(&r->head);
-			pthread_mutex_unlock(&ssdp->mutex);
-			ssdp_request_handler(ssdp, r, NULL);
-			pthread_mutex_lock(&ssdp->mutex);
+			thread_mutex_unlock(ssdp->mutex);
+			ssdp_request_handler(ssdp, r, NULL, 0);
+			thread_mutex_lock(ssdp->mutex);
 			ssdp_request_uninit(r);
 		}
 		if (ssdp->running == 0 || ssdp->socket < 0) {
-			pthread_mutex_unlock(&ssdp->mutex);
+			thread_mutex_unlock(ssdp->mutex);
 			break;
 		}
-		memset(&pfd, 0, sizeof(struct pollfd));
-		pfd.fd = ssdp->socket;
-		pfd.events = POLLIN;
-		pfd.revents = 0;
-		pthread_mutex_unlock(&ssdp->mutex);
-		ret = poll(&pfd, 1, ssdp_recv_timeout);
+		thread_mutex_unlock(ssdp->mutex);
+		ret = socket_poll(ssdp->socket, SOCKET_EVENT_IN, &presult, ssdp_recv_timeout);
 		if (!ret) {
 			continue;
 		} else {
-			if (pfd.revents != POLLIN) {
+			if (presult != SOCKET_EVENT_IN) {
 				break;
 			}
 		}
-		sender_length = sizeof(struct sockaddr_in);
-		received = recvfrom(pfd.fd, buffer, ssdp_buffer_length, 0, (struct sockaddr *) &sender, &sender_length);
+		received = socket_recvfrom(ssdp->socket, buffer, ssdp_buffer_length, senderip, &senderport);
 		if (received <= 0) {
 			continue;
 		}
 		buffer[received] = '\0';
 		request = ssdp_parse(buffer, received);
 		if (request != NULL) {
-			ssdp_request_handler(ssdp, request, &sender);
+			ssdp_request_handler(ssdp, request, senderip, senderport);
 			ssdp_request_uninit(request);
 		}
 	}
 out:
-	pthread_mutex_lock(&ssdp->mutex);
+	thread_mutex_lock(ssdp->mutex);
 	ssdp->stopped = 1;
 	ssdp->running = 0;
 	if (buffer != NULL) {
 		free(buffer);
 	}
-	pthread_cond_signal(&ssdp->cond);
-	pthread_mutex_unlock(&ssdp->mutex);
+	thread_cond_signal(ssdp->cond);
+	thread_mutex_unlock(ssdp->mutex);
 
 	return NULL;
 }
 
 static int ssdp_init_server (ssdp_t *ssdp)
 {
-	int on;
-	struct hostent *h;
-	struct ip_mreq mreq;
-	struct in_addr mcastip;
-	struct sockaddr_in addr;
-
-	h = gethostbyname(ssdp_ip);
-	if (h == NULL) {
-		return -1;
-	}
-
-	ssdp->socket = socket(AF_INET, SOCK_DGRAM, 0);
-	if (ssdp->socket < 0) {
+	ssdp->socket = socket_open(SOCKET_DOMAIN_INET, SOCKET_TYPE_DGRAM);
+	if (ssdp->socket == NULL) {
 		return -2;
 	}
-
-	on = 1;
-	if (setsockopt(ssdp->socket, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on)) < 0) {
-		close(ssdp->socket);
+	if (socket_option_reuseaddr(ssdp->socket, 1) < 0) {
+		socket_close(ssdp->socket);
 		return -1;
 	}
-
-	addr.sin_family = AF_INET;
-	inet_aton(ssdp_ip, &addr.sin_addr);
-	addr.sin_port = htons(ssdp_port);
-	if (bind(ssdp->socket, (struct sockaddr *) &addr, sizeof(addr)) < 0) {
-		close(ssdp->socket);
+	if (socket_bind(ssdp->socket, ssdp_ip, ssdp_port) < 0) {
+		socket_close(ssdp->socket);
 		return -1;
 	}
-
-	memcpy(&mcastip, h->h_addr_list[0], h->h_length);
-	mreq.imr_multiaddr.s_addr = mcastip.s_addr;
-	mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-	setsockopt(ssdp->socket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (void *) &mreq, sizeof(mreq));
-
-	pthread_mutex_init(&ssdp->mutex, NULL);
-	pthread_cond_init(&ssdp->cond, NULL);
-	pthread_mutex_lock(&ssdp->mutex);
-	pthread_create(&ssdp->thread, NULL, ssdp_thread_loop, ssdp);
+	if (socket_option_membership(ssdp->socket, ssdp_ip, 1) < 0) {
+		socket_close(ssdp->socket);
+		return -1;
+	}
+	ssdp->mutex = thread_mutex_init();
+	ssdp->cond = thread_cond_init();
+	thread_mutex_lock(ssdp->mutex);
+	ssdp->thread = thread_create("ssdp_thread_loop", ssdp_thread_loop, ssdp);
 	while (ssdp->started == 0) {
-		pthread_cond_wait(&ssdp->cond, &ssdp->mutex);
+		thread_cond_wait(ssdp->cond, ssdp->mutex);
 	}
-	pthread_mutex_unlock(&ssdp->mutex);
-
+	thread_mutex_unlock(ssdp->mutex);
 	return 0;
 }
 
-static int ssdp_advertise_send (const char *buffer, struct sockaddr_in *dest)
+static int ssdp_advertise_send (const char *buffer, const char *address, int port)
 {
 	int c;
 	int rc;
-	int ttl;
-	int sock;
-	int socklen;
+	socket_t *sock;
 	if (buffer == NULL) {
 		return -1;
 	}
-	sock = socket(AF_INET, SOCK_DGRAM, 0);
-	if (sock < 0) {
+	sock = socket_open(SOCKET_DOMAIN_INET, SOCKET_TYPE_DGRAM);
+	if (sock == NULL) {
 		return -1;
 	}
-	ttl = ssdp_ttl;
-	setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, (char *) &ttl, sizeof(int));
-	socklen = sizeof(struct sockaddr_in);
+	socket_option_multicastttl(sock, ssdp_ttl);
 	for (c = 0; c < 2; c++) {
-		rc = sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *) dest, socklen);
+		rc = socket_sendto(sock, buffer, strlen(buffer), address, port);
 		usleep(ssdp_pause * 1000);
 	}
-	close(sock);
+	socket_close(sock);
 	return 0;
 }
 
@@ -698,7 +656,7 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 	int ret;
 	char *data;
 	char *buffer;
-	struct pollfd pfd;
+	socket_event_t presult;
 	ssdp_request_t *request;
 	const char *format_search =
 		"M-SEARCH * HTTP/1.1\r\n"
@@ -707,14 +665,7 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 		"MAN: \"ssdp:discover\"\r\n"
 		"HOST: %s:%d\r\n"
 		"\r\n";
-	int ttl;
-	int sock;
-	int socklen;
-	struct sockaddr_in dest;
-	memset(&dest, 0, sizeof(dest));
-	dest.sin_family = AF_INET;
-	dest.sin_addr.s_addr = inet_addr(ssdp_ip);
-	dest.sin_port = htons(ssdp_port);
+	socket_t *sock;
 	ret = asprintf(
 		&buffer,
 		format_search,
@@ -725,42 +676,36 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 	if (ret < 0) {
 		return -1;
 	}
-	sock = socket(AF_INET, SOCK_DGRAM, 0);
+	sock = socket_open(SOCKET_DOMAIN_INET, SOCKET_TYPE_DGRAM);
 	if (sock < 0) {
 		free(buffer);
 		return -1;
 	}
-	ttl = ssdp_ttl;
-	socklen = sizeof(struct sockaddr_in);
-	setsockopt(sock, IPPROTO_IP, IP_MULTICAST_TTL, (char *) &ttl, sizeof(int));
+	socket_option_multicastttl(sock, ssdp_ttl);
 	data = malloc(sizeof(char) * 4096);
 	for (t = 0; t < timeout; t++) {
-		ssdp_advertise_send(buffer, &dest);
-		sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *) &dest, socklen);
+		ssdp_advertise_send(buffer, ssdp_ip, ssdp_port);
+		socket_sendto(sock, buffer, strlen(buffer), ssdp_ip, ssdp_port);
 		usleep(ssdp_pause * 1000);
 	}
 	do {
-		memset(&pfd, 0, sizeof(struct pollfd));
-		pfd.fd = sock;
-		pfd.events = POLLIN;
-		pfd.revents = 0;
-		ret = poll(&pfd, 1, ssdp_recv_timeout);
-		if (ret <= 0 || pfd.revents != POLLIN) {
+		ret = socket_poll(sock, SOCKET_EVENT_IN, &presult, ssdp_recv_timeout);
+		if (ret <= 0 || presult != SOCKET_EVENT_IN) {
 			break;
 		}
-		r = recvfrom(sock, data, 4096, MSG_DONTWAIT, NULL, NULL);
+		r = socket_recvfrom(sock, data, 4096, NULL, 0);
 		if (r > 0) {
 			data[r] = '\0';
 			request = ssdp_parse(data, r);
 			if (request != NULL) {
-				pthread_mutex_lock(&ssdp->mutex);
+				thread_mutex_lock(ssdp->mutex);
 				list_add_tail(&request->head, &ssdp->requests);
-				pthread_mutex_unlock(&ssdp->mutex);
+				thread_mutex_unlock(ssdp->mutex);
 			}
 		}
 	} while (1);
 
-	close(sock);
+	socket_close(sock);
 	free(buffer);
 	free(data);
 	return 0;
@@ -770,18 +715,13 @@ int ssdp_advertise (ssdp_t *ssdp)
 {
 	char *buffer;
 	ssdp_device_t *d;
-	struct sockaddr_in dest;
-	memset(&dest, 0, sizeof(dest));
-	dest.sin_family = AF_INET;
-	dest.sin_addr.s_addr = inet_addr(ssdp_ip);
-	dest.sin_port = htons(ssdp_port);
-	pthread_mutex_lock(&ssdp->mutex);
+	thread_mutex_lock(ssdp->mutex);
 	list_for_each_entry(d, &ssdp->devices, head) {
 		buffer = ssdp_advertise_buffer(d, 0);
-		ssdp_advertise_send(buffer, &dest);
+		ssdp_advertise_send(buffer, ssdp_ip, ssdp_port);
 		free(buffer);
 	}
-	pthread_mutex_unlock(&ssdp->mutex);
+	thread_mutex_unlock(ssdp->mutex);
 	return 0;
 }
 
@@ -789,19 +729,14 @@ int ssdp_byebye (ssdp_t *ssdp)
 {
 	char *buffer;
 	ssdp_device_t *d;
-	struct sockaddr_in dest;
-	memset(&dest, 0, sizeof(dest));
-	dest.sin_family = AF_INET;
-	dest.sin_addr.s_addr = inet_addr(ssdp_ip);
-	dest.sin_port = htons(ssdp_port);
-	pthread_mutex_lock(&ssdp->mutex);
+	thread_mutex_lock(ssdp->mutex);
 	list_for_each_entry(d, &ssdp->devices, head) {
 		debugf("sending byebye notify for '%s'", d->nt);
 		buffer = ssdp_byebye_buffer(d);
-		ssdp_advertise_send(buffer, &dest);
+		ssdp_advertise_send(buffer, ssdp_ip, ssdp_port);
 		free(buffer);
 	}
-	pthread_mutex_unlock(&ssdp->mutex);
+	thread_mutex_unlock(ssdp->mutex);
 	return 0;
 }
 
@@ -809,7 +744,7 @@ int ssdp_register (ssdp_t *ssdp, char *nt, char *usn, char *location, char *serv
 {
 	int ret;
 	ssdp_device_t *d;
-	pthread_mutex_lock(&ssdp->mutex);
+	thread_mutex_lock(ssdp->mutex);
 	printf("registering\n"
 		"  nt      : %s\n"
 		"  usn     : %s\n"
@@ -827,7 +762,7 @@ int ssdp_register (ssdp_t *ssdp, char *nt, char *usn, char *location, char *serv
 		ret = 0;
 		list_add(&d->head, &ssdp->devices);
 	}
-	pthread_mutex_unlock(&ssdp->mutex);
+	thread_mutex_unlock(ssdp->mutex);
 	return ret;
 }
 
@@ -857,16 +792,16 @@ int ssdp_uninit (ssdp_t *ssdp)
 	debugf("sending ssdp:byebye");
 	ssdp_byebye(ssdp);
 	debugf("setting ssdp->running to 0");
-	pthread_mutex_lock(&ssdp->mutex);
+	thread_mutex_lock(ssdp->mutex);
 	ssdp->running = 0;
 	debugf("signalling ssdp->cond");
-	pthread_cond_signal(&ssdp->cond);
+	thread_cond_signal(ssdp->cond);
 	while (ssdp->stopped == 0) {
 		debugf("waiting for ssdp->stopped");
-		pthread_cond_wait(&ssdp->cond, &ssdp->mutex);
+		thread_cond_wait(ssdp->cond, ssdp->mutex);
 	}
 	debugf("joining ssdp->thread");
-	pthread_join(ssdp->thread, NULL);
+	thread_join(ssdp->thread);
 	list_for_each_entry_safe(d, dn, &ssdp->devices, head) {
 		list_del(&d->head);
 		ssdp_device_uninit(d);
@@ -875,10 +810,10 @@ int ssdp_uninit (ssdp_t *ssdp)
 		list_del(&r->head);
 		ssdp_request_uninit(r);
 	}
-	pthread_mutex_unlock(&ssdp->mutex);
-	pthread_mutex_destroy(&ssdp->mutex);
-	pthread_cond_destroy(&ssdp->cond);
-	close(ssdp->socket);
+	thread_mutex_unlock(ssdp->mutex);
+	thread_mutex_destroy(ssdp->mutex);
+	thread_cond_destroy(ssdp->cond);
+	socket_close(ssdp->socket);
 	free(ssdp);
 	return 0;
 }

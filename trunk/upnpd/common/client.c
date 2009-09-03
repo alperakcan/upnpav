@@ -1,28 +1,40 @@
-/***************************************************************************
-    begin                : Sun Jun 01 2008
-    copyright            : (C) 2008 - 2009 by Alper Akcan
-    email                : alper.akcan@gmail.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU Lesser General Public License as        *
- *   published by the Free Software Foundation; either version 2.1 of the  *
- *   License, or (at your option) any later version.                       *
- *                                                                         *
- ***************************************************************************/
+/*
+ * upnpavd - UPNP AV Daemon
+ *
+ * Copyright (C) 2009 Alper Akcan, alper.akcan@gmail.com
+ * Copyright (C) 2009 CoreCodec, Inc., http://www.CoreCodec.com
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * Any non-LGPL usage of this software or parts of this software is strictly
+ * forbidden.
+ *
+ * Commercial non-LGPL licensing of this software is possible.
+ * For more info contact CoreCodec through info@corecodec.com
+ */
 
 #include <config.h>
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <inttypes.h>
-#include <pthread.h>
 
+#include "platform.h"
 #include "gena.h"
 #include "upnp.h"
-#include "upnpd.h"
 #include "uuid.h"
 #include "common.h"
 
@@ -301,7 +313,7 @@ static int client_event_handler (void *cookie, upnp_event_t *event)
 {
 	client_t *client;
 	client = (client_t *) cookie;
-	pthread_mutex_lock(&client->mutex);
+	thread_mutex_lock(client->mutex);
 	switch (event->type) {
 		case UPNP_EVENT_TYPE_ADVERTISEMENT_ALIVE:
 			client_event_advertisement_alive(client, &event->event.advertisement);
@@ -314,7 +326,7 @@ static int client_event_handler (void *cookie, upnp_event_t *event)
 		case UPNP_EVENT_TYPE_UNKNOWN:
 			break;
 	}
-	pthread_mutex_unlock(&client->mutex);
+	thread_mutex_unlock(client->mutex);
 	return 0;
 }
 
@@ -322,26 +334,21 @@ static void * client_timer (void *arg)
 {
 	int stamp;
 	client_t *client;
-	struct timeval tval;
-	struct timespec tspec;
 	client_device_t *device;
 	client_device_t *devicen;
 
 	client = (client_t *) arg;
 	stamp = 30;
 
-	pthread_mutex_lock(&client->mutex);
+	thread_mutex_lock(client->mutex);
 	debugf("started timer thread");
 	client->timer_running = 1;
-	pthread_cond_broadcast(&client->cond);
-	pthread_mutex_unlock(&client->mutex);
+	thread_cond_broadcast(client->cond);
+	thread_mutex_unlock(client->mutex);
 
 	while (1) {
-		pthread_mutex_lock(&client->mutex);
-		gettimeofday(&tval, NULL);
-		tspec.tv_sec = tval.tv_sec + stamp;
-		tspec.tv_nsec = 0;
-		pthread_cond_timedwait(&client->cond, &client->mutex, &tspec);
+		thread_mutex_lock(client->mutex);
+		thread_cond_timedwait(client->cond, client->mutex, stamp * 1000);
 		if (client->running == 0) {
 			goto out;
 		}
@@ -366,12 +373,12 @@ static void * client_timer (void *arg)
 #endif
 			}
 		}
-		pthread_mutex_unlock(&client->mutex);
+		thread_mutex_unlock(client->mutex);
 	}
 out:	client->timer_running = 0;
 	debugf("stopped timer thread");
-	pthread_cond_broadcast(&client->cond);
-	pthread_mutex_unlock(&client->mutex);
+	thread_cond_broadcast(client->cond);
+	thread_mutex_unlock(client->mutex);
 
 	return NULL;
 }
@@ -381,13 +388,15 @@ int client_init (client_t *client)
 	int ret;
 	ret = -1;
 	debugf("initializing client '%s'", client->name);
-	if (pthread_mutex_init(&client->mutex, NULL) != 0) {
-		debugf("pthread_mutex_init(&client->mutex, NULL) failed");
+	client->mutex = thread_mutex_init();
+	if (client->mutex == NULL) {
+		debugf("thread_mutex_init() failed");
 		goto out;
 	}
-	if (pthread_cond_init(&client->cond, NULL) != 0) {
-		debugf("pthread_cond_init(&client->cond, NULL) failed");
-		pthread_mutex_destroy(&client->mutex);
+	client->cond = thread_cond_init();
+	if (client->cond == NULL) {
+		debugf("thread_cond_init() failed");
+		thread_mutex_destroy(client->mutex);
 		goto out;
 	}
 	debugf("initializing devices list");
@@ -396,8 +405,8 @@ int client_init (client_t *client)
 	upnp = upnp_init(client->interface, 0, NULL, NULL);
 	if (upnp == NULL) {
 		debugf("upnp_init() failed");
-		pthread_cond_destroy(&client->cond);
-		pthread_mutex_destroy(&client->mutex);
+		thread_cond_destroy(client->cond);
+		thread_mutex_destroy(client->mutex);
 		goto out;
 	}
 	client->port = upnp_getport(upnp);
@@ -405,8 +414,8 @@ int client_init (client_t *client)
 	debugf("registering client device '%s'", client->name);
 	if (upnp_register_client(upnp, client_event_handler, client)) {
 		upnp_uninit(upnp);
-		pthread_cond_destroy(&client->cond);
-		pthread_mutex_destroy(&client->mutex);
+		thread_cond_destroy(client->cond);
+		thread_mutex_destroy(client->mutex);
 		goto out;
 	}
 	client->running = 1;
@@ -417,14 +426,14 @@ int client_init (client_t *client)
 	       client->ipaddress,
 	       client->port);
 
-	pthread_mutex_lock(&client->mutex);
+	thread_mutex_lock(client->mutex);
 	debugf("starting timer thread");
-	pthread_create(&client->timer_thread, NULL, client_timer, client);
+	client->timer_thread = thread_create("client_timer", client_timer, client);
 	while (client->timer_running == 0) {
-		pthread_cond_wait(&client->cond, &client->mutex);
+		thread_cond_wait(client->cond, client->mutex);
 	}
 	debugf("timer is up and running");
-	pthread_mutex_unlock(&client->mutex);
+	thread_mutex_unlock(client->mutex);
 
 	client_refresh(client, 1);
 	ret = 0;
@@ -439,25 +448,25 @@ int client_uninit (client_t *client)
 	ret = -1;
 	debugf("uninitializing client '%s'", client->name);
 	upnp_uninit(upnp);
-	pthread_mutex_lock(&client->mutex);
+	thread_mutex_lock(client->mutex);
 	client->running = 0;
-	pthread_cond_broadcast(&client->cond);
-	pthread_mutex_unlock(&client->mutex);
+	thread_cond_broadcast(client->cond);
+	thread_mutex_unlock(client->mutex);
 	debugf("waiting for timer thread to finish");
-	pthread_mutex_lock(&client->mutex);
+	thread_mutex_lock(client->mutex);
 	while (client->timer_running != 0) {
-		pthread_cond_wait(&client->cond, &client->mutex);
+		thread_cond_wait(client->cond, client->mutex);
 	}
 	debugf("joining timer thread");
-	pthread_join(client->timer_thread, NULL);
+	thread_join(client->timer_thread);
 	list_for_each_entry_safe(device, devicen, &client->devices, head) {
 		list_del(&device->head);
 		client_device_uninit(device);
 	}
 	debugf("unregistering client '%s'", client->name);
-	pthread_mutex_unlock(&client->mutex);
-	pthread_cond_destroy(&client->cond);
-	pthread_mutex_destroy(&client->mutex);
+	thread_mutex_unlock(client->mutex);
+	thread_cond_destroy(client->cond);
+	thread_mutex_destroy(client->mutex);
 	debugf("uninitialized client '%s'", client->name);
 	return 0;
 }
@@ -468,7 +477,7 @@ int client_refresh (client_t *client, int remove)
 	client_device_t *device;
 	client_device_t *devicen;
 	ret = 0;
-	pthread_mutex_lock(&client->mutex);
+	thread_mutex_lock(client->mutex);
 	debugf("refreshing device list");
 	if (remove != 0) {
 		debugf("cleaning device list");
@@ -491,7 +500,7 @@ int client_refresh (client_t *client, int remove)
 		debugf("error sending search request for %s", "upnp:rootdevice");
 	}
 #endif
-	pthread_mutex_unlock(&client->mutex);
+	thread_mutex_unlock(client->mutex);
 	return ret;
 }
 
@@ -507,14 +516,14 @@ IXML_Document * client_action (client_t *client, char *devicename, char *service
 	response = NULL;
 	actionNode = NULL;
 
-	pthread_mutex_lock(&client->mutex);
+	thread_mutex_lock(client->mutex);
 	list_for_each_entry(device, &client->devices, head) {
 		if (strcmp(device->name, devicename) == 0) {
 			goto found_device;
 		}
 	}
 	debugf("could not find device");
-	pthread_mutex_unlock(&client->mutex);
+	thread_mutex_unlock(client->mutex);
 	return NULL;
 
 found_device:
@@ -524,7 +533,7 @@ found_device:
 		}
 	}
 	debugf("could not find service");
-	pthread_mutex_unlock(&client->mutex);
+	thread_mutex_unlock(client->mutex);
 	return NULL;
 
 found_service:
@@ -532,10 +541,10 @@ found_service:
 	response = upnp_makeaction(upnp, actionname, service->controlurl, service->type, param_count, param_name, param_val);
 	if (response == NULL) {
 		debugf("upnp_makeaction() failed");
-		pthread_mutex_unlock(&client->mutex);
+		thread_mutex_unlock(client->mutex);
 		return NULL;
 	}
-	pthread_mutex_unlock(&client->mutex);
+	thread_mutex_unlock(client->mutex);
 
 	return response;
 }

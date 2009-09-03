@@ -1,0 +1,14 @@
+#include "*/*.proj"
+
+CON upnpd
+{
+  USE upnpd_platform
+  USE upnpd_common
+  USE upnpd_controller
+  USE upnpd_mediaserver
+  
+  EXPINCLUDE .
+  
+  SOURCE upnpd.c
+  HEADER upnpd.h
+}

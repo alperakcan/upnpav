@@ -1,0 +1,16 @@
+IF ENABLE_CONTROLLER
+LIB upnpd_controller
+{
+  INCLUDE ../
+  
+  USE upnpd_common
+  
+  SOURCE controller.c
+  SOURCE console.c
+
+  HEADER controller.h
+
+  LIBS(HAVE_LIBREADLINE) readline
+  LIBS(HAVE_LIBREADLINE) termcap
+}
+ENDIF

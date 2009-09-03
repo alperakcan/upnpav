@@ -1,0 +1,26 @@
+IF ENABLE_UPNPFS
+CON upnpfs
+{
+  USE upnpd_common
+  USE upnpd_platform
+
+  EXPINCLUDE .
+  
+  SOURCE do_findpath.c
+  SOURCE op_access.c
+  SOURCE op_destroy.c
+  SOURCE op_getattr.c
+  SOURCE op_init.c
+  SOURCE op_open.c
+  SOURCE op_opendir.c
+  SOURCE op_read.c
+  SOURCE op_readdir.c
+  SOURCE op_release.c
+  SOURCE upnpfs.c
+
+  HEADER upnpfs.h
+  
+  LIBS fuse
+  INCLUDE /usr/local/include
+}
+ENDIF

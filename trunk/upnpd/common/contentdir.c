@@ -1,28 +1,39 @@
-/***************************************************************************
-    begin                : Sun Jun 01 2008
-    copyright            : (C) 2008 - 2009 by Alper Akcan
-    email                : alper.akcan@gmail.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU Lesser General Public License as        *
- *   published by the Free Software Foundation; either version 2.1 of the  *
- *   License, or (at your option) any later version.                       *
- *                                                                         *
- ***************************************************************************/
+/*
+ * upnpavd - UPNP AV Daemon
+ *
+ * Copyright (C) 2009 Alper Akcan, alper.akcan@gmail.com
+ * Copyright (C) 2009 CoreCodec, Inc., http://www.CoreCodec.com
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * Any non-LGPL usage of this software or parts of this software is strictly
+ * forbidden.
+ *
+ * Commercial non-LGPL licensing of this software is possible.
+ * For more info contact CoreCodec through info@corecodec.com
+ */
 
 #include <config.h>
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <inttypes.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
-#include <fcntl.h>
+#include <inttypes.h>
+#include <unistd.h>
 
+#include "platform.h"
 #include "gena.h"
 #include "upnp.h"
 #include "common.h"
@@ -289,7 +300,7 @@ static service_action_t *contentdirectory_actions[] = {
 static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_t *info)
 {
 	entry_t *entry;
-	struct stat stbuf;
+	file_stat_t stat;
 	const char *ename;
 	contentdir_t *contentdir;
 	debugf("contentdirectory_vfsgetinfo '%s'", path);
@@ -306,9 +317,10 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 		return -1;
 	}
 	debugf("entry path is '%s'", entry->path);
-	if (access(entry->path, R_OK) == 0 && stat(entry->path, &stbuf) == 0) {
-		info->size = stbuf.st_size;
-		info->mtime = stbuf.st_mtime;
+	if (file_access(entry->path, FILE_MODE_READ) == 0 &&
+	    file_stat(entry->path, &stat) == 0) {
+		info->size = stat.size;
+		info->mtime = stat.mtime;
 		info->mimetype = strdup(entry->mime);
 		entry_uninit(entry);
 		return 0;
@@ -320,8 +332,8 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 
 static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_t mode)
 {
-	file_t *file;
 	entry_t *entry;
+	upnp_file_t *file;
 	const char *ename;
 	contentdir_t *contentdir;
 	debugf("contentdirectory_vfsopen");
@@ -338,17 +350,17 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 		return NULL;
 	}
 	debugf("entry path is '%s'", entry->path);
-	file = (file_t *) malloc(sizeof(file_t));
+	file = (upnp_file_t *) malloc(sizeof(upnp_file_t));
 	if (file == NULL) {
 		debugf("malloc failed");
 		entry_uninit(entry);
 		return NULL;
 	}
-	memset(file, 0, sizeof(file_t));
+	memset(file, 0, sizeof(upnp_file_t));
 	file->virtual = 0;
-	file->fd = open(entry->path, O_RDONLY);
+	file->file = file_open(entry->path, FILE_MODE_READ);
 	file->service = &contentdir->service;
-	if (file->fd < 0) {
+	if (file->file == NULL) {
 		debugf("open(%s, O_RDONLY); failed", ename);
 		free(file);
 		entry_uninit(entry);
@@ -360,12 +372,12 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 
 static int contentdirectory_vfsread (void *cookie, void *handle, char *buffer, unsigned int length)
 {
-	file_t *file;
+	upnp_file_t *file;
 	contentdir_t *contentdir;
 	debugf("contentdirectory_vfsread");
-	file = (file_t *) handle;
+	file = (upnp_file_t *) handle;
 	contentdir = (contentdir_t *) cookie;
-	return read(file->fd, buffer, length);
+	return file_read(file->file, buffer, length);
 }
 
 static int contentdirectory_vfswrite (void *cookie, void *handle, char *buffer, unsigned int length)
@@ -378,27 +390,27 @@ static int contentdirectory_vfswrite (void *cookie, void *handle, char *buffer, 
 
 static unsigned long contentdirectory_vfsseek (void *cookie, void *handle, long offset, gena_seek_t whence)
 {
-	file_t *file;
+	upnp_file_t *file;
 	contentdir_t *contentdir;
 	debugf("contentdirectory_vfsseek");
-	file = (file_t *) handle;
+	file = (upnp_file_t *) handle;
 	contentdir = (contentdir_t *) cookie;
 	switch (whence) {
-		case GENA_SEEK_SET: return lseek(file->fd, offset, SEEK_SET);
-		case GENA_SEEK_CUR: return lseek(file->fd, offset, SEEK_CUR);
-		case GENA_SEEK_END: return lseek(file->fd, offset, SEEK_END);
+		case GENA_SEEK_SET: return file_seek(file->file, offset, FILE_SEEK_SET);
+		case GENA_SEEK_CUR: return file_seek(file->file, offset, FILE_SEEK_CUR);
+		case GENA_SEEK_END: return file_seek(file->file, offset, FILE_SEEK_END);
 	}
 	return -1;
 }
 
 static int contentdirectory_vfsclose (void *cookie, void *handle)
 {
-	file_t *file;
+	upnp_file_t *file;
 	contentdir_t *contentdir;
 	debugf("contentdirectory_vfsclose");
-	file = (file_t *) handle;
+	file = (upnp_file_t *) handle;
 	contentdir = (contentdir_t *) cookie;
-	close(file->fd);
+	file_close(file->file);
 	free(file);
 	return 0;
 }
