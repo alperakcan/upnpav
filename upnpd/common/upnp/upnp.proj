@@ -9,7 +9,6 @@ LIB upnpd_upnp
   SOURCE ssdp.c
   SOURCE upnp.c
   SOURCE uuid.c
-  SOURCE debug.c
 
   HEADER upnp.h
   HEADER ssdp.h

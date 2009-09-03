@@ -27,8 +27,6 @@
 
 #include "upnpfs.h"
 
-extern unsigned char upnp_debug;
-
 struct options_s opts;
 struct private_s priv;
 
@@ -193,7 +191,7 @@ static char * parse_mount_options (const char *orig_opts)
 				goto err_exit;
 			}
 			opts.debug = 1;
-			upnp_debug = 1;
+			platform_debug = 1;
 			strcat(ret, "debug,");
 		} else if (!strcmp(opt, "silent")) { /* keep silent */
 			if (val) {

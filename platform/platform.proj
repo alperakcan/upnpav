@@ -4,6 +4,7 @@ LIB upnpd_platform
   EXPINCLUDE .
 
   IF ENABLE_PLATFORM_POSIX
+  SOURCE posix/debug.c
   SOURCE posix/thread.c
   SOURCE posix/socket.c
   SOURCE posix/file.c

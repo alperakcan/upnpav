@@ -26,6 +26,7 @@
  */
 
 #include <config.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -33,7 +34,7 @@
 
 #include "platform.h"
 
-unsigned char upnp_debug = 0;
+int platform_debug = 0;
 
 void debug_debugf (char *file, int line, const char *func, char *fmt, ...)
 {
@@ -42,7 +43,7 @@ void debug_debugf (char *file, int line, const char *func, char *fmt, ...)
 	char *p;
 	va_list args;
 
-	if (upnp_debug == 0) {
+	if (platform_debug == 0) {
 		return;
 	}
 
@@ -76,3 +77,4 @@ void debug_debugf (char *file, int line, const char *func, char *fmt, ...)
 	return;
 err:	exit(1);
 }
+
