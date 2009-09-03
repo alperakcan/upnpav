@@ -39,7 +39,6 @@
 #include "platform.h"
 #include "gena.h"
 #include "upnp.h"
-#include "list.h"
 
 #ifndef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))

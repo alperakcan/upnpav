@@ -40,7 +40,6 @@
 #include "gena.h"
 #include "upnp.h"
 #include "ixml.h"
-#include "list.h"
 #include "uuid.h"
 
 #ifndef MAX

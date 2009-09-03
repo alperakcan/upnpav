@@ -37,7 +37,6 @@
 #include "ssdp.h"
 #include "gena.h"
 #include "upnp.h"
-#include "list.h"
 
 struct ssdp_s {
 	int started;
