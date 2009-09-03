@@ -43,7 +43,7 @@ void * op_init (struct fuse_conn_info *conn)
 	priv.controller = controller_init(priv.options);
 	if (priv.controller == NULL) {
 		debugfs("controller_init('%s') failed", priv.options);
-		exit(-1);
+		exit(-3);
 	}
 	list_init(&priv.cache);
 	priv.cache_size = opts.cache_size;
