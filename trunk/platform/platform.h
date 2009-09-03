@@ -50,13 +50,13 @@ int thread_cond_destroy (thread_cond_t *cond);
 #endif
 
 typedef enum {
-	SOCKET_DOMAIN_UNIX    = 0x00,
-	SOCKET_DOMAIN_INET    = 0x01,
+	SOCKET_DOMAIN_UNIX = 0x00,
+	SOCKET_DOMAIN_INET = 0x01,
 } socket_domain_t;
 
 typedef enum {
-	SOCKET_TYPE_STREAM  = 0x00,
-	SOCKET_TYPE_DGRAM   = 0x01,
+	SOCKET_TYPE_STREAM = 0x00,
+	SOCKET_TYPE_DGRAM  = 0x01,
 } socket_type_t;
 
 typedef enum {
