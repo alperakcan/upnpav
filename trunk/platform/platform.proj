@@ -9,6 +9,7 @@ LIB upnpd_platform
   SOURCE posix/file.c
   SOURCE posix/time.c
   SOURCE posix/rand.c
+  SOURCE posix/interface.c
   ENDIF
 
   HEADER platform.h

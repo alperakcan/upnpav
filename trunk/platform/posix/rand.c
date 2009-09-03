@@ -25,6 +25,8 @@
  * For more info contact CoreCodec through info@corecodec.com
  */
 
+#include <config.h>
+
 #include <stdlib.h>
 
 void rand_srand (unsigned int seed)

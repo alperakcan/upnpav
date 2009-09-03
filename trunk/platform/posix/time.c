@@ -25,6 +25,8 @@
  * For more info contact CoreCodec through info@corecodec.com
  */
 
+#include <config.h>
+
 #include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
