@@ -1,29 +1,39 @@
-/***************************************************************************
-    begin                : Sun Jun 01 2008
-    copyright            : (C) 2008 - 2009 by Alper Akcan
-    email                : alper.akcan@gmail.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU Lesser General Public License as        *
- *   published by the Free Software Foundation; either version 2.1 of the  *
- *   License, or (at your option) any later version.                       *
- *                                                                         *
- ***************************************************************************/
+/*
+ * upnpavd - UPNP AV Daemon
+ *
+ * Copyright (C) 2009 Alper Akcan, alper.akcan@gmail.com
+ * Copyright (C) 2009 CoreCodec, Inc., http://www.CoreCodec.com
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * Any non-LGPL usage of this software or parts of this software is strictly
+ * forbidden.
+ *
+ * Commercial non-LGPL licensing of this software is possible.
+ * For more info contact CoreCodec through info@corecodec.com
+ */
 
 #include <config.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fnmatch.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 #include <unistd.h>
 #include <time.h>
 
+#include "platform.h"
 #include "metadata.h"
 
 typedef struct metadata_info_s {
@@ -85,19 +95,19 @@ metadata_t * metadata_init (const char *path)
 {
 	char *p;
 	metadata_t *m;
-	struct stat stbuf;
+	file_stat_t stat;
 	struct tm modtime;
 	metadata_info_t **info;
 
-	if (access(path, R_OK) != 0) {
+	if (file_access(path, FILE_MODE_READ) != 0) {
 		return NULL;
 	}
-	if (stat(path, &stbuf) != 0) {
+	if (file_stat(path, &stat) != 0) {
 		return NULL;
 	}
 
 	m = NULL;
-	if (S_ISREG(stbuf.st_mode)) {
+	if (FILE_ISREG(stat.type)) {
 		m = (metadata_t *) malloc(sizeof(metadata_t));
 		if (m == NULL) {
 			return NULL;
@@ -108,14 +118,14 @@ metadata_t * metadata_init (const char *path)
 		p = strrchr(path, '/');
 		m->pathname = strdup(path);
 		m->basename = (p == NULL) ? strdup(path) : strdup(p + 1);
-		m->size = stbuf.st_size;
+		m->size = stat.size;
 		m->date = (char *) malloc(sizeof(char) * 30);
 		if (m->date != NULL) {
-			localtime_r(&stbuf.st_mtime, &modtime);
+			localtime_r(&stat.mtime, &modtime);
 			strftime(m->date, 30, "%F %T", &modtime);
 		}
 		for (info = metadata_info; *info != NULL; info++) {
-			if (fnmatch((*info)->extension, m->basename, FNM_CASEFOLD) == 0) {
+			if (file_match((*info)->extension, m->basename, FILE_MATCH_CASEFOLD) == 0) {
 				m->type = (*info)->type;
 				m->mimetype = strdup((*info)->mimetype);
 				break;
@@ -132,7 +142,7 @@ metadata_t * metadata_init (const char *path)
 			goto error;
 		}
 		return m;
-	} else if (S_ISDIR(stbuf.st_mode)) {
+	} else if (FILE_ISDIR(stat.type)) {
 		m = (metadata_t *) malloc(sizeof(metadata_t));
 		if (m == NULL) {
 			return NULL;
@@ -143,7 +153,7 @@ metadata_t * metadata_init (const char *path)
 		p = strrchr(path, '/');
 		m->pathname = strdup(path);
 		m->basename = (p == NULL) ? strdup(path) : strdup(p + 1);
-		m->size = stbuf.st_size;
+		m->size = stat.size;
 		if (m->pathname == NULL ||
 		    m->basename == NULL) {
 			goto error;

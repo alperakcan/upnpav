@@ -1,33 +1,35 @@
-/**
- * Copyright (c) 2009 Alper Akcan <alper.akcan@gmail.com>
+/*
+ * upnpavd - UPNP AV Daemon
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2009 Alper Akcan, alper.akcan@gmail.com
+ * Copyright (C) 2009 CoreCodec, Inc., http://www.CoreCodec.com
  *
- * This program is distributed in the hope that it will be useful,
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program (in the main directory of the fuse-ext2
- * distribution in the file COPYING); if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * Any non-LGPL usage of this software or parts of this software is strictly
+ * forbidden.
+ *
+ * Commercial non-LGPL licensing of this software is possible.
+ * For more info contact CoreCodec through info@corecodec.com
  */
 
+#include "upnpfs.h"
+
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <poll.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <ctype.h>
 #include <assert.h>
-
-#include "upnpfs.h"
 
 typedef struct upnpfs_http_s {
 	upnp_url_t url;
@@ -38,7 +40,7 @@ typedef struct upnpfs_http_s {
 	unsigned int lines_count;
 	unsigned int offset;
 	unsigned int size;
-	int file;
+	socket_t *socket;
 	int code;
 	int seek;
 } upnpfs_http_t;
@@ -48,18 +50,15 @@ static int http_read (upnpfs_http_t *http, char *buffer, unsigned int size)
 	int r;
 	int t;
 	int rc;
-	struct pollfd pfd;
+	socket_event_t presult;
 	t = 0;
 	while (t != size) {
-		memset(&pfd, 0, sizeof(struct pollfd));
-		pfd.fd = http->file;
-		pfd.events = POLLIN;
-		rc = poll(&pfd, 1, 1000);
-		if (rc <= 0 || pfd.revents != POLLIN) {
+		rc = socket_poll(http->socket, SOCKET_EVENT_IN, &presult, 1000);
+		if (rc <= 0 || presult != SOCKET_EVENT_IN) {
 			debugfs("poll() %d failed", rc);
 			return 0;
 		}
-		r = recv(pfd.fd, buffer + t, size - t, 0);
+		r = socket_recv(http->socket, buffer + t, size - t);
 		if (r <= 0) {
 			debugfs("recv() failed");
 			break;
@@ -74,18 +73,15 @@ static int http_write (upnpfs_http_t *http, char *buffer, unsigned int size)
 	int s;
 	int t;
 	int rc;
-	struct pollfd pfd;
+	socket_event_t presult;
 	t = 0;
 	while (t != size) {
-		memset(&pfd, 0, sizeof(struct pollfd));
-		pfd.fd = http->file;
-		pfd.events = POLLOUT;
-		rc = poll(&pfd, 1, 1000);
-		if (rc <= 0 || pfd.revents != POLLOUT) {
+		rc = socket_poll(http->socket, SOCKET_EVENT_OUT, &presult, 1000);
+		if (rc <= 0 || presult != SOCKET_EVENT_OUT) {
 			debugfs("poll() failed");
 			return 0;
 		}
-		s = send(pfd.fd, buffer + t, size - t, 0);
+		s = socket_send(http->socket, buffer + t, size - t);
 		if (s <= 0) {
 			debugfs("send() failed");
 			break;
@@ -95,24 +91,21 @@ static int http_write (upnpfs_http_t *http, char *buffer, unsigned int size)
 	return t;
 }
 
-static int http_getline (int fd, int timeout, char *buf, int buflen)
+static int http_getline (socket_t *socket, int timeout, char *buf, int buflen)
 {
-	int rc;
-	struct pollfd pfd;
-	int count = 0;
 	char c;
+	int rc;
+	int count;
+	socket_event_t presult;
 
-	memset(&pfd, 0, sizeof(struct pollfd));
-	pfd.fd = fd;
-	pfd.events = POLLIN;
-
-	rc = poll(&pfd, 1, timeout);
-	if (rc <= 0 || pfd.revents != POLLIN) {
+	count = 0;
+	rc = socket_poll(socket, SOCKET_EVENT_IN, &presult, timeout);
+	if (rc <= 0 || presult != SOCKET_EVENT_IN) {
 		return 0;
 	}
 
 	while (1) {
-		if (recv(pfd.fd, &c, 1, MSG_DONTWAIT) <= 0) {
+		if (socket_recv(socket, &c, 1) <= 0) {
 			break;
 		}
 		buf[count] = c;
@@ -136,10 +129,10 @@ static int http_close (upnpfs_http_t *http)
 	http->lines = NULL;
 	free(http->buffer);
 	http->buffer = NULL;
-	if (http->file >= 0) {
-		close(http->file);
+	if (http->socket != NULL) {
+		socket_close(http->socket);
 	}
-	http->file = -1;
+	http->socket = NULL;
 	http->buffer_length =  0;
 	http->lines_length = 0;
 	http->size = 0;
@@ -212,11 +205,6 @@ static int http_open (upnpfs_http_t *http, unsigned int offset)
 {
 	int err;
 	int line;
-	struct sockaddr_in server;
-
-	server.sin_family = AF_INET;
-	server.sin_addr.s_addr = inet_addr(http->url.host);
-	server.sin_port = htons(http->url.port);
 
 	http->lines = NULL;
 	http->buffer = NULL;
@@ -229,12 +217,12 @@ static int http_open (upnpfs_http_t *http, unsigned int offset)
 	http->code = 0;
 	http->seek = 0;
 
-	http->file = socket(AF_INET, SOCK_STREAM, 0);
-	if (http->file < 0) {
+	http->socket = socket_open(SOCKET_DOMAIN_INET, SOCKET_TYPE_STREAM);
+	if (http->socket == NULL) {
 		debugfs("socket() failed");
 		goto error;
 	}
-	if (connect(http->file, (struct sockaddr *) &server, sizeof(server)) == -1) {
+	if (socket_connect(http->socket, http->url.host, http->url.port, 10000) < 0) {
 		debugfs("connect() failed");
 		goto error;
 	}
@@ -267,7 +255,7 @@ static int http_open (upnpfs_http_t *http, unsigned int offset)
 
 	line = 0;
 	while (1) {
-		if (http_getline(http->file, 1000, http->lines, http->lines_length) <= 0) {
+		if (http_getline(http->socket, 1000, http->lines, http->lines_length) <= 0) {
 			break;
 		}
         	err = http_process(http, http->lines, line);
@@ -295,7 +283,7 @@ int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse
 	entry_t *e;
 	upnpfs_http_t h;
 	upnpfs_file_t *f;
-	debugfs("enter");
+	debugfs("enter (fi: %p)", fi);
 	f = (upnpfs_file_t *) (unsigned long) fi->fh;
 	if (f->metadata == 1) {
 		e = controller_browse_metadata(priv.controller, f->cache->device, f->cache->object);

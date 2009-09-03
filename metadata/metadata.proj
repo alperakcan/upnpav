@@ -1,0 +1,10 @@
+LIB upnpd_metadata
+{
+  USE upnpd_platform
+
+  EXPINCLUDE .
+
+  SOURCE metadata.c
+  SOURCE snapshot.c
+  HEADER metadata.h
+}

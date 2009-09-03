@@ -1,23 +1,35 @@
-/***************************************************************************
-    begin                : Sun Jun 01 2008
-    copyright            : (C) 2008 - 2009 by Alper Akcan
-    email                : alper.akcan@gmail.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU Lesser General Public License as        *
- *   published by the Free Software Foundation; either version 2.1 of the  *
- *   License, or (at your option) any later version.                       *
- *                                                                         *
- ***************************************************************************/
+/*
+ * upnpavd - UPNP AV Daemon
+ *
+ * Copyright (C) 2009 Alper Akcan, alper.akcan@gmail.com
+ * Copyright (C) 2009 CoreCodec, Inc., http://www.CoreCodec.com
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * Any non-LGPL usage of this software or parts of this software is strictly
+ * forbidden.
+ *
+ * Commercial non-LGPL licensing of this software is possible.
+ * For more info contact CoreCodec through info@corecodec.com
+ */
 
 #ifndef COMMON_H_
 #define COMMON_H_
 
 typedef struct list_s list_t;
-typedef struct file_s file_t;
+typedef struct upnp_file_s upnp_file_t;
 typedef struct entry_s entry_t;
 typedef struct client_s client_t;
 typedef struct device_s device_t;
@@ -42,13 +54,13 @@ struct list_s {
 
 /**
   */
-struct file_s {
+struct upnp_file_s {
 	/** */
 	int virtual;
 	/** service info, show */
 	device_service_t *service;
 	/** file descriptor, only for real files */
-	int fd;
+	file_t *file;
 	/** buffer size, only for virtual files */
 	size_t size;
 	/** buffer offset, only for virtual files */
@@ -413,11 +425,11 @@ struct client_s {
 	/** */
 	int running;
 	/** */
-	pthread_mutex_t mutex;
+	thread_mutex_t *mutex;
 	/** */
-	pthread_cond_t cond;
+	thread_cond_t *cond;
 	/** */
-	pthread_t timer_thread;
+	thread_t *timer_thread;
 	/** */
 	int timer_running;
 	/** */
@@ -453,7 +465,7 @@ struct device_service_s {
 	int (*uninit) (device_service_t *service);
 
         /** */
-	pthread_mutex_t mutex;
+	thread_mutex_t *mutex;
 	/** */
 	char *description;
 	/** */
@@ -496,7 +508,7 @@ struct device_s {
 	device_service_t **services;
 
 	/** */
-	pthread_mutex_t mutex;
+	thread_mutex_t *mutex;
 	/** */
 	char *ipaddress;
 	/** */

@@ -2,7 +2,7 @@
 AC_INIT([upnpd], [0.0.2], [upnpd@alperakcan.org])
 AC_CANONICAL_TARGET
 
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+#AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_HEADER([config.h])
 
 # Initialize config.h
@@ -238,6 +238,29 @@ fi
 # Check extra parameters
 #
 
+AC_ARG_ENABLE([platform],
+[  --enable-platform=[[platform]] platform can be one of [[posix (default),corec]]],
+if test "$enableval" = "posix"
+then
+	enable_platform_posix=yes
+	enable_platform_corec=no
+	AC_DEFINE(ENABLE_PLATFORM_POSIX, 1, [Define to 1 if you want 'posix' platform support.])
+elif test "$enableval" = "corec"
+then
+	enable_platform_corec=yes
+	enable_platform_posix=no
+	AC_DEFINE(ENABLE_PLATFORM_COREC, 1, [Define to 1 if you want 'corec' platform support.])
+else
+	enable_platform_posix=yes
+	enable_platform_corec=no
+	AC_DEFINE(ENABLE_PLATFORM_POSIX, 1, [Define to 1 if you want 'posix' platform support.])
+fi
+,
+enable_platform_posix=yes
+enable_platform_corec=no
+AC_DEFINE(ENABLE_PLATFORM_POSIX, 1, [Define to 1 if you want 'posix' platform support.])
+)
+
 AC_ARG_ENABLE([controller],
 [  --disable-controller    disable controller application [[default=yes]]],
 if test "$enableval" = "no"
@@ -317,16 +340,16 @@ AM_CONDITIONAL(ENABLE_OPTIONAL, test "$enable_optional" = "yes")
 # Create files
 #
 
-AC_CONFIG_FILES([
-	Makefile
-	ixml/Makefile
-	metadata/Makefile
-	upnpd/Makefile
-	upnpd/common/Makefile
-	upnpd/common/upnp/Makefile
-	upnpd/controller/Makefile
-	upnpd/mediaserver/Makefile
-	upnpfs/Makefile
-])
+#AC_CONFIG_FILES([
+#	Makefile
+#	ixml/Makefile
+#	metadata/Makefile
+#	upnpd/Makefile
+#	upnpd/common/Makefile
+#	upnpd/common/upnp/Makefile
+#	upnpd/controller/Makefile
+#	upnpd/mediaserver/Makefile
+#	upnpfs/Makefile
+#])
 
 AC_OUTPUT

@@ -1,17 +1,29 @@
-/***************************************************************************
-    begin                : Mon Mar 02 2009
-    copyright            : (C) 2009 by Alper Akcan
-    email                : alper.akcan@gmail.com
- ***************************************************************************/
-
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU Lesser General Public License as        *
- *   published by the Free Software Foundation; either version 2.1 of the  *
- *   License, or (at your option) any later version.                       *
- *                                                                         *
- ***************************************************************************/
+/*
+ * upnpavd - UPNP AV Daemon
+ *
+ * Copyright (C) 2009 Alper Akcan, alper.akcan@gmail.com
+ * Copyright (C) 2009 CoreCodec, Inc., http://www.CoreCodec.com
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * Any non-LGPL usage of this software or parts of this software is strictly
+ * forbidden.
+ *
+ * Commercial non-LGPL licensing of this software is possible.
+ * For more info contact CoreCodec through info@corecodec.com
+ */
 
 #include <config.h>
 
@@ -19,14 +31,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include <pthread.h>
+#include <inttypes.h>
 
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <sys/poll.h>
 #include <signal.h>
 
+#include "platform.h"
 #include "ssdp.h"
 #include "gena.h"
 #include "upnp.h"
@@ -34,8 +43,12 @@
 #include "list.h"
 #include "uuid.h"
 
+#ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#endif
+#ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif
 
 #define UPNP_SUBSCRIPTION_MAX 100
 
@@ -118,7 +131,7 @@ struct upnp_s {
 		upnp_device_t device;
 		upnp_client_t client;
 	} type;
-	pthread_mutex_t mutex;
+	thread_mutex_t *mutex;
 	gena_callbacks_t gena_callbacks;
 	gena_callback_vfs_t *vfscallbacks;
 };
@@ -129,19 +142,19 @@ static int gena_callback_info (void *cookie, char *path, gena_fileinfo_t *info)
 	upnp_t *upnp;
 	ret = -1;
 	upnp = (upnp_t *) cookie;
-	pthread_mutex_lock(&upnp->mutex);
+	thread_mutex_lock(upnp->mutex);
 	if (strcmp(path, "/description.xml") == 0) {
 		info->size = strlen(upnp->type.device.description);
 		info->mtime = 0;
 		info->mimetype = strdup("text/xml");
-		pthread_mutex_unlock(&upnp->mutex);
+		thread_mutex_unlock(upnp->mutex);
 		return 0;
 	}
 	if (upnp->vfscallbacks != NULL &&
 	    upnp->vfscallbacks->info != NULL) {
 		ret = upnp->vfscallbacks->info(upnp->vfscallbacks->cookie, path, info);
 	}
-	pthread_mutex_unlock(&upnp->mutex);
+	thread_mutex_unlock(upnp->mutex);
 	return ret;
 }
 
@@ -152,7 +165,7 @@ static void * gena_callback_open (void *cookie, char *path, gena_filemode_t mode
 	upnp = (upnp_t *) cookie;
 	file = (gena_file_t *) malloc(sizeof(gena_file_t));
 	memset(file, 0, sizeof(gena_file_t));
-	pthread_mutex_lock(&upnp->mutex);
+	thread_mutex_lock(upnp->mutex);
 	if (strcmp(path, "/description.xml") == 0) {
 		file->virtual = 1;
 		file->size = strlen(upnp->type.device.description);
@@ -161,7 +174,7 @@ static void * gena_callback_open (void *cookie, char *path, gena_filemode_t mode
 			free(file);
 			file = NULL;
 		}
-		pthread_mutex_unlock(&upnp->mutex);
+		thread_mutex_unlock(upnp->mutex);
 		return file;
 	}
 	if (upnp->vfscallbacks != NULL &&
@@ -171,10 +184,10 @@ static void * gena_callback_open (void *cookie, char *path, gena_filemode_t mode
 			free(file);
 			file = NULL;
 		}
-		pthread_mutex_unlock(&upnp->mutex);
+		thread_mutex_unlock(upnp->mutex);
 		return file;
 	}
-	pthread_mutex_unlock(&upnp->mutex);
+	thread_mutex_unlock(upnp->mutex);
 	return NULL;
 }
 
@@ -343,7 +356,7 @@ int upnp_accept_subscription (upnp_t *upnp, const char *udn, const char *service
 		"SID: %s\r\n"
 		"SEQ: %u\r\n"
 		"\r\n";
-	pthread_mutex_lock(&upnp->mutex);
+	thread_mutex_lock(upnp->mutex);
 	list_for_each_entry(s, &upnp->type.device.services, head) {
 		if (strcmp(s->serviceid, serviceid) == 0 &&
 		    strcmp(s->udn, udn) == 0) {
@@ -385,7 +398,7 @@ found:
 	free(header);
 	free(propset);
 out:
-	pthread_mutex_unlock(&upnp->mutex);
+	thread_mutex_unlock(upnp->mutex);
 	return 0;
 }
 
@@ -423,6 +436,7 @@ int upnp_url_parse (const char *uri, upnp_url_t *url)
 	char *i;
 	char *p;
 	char *e;
+	memset(url, 0, sizeof(upnp_url_t));
 	url->url = strdup(uri);
 	if (url->url == NULL) {
 		return -1;
@@ -471,7 +485,7 @@ static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subsc
 	upnp_subscribe_t *c;
 	ret = -1;
 	debugf("enter");
-	pthread_mutex_lock(&upnp->mutex);
+	thread_mutex_lock(upnp->mutex);
 	list_for_each_entry(s, &upnp->type.device.services, head) {
 		debugf("eventurl: %s", s->eventurl);
 		if (strcmp(subscribe->path, s->eventurl) == 0) {
@@ -481,9 +495,8 @@ static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subsc
 				goto out;
 			}
 			memset(c, 0, sizeof(upnp_subscribe_t));
-			uuid_generate(uuid);
-			sprintf(c->sid, "uuid:");
-			uuid_unparse_lower(uuid, c->sid + strlen(c->sid));
+			uuid_generate(&uuid);
+			sprintf(c->sid, "uuid:%s", uuid.uuid);
 			subscribe->sid = strdup(c->sid);
 			if (subscribe->sid == NULL) {
 				free(c);
@@ -500,7 +513,7 @@ static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subsc
 			goto out;
 		}
 	}
-out:	pthread_mutex_unlock(&upnp->mutex);
+out:	thread_mutex_unlock(upnp->mutex);
 	debugf("ret: %d", ret);
 	return ret;
 }
@@ -512,7 +525,7 @@ static int gena_callback_event_subscribe_accept (upnp_t *upnp, gena_event_subscr
 	upnp_service_t *s;
 	ret = -1;
 	debugf("enter");
-	pthread_mutex_lock(&upnp->mutex);
+	thread_mutex_lock(upnp->mutex);
 	list_for_each_entry(s, &upnp->type.device.services, head) {
 		if (strcmp(subscribe->path, s->eventurl) == 0) {
 			memset(&e, 0, sizeof(upnp_event_t));
@@ -520,16 +533,16 @@ static int gena_callback_event_subscribe_accept (upnp_t *upnp, gena_event_subscr
 			e.event.subscribe.serviceid = s->serviceid;
 			e.event.subscribe.udn = s->udn;
 			e.event.subscribe.sid = subscribe->sid;
-			pthread_mutex_unlock(&upnp->mutex);
+			thread_mutex_unlock(upnp->mutex);
 			if (upnp->type.device.callback != NULL) {
 				upnp->type.device.callback(upnp->type.device.cookie, &e);
 			}
-			pthread_mutex_lock(&upnp->mutex);
+			thread_mutex_lock(upnp->mutex);
 			ret = 0;
 			goto out;
 		}
 	}
-out:	pthread_mutex_unlock(&upnp->mutex);
+out:	thread_mutex_unlock(upnp->mutex);
 	debugf("ret: %d", ret);
 	return ret;
 }
@@ -540,7 +553,7 @@ static int gena_callback_event_subscribe_renew (upnp_t *upnp, gena_event_subscri
 	upnp_service_t *s;
 	upnp_subscribe_t *c;
 	ret = -1;
-	pthread_mutex_lock(&upnp->mutex);
+	thread_mutex_lock(upnp->mutex);
 	list_for_each_entry(s, &upnp->type.device.services, head) {
 		if (strcmp(subscribe->path, s->eventurl) == 0) {
 			list_for_each_entry(c, &s->subscribers, head) {
@@ -551,7 +564,7 @@ static int gena_callback_event_subscribe_renew (upnp_t *upnp, gena_event_subscri
 			}
 		}
 	}
-out:	pthread_mutex_unlock(&upnp->mutex);
+out:	thread_mutex_unlock(upnp->mutex);
 	return -1;
 }
 
@@ -560,7 +573,7 @@ static int gena_callback_event_subscribe_drop (upnp_t *upnp, gena_event_unsubscr
 	upnp_service_t *s;
 	upnp_subscribe_t *c;
 	upnp_subscribe_t *cn;
-	pthread_mutex_lock(&upnp->mutex);
+	thread_mutex_lock(upnp->mutex);
 	list_for_each_entry(s, &upnp->type.device.services, head) {
 		if (strcmp(unsubscribe->path, s->eventurl) == 0) {
 			list_for_each_entry_safe(c, cn, &s->subscribers, head) {
@@ -574,7 +587,7 @@ static int gena_callback_event_subscribe_drop (upnp_t *upnp, gena_event_unsubscr
 			}
 		}
 	}
-	pthread_mutex_unlock(&upnp->mutex);
+	thread_mutex_unlock(upnp->mutex);
 	return 0;
 }
 
@@ -611,7 +624,7 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 		"</s:Envelope>\n";
 
 	ret = -1;
-	pthread_mutex_lock(&upnp->mutex);
+	thread_mutex_lock(upnp->mutex);
 	list_for_each_entry(s, &upnp->type.device.services, head) {
 		if (strcmp(action->path, s->controlurl) == 0) {
 			memset(&e, 0, sizeof(upnp_event_t));
@@ -624,7 +637,7 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 			}
 			e.event.action.serviceid = s->serviceid;
 			e.event.action.udn = s->udn;
-			pthread_mutex_unlock(&upnp->mutex);
+			thread_mutex_unlock(upnp->mutex);
 			if (upnp->type.device.callback != NULL) {
 				upnp->type.device.callback(upnp->type.device.cookie, &e);
 			}
@@ -645,12 +658,12 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 			}
 			ixmlDocument_free(e.event.action.request);
 			ixmlDocument_free(e.event.action.response);
-			pthread_mutex_lock(&upnp->mutex);
+			thread_mutex_lock(upnp->mutex);
 			ret = 0;
 			goto out;
 		}
 	}
-out:	pthread_mutex_unlock(&upnp->mutex);
+out:	thread_mutex_unlock(upnp->mutex);
 	return ret;
 }
 
@@ -724,9 +737,9 @@ static int ssdp_callback_event (void *cookie, ssdp_event_t *event)
 int upnp_advertise (upnp_t *upnp)
 {
 	int rc;
-	pthread_mutex_lock(&upnp->mutex);
+	thread_mutex_lock(upnp->mutex);
 	rc = ssdp_advertise(upnp->ssdp);
-	pthread_mutex_unlock(&upnp->mutex);
+	thread_mutex_unlock(upnp->mutex);
 	return rc;
 }
 
@@ -758,11 +771,11 @@ static char * upnp_ixml_getfirstelementitem (IXML_Element *element, const char *
 
 int upnp_register_client (upnp_t *upnp, int (*callback) (void *cookie, upnp_event_t *), void *cookie)
 {
-	pthread_mutex_lock(&upnp->mutex);
+	thread_mutex_lock(upnp->mutex);
 	upnp->type.type = UPNP_TYPE_CLIENT;
 	upnp->type.client.callback = callback;
 	upnp->type.client.cookie = cookie;
-	pthread_mutex_unlock(&upnp->mutex);
+	thread_mutex_unlock(upnp->mutex);
 	return 0;
 }
 
@@ -794,25 +807,25 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 
 	upnp_service_t *service;
 
-	pthread_mutex_lock(&upnp->mutex);
+	thread_mutex_lock(upnp->mutex);
 	upnp->type.type = UPNP_TYPE_DEVICE;
 	list_init(&upnp->type.device.services);
 	upnp->type.device.description = strdup(description);
 	upnp->type.device.callback = callback;
 	upnp->type.device.cookie = cookie;
 	if (upnp->type.device.description == NULL) {
-		pthread_mutex_unlock(&upnp->mutex);
+		thread_mutex_unlock(upnp->mutex);
 		return -1;
 	}
 	if (asprintf(&upnp->type.device.location, "http://%s:%d/description.xml", upnp->host, upnp->port) < 0) {
 		free(upnp->type.device.description);
-		pthread_mutex_unlock(&upnp->mutex);
+		thread_mutex_unlock(upnp->mutex);
 		return -1;
 	}
 
 	rc = ixmlParseBufferEx(description, &desc);
 	if (rc != IXML_SUCCESS) {
-		pthread_mutex_unlock(&upnp->mutex);
+		thread_mutex_unlock(upnp->mutex);
 		return -1;
 	}
 
@@ -923,7 +936,7 @@ _continue:
 	ixmlNodeList_free(devicelist);
 	ixmlDocument_free(desc);
 
-	pthread_mutex_unlock(&upnp->mutex);
+	thread_mutex_unlock(upnp->mutex);
 	return 0;
 }
 
@@ -940,6 +953,8 @@ unsigned short upnp_getport (upnp_t *upnp)
 upnp_t * upnp_init (const char *host, const unsigned short port, gena_callback_vfs_t *vfscallbacks, void *vfscookie)
 {
 	upnp_t *upnp;
+	debugf("setting seed\n");
+	rand_srand(time(NULL));
 	debugf("ignoring sigpipe signal");
 	signal(SIGPIPE, SIG_IGN);
 	debugf("initializing upnp stack");
@@ -986,7 +1001,7 @@ upnp_t * upnp_init (const char *host, const unsigned short port, gena_callback_v
 	}
 	upnp->port = gena_getport(upnp->gena);
 
-	pthread_mutex_init(&upnp->mutex, NULL);
+	upnp->mutex = thread_mutex_init();
 
 	return upnp;
 }
@@ -1024,7 +1039,7 @@ int upnp_uninit (upnp_t *upnp)
 		free(upnp->type.device.description);
 		free(upnp->type.device.location);
 	}
-	pthread_mutex_destroy(&upnp->mutex);
+	thread_mutex_destroy(upnp->mutex);
 	free(upnp->host);
 	free(upnp);
 	return 0;
@@ -1117,9 +1132,9 @@ IXML_Document * upnp_makeaction (upnp_t *upnp, const char *actionname, const cha
 int upnp_search (upnp_t *upnp, int timeout, const char *uuid)
 {
 	int ret;
-	pthread_mutex_lock(&upnp->mutex);
+	thread_mutex_lock(upnp->mutex);
 	ret = ssdp_search(upnp->ssdp, uuid, timeout);
-	pthread_mutex_unlock(&upnp->mutex);
+	thread_mutex_unlock(upnp->mutex);
 	return 0;
 }
 

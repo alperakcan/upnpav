@@ -2,24 +2,43 @@
 Basic upnp av deamon including server, renderer, and controller based on UPNP
 Forum specs v 1.0
 
-Alper Akcan.
+- Simple build (gcc linux)
 
+# ./autogen.sh
+# ./configure
+# coremake -v gcc_linux
+# make
 
-- MIPS - uCLinux Configuration;
+- Simple build (osx xcode)
 
-./autogen.sh
+# ./autogen.sh
+# ./configure
+# coremake -v xcode_uni
+# xcodebuild -alltargets
 
-mkdir -p build
-cd build
-ac_cv_func_malloc_0_nonnull=yes ../configure --host=mips-linux-uclibc --disable-controller --enable-mediaserver
-make -s
+executable will be under release directory.
 
-./upnpd/upnpd
+- MIPS - uCLinux Configuration
 
+# ./autogen.sh
+# ac_cv_func_malloc_0_nonnull=yes ./configure --host=mips-linux-uclibc
 
-- simple run
+- Simple run
 
-# route add -net 239.0.0.0 netmask 255.0.0.0 eth0
+linux# route add -net 239.0.0.0 netmask 255.0.0.0 eth0
+macos# route add -net 239.0.0.0 -netmask 255.0.0.0 -interface en0
 
 # upnpd -d mediaserver -i eth0 -o directory=/path/to/share,friendlyname=friendlyname -v
 # upnpd -d controller -i eth0 -v
+
+# upnpfs /path/to/mount -i eth0 -o debug
+
+- Usefull parameters for configure
+
+--enable-platform=[posix,corec] [posix by default]
+--disable-mediaserver [enabled by default]
+--disable-controller [enabled by default]
+--disable-upnpfs [enabled by default]
+--enable-optional [disabled by default]
+
+Alper Akcan.

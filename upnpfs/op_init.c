@@ -1,25 +1,31 @@
-/**
- * Copyright (c) 2009 Alper Akcan <alper.akcan@gmail.com>
+/*
+ * upnpavd - UPNP AV Daemon
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2009 Alper Akcan, alper.akcan@gmail.com
+ * Copyright (C) 2009 CoreCodec, Inc., http://www.CoreCodec.com
  *
- * This program is distributed in the hope that it will be useful,
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program (in the main directory of the fuse-ext2
- * distribution in the file COPYING); if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * Any non-LGPL usage of this software or parts of this software is strictly
+ * forbidden.
+ *
+ * Commercial non-LGPL licensing of this software is possible.
+ * For more info contact CoreCodec through info@corecodec.com
  */
 
 #include "upnpfs.h"
-
-#include <pthread.h>
 
 void * op_init (struct fuse_conn_info *conn)
 {
@@ -41,7 +47,7 @@ void * op_init (struct fuse_conn_info *conn)
 	}
 	list_init(&priv.cache);
 	priv.cache_size = opts.cache_size;
-	pthread_mutex_init(&priv.cache_mutex, NULL);
+	priv.cache_mutex = thread_mutex_init();
 	free(ipaddr);
 	debugfs("leave");
 	return NULL;

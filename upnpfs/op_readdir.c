@@ -1,28 +1,38 @@
-/**
- * Copyright (c) 2009 Alper Akcan <alper.akcan@gmail.com>
+/*
+ * upnpavd - UPNP AV Daemon
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * Copyright (C) 2009 Alper Akcan, alper.akcan@gmail.com
+ * Copyright (C) 2009 CoreCodec, Inc., http://www.CoreCodec.com
  *
- * This program is distributed in the hope that it will be useful,
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program (in the main directory of the fuse-ext2
- * distribution in the file COPYING); if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * Any non-LGPL usage of this software or parts of this software is strictly
+ * forbidden.
+ *
+ * Commercial non-LGPL licensing of this software is possible.
+ * For more info contact CoreCodec through info@corecodec.com
  */
 
 #include "upnpfs.h"
 
-#include <pthread.h>
-
 int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
 {
+	int i;
+	int j;
+	int nd;
+	char **d;
 	char *p;
 	char *t;
 	char *pt;
@@ -35,14 +45,39 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 	filler(buffer, ".", NULL, 0);
 	filler(buffer, "..", NULL, 0);
 	if (strcmp(path, "/") == 0) {
-		pthread_mutex_lock(&priv.controller->mutex);
-		if (list_count(&priv.controller->devices) > 0) {
+		thread_mutex_lock(priv.controller->mutex);
+		if (list_count(&priv.controller->devices) <= 0) {
+			goto out;
+		}
+		d = (char **) malloc(sizeof(char *) * list_count(&priv.controller->devices));
+		if (d == NULL) {
+			thread_mutex_unlock(priv.controller->mutex);
+			goto out;
+		}
+		nd = 0;
+		list_for_each_entry(device, &priv.controller->devices, head) {
+			d[nd] = strdup(device->name);
+			if (d[nd] != NULL) {
+				nd++;
+			}
+		}
+		thread_mutex_unlock(priv.controller->mutex);
+
+		if (nd <= 0) {
+			goto out;
+		}
+		for (i = 0, j = 0; i < nd; i++) {
+			e = controller_browse_metadata(priv.controller, d[i], "0");
+			if (e != NULL) {
+				j++;
+				filler(buffer, d[i], NULL, 0);
+			}
+			free(d[i]);
+		}
+		free(d);
+		if (j > 0) {
 			filler(buffer, ".devices", NULL, 0);
 		}
-		list_for_each_entry(device, &priv.controller->devices, head) {
-			filler(buffer, device->name, NULL, 0);
-		}
-		pthread_mutex_unlock(&priv.controller->mutex);
 	} else if (((t = strstr(path, "/.metadata")) != NULL) &&
 		   (strcmp(t, "/.metadata") == 0)) {
 		p = strdup(path);
@@ -103,6 +138,7 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 		do_releasecache(c);
 		entry_uninit(r);
 	}
+out:
 	debugfs("leave");
 	return 0;
 }
