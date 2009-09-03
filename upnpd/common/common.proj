@@ -11,6 +11,7 @@ LIB upnpd_common
   EXPINCLUDE .
 
   SOURCE entry.c
+  SOURCE client.c
   SOURCE device.c
   SOURCE upnp.c
   SOURCE connection.c
@@ -21,10 +22,7 @@ LIB upnpd_common
   SOURCE uri.c
   SOURCE sqlite3.c
   SOURCE(ENABLE_MEDIASERVER) mediaserver.c
-  IF ENABLE_CONTROLLER
-    SOURCE client.c
-    SOURCE controller.c
-  ENDIF
+  SOURCE(ENABLE_CONTROLLER) controller.c
   
   HEADER sqlite3.h
   HEADER common.h
