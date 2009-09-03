@@ -566,7 +566,7 @@ static int ssdp_advertise_send (const char *buffer, const char *address, int por
 	socket_option_multicastttl(sock, ssdp_ttl);
 	for (c = 0; c < 2; c++) {
 		rc = socket_sendto(sock, buffer, strlen(buffer), address, port);
-		usleep(ssdp_pause * 1000);
+		time_usleep(ssdp_pause * 1000);
 	}
 	socket_close(sock);
 	return 0;
@@ -686,7 +686,7 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 	for (t = 0; t < timeout; t++) {
 		ssdp_advertise_send(buffer, ssdp_ip, ssdp_port);
 		socket_sendto(sock, buffer, strlen(buffer), ssdp_ip, ssdp_port);
-		usleep(ssdp_pause * 1000);
+		time_usleep(ssdp_pause * 1000);
 	}
 	do {
 		ret = socket_poll(sock, SOCKET_EVENT_IN, &presult, ssdp_recv_timeout);

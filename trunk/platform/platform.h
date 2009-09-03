@@ -130,4 +130,6 @@ int file_close (file_t *file);
 void rand_srand (unsigned int seed);
 int rand_rand (void);
 
+void time_sleep (unsigned int secs);
+void time_usleep (unsigned int usecs);
 unsigned long long time_gettimeofday (void);
