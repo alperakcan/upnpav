@@ -42,5 +42,6 @@ void op_destroy (void *userdata)
 		free(c->source);
 		free(c);
 	}
+	thread_mutex_destroy(priv.cache_mutex);
 	debugfs("leave");
 }

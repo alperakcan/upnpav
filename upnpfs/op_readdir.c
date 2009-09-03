@@ -72,6 +72,7 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 				j++;
 				filler(buffer, d[i], NULL, 0);
 			}
+			entry_uninit(e);
 			free(d[i]);
 		}
 		free(d);
