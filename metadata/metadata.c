@@ -94,6 +94,7 @@ static metadata_info_t *metadata_info[] = {
 metadata_t * metadata_init (const char *path)
 {
 	char *p;
+	time_t mtime;
 	metadata_t *m;
 	file_stat_t stat;
 	struct tm modtime;
@@ -121,7 +122,9 @@ metadata_t * metadata_init (const char *path)
 		m->size = stat.size;
 		m->date = (char *) malloc(sizeof(char) * 30);
 		if (m->date != NULL) {
-			localtime_r(&stat.mtime, &modtime);
+			mtime = stat.mtime;
+			localtime_r(&mtime, &modtime);
+			stat.mtime = mtime;
 			strftime(m->date, 30, "%F %T", &modtime);
 		}
 		for (info = metadata_info; *info != NULL; info++) {

@@ -261,6 +261,29 @@ enable_platform_corec=no
 AC_DEFINE(ENABLE_PLATFORM_POSIX, 1, [Define to 1 if you want 'posix' platform support.])
 )
 
+AC_ARG_ENABLE([database],
+[  --enable-database=[[database]] database can be one of [[sqlite3 (default),corec]]],
+if test "$enableval" = "sqlite3"
+then
+	enable_database_sqlite3=yes
+	enable_database_corec=no
+	AC_DEFINE(ENABLE_DATABASE_SQLITE3, 1, [Define to 1 if you want 'sqlite3' platform support.])
+elif test "$enableval" = "corec"
+then
+	enable_database_corec=yes
+	enable_database_sqlite3=no
+	AC_DEFINE(ENABLE_DATABASE_COREC, 1, [Define to 1 if you want 'corec' platform support.])
+else
+	enable_database_sqlite3=yes
+	enable_database_corec=no
+	AC_DEFINE(ENABLE_DATABASE_SQLITE3, 1, [Define to 1 if you want 'sqlite3' platform support.])
+fi
+,
+enable_database_sqlite3=yes
+enable_database_corec=no
+AC_DEFINE(ENABLE_DATABASE_SQLITE3, 1, [Define to 1 if you want 'sqlite3' platform support.])
+)
+
 AC_ARG_ENABLE([controller],
 [  --disable-controller    disable controller application [[default=yes]]],
 if test "$enableval" = "no"

@@ -111,7 +111,7 @@ typedef struct file_s file_t;
 
 typedef struct file_stat_s {
 	int64_t size;
-	time_t mtime;
+	unsigned int mtime;
 	file_type_t type;
 } file_stat_t;
 

@@ -34,6 +34,7 @@
 #include <unistd.h>
 
 #include "platform.h"
+#include "database.h"
 #include "gena.h"
 #include "upnp.h"
 #include "common.h"
@@ -46,7 +47,7 @@ typedef struct contentdir_s {
 	/** */
 	uint32_t updateid;
 	/** */
-	entry_t *root;
+	database_t *database;
 	/** */
 	char *rootpath;
 	/** */
@@ -430,7 +431,7 @@ int contentdirectory_uninit (device_service_t *contentdir)
 	service_variable_t *variable;
 	debugf("contentdirectory uninit");
 	debugf("uninitializing entry database");
-	entry_uninit(((contentdir_t *) contentdir)->root);
+	database_uninit((database_t *) ((contentdir_t *) contentdir)->database, 1);
 	free(((contentdir_t *) contentdir)->rootpath);
 	for (i = 0; (variable = contentdir->variables[i]) != NULL; i++) {
 		free(variable->value);
@@ -483,7 +484,7 @@ device_service_t * contentdirectory_init (char *directory, int cached)
 	contentdir->cached = cached;
 
 	if (contentdir->cached) {
-		entry_scan(contentdir->rootpath);
+		contentdir->database = entry_scan(contentdir->rootpath);
 	}
 
 	debugf("initialized content directory service");

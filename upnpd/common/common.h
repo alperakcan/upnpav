@@ -551,7 +551,7 @@ int entry_print (entry_t *file);
 int entry_dump (entry_t *file);
 int entry_normalize_parent (entry_t *entry);
 int entry_normalize_root (entry_t *entry);
-int entry_scan (const char *path);
+void * entry_scan (const char *path);
 entry_t * entry_init_from_id (int cached, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total);
 entry_t * entry_init_from_path (const char *path, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total);
 int entry_uninit (entry_t *root);
