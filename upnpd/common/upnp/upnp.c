@@ -386,8 +386,8 @@ found:
 	}
 	c->sequence++;
 
-	printf("header: %s\n", header);
-	printf("propset: %s\n", propset);
+	debugf("header: %s\n", header);
+	debugf("propset: %s\n", propset);
 
 	data = gena_send_recv(upnp->gena, c->url.host, c->url.port, header, propset);
 	if (data == NULL) {
@@ -954,7 +954,7 @@ upnp_t * upnp_init (const char *host, const unsigned short port, gena_callback_v
 {
 	upnp_t *upnp;
 	debugf("setting seed\n");
-	rand_srand(time(NULL));
+	rand_srand(time_gettimeofday());
 	debugf("ignoring sigpipe signal");
 	signal(SIGPIPE, SIG_IGN);
 	debugf("initializing upnp stack");

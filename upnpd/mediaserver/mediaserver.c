@@ -166,10 +166,10 @@ int mediaserver_main (char *options)
 			}
 			free(rline);
 		} else {
-			sleep(2);
+			time_sleep(2);
 		}
 #else
-		sleep(2);
+		time_sleep(2);
 #endif
 	};
 

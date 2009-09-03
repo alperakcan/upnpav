@@ -25,8 +25,19 @@
  * For more info contact CoreCodec through info@corecodec.com
  */
 
+#include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
+
+int time_sleep (unsigned int secs)
+{
+	return sleep(secs);
+}
+
+int time_usleep (unsigned int usecs)
+{
+	return usleep(usecs);
+}
 
 unsigned long long time_gettimeofday (void)
 {
