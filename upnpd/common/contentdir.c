@@ -431,7 +431,9 @@ int contentdirectory_uninit (device_service_t *contentdir)
 	service_variable_t *variable;
 	debugf("contentdirectory uninit");
 	debugf("uninitializing entry database");
-	database_uninit((database_t *) ((contentdir_t *) contentdir)->database, 1);
+	if ((database_t *) ((contentdir_t *) contentdir)->database != NULL) {
+		database_uninit((database_t *) ((contentdir_t *) contentdir)->database, 1);
+	}
 	free(((contentdir_t *) contentdir)->rootpath);
 	for (i = 0; (variable = contentdir->variables[i]) != NULL; i++) {
 		free(variable->value);
