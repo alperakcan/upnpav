@@ -575,8 +575,9 @@ entry_t * entry_init_from_id (int cached, const char *id, unsigned int start, un
 			return NULL;
 		}
 		entry = NULL;
+		tentry = NULL;
 		for (dt = de; dt != NULL; dt = dt->next) {
-			if (entry == NULL) {
+			if (tentry == NULL) {
 				tentry = entry_init_from_database(dt);
 				if (tentry == NULL) {
 					break;

@@ -45,6 +45,40 @@
 
 #include "controller.h"
 
+#if !HAVE_LIBREADLINE
+static int rinit = 0;
+static list_t rlist;
+
+static char * readline (const char *shell)
+{
+	char *buf;
+	size_t size;
+	size_t read;
+	if (rinit == 0) {
+		list_init(&rlist);
+		rinit = 1;
+	}
+	printf("%s ", shell);
+	buf = NULL;
+	size = 0;
+	read = getdelim(&buf, &size, '\n', stdin);
+	if (read == -1) {
+		return NULL;
+	}
+	buf[read - 1] = '\0';
+	return buf;
+}
+
+static int add_history (const char *line)
+{
+	if (rinit == 0) {
+		list_init(&rlist);
+		rinit = 1;
+	}
+	return 0;
+}
+#endif
+
 static int browse_device (client_t *client, char *device, char *object)
 {
 	entry_t *entry;
