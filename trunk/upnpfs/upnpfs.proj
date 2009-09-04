@@ -5,7 +5,7 @@ CON upnpfs
   USE upnpd_platform
 
   EXPINCLUDE .
-  
+
   SOURCE do_findpath.c
   SOURCE op_access.c
   SOURCE op_destroy.c
@@ -19,7 +19,7 @@ CON upnpfs
   SOURCE upnpfs.c
 
   HEADER upnpfs.h
-  
+
   LIBS fuse
   INCLUDE /usr/local/include
 }
