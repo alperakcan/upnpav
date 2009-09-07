@@ -4,6 +4,12 @@
 /* Define to 1 if you want 'controller' support. */
 #define ENABLE_CONTROLLER 1
 
+/* Define to 1 if you want 'corec' platform support. */
+/* #undef ENABLE_DATABASE_COREC */
+
+/* Define to 1 if you want 'sqlite3' platform support. */
+#define ENABLE_DATABASE_SQLITE3 1
+
 /* Define to 1 if you want 'mediaserver' support. */
 #define ENABLE_MEDIASERVER 1
 
@@ -37,9 +43,6 @@
 
 /* Define to 1 if you want 'libffmpeg' support. */
 #define HAVE_LIBFFMPEG 1
-
-/* Define to 1 if you want 'libfuse' support. */
-#define HAVE_LIBFUSE 1
 
 /* Define if you have a readline compatible library */
 #define HAVE_LIBREADLINE 1
