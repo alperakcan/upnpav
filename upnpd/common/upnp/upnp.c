@@ -1000,7 +1000,7 @@ upnp_t * upnp_init (const char *host, const unsigned short port, gena_callback_v
 	}
 	upnp->port = gena_getport(upnp->gena);
 
-	upnp->mutex = thread_mutex_init();
+	upnp->mutex = thread_mutex_init("upnp->mutex", 0);
 
 	return upnp;
 }

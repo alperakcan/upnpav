@@ -58,14 +58,17 @@ struct thread_s {
 };
 
 struct thread_cond_s {
+	char *name;
         pthread_cond_t cond;
 };
 
 struct thread_mutex_s {
+	char *name;
+	int recursive;
         pthread_mutex_t mutex;
 };
 
-thread_cond_t * thread_cond_init (void)
+thread_cond_t * thread_cond_init (const char *name)
 {
         thread_cond_t *c;
         c = (thread_cond_t *) malloc(sizeof(thread_cond_t));
@@ -73,6 +76,7 @@ thread_cond_t * thread_cond_init (void)
                 return NULL;
         }
         memset(c, 0, sizeof(thread_cond_t));
+        c->name = strdup(name);
         if (pthread_cond_init(&c->cond, NULL) != 0) {
                 free(c);
                 return NULL;
@@ -139,16 +143,32 @@ again:  ret = pthread_cond_timedwait(&cond->cond, &mut->mutex, &tspec);
         return ret;
 }
 
-thread_mutex_t * thread_mutex_init (void)
+thread_mutex_t * thread_mutex_init (const char *name, int recursive)
 {
         thread_mutex_t *m;
         m = (thread_mutex_t *) malloc(sizeof(thread_mutex_t));
         if (m == NULL) {
                 return NULL;
         }
-        if (pthread_mutex_init(&m->mutex, NULL) != 0) {
-                free(m);
-                return NULL;
+        memset(m, 0, sizeof(thread_mutex_t));
+        m->name = strdup(name);
+        if (recursive != 0) {
+                pthread_mutexattr_t attr;
+                pthread_mutexattr_init(&attr);
+                pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+                if (pthread_mutex_init(&m->mutex, &attr) != 0) {
+                	free(m->name);
+                        free(m);
+                        return NULL;
+                }
+                pthread_mutexattr_destroy(&attr);
+                m->recursive = 1;
+        } else {
+                if (pthread_mutex_init(&m->mutex, NULL) != 0) {
+                	free(m->name);
+                        free(m);
+                        return NULL;
+                }
         }
         return m;
 }
@@ -156,6 +176,7 @@ thread_mutex_t * thread_mutex_init (void)
 int thread_mutex_destroy (thread_mutex_t *mutex)
 {
         pthread_mutex_destroy(&mutex->mutex);
+        free(mutex->name);
         free(mutex);
         return 0;
 }
@@ -200,8 +221,8 @@ thread_t * thread_create (const char *name, void * (*function) (void *), void *f
         arg->f = function;
         arg->arg = farg;
         arg->name = tid->name;
-        arg->cond = thread_cond_init();
-        arg->mut = thread_mutex_init();
+        arg->cond = thread_cond_init("arg->cond");
+        arg->mut = thread_mutex_init("arg->mut", 0);
         arg->flag = 0;
 
         thread_mutex_lock(arg->mut);

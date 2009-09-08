@@ -359,9 +359,9 @@ int device_init (device_t *device)
 	uuid_gen_t uuid;
 	ret = -1;
 	debugf("initializing device '%s'", device->name);
-	device->mutex = thread_mutex_init();
+	device->mutex = thread_mutex_init("device->mutex", 0);
 	if (device->mutex == NULL) {
-		debugf("thread_mutex_init(device->mutex) failed");
+		debugf("thread_mutex_init(device->mutex, 0) failed");
 		goto out;
 	}
 	debugf("initializing upnp stack");

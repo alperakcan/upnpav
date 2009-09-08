@@ -539,8 +539,8 @@ static int ssdp_init_server (ssdp_t *ssdp)
 		socket_close(ssdp->socket);
 		return -1;
 	}
-	ssdp->mutex = thread_mutex_init();
-	ssdp->cond = thread_cond_init();
+	ssdp->mutex = thread_mutex_init("ssdp->mutex", 0);
+	ssdp->cond = thread_cond_init("ssdp->cond");
 	thread_mutex_lock(ssdp->mutex);
 	ssdp->thread = thread_create("ssdp_thread_loop", ssdp_thread_loop, ssdp);
 	while (ssdp->started == 0) {

@@ -47,7 +47,7 @@ void * op_init (struct fuse_conn_info *conn)
 	}
 	list_init(&priv.cache);
 	priv.cache_size = opts.cache_size;
-	priv.cache_mutex = thread_mutex_init();
+	priv.cache_mutex = thread_mutex_init("cache_mutex", 0);
 	free(ipaddr);
 	debugfs("leave");
 	return NULL;

@@ -1,6 +1,8 @@
 
 LIB upnpd_database
 {
+  USE upnpd_platform
+  
   EXPINCLUDE .
 
   IF ENABLE_DATABASE_SQLITE3

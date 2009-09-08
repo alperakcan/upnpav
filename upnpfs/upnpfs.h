@@ -95,8 +95,6 @@ struct private_s {
 extern struct options_s opts;
 extern struct private_s priv;
 
-#if ENABLE_DEBUG || 1
-
 static inline void debugfs_printf (const char *function, char *file, int line, const char *fmt, ...)
 {
 	va_list args;
@@ -114,12 +112,6 @@ static inline void debugfs_printf (const char *function, char *file, int line, c
 #define debugfs(a...) { \
 	debugfs_printf(__FUNCTION__, __FILE__, __LINE__, a); \
 }
-
-#else /* ENABLE_DEBUG */
-
-#define debugf(a...) do { } while(0)
-
-#endif /* ENABLE_DEBUG */
 
 int do_releasecache (upnpfs_cache_t *cache);
 
