@@ -2,8 +2,21 @@
 Basic upnp av deamon including server, renderer, and controller based on UPNP
 Forum specs v 1.0
 
+- Dependencies
+
+upnpavd:
+  no dependencies
+
+upnpfs:
+  requires at least fuse version 2.6.0, you get the latest fuse packages
+for your os from:
+  
+  linux : http://fuse.sourceforge.net/
+  mac os: http://code.google.com/p/macfuse/
+
 - Simple build (gcc linux)
 
+# ./tools/coremake/build.sh
 # ./autogen.sh
 # ./configure
 # coremake -v gcc_linux
@@ -11,8 +24,9 @@ Forum specs v 1.0
 
 - Simple build (osx xcode)
 
+# ./tools/coremake/build.sh
 # ./autogen.sh
-# ./configure
+# PKG_CONFIG_PATH=/usr/local/lib/pkgconfig ./configure
 # coremake -v xcode_uni
 # xcodebuild -alltargets
 
