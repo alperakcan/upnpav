@@ -6,6 +6,7 @@ PLATFORM_FILES tools/coremake
 
 WORKSPACE upnpd
 {
+  USE coremake
   USE upnpd
   USE upnpfs
 }
