@@ -7,8 +7,6 @@ LIB upnpd_mediaserver
   
   SOURCE mediaserver.c
 
-  HEADER mediaserver.h
-  
   LIBS(HAVE_LIBREADLINE) readline
   LIBS(HAVE_LIBREADLINE) termcap
 }
