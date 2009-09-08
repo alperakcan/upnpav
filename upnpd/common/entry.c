@@ -31,7 +31,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <inttypes.h>
-#include <dirent.h>
 
 #include "platform.h"
 #include "metadata.h"
@@ -464,24 +463,29 @@ int entry_dump (entry_t *entry)
 
 static int entry_scan_path (database_t *database, const char *path, unsigned long long parentid)
 {
-	DIR *dp;
 	char *ptr;
+	dir_t *dir;
 	entry_t *entry;
-	struct dirent *current;
+	dir_entry_t *current;
 	unsigned long long size;
 	unsigned long long objectid;
 
-	dp = opendir(path);
-	if (dp == NULL) {
+	current = (dir_entry_t *) malloc(sizeof(dir_entry_t));
+	if (current == NULL) {
+		return -1;
+	}
+	dir = file_opendir(path);
+	if (dir == NULL) {
+		free(current);
 		return -1;
 	}
 	debugf("looking into: %s", path);
-	while ((current = readdir(dp)) != NULL) {
-		if (strncmp(current->d_name, ".", 1) == 0) {
+	while (file_readdir(dir, current) == 0) {
+		if (strncmp(current->name, ".", 1) == 0) {
 			/* will cover parent, self, hidden */
 			continue;
 		}
-		if (asprintf(&ptr, "%s/%s", path, current->d_name) < 0) {
+		if (asprintf(&ptr, "%s/%s", path, current->name) < 0) {
 			continue;
 		}
 		entry = entry_didl_from_path(ptr);
@@ -540,7 +544,8 @@ static int entry_scan_path (database_t *database, const char *path, unsigned lon
 		entry_uninit(entry);
 		free(ptr);
 	}
-	closedir(dp);
+	free(current);
+	file_closedir(dir);
 	return 0;
 }
 
@@ -610,29 +615,34 @@ entry_t * entry_init_from_id (void *database, const char *id, unsigned int start
 
 entry_t * entry_init_from_path (const char *path, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total)
 {
-	DIR *dp;
 	char *ptr;
+	dir_t *dir;
 	entry_t *tmp;
 	entry_t *next;
 	entry_t *prev;
 	entry_t *entry;
-	struct dirent *current;
+	dir_entry_t *current;
 
 	next = NULL;
 	entry = NULL;
 	*total = 0;
 
-	dp = opendir(path);
-	if (dp == NULL) {
+	current = (dir_entry_t *) malloc(sizeof(dir_entry_t));
+	if (current == NULL) {
+		return NULL;
+	}
+	dir = file_opendir(path);
+	if (dir == NULL) {
+		free(current);
 		return NULL;
 	}
 	debugf("looking into: %s", path);
-	while ((current = readdir(dp)) != NULL) {
-		if (strncmp(current->d_name, ".", 1) == 0) {
+	while (file_readdir(dir, current) == 0) {
+		if (strncmp(current->name, ".", 1) == 0) {
 			/* will cover parent, self, hidden */
 			continue;
 		}
-		if (asprintf(&ptr, "%s/%s", path, current->d_name) < 0) {
+		if (asprintf(&ptr, "%s/%s", path, current->name) < 0) {
 			continue;
 		}
 		next = entry_didl_from_path(ptr);
@@ -667,7 +677,8 @@ found:
 		free(ptr);
 		*total = *total + 1;
 	}
-	closedir(dp);
+	free(current);
+	file_closedir(dir);
 
 	while (entry != NULL && start > 0) {
 		tmp = entry;
