@@ -1013,8 +1013,8 @@ static void * gena_loop (void *arg)
 			memset(gena_thread, 0, sizeof(gena_thread_t));
 			gena_thread->socket = socket;
 			gena_thread->callbacks = gena->callbacks;
-			gena_thread->mutex = thread_mutex_init();
-			gena_thread->cond = thread_cond_init();
+			gena_thread->mutex = thread_mutex_init("gena_thread->mutex", 0);
+			gena_thread->cond = thread_cond_init("gena_thread->cond");
 			thread_mutex_lock(gena_thread->mutex);
 			gena_thread->thread = thread_create("gena_thread_loop", gena_thread_loop, gena_thread);
 			while (gena_thread->running != 1) {
@@ -1223,8 +1223,8 @@ gena_t * gena_init (char *address, unsigned short port, gena_callbacks_t *callba
 	list_init(&gena->threads);
 	gena_init_server(gena);
 
-	gena->mutex = thread_mutex_init();
-	gena->cond = thread_cond_init();
+	gena->mutex = thread_mutex_init("gena->mutex", 0);
+	gena->cond = thread_cond_init("gena->cond");
 	gena->thread = thread_create("gena_loop", gena_loop, gena);
 
 	thread_mutex_lock(gena->mutex);

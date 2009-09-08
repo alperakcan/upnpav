@@ -42,9 +42,9 @@ int service_init (device_service_t *service)
 	int ret;
 	ret = -1;
 	debugf("initializing service '%s'", service->name);
-	service->mutex = thread_mutex_init();
+	service->mutex = thread_mutex_init("service->mutex", 0);
 	if (service->mutex == NULL) {
-		debugf("thread_mutex_init() failed");
+		debugf("thread_mutex_init(service->mutex, 0) failed");
 		goto out;
 	}
 	debugf("generating service '%s' description", service->name);

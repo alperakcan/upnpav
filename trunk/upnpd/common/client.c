@@ -388,14 +388,14 @@ int client_init (client_t *client)
 	int ret;
 	ret = -1;
 	debugf("initializing client '%s'", client->name);
-	client->mutex = thread_mutex_init();
+	client->mutex = thread_mutex_init("client->mutex", 0);
 	if (client->mutex == NULL) {
-		debugf("thread_mutex_init() failed");
+		debugf("thread_mutex_init(client->mutex, 0) failed");
 		goto out;
 	}
-	client->cond = thread_cond_init();
+	client->cond = thread_cond_init("client->cond");
 	if (client->cond == NULL) {
-		debugf("thread_cond_init() failed");
+		debugf("thread_cond_init(client->cond) failed");
 		thread_mutex_destroy(client->mutex);
 		goto out;
 	}
