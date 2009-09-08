@@ -108,12 +108,17 @@ typedef enum {
 } file_match_t;
 
 typedef struct file_s file_t;
+typedef struct dir_s dir_t;
 
 typedef struct file_stat_s {
 	int64_t size;
 	unsigned int mtime;
 	file_type_t type;
 } file_stat_t;
+
+typedef struct dir_entry_s {
+	char name[1024];
+} dir_entry_t;
 
 #define FILE_ISREG(type) (type & FILE_TYPE_REGULAR)
 #define FILE_ISDIR(type) (type & FILE_TYPE_DIRECTORY)
@@ -126,6 +131,10 @@ int file_read (file_t *file, void *buffer, int length);
 int file_write (file_t *file, const void *buffer, int length);
 long file_seek (file_t *file, long offset, file_seek_t whence);
 int file_close (file_t *file);
+
+dir_t * file_opendir (const char *path);
+int file_readdir (dir_t *dir, dir_entry_t *entry);
+int file_closedir (dir_t *dir);
 
 void rand_srand (unsigned int seed);
 int rand_rand (void);

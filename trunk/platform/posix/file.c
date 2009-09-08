@@ -34,8 +34,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <fnmatch.h>
+#include <dirent.h>
 
 #include "platform.h"
+
+struct dir_s {
+	DIR *dir;
+};
 
 struct file_s {
 	file_mode_t mode;
@@ -149,5 +154,41 @@ int file_close (file_t *file)
 {
 	close(file->fd);
 	free(file);
+	return 0;
+}
+
+dir_t * file_opendir (const char *path)
+{
+	dir_t *d;
+	d = (dir_t *) malloc(sizeof(dir_t));
+	if (d == NULL) {
+		return NULL;
+	}
+	d->dir = opendir(path);
+	if (d->dir == NULL) {
+		free(d);
+		return NULL;
+	}
+	return d;
+}
+
+int file_readdir (dir_t *dir, dir_entry_t *entry)
+{
+	struct dirent *c;
+	c = readdir(dir->dir);
+	if (c == NULL) {
+		return -1;
+	}
+	if (strlen(c->d_name) + 1 > sizeof(entry->name)) {
+		return -1;
+	}
+	strncpy(entry->name, c->d_name, sizeof(entry->name));
+	return 0;
+}
+
+int file_closedir (dir_t *dir)
+{
+	closedir(dir->dir);
+	free(dir);
 	return 0;
 }
