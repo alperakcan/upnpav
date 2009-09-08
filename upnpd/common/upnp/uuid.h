@@ -25,9 +25,9 @@
  * For more info contact CoreCodec through info@corecodec.com
  */
 
-typedef struct uuid_s uuid_t;
+typedef struct uuid_gen_s uuid_gen_t;
 
-struct uuid_s {
+struct uuid_gen_s {
 	uint32_t time_low;
 	uint16_t time_mid;
 	uint16_t time_high_version;
@@ -36,4 +36,4 @@ struct uuid_s {
 	char uuid[50];
 };
 
-void uuid_generate (uuid_t *uuid);
+void uuid_generate (uuid_gen_t *uuid);

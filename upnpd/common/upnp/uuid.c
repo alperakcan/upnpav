@@ -36,12 +36,12 @@
 #include "platform.h"
 #include "uuid.h"
 
-void uuid_generate (uuid_t *uuid)
+void uuid_generate (uuid_gen_t *uuid)
 {
 	unsigned long long tm;
 	const char *uuid_format = "%08x-%04x-%04x-%04x-%02x%02x%02x%02x%02x%02x";
 	tm = time_gettimeofday();
-	memset(uuid, 0, sizeof(uuid_t));
+	memset(uuid, 0, sizeof(uuid_gen_t));
 	uuid->time_low = (tm >> 32) & 0xffffffff;
 	uuid->time_mid = (tm >> 16) & 0x0000ffff;
 	uuid->time_high_version = tm & 0xffff;

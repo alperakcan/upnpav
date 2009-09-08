@@ -479,7 +479,7 @@ int upnp_url_parse (const char *uri, upnp_url_t *url)
 static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subscribe_t *subscribe)
 {
 	int ret;
-	uuid_t uuid;
+	uuid_gen_t uuid;
 	upnp_service_t *s;
 	upnp_subscribe_t *c;
 	ret = -1;

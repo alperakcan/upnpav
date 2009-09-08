@@ -356,7 +356,7 @@ int device_init (device_t *device)
 {
 	int ret;
 	char *tmp;
-	uuid_t uuid;
+	uuid_gen_t uuid;
 	ret = -1;
 	debugf("initializing device '%s'", device->name);
 	device->mutex = thread_mutex_init();
