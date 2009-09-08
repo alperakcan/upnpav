@@ -145,7 +145,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 			}
 		} else {
 			debugf("looking for '%s'", objectid);
-			entry = entry_didl_from_id(contentdir->cached, objectid);
+			entry = entry_didl_from_id(contentdir->database, objectid);
 		}
 		if (entry != NULL) {
 			if (contentdir->cached == 0) {
@@ -203,7 +203,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 				tmp = tmp->next;
 			}
 		} else {
-			entry = entry_init_from_id(contentdir->cached, objectid, startingindex, requestedcount, &numberreturned, &totalmatches);
+			entry = entry_init_from_id(contentdir->database, objectid, startingindex, requestedcount, &numberreturned, &totalmatches);
 		}
 		if (entry == NULL) {
 			request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
@@ -312,7 +312,7 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 	}
 	ename = path + strlen("/upnp/contentdirectory?id=");
 	debugf("entry name is '%s'", ename);
-	entry = entry_didl_from_id(contentdir->cached, (char *) ename);
+	entry = entry_didl_from_id(contentdir->database, ename);
 	if (entry == NULL) {
 		debugf("no entry found '%s'", ename);
 		return -1;
@@ -345,7 +345,7 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 	}
 	ename = path + strlen("/upnp/contentdirectory?id=");
 	debugf("entry name is '%s'", ename);
-	entry = entry_didl_from_id(contentdir->cached, (char *) ename);
+	entry = entry_didl_from_id(contentdir->database, ename);
 	if (entry == NULL) {
 		debugf("no entry found '%s'", ename);
 		return NULL;

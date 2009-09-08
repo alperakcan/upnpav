@@ -545,14 +545,14 @@ device_service_t * device_service_find (device_t *device, char *serviceid);
 
 char * entryid_path_from_id (const char *id);
 char * entryid_id_from_path (const char *path);
-entry_t * entry_didl_from_id (int cached, const char *id);
+entry_t * entry_didl_from_id (void *database, const char *id);
 entry_t * entry_didl_from_path (const char *path);
 int entry_print (entry_t *file);
 int entry_dump (entry_t *file);
 int entry_normalize_parent (entry_t *entry);
 int entry_normalize_root (entry_t *entry);
 void * entry_scan (const char *path);
-entry_t * entry_init_from_id (int cached, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total);
+entry_t * entry_init_from_id (void *database, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total);
 entry_t * entry_init_from_path (const char *path, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total);
 int entry_uninit (entry_t *root);
 entry_t * entry_from_result (char *result);
