@@ -53,3 +53,11 @@ unsigned long long time_gettimeofday (void)
 	tusec = ((long long) tv.tv_usec) / 1000;
 	return tsec + tusec;
 }
+
+int time_strftime (char *str, int max, unsigned long long tm)
+{
+	time_t t;
+	static const char RFC1123FMT[] = "%a, %d %b %Y %H:%M:%S GMT";
+	t = tm / 1000;
+	return strftime(str, max, RFC1123FMT, gmtime(&t));
+}

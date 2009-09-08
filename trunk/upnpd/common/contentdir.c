@@ -31,7 +31,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <inttypes.h>
-#include <unistd.h>
 
 #include "platform.h"
 #include "database.h"

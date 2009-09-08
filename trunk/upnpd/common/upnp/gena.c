@@ -34,7 +34,6 @@
 #include <string.h>
 #include <inttypes.h>
 #include <assert.h>
-#include <time.h>
 
 #include "platform.h"
 #include "gena.h"
@@ -303,19 +302,17 @@ static int gena_remove_escaped_chars (char *in)
 
 static void gena_senderrorheader (socket_t *socket, gena_response_type_t type)
 {
-	static const char RFC1123FMT[] = "%a, %d %b %Y %H:%M:%S GMT";
-
 	int len;
 	char *header;
-	time_t timer;
 	unsigned int i;
 	char tmpstr[80];
 	int responseNum = 0;
+	unsigned long long timer;
 	const char *mimetype = NULL;
 	const char *infoString = NULL;
 	const char *responseString = "";
 
-	timer = time(0);
+	timer = time_gettimeofday();
 	header = (char *) malloc(GENA_HEADER_SIZE);
 	if (header == NULL) {
 		return;
@@ -331,7 +328,7 @@ static void gena_senderrorheader (socket_t *socket, gena_response_type_t type)
 	}
 	mimetype = "text/html";
 
-	strftime(tmpstr, sizeof(tmpstr), RFC1123FMT, gmtime(&timer));
+	time_strftime(tmpstr, sizeof(tmpstr), timer);
 	len = sprintf(header, "HTTP/1.0 %d %s\r\nContent-type: %s\r\n"
 			      "Date: %s\r\nConnection: close\r\n",
 			      responseNum, responseString, mimetype, tmpstr);
@@ -355,21 +352,19 @@ static void gena_senderrorheader (socket_t *socket, gena_response_type_t type)
 
 static void gena_sendfileheader (socket_t *socket, gena_fileinfo_internal_t *fileinfo)
 {
-	static const char RFC1123FMT[] = "%a, %d %b %Y %H:%M:%S GMT";
-
 	int len;
-	time_t t;
 	char *header;
-	time_t timer;
 	unsigned int i;
 	char tmpstr[80];
 	int responseNum = 0;
+	unsigned long long t;
+	unsigned long long timer;
 	const char *infoString = NULL;
 	const char *responseString = "";
 
 	gena_response_type_t type;
 
-	timer = time(0);
+	timer = time_gettimeofday();
 	header = (char *) malloc(GENA_HEADER_SIZE);
 	if (header == NULL) {
 		return;
@@ -390,13 +385,13 @@ static void gena_sendfileheader (socket_t *socket, gena_fileinfo_internal_t *fil
 		}
 	}
 
-	strftime(tmpstr, sizeof(tmpstr), RFC1123FMT, gmtime(&timer));
+	time_strftime(tmpstr, sizeof(tmpstr), timer);
 	len = sprintf(header, "HTTP/1.0 %d %s\r\nContent-type: %s\r\n"
 			      "Date: %s\r\nConnection: close\r\n",
 			      responseNum, responseString, fileinfo->fileinfo.mimetype, tmpstr);
 
 	t = fileinfo->fileinfo.mtime;
-	strftime(tmpstr, sizeof(tmpstr), RFC1123FMT, gmtime(&t));
+	time_strftime(tmpstr, sizeof(tmpstr), t * 1000);
 	if (type == GENA_RESPONSE_TYPE_PARTIAL_CONTENT) {
 		len += sprintf(header + len,
 			"Accept-Ranges: bytes\r\n"
