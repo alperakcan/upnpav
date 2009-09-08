@@ -133,6 +133,7 @@ int rand_rand (void);
 void time_sleep (unsigned int secs);
 void time_usleep (unsigned int usecs);
 unsigned long long time_gettimeofday (void);
+int time_strftime (char *str, int max, unsigned long long tm);
 
 char * interface_getaddr (char *ifname);
 int interface_printall (void);

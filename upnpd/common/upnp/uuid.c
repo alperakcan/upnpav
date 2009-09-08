@@ -31,7 +31,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
-#include <sys/time.h>
 
 #include "platform.h"
 #include "uuid.h"
