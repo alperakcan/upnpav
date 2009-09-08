@@ -132,8 +132,6 @@ static char * entryid_parentid_from_path (const char *path)
 	return parentid;
 }
 
-static database_t *database;
-
 entry_t * entry_init_from_database (database_entry_t *dentry)
 {
 	entry_t *entry;
@@ -235,19 +233,20 @@ entry_t * entry_init_from_database (database_entry_t *dentry)
 	return entry;
 }
 
-entry_t * entry_didl_from_id (int cached, const char *id)
+entry_t * entry_didl_from_id (void *database, const char *id)
 {
+	char *path;
 	entry_t *entry;
+	database_t *db;
 	database_entry_t *de;
-	if (cached == 0) {
-		char *path;
-		entry_t *entry;
+	db = (database_t *) database;
+	if (db == NULL) {
 		path = entryid_path_from_id(id);
 		entry = entry_didl_from_path(path);
 		free(path);
 		return entry;
 	} else {
-		de = database_query_entry(database, id);
+		de = database_query_entry(db, id);
 		entry = entry_init_from_database(de);
 		database_entry_free(de);
 		return entry;
@@ -464,7 +463,7 @@ int entry_dump (entry_t *entry)
 	return 0;
 }
 
-static int entry_scan_path (const char *path, unsigned long long parentid)
+static int entry_scan_path (database_t *database, const char *path, unsigned long long parentid)
 {
 	DIR *dp;
 	char *ptr;
@@ -504,7 +503,7 @@ static int entry_scan_path (const char *path, unsigned long long parentid)
 					entry->didl.dc.date,
 					entry->mime,
 					"*");
-			entry_scan_path(entry->path, objectid);
+			entry_scan_path(database, entry->path, objectid);
 		} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_MUSICTRACK) {
 			size = entry->didl.res.size;
 			objectid = database_insert(database,
@@ -549,27 +548,30 @@ static int entry_scan_path (const char *path, unsigned long long parentid)
 void * entry_scan (const char *path)
 {
 	int ret;
+	database_t *database;
 	database = database_init(1);
-	ret = entry_scan_path(path, 0);
+	ret = entry_scan_path(database, path, 0);
 	database_index(database);
 	return (void *) database;
 }
 
-entry_t * entry_init_from_id (int cached, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total)
+entry_t * entry_init_from_id (void *database, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total)
 {
 	char *path;
 	entry_t *entry;
 	entry_t *tentry;
+	database_t *db;
 	database_entry_t *de;
 	database_entry_t *dt;
 	unsigned long long ds;
-	if (cached == 0) {
+	db = (database_t *) database;
+	if (db == NULL) {
 		path = entryid_path_from_id(id);
 		entry = entry_init_from_path(path, start, count, returned, total);
 		free(path);
 		return entry;
 	} else {
-		de = database_query_parent(database, id, start, count, &ds);
+		de = database_query_parent(db, id, start, count, &ds);
 		*total = ds;
 		if (*total == 0) {
 			return NULL;
