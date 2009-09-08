@@ -75,13 +75,18 @@ static int metadata_image (metadata_t *metadata)
 
 static metadata_info_t *metadata_info[] = {
 	/* video */
+	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.ts", "video/mpeg", metadata_video},
 	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mpg", "video/mpeg", metadata_video},
 	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mpeg", "video/mpeg", metadata_video},
 	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.avi", "video/x-msvideo", metadata_video},
+	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mp4", "video/mp4", metadata_video},
+	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.wmv", "video/x-ms-wmv", metadata_video},
+	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mkv", "video/x-matroska", metadata_video},
 	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mts", "video/vnd.dlna.mpeg-tts", metadata_video},
 	/* audio */
 	& (metadata_info_t) {METADATA_TYPE_AUDIO, "*.mp3", "audio/mpeg", metadata_audio},
 	& (metadata_info_t) {METADATA_TYPE_AUDIO, "*.ogg", "audio/ogg", metadata_audio},
+	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.wma", "audio/x-ms-wma", metadata_audio},
 	/* image */
 	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.bmp", "image/bmp", metadata_image},
 	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.jpg", "image/jpeg", metadata_image},
