@@ -31,9 +31,15 @@
 #include <unistd.h>
 #include <string.h>
 
+#include "platform.h"
 #include "database.h"
 
 #include "sqlite3.h"
+
+typedef struct database_arg_s {
+	sqlite3 *database;
+	void *args;
+} database_arg_t;
 
 struct database_s {
 	char *name;
@@ -93,21 +99,38 @@ database_t * database_init (int remove)
 
 int database_index (database_t *database)
 {
-	sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on OBJECT(ID);", 0, 0, 0);
 	sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on DETAIL(ID);", 0, 0, 0);
+	sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on OBJECT(ID);", 0, 0, 0);
+	sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on OBJECT(CLASS);", 0, 0, 0);
+	sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on OBJECT(PARENT);", 0, 0, 0);
 	sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on OBJECT(ID, PARENT);", 0, 0, 0);
 	sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on OBJECT(ID, DETAIL);", 0, 0, 0);
 	return 0;
 }
 
+static int database_count_callback (void *args, int argc, char **argv, char **azColName)
+{
+	unsigned long long *total;
+	total = (unsigned long long *) args;
+	if (argc < 1) {
+		*total = 0;
+	} else {
+		*total = atoll(argv[0]);
+	}
+	return 0;
+}
+
 static int database_query_callback (void *args, int argc, char **argv, char **azColName)
 {
+	char *sql;
+	database_arg_t *darg;
 	database_entry_t *tmp;
 	database_entry_t *prev;
 	database_entry_t *entry;
 	database_entry_t **root;
 
-	root = (database_entry_t **) args;
+	darg = (database_arg_t *) args;
+	root = (database_entry_t **) darg->args;
 
 	entry = (database_entry_t *) malloc(sizeof(database_entry_t));
 	if (entry == NULL) {
@@ -124,6 +147,16 @@ static int database_query_callback (void *args, int argc, char **argv, char **az
 	entry->date = strdup(argv[6]);
 	entry->mime = strdup(argv[7]);
 	entry->dlna = strdup(argv[8]);
+
+	if (entry->class == DATABASE_CLASS_FOLDER) {
+		sql = sqlite3_mprintf(
+				"SELECT count(*)"
+				"  from OBJECT o"
+				"  where o.PARENT = %s;",
+				entry->id);
+		sqlite3_exec(darg->database, sql, database_count_callback, (void *) &entry->childs, 0);
+		sqlite3_free(sql);
+	}
 
 	if (*root == NULL) {
 		*root = entry;
@@ -143,6 +176,7 @@ static int database_query_callback (void *args, int argc, char **argv, char **az
 database_entry_t * database_query_entry (database_t *database, const char *entryid)
 {
 	char *sql;
+	database_arg_t darg;
 	database_entry_t *e;
 	e = NULL;
 	sql = sqlite3_mprintf(
@@ -158,32 +192,22 @@ database_entry_t * database_query_entry (database_t *database, const char *entry
 			"  from OBJECT o left join DETAIL d on (d.ID = o.DETAIL)"
 			"  where o.ID = %s;",
 			entryid);
-	sqlite3_exec(database->database, sql, database_query_callback, (void *) &e, 0);
+	darg.database = database->database;
+	darg.args = (void *) &e;
+	sqlite3_exec(database->database, sql, database_query_callback, (void *) &darg, 0);
 	sqlite3_free(sql);
 	return e;
 }
 
-static int database_count_callback (void *args, int argc, char **argv, char **azColName)
-{
-	unsigned long long *total;
-	total = (unsigned long long *) args;
-	if (argc < 1) {
-		*total = 0;
-	} else {
-		*total = atoll(argv[0]);
-	}
-	return 0;
-}
-
-
 database_entry_t * database_query_parent (database_t *database, const char *parentid, unsigned long long start, unsigned long long count, unsigned long long *total)
 {
 	char *sql;
+	database_arg_t darg;
 	database_entry_t *e;
 	e = NULL;
 	sql = sqlite3_mprintf(
 			"SELECT count(*)"
-			"  from OBJECT o left join DETAIL d on (d.ID = o.DETAIL)"
+			"  from OBJECT o"
 			"  where o.PARENT = %s;",
 			parentid);
 	sqlite3_exec(database->database, sql, database_count_callback, (void *) total, 0);
@@ -206,7 +230,9 @@ database_entry_t * database_query_parent (database_t *database, const char *pare
 			parentid,
 			start,
 			count);
-	sqlite3_exec(database->database, sql, database_query_callback, (void *) &e, 0);
+	darg.database = database->database;
+	darg.args = (void *) &e;
+	sqlite3_exec(database->database, sql, database_query_callback, (void *) &darg, 0);
 	sqlite3_free(sql);
 	if (e == NULL) {
 		*total = 0;
@@ -226,6 +252,8 @@ unsigned long long database_insert (database_t *database,
 {
 	char *sql;
 	unsigned long long detailid;
+
+	debugf("inserting '%s' under %llu", path, parentid);
 
 	detailid = 0;
 	sql = sqlite3_mprintf(
@@ -255,7 +283,7 @@ unsigned long long database_insert (database_t *database,
 	sqlite3_exec(database->database, sql, 0, 0, 0);
 	sqlite3_free(sql);
 
-	return 0;
+	return detailid;
 }
 
 int database_entry_free (database_entry_t *entry)
