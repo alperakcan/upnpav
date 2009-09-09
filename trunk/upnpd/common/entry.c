@@ -141,17 +141,17 @@ entry_t * entry_init_from_database (database_entry_t *dentry)
 		return NULL;
 	}
 	memset(entry, 0, sizeof(entry_t));
-	if (dentry->class == DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER) {
+	if (dentry->class == DATABASE_CLASS_FOLDER) {
 		entry->didl.entryid = strdup(dentry->id);
 		entry->didl.parentid = strdup(dentry->parent);
 		entry->path = strdup(dentry->path);
-		entry->didl.childcount = 0;
+		entry->didl.childcount = dentry->childs;
 		entry->didl.restricted = 1;
 		entry->didl.dc.title = strdup(dentry->title);
 		entry->didl.upnp.type = DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER;
 		entry->didl.upnp.object.class = strdup("object.container.storageFolder");
 		entry->didl.upnp.storagefolder.storageused = 0;
-	} else if (dentry->class == DIDL_UPNP_OBJECT_TYPE_MUSICTRACK) {
+	} else if (dentry->class == DATABASE_CLASS_MUSIC) {
 		entry->didl.entryid = strdup(dentry->id);
 		entry->didl.parentid = strdup(dentry->parent);
 		entry->path = strdup(dentry->path);
@@ -177,7 +177,7 @@ entry_t * entry_init_from_database (database_entry_t *dentry)
 		entry->didl.upnp.musictrack.audioitem.longdescription = NULL;
 		asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
 		entry->didl.res.size = dentry->size;
-	} else if (dentry->class == DIDL_UPNP_OBJECT_TYPE_MOVIE) {
+	} else if (dentry->class == DATABASE_CLASS_MOVIE) {
 		entry->didl.entryid = strdup(dentry->id);
 		entry->didl.parentid = strdup(dentry->parent);
 		entry->path = strdup(dentry->path);
@@ -203,7 +203,7 @@ entry_t * entry_init_from_database (database_entry_t *dentry)
 		entry->didl.upnp.movie.videoitem.rating = NULL;
 		asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
 		entry->didl.res.size = dentry->size;
-	} else if (dentry->class == DIDL_UPNP_OBJECT_TYPE_PHOTO) {
+	} else if (dentry->class == DATABASE_CLASS_IMAGE) {
 		entry->didl.entryid = strdup(dentry->id);
 		entry->didl.parentid = strdup(dentry->parent);
 		entry->path = strdup(dentry->path);
@@ -227,6 +227,9 @@ entry_t * entry_init_from_database (database_entry_t *dentry)
 		entry->didl.upnp.photo.album = NULL;
 		asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
 		entry->didl.res.size = dentry->size;
+	} else {
+		free(entry);
+		return NULL;
 	}
 	return entry;
 }
@@ -467,6 +470,7 @@ static int entry_scan_path (database_t *database, const char *path, unsigned lon
 	dir_t *dir;
 	entry_t *entry;
 	dir_entry_t *current;
+	database_class_t class;
 	unsigned long long size;
 	unsigned long long objectid;
 
@@ -495,44 +499,20 @@ static int entry_scan_path (database_t *database, const char *path, unsigned lon
 			continue;
 		}
 		debugf("found: %s", entry->path);
+		class = DATABASE_CLASS_UNKNOWN;
 		if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER) {
-			size = entry->didl.res.size;
-			objectid = database_insert(database,
-					entry->didl.upnp.type,
-					parentid,
-					entry->path,
-					entry->didl.dc.title,
-					size,
-					entry->didl.dc.date,
-					entry->mime,
-					"*");
-			entry_scan_path(database, entry->path, objectid);
+			class = DATABASE_CLASS_FOLDER;
 		} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_MUSICTRACK) {
-			size = entry->didl.res.size;
-			objectid = database_insert(database,
-					entry->didl.upnp.type,
-					parentid,
-					entry->path,
-					entry->didl.dc.title,
-					size,
-					entry->didl.dc.date,
-					entry->mime,
-					"*");
+			class = DATABASE_CLASS_MUSIC;
 		} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_MOVIE) {
-			size = entry->didl.res.size;
-			objectid = database_insert(database,
-					entry->didl.upnp.type,
-					parentid,
-					entry->path,
-					entry->didl.dc.title,
-					size,
-					entry->didl.dc.date,
-					entry->mime,
-					"*");
+			class = DATABASE_CLASS_MOVIE;
 		} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_PHOTO) {
+			class = DATABASE_CLASS_IMAGE;
+		}
+		if (class != DATABASE_CLASS_UNKNOWN) {
 			size = entry->didl.res.size;
 			objectid = database_insert(database,
-					entry->didl.upnp.type,
+					class,
 					parentid,
 					entry->path,
 					entry->didl.dc.title,
@@ -540,6 +520,9 @@ static int entry_scan_path (database_t *database, const char *path, unsigned lon
 					entry->didl.dc.date,
 					entry->mime,
 					"*");
+			if (class == DATABASE_CLASS_FOLDER) {
+				entry_scan_path(database, entry->path, objectid);
+			}
 		}
 		entry_uninit(entry);
 		free(ptr);
