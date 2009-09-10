@@ -253,8 +253,6 @@ unsigned long long database_insert (database_t *database,
 	char *sql;
 	unsigned long long detailid;
 
-	debugf("inserting '%s' under %llu", path, parentid);
-
 	detailid = 0;
 	sql = sqlite3_mprintf(
 			"INSERT into DETAIL"
@@ -282,6 +280,8 @@ unsigned long long database_insert (database_t *database,
 			detailid);
 	sqlite3_exec(database->database, sql, 0, 0, 0);
 	sqlite3_free(sql);
+
+	debugf("inserted '%s' (%llu) under %llu", path, detailid, parentid);
 
 	return detailid;
 }
