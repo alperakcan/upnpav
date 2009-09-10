@@ -29,11 +29,11 @@ typedef struct database_s database_t;
 typedef struct database_entry_s database_entry_t;
 
 typedef enum {
-	DATABASE_CLASS_UNKNOWN,
-	DATABASE_CLASS_FOLDER,
-	DATABASE_CLASS_MUSIC,
-	DATABASE_CLASS_MOVIE,
-	DATABASE_CLASS_IMAGE,
+	DATABASE_CLASS_UNKNOWN = 0x00,
+	DATABASE_CLASS_FOLDER  = 0x01,
+	DATABASE_CLASS_MUSIC   = 0x02,
+	DATABASE_CLASS_MOVIE   = 0x04,
+	DATABASE_CLASS_IMAGE   = 0x08,
 } database_class_t;
 
 struct database_entry_s {
