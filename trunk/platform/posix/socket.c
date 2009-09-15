@@ -74,7 +74,7 @@ static inline int socket_event_bsd (socket_event_t event)
 	if (event & SOCKET_EVENT_NVAL) bsd |= POLLNVAL;
 	if (event & SOCKET_EVENT_OUT)  bsd |= POLLOUT;
 	if (event & SOCKET_EVENT_PRI)  bsd |= POLLPRI;
-	return event;
+	return bsd;
 }
 
 static inline socket_event_t socket_bsd_event (int bsd)
