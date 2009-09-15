@@ -61,7 +61,7 @@ typedef struct thread_mutex_s thread_mutex_t;
   * @param *name     - thread name
   * @param *function - pointer to the function.
   * @param *arg      - argument to pass to function.
-  * @returns NULL on error, otherwise pointer to new thread object
+  * @returns NULL on error, otherwise the thread object
   */
 thread_t * thread_create (const char *name, void * (*function) (void *), void *arg);
 
@@ -75,7 +75,7 @@ unsigned int thread_self (void);
   *        thread identified by tid terminates, either by calling
   *        thread_exit or by being cancelled.
   *
-  * @param *thread  - thread id of the thread to cancel.
+  * @param *thread  - the thread
   * @returns 0 on success, 1 on error.
   */
 int thread_join (thread_t *thread);
@@ -84,17 +84,29 @@ int thread_join (thread_t *thread);
   *
   * @param *name     - name of the mutex pointer
   * @param recursive - 1 if recursive otherwise 0
-  * @returns NULL on error, otherwise pointer to new mutex object
+  * @returns NULL on error, otherwise the mutex object
   */
 thread_mutex_t * thread_mutex_init (const char *name, int recursive);
 
 /** @brief locks the given mutex
   *
-  * @param *mut - address of the mutex pointer.
+  * @param *mutex - the mutex
   * @returns 0 on success, 1 on error.
   */
 int thread_mutex_lock (thread_mutex_t *mutex);
+
+/** @brief unlocks the given mutex
+  *
+  * @param *mutex - the mutex
+  * @returns 0 on success, 1 on error.
+  */
 int thread_mutex_unlock (thread_mutex_t *mutex);
+
+/** @brief destroys the given mutex
+  *
+  * @param *mutex - the mutex
+  * @returns 0 on success, 1 on error.
+  */
 int thread_mutex_destroy (thread_mutex_t *mutex);
 
 thread_cond_t * thread_cond_init (const char *name);
