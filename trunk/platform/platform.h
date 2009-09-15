@@ -25,15 +25,74 @@
  * For more info contact CoreCodec through info@corecodec.com
  */
 
+/**
+ * @defgroup platform platform api
+ * @brief    platform specific porting layer api definitions
+ */
+
+/**
+ * @defgroup platform_thread thread api
+ * @ingroup  platform
+ * @brief    thread abstraction for platform layer
+ */
+
+/** @addtogroup platform_thread */
+/*@{*/
+
+/**
+ * @brief exported thread structure
+ */
 typedef struct thread_s thread_t;
+
+/**
+ * @brief exported thread condition variable structure
+ */
 typedef struct thread_cond_s thread_cond_t;
+
+/**
+ * @brief exported thread mutex structure
+ */
 typedef struct thread_mutex_s thread_mutex_t;
 
+/** @brief creates a new thread of control that executes concurrently
+  *        with the calling thread. The new thread applies the function
+  *        passing it as first argument.
+  *
+  * @param *name     - thread name
+  * @param *function - pointer to the function.
+  * @param *arg      - argument to pass to function.
+  * @returns NULL on error, otherwise pointer to new thread object
+  */
 thread_t * thread_create (const char *name, void * (*function) (void *), void *arg);
+
+/** @brief returns the thread identifier for the calling thread.
+  *
+  * @returns th thread id.
+  */
 unsigned int thread_self (void);
+
+/** @brief suspends the execution of the calling thread until the
+  *        thread identified by tid terminates, either by calling
+  *        thread_exit or by being cancelled.
+  *
+  * @param *thread  - thread id of the thread to cancel.
+  * @returns 0 on success, 1 on error.
+  */
 int thread_join (thread_t *thread);
 
+/** @brief initialize the mutex struct
+  *
+  * @param *name     - name of the mutex pointer
+  * @param recursive - 1 if recursive otherwise 0
+  * @returns NULL on error, otherwise pointer to new mutex object
+  */
 thread_mutex_t * thread_mutex_init (const char *name, int recursive);
+
+/** @brief locks the given mutex
+  *
+  * @param *mut - address of the mutex pointer.
+  * @returns 0 on success, 1 on error.
+  */
 int thread_mutex_lock (thread_mutex_t *mutex);
 int thread_mutex_unlock (thread_mutex_t *mutex);
 int thread_mutex_destroy (thread_mutex_t *mutex);
@@ -44,6 +103,8 @@ int thread_cond_timedwait (thread_cond_t *cond, thread_mutex_t *mutex, int timeo
 int thread_cond_signal (thread_cond_t *cond);
 int thread_cond_broadcast (thread_cond_t *cond);
 int thread_cond_destroy (thread_cond_t *cond);
+
+/*@}*/
 
 #ifndef SOCKET_IP_LENGTH
 #define SOCKET_IP_LENGTH 20
