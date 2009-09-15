@@ -170,6 +170,9 @@ int socket_connect (socket_t *socket, const char *address, int port, int timeout
 		if (poll(&pfd, 1, timeout) <= 0) {
 			return -1;
 		}
+		if (pfd.revents != POLLOUT) {
+			return -1;
+		}
 	}
 	flags &= ~O_NONBLOCK;
 	if (fcntl(socket->fd, F_SETFL, flags) < 0) {
