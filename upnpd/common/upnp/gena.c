@@ -1040,7 +1040,7 @@ static int gena_init_server (gena_t *gena)
 		port = GENA_LISTEN_PORT;
 	}
 
-	socket = socket_open(SOCKET_DOMAIN_INET, SOCKET_TYPE_STREAM);
+	socket = socket_open(SOCKET_TYPE_STREAM);
 	if (socket == NULL) {
 		debugf("socket() failed");
 		return -1;
@@ -1077,7 +1077,7 @@ char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port
 	socket_t *socket;
 	socket_event_t presult;
 
-	socket = socket_open(SOCKET_DOMAIN_INET, SOCKET_TYPE_STREAM);
+	socket = socket_open(SOCKET_TYPE_STREAM);
 	if (socket == NULL) {
 		return NULL;
 	}
