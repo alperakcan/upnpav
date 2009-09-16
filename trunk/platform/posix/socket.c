@@ -41,19 +41,9 @@
 #include "platform.h"
 
 struct socket_s {
-	int domain;
 	int type;
 	int fd;
 };
-
-static inline int socket_domain_bsd (socket_domain_t domain)
-{
-	switch (domain) {
-		case SOCKET_DOMAIN_INET:    return AF_INET;
-		case SOCKET_DOMAIN_UNIX:    return AF_UNIX;
-	}
-	return -1;
-}
 
 static inline int socket_type_bsd (socket_type_t type)
 {
@@ -68,12 +58,9 @@ static inline int socket_event_bsd (socket_event_t event)
 {
 	int bsd;
 	bsd = 0;
-	if (event & SOCKET_EVENT_ERR)  bsd |= POLLERR;
-	if (event & SOCKET_EVENT_HUP)  bsd |= POLLHUP;
+	if (event & SOCKET_EVENT_ERR)  bsd |= (POLLERR | POLLHUP | POLLNVAL);
 	if (event & SOCKET_EVENT_IN)   bsd |= POLLIN;
-	if (event & SOCKET_EVENT_NVAL) bsd |= POLLNVAL;
 	if (event & SOCKET_EVENT_OUT)  bsd |= POLLOUT;
-	if (event & SOCKET_EVENT_PRI)  bsd |= POLLPRI;
 	return bsd;
 }
 
@@ -82,15 +69,14 @@ static inline socket_event_t socket_bsd_event (int bsd)
 	socket_event_t event;
 	event = 0;
 	if (bsd & POLLERR)  event |= SOCKET_EVENT_ERR;
-	if (bsd & POLLHUP)  event |= SOCKET_EVENT_HUP;
+	if (bsd & POLLHUP)  event |= SOCKET_EVENT_ERR;
 	if (bsd & POLLIN)   event |= SOCKET_EVENT_IN;
-	if (bsd & POLLNVAL) event |= SOCKET_EVENT_NVAL;
+	if (bsd & POLLNVAL) event |= SOCKET_EVENT_ERR;
 	if (bsd & POLLOUT)  event |= SOCKET_EVENT_OUT;
-	if (bsd & POLLPRI)  event |= SOCKET_EVENT_PRI;
 	return event;
 }
 
-socket_t * socket_open (socket_domain_t domain, socket_type_t type)
+socket_t * socket_open (socket_type_t type)
 {
 	socket_t *s;
 	s = (socket_t *) malloc(sizeof(socket_t));
@@ -99,8 +85,7 @@ socket_t * socket_open (socket_domain_t domain, socket_type_t type)
 	}
 	memset(s, 0, sizeof(socket_t));
 	s->type = socket_type_bsd(type);
-	s->domain = socket_domain_bsd(domain);
-	s->fd = socket(s->domain, s->type, 0);
+	s->fd = socket(AF_INET, s->type, 0);
 	if (s->fd < 0) {
 		free(s);
 		return NULL;
@@ -114,7 +99,7 @@ int socket_bind (socket_t *socket, const char *address, int port)
 	struct sockaddr_in soc;
 	len = sizeof(soc);
 	memset(&soc, 0, len);
-	soc.sin_family = socket->domain;
+	soc.sin_family = AF_INET;
 	soc.sin_addr.s_addr = inet_addr(address);
 	soc.sin_port = htons(port);
 	return bind(socket->fd, (struct sockaddr *) &soc, len);
@@ -135,7 +120,6 @@ socket_t * socket_accept (socket_t *socket)
 		return NULL;
 	}
 	memset(s, 0, sizeof(socket_t));
-	s->domain = socket->domain;
 	s->type = socket->type;
 	memset(&client, 0, sizeof(struct sockaddr_in));
 	client_len = sizeof(struct sockaddr_in);
@@ -199,7 +183,7 @@ int socket_recvfrom (socket_t *socket, void *buf, int length, char *address, int
 	sender_length = sizeof(struct sockaddr_in);
 	rc = recvfrom(socket->fd, buf, length, 0, (struct sockaddr *) &sender, &sender_length);
 	if (address) {
-		inet_ntop(socket->domain, &(sender.sin_addr), address, SOCKET_IP_LENGTH);
+		inet_ntop(AF_INET, &(sender.sin_addr), address, SOCKET_IP_LENGTH);
 	}
 	if (port) {
 		*port = ntohs(sender.sin_port);
@@ -211,7 +195,7 @@ int socket_sendto (socket_t *socket, const void *buf, int length, const char *ad
 {
 	socklen_t dest_length;
 	struct sockaddr_in dest;
-	dest.sin_family = socket->domain;
+	dest.sin_family = AF_INET;
 	dest.sin_addr.s_addr = inet_addr(address);
 	dest.sin_port = htons(port);
 	dest_length = sizeof(struct sockaddr_in);

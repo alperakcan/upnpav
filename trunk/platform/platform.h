@@ -31,7 +31,7 @@
  */
 
 /**
- * @defgroup platform_thread thread api
+ * @defgroup platform_thread platform thread api
  * @ingroup  platform
  * @brief    thread abstraction for platform layer
  */
@@ -54,99 +54,226 @@ typedef struct thread_cond_s thread_cond_t;
  */
 typedef struct thread_mutex_s thread_mutex_t;
 
-/** @brief creates a new thread of control that executes concurrently
-  *        with the calling thread. The new thread applies the function
-  *        passing it as first argument.
-  *
-  * @param *name     - thread name
-  * @param *function - pointer to the function.
-  * @param *arg      - argument to pass to function.
-  * @returns NULL on error, otherwise the thread object
-  */
+/**
+ * @brief creates a new thread of control that executes concurrently
+ *        with the calling thread. the new thread applies the function
+ *        passing it as first argument.
+ *
+ * @param *name     - thread name
+ * @param *function - thread function.
+ * @param *arg      - argument passed to thread function.
+ *
+ * @returns NULL on error, otherwise the thread object
+ */
 thread_t * thread_create (const char *name, void * (*function) (void *), void *arg);
 
-/** @brief returns the thread identifier for the calling thread.
-  *
-  * @returns th thread id.
-  */
+/**
+ * @brief returns the thread identifier for the calling thread.
+ *
+ * @returns thread id.
+ */
 unsigned int thread_self (void);
 
-/** @brief suspends the execution of the calling thread until the
-  *        thread identified by tid terminates, either by calling
-  *        thread_exit or by being cancelled.
-  *
-  * @param *thread  - the thread
-  * @returns 0 on success, 1 on error.
-  */
+/**
+ * @brief suspends the execution of the calling thread until the
+ *        thread terminates, either by calling thread_exit or by
+ *        being cancelled.
+ *
+ * @param *thread  - the thread
+ *
+ * @returns 0 on success, 1 on error.
+ */
 int thread_join (thread_t *thread);
 
-/** @brief initialize the mutex struct
-  *
-  * @param *name     - name of the mutex pointer
-  * @param recursive - 1 if recursive otherwise 0
-  * @returns NULL on error, otherwise the mutex object
-  */
+/**
+ * @brief initialize the mutex object
+ *
+ * @param *name     - name of the mutex
+ * @param recursive - 1 if recursive otherwise 0
+ *
+ * @returns NULL on error, otherwise the mutex object
+ */
 thread_mutex_t * thread_mutex_init (const char *name, int recursive);
 
-/** @brief locks the given mutex
-  *
-  * @param *mutex - the mutex
-  * @returns 0 on success, 1 on error.
-  */
+/**
+ * @brief locks the given mutex
+ *
+ * @param *mutex - the mutex
+ *
+ * @returns 0 on success, 1 on error.
+ */
 int thread_mutex_lock (thread_mutex_t *mutex);
 
-/** @brief unlocks the given mutex
-  *
-  * @param *mutex - the mutex
-  * @returns 0 on success, 1 on error.
-  */
+/**
+ * @brief unlocks the given mutex
+ *
+ * @param *mutex - the mutex
+ *
+ * @returns 0 on success, 1 on error.
+ */
 int thread_mutex_unlock (thread_mutex_t *mutex);
 
-/** @brief destroys the given mutex
-  *
-  * @param *mutex - the mutex
-  * @returns 0 on success, 1 on error.
-  */
+/**
+ * @brief destroys the given mutex
+ *
+ * @param *mutex - the mutex
+ *
+ * @returns 0 on success, 1 on error.
+ */
 int thread_mutex_destroy (thread_mutex_t *mutex);
 
+/**
+ * @brief initialize condition variable object
+ *
+ * @param *name - name of the condition variable
+ *
+ * @returns NULL on error, otherwise the condition variable object
+ */
 thread_cond_t * thread_cond_init (const char *name);
+
+/**
+ * @brief wait on condition variable by automatically unocking the
+ *        mutex object and waiting for condition signal.
+ *
+ * @param *cond  - condition variable object
+ * @param *mutex - mutex object
+ *
+ * @returns 0 on success, otherwise -1
+ */
 int thread_cond_wait (thread_cond_t *cond, thread_mutex_t *mutex);
+
+/**
+ * @brief wait on condition variable for a specific amount of time.
+ *
+ * @param *cond - condition variable object
+ * @param *mutex - mutex object
+ * @param timeout - timeout value in miliseconds, -1 for infinite
+ *
+ * @returns 0 on success, 1 on timeout, -1 on error
+ */
 int thread_cond_timedwait (thread_cond_t *cond, thread_mutex_t *mutex, int timeout);
+
+/**
+ * @brief unlock a thread waiting for a condition variable
+ *
+ * @param *cond - condition variable object
+ *
+ * @returns 0 on success, otherwise -1
+ */
 int thread_cond_signal (thread_cond_t *cond);
+
+/**
+ * @brief unlocks all threads waiting for a condition variable
+ *
+ * @param *cond - condition variable object
+ *
+ * @returns 0 on success, otherwise -1
+ */
 int thread_cond_broadcast (thread_cond_t *cond);
+
+/**
+ * @brief destroys given condition variable object
+ *
+ * @param *cond - condition variable object
+ *
+ * @returns 0 on success, otherwise -1
+ */
 int thread_cond_destroy (thread_cond_t *cond);
 
 /*@}*/
 
+/**
+ * @defgroup platform_socket platform socket api
+ * @ingroup  platform
+ * @brief    socket abstraction for platform layer
+ */
+
+/** @addtogroup platform_thread */
+/*@{*/
+
 #ifndef SOCKET_IP_LENGTH
+/**
+ * @brief maximum allowed length for IP string
+ */
 #define SOCKET_IP_LENGTH 20
 #endif
 
+/**
+ * @brief socket communication types
+ */
 typedef enum {
-	SOCKET_DOMAIN_UNIX = 0x00,
-	SOCKET_DOMAIN_INET = 0x01,
-} socket_domain_t;
-
-typedef enum {
+	/** tcp communication */
 	SOCKET_TYPE_STREAM = 0x00,
+	/** udp communication */
 	SOCKET_TYPE_DGRAM  = 0x01,
 } socket_type_t;
 
+/**
+ * @brief socket event types
+ */
 typedef enum {
+	/** in data event */
 	SOCKET_EVENT_IN   = 0x01,
-	SOCKET_EVENT_PRI  = 0x02,
-	SOCKET_EVENT_OUT  = 0x04,
-	SOCKET_EVENT_ERR  = 0x08,
-	SOCKET_EVENT_HUP  = 0x10,
-	SOCKET_EVENT_NVAL = 0x20,
+	/** out data event */
+	SOCKET_EVENT_OUT  = 0x02,
+	/** error event */
+	SOCKET_EVENT_ERR  = 0x04,
 } socket_event_t;
 
+/**
+ * @brief exported socket structure
+ */
 typedef struct socket_s socket_t;
 
-socket_t * socket_open (socket_domain_t domain, socket_type_t type);
+/**
+ * @brief create a socket object with given socket type
+ *
+ * @param type - socket type
+ *
+ * @returns socket object on success, otherwise NULL
+ */
+socket_t * socket_open (socket_type_t type);
+
+/**
+ * @brief binds a socket to a given address and port
+ *
+ * @param * socket - socket object
+ * @param *address - bind address
+ * @param port     - bind port
+ *
+ * @returns 0 on success, otherwise -1
+ */
 int socket_bind (socket_t *socket, const char *address, int port);
+
+/**
+ * @brief sets maximum allowed connection for a given socket object
+ *
+ * @param *socket - socket object
+ * @param backlog - maximum allowed connection
+ *
+ * @returns 0 on success, otherwise -1
+ */
 int socket_listen (socket_t *socket, int backlog);
+
+/**
+ * @brief accepts a new connection on given socket object
+ *
+ * @param *socket - socket object
+ *
+ * @returns new socket object for accepted connection, otherwise NULL
+ */
 socket_t * socket_accept (socket_t *socket);
+
+/**
+ * @brief connects to given address and port with given timeout value
+ *
+ * @param *socket  - socket object
+ * @param *address - remote address
+ * @param port     - remote port
+ * @param timeout  - timeout value in miliseconds, -1 for infinite
+ *
+ * @returns 0 on success, otherwise -1
+ */
 int socket_connect (socket_t *socket, const char *address, int port, int timeout);
 int socket_recv (socket_t *socket, void *buffer, int length);
 int socket_send (socket_t *socket, const void *buffer, int length);
@@ -158,6 +285,12 @@ int socket_close (socket_t *socket);
 int socket_option_reuseaddr (socket_t *socket, int on);
 int socket_option_membership (socket_t *socket, const char *address, int on);
 int socket_option_multicastttl (socket_t *socket, int ttl);
+
+/*@}*/
+
+#ifndef FILE_MAX_LENGTH
+#define FILE_MAX_LENGTH 1024
+#endif
 
 typedef enum {
 	FILE_MODE_READ  = 0x01,
@@ -190,7 +323,7 @@ typedef struct file_stat_s {
 } file_stat_t;
 
 typedef struct dir_entry_s {
-	char name[1024];
+	char name[FILE_MAX_LENGTH];
 } dir_entry_t;
 
 #define FILE_ISREG(type) (type & FILE_TYPE_REGULAR)

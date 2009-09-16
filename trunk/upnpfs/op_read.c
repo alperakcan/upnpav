@@ -217,7 +217,7 @@ static int http_open (upnpfs_http_t *http, unsigned int offset)
 	http->code = 0;
 	http->seek = 0;
 
-	http->socket = socket_open(SOCKET_DOMAIN_INET, SOCKET_TYPE_STREAM);
+	http->socket = socket_open(SOCKET_TYPE_STREAM);
 	if (http->socket == NULL) {
 		debugfs("socket() failed");
 		goto error;

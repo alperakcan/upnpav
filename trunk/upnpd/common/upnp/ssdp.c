@@ -523,7 +523,7 @@ out:
 
 static int ssdp_init_server (ssdp_t *ssdp)
 {
-	ssdp->socket = socket_open(SOCKET_DOMAIN_INET, SOCKET_TYPE_DGRAM);
+	ssdp->socket = socket_open(SOCKET_TYPE_DGRAM);
 	if (ssdp->socket == NULL) {
 		return -2;
 	}
@@ -558,7 +558,7 @@ static int ssdp_advertise_send (const char *buffer, const char *address, int por
 	if (buffer == NULL) {
 		return -1;
 	}
-	sock = socket_open(SOCKET_DOMAIN_INET, SOCKET_TYPE_DGRAM);
+	sock = socket_open(SOCKET_TYPE_DGRAM);
 	if (sock == NULL) {
 		return -1;
 	}
@@ -675,7 +675,7 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 	if (ret < 0) {
 		return -1;
 	}
-	sock = socket_open(SOCKET_DOMAIN_INET, SOCKET_TYPE_DGRAM);
+	sock = socket_open(SOCKET_TYPE_DGRAM);
 	if (sock < 0) {
 		free(buffer);
 		return -1;
