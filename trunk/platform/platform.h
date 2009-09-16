@@ -275,15 +275,105 @@ socket_t * socket_accept (socket_t *socket);
  * @returns 0 on success, otherwise -1
  */
 int socket_connect (socket_t *socket, const char *address, int port, int timeout);
+
+/**
+ * @brief receive data from stream socket
+ *
+ * @param *socket - socket object
+ * @param *buffer - recv buffer
+ * @param length  - maximum data length to read
+ *
+ * @returns received buffer size on success, -1 on error
+ */
 int socket_recv (socket_t *socket, void *buffer, int length);
+
+/**
+ * @brief send data from stream socket
+ *
+ * @param *socket - socket object
+ * @param *buffer - send buffer
+ * @param length  - length of buffer
+ *
+ * @returns sent buffer size on success, -1 on error
+ */
 int socket_send (socket_t *socket, const void *buffer, int length);
+
+/**
+ * @brief receive data from datagram socket
+ *
+ * @param *socket  - socket object
+ * @param *buf     - receive buffer
+ * @param length   - maximum data length to read
+ * @param *address - preallocated sender address, can be NULL
+ * @param *port    - sender port, can be NULL
+ *
+ * @returns received buffer size, sender address, sender port on success, -1 on error
+ */
 int socket_recvfrom (socket_t *socket, void *buf, int length, char *address, int *port);
+
+/**
+ * @bried send data from datagram socket to given address, port
+ *
+ * @param *socket  - socket object
+ * @param *buf     - send buffer
+ * @param length   - length of buffer
+ * @param *address - destination address
+ * @param port     - destination port
+ *
+ * @return send buffer size on success, -1 on error
+ */
 int socket_sendto (socket_t *socket, const void *buf, int length, const char *address, int port);
+
+/**
+ * @brief poll events on given socket tiwh a given timeout value
+ *
+ * @param *socket - socket object
+ * @param request - requested events (bitwise or'ed)
+ * @param *result - result events (bitwise or'ed)
+ * @param timeout - timeout to wait on socket in miliseconds, -1 for infinite
+ *
+ * @returns 0 on timeout, 1 on success, -1 on error
+ */
 int socket_poll (socket_t *socket, socket_event_t request, socket_event_t *result, int timeout);
+
+/**
+ * @brief closes and destroys given socket object
+ *
+ * @param *socket - socket object
+ *
+ * @return 0 on success, -1 on error
+ */
 int socket_close (socket_t *socket);
 
+/**
+ * @brief sets reusable flag for given socket object
+ *
+ * @param *socket - socket object
+ * @param on      - 0 for disable, 1 for enable
+ *
+ * @returns 0 on success, -1 on error
+ */
 int socket_option_reuseaddr (socket_t *socket, int on);
+
+/**
+ * @brief joins/leaves to a given multicast address
+ *
+ * @param *socket  - socket object
+ * @param *address - destination multicast address
+ * @param on       - 0 for leave, 1 for join
+ *
+ * @returns 0 on success, -1 on error
+ */
 int socket_option_membership (socket_t *socket, const char *address, int on);
+
+/**
+ * @brief sets multicast time to live value for given socket
+ *
+ * @param *socket - socket object
+ * @param ttl     - time to live value
+ *
+ * @returns 0 on success, -1 on error
+ */
 int socket_option_multicastttl (socket_t *socket, int ttl);
 
 /*@}*/
