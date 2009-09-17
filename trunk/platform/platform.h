@@ -379,44 +379,92 @@ int socket_option_multicastttl (socket_t *socket, int ttl);
 /*@}*/
 
 #ifndef FILE_MAX_LENGTH
+/**
+ * @brief maximum allowed length for file name
+ */
 #define FILE_MAX_LENGTH 1024
 #endif
 
+/**
+ * @brief file open modes
+ */
 typedef enum {
+	/** read mode */
 	FILE_MODE_READ  = 0x01,
+	/** write mode */
 	FILE_MODE_WRITE = 0x02,
 } file_mode_t;
 
+/**
+ * @brief file seek operations
+ */
 typedef enum {
+	/** seek from beginning */
 	FILE_SEEK_SET = 0x00,
+	/** seek from current position */
 	FILE_SEEK_CUR = 0x01,
+	/** seek from end of file */
 	FILE_SEEK_END = 0x02,
 } file_seek_t;
 
+/**
+ * @brief file types
+ */
 typedef enum {
+	/** unknown type */
 	FILE_TYPE_UNKNOWN   = 0x00,
+	/** regular file */
 	FILE_TYPE_REGULAR   = 0x01,
+	/** directory */
 	FILE_TYPE_DIRECTORY = 0x02,
 } file_type_t;
 
+/**
+ * @brief filename match options
+ */
 typedef enum {
+	/** ignore case sensitive matching */
 	FILE_MATCH_CASEFOLD = 0x01,
 } file_match_t;
 
+/**
+ * @brief exported file structure
+ */
 typedef struct file_s file_t;
+
+/**
+ * @brief exported dir structure
+ */
 typedef struct dir_s dir_t;
 
+/**
+ * @brief file stat information
+ */
 typedef struct file_stat_s {
+	/** file size */
 	int64_t size;
+	/** file modification time */
 	unsigned int mtime;
+	/** file type */
 	file_type_t type;
 } file_stat_t;
 
+/**
+ * @brief directory entry information
+ */
 typedef struct dir_entry_s {
+	/** entry name */
 	char name[FILE_MAX_LENGTH];
 } dir_entry_t;
 
+/**
+ * @brief tests if file is a regular file
+ */
 #define FILE_ISREG(type) (type & FILE_TYPE_REGULAR)
+
+/**
+ * @brief tests if file is a directory
+ */
 #define FILE_ISDIR(type) (type & FILE_TYPE_DIRECTORY)
 
 int file_match (const char *path, const char *string, file_match_t flag);
@@ -446,4 +494,3 @@ int interface_printall (void);
 extern int platform_debug;
 #define debugf(fmt...) debug_debugf(__FILE__, __LINE__, __FUNCTION__, fmt);
 void debug_debugf (char *file, int line, const char *func, char *fmt, ...);
-
