@@ -87,6 +87,7 @@ thread_cond_t * thread_cond_init (const char *name)
 int thread_cond_destroy (thread_cond_t *cond)
 {
         pthread_cond_destroy(&cond->cond);
+        free(cond->name);
         free(cond);
         return 0;
 }
