@@ -67,7 +67,21 @@ static int strappend (char **to, char *append)
 	return 0;
 }
 
+static int strappend_int (char **to, int i)
+{
+	int r;
+	char *append;
+	append = NULL;
+	if (asprintf(&append, "%d", i) < 0) {
+		return -1;
+	}
+	r = strappend(to, append);
+	free(append);
+	return r;
+}
+
 #define APPEND(a) if (strappend(result, a) != 0) { goto error; }
+#define APPENDI(a) if (strappend_int(result, a) != 0) { goto error; }
 
 static int generate_description (char **result, device_t *device)
 {
@@ -92,9 +106,9 @@ static int generate_description (char **result, device_t *device)
 		for (i = 0; (icon = device->icons[i]) != NULL; i++) {
 			APPEND("\n<icon>");
 			APPEND("\n<mimetype>"); APPEND(icon->mimetype); APPEND("</mimetype>");
-			//APPEND("\n<width>"); APPEND(icon->width); APPEND("</width>");
-			//APPEND("\n<height>"); APPEND(icon->height); APPEND("</height>");
-			//APPEND("\n<depth>"); APPEND(icon->depth); APPEND("</depth>");
+			APPEND("\n<width>"); APPENDI(icon->width); APPEND("</width>");
+			APPEND("\n<height>"); APPENDI(icon->height); APPEND("</height>");
+			APPEND("\n<depth>"); APPENDI(icon->depth); APPEND("</depth>");
 			APPEND("\n<url>"); APPEND(icon->url); APPEND("</url>");
 			APPEND("\n</icon>");
 		}
