@@ -160,135 +160,133 @@ static IXML_Document * generate_description (device_t *device)
 	return doc;
 }
 
-static IXML_Element * generate_scpd_action (service_action_t *action, IXML_Document *doc)
+static int strappend (char **to, char *append)
 {
+	int l;
 	int j;
-	IXML_Element *top;
-	IXML_Element *parent;
-	IXML_Element *child;
-	action_argument_t *argument;
-
-	top = ixmlDocument_createElement(doc, "action");
-
-	add_value_element(doc, top, "name", action->name);
-	if (action->arguments) {
-		parent=ixmlDocument_createElement(doc, "argumentList");
-		ixmlNode_appendChild((IXML_Node *) top,(IXML_Node *) parent);
-		for (j = 0; (argument = action->arguments[j]) != NULL; j++) {
-			child = ixmlDocument_createElement(doc, "argument");
-			ixmlNode_appendChild((IXML_Node *) parent, (IXML_Node *) child);
-			add_value_element(doc, child, "name", argument->name);
-			add_value_element(doc, child, "direction", (argument->direction == ARGUMENT_DIRECTION_IN) ? "in" : "out");
-			add_value_element(doc, child, "relatedStateVariable", argument->relatedstatevariable);
-		}
+	char *tmp;
+	if (*to == NULL) {
+		l = 0;
+	} else {
+		l = strlen(*to);
 	}
-	return top;
+	if (append == NULL) {
+		return 0;
+	}
+	j = strlen(append);
+	tmp = (char *) malloc(l + j + 1);
+	if (tmp == NULL) {
+		return -1;
+	}
+	if (l > 0) {
+		memcpy(tmp, *to, l);
+	}
+	memcpy(tmp + l, append, j + 1);
+	free(*to);
+	*to = tmp;
+	return 0;
 }
 
-static IXML_Element * generate_scpd_actionlist (device_service_t *service, IXML_Document *doc)
+static int generate_scpd (char **result, device_service_t *service)
 {
 	int i;
-	IXML_Element *top;
-	IXML_Element *child;
-	service_action_t *action;
-
-	top = ixmlDocument_createElement(doc, "actionList");
-	for (i = 0; (action = service->actions[i]) != NULL; i++) {
-		child = generate_scpd_action(action, doc);
-		ixmlNode_appendChild((IXML_Node *) top, (IXML_Node *) child);
-	}
-	return top;
-}
-
-static IXML_Element * generate_scpd_statevar (service_variable_t *variable, IXML_Document *doc)
-{
-	int i;
+	int j;
 	char *datatype;
 	char *allowedvalue;
-
-	IXML_Element *top;
-	IXML_Element *parent;
-
-	datatype = NULL;
-
-	switch (variable->datatype) {
-		case VARIABLE_DATATYPE_STRING:	datatype = "string"; break;
-		case VARIABLE_DATATYPE_I4:	datatype = "i4"; break;
-		case VARIABLE_DATATYPE_UI4:	datatype = "ui4"; break;
-		default: assert(0); break;
-	}
-
-	top = ixmlDocument_createElement(doc, "stateVariable");
-
-	add_value_attribute(doc, top, "sendEvents", (variable->sendevent == VARIABLE_SENDEVENT_YES) ? "yes" : "no");
-	add_value_element(doc, top, "name", variable->name);
-	add_value_element(doc, top, "dataType", datatype);
-
-	if (variable->allowedvalues != NULL) {
-		parent = ixmlDocument_createElement(doc, "allowedValueList");
-		ixmlNode_appendChild((IXML_Node *) top, (IXML_Node *) parent);
-		for (i = 0; (allowedvalue = variable->allowedvalues[i]) != NULL; i++) {
-			add_value_element(doc,parent,"allowedValue", allowedvalue);
-		}
-	}
-	if (variable->defaultvalue) {
-		add_value_element(doc, top, "defaultValue", variable->defaultvalue);
-	}
-	return top;
-}
-
-static IXML_Element * generate_scpd_servicestatetable (device_service_t *service, IXML_Document *doc)
-{
-	int i;
-	IXML_Element *top;
-	IXML_Element *child;
+	service_action_t *action;
+	action_argument_t *argument;
 	service_variable_t *variable;
 
-	top = ixmlDocument_createElement(doc, "serviceStateTable");
-	for (i = 0; (variable = service->variables[i]) != NULL; i++) {
-		child = generate_scpd_statevar(variable, doc);
-		ixmlNode_appendChild((IXML_Node *) top, (IXML_Node *) child);
+	if (strappend(result, "\n<scpd xmlns=\"urn:schemas-upnp-org:service-1-0\">") != 0) { goto error; }
+	if (strappend(result, "\n<specVersion>\n<major>1</major>\n<minor>0</minor>\n</specVersion>") != 0) { goto error; }
+	if (service->actions != NULL) {
+		if (strappend(result, "\n<actionList>") != 0) { goto error; }
+		for (i = 0; (action = service->actions[i]) != NULL; i++) {
+			if (strappend(result, "\n<action>") != 0) { goto error; }
+			if (strappend(result, "\n<name>") != 0) { goto error; }
+			if (strappend(result, action->name) != 0) { goto error; }
+			if (strappend(result, "</name>") != 0) { goto error; }
+			if (action->arguments != NULL) {
+				if (strappend(result, "\n<argumentList>") != 0) { goto error; }
+				for (j = 0; (argument = action->arguments[j]) != NULL; j++) {
+					if (strappend(result, "\n<argument>") != 0) { goto error; }
+					if (strappend(result, "\n<name>") != 0) { goto error; }
+					if (strappend(result, argument->name) != 0) { goto error; }
+					if (strappend(result, "</name>") != 0) { goto error; }
+					if (argument->direction == ARGUMENT_DIRECTION_IN) {
+						if (strappend(result, "\n<direction>in</direction>") != 0) { goto error; }
+					} else {
+						if (strappend(result, "\n<direction>out</direction>") != 0) { goto error; }
+					}
+					if (strappend(result, "\n<relatedStateVariable>") != 0) { goto error; }
+					if (strappend(result, argument->relatedstatevariable) != 0) { goto error; }
+					if (strappend(result, "</relatedStateVariable>") != 0) { goto error; }
+					if (strappend(result, "\n</argument>") != 0) { goto error; }
+				}
+				if (strappend(result, "\n</argumentList>") != 0) { goto error; }
+			}
+			if (strappend(result, "\n</action>") != 0) { goto error; }
+		}
+		if (strappend(result, "\n</actionList>") != 0) { goto error; }
 	}
-	return top;
-}
-
-static IXML_Document * generate_scpd (device_service_t *service)
-{
-	IXML_Document *doc;
-	IXML_Element *root;
-	IXML_Element *child;
-
-	doc = ixmlDocument_createDocument();
-
-	root = ixmlDocument_createElementNS(doc, "urn:schemas-upnp-org:service-1-0", "scpd");
-	ixmlElement_setAttribute(root, "xmlns", "urn:schemas-upnp-org:service-1-0");
-	ixmlNode_appendChild((IXML_Node *) doc, (IXML_Node *) root);
-
-	child = generate_specversion(doc, 1, 0);
-	ixmlNode_appendChild((IXML_Node *) root, (IXML_Node *) child);
-
-	child = generate_scpd_actionlist(service, doc);
-	ixmlNode_appendChild((IXML_Node *) root, (IXML_Node *) child);
-
-	child = generate_scpd_servicestatetable(service, doc);
-	ixmlNode_appendChild((IXML_Node *) root, (IXML_Node *) child);
-
-	return doc;
+	if (service->variables != NULL) {
+		if (strappend(result, "\n<serviceStateTable>") != 0) { goto error; }
+		for (i = 0; (variable = service->variables[i]) != NULL; i++) {
+			datatype = NULL;
+			switch (variable->datatype) {
+				case VARIABLE_DATATYPE_STRING:	datatype = "string"; break;
+				case VARIABLE_DATATYPE_I4:	datatype = "i4"; break;
+				case VARIABLE_DATATYPE_UI4:	datatype = "ui4"; break;
+				default: assert(0); break;
+			}
+			if (variable->sendevent == VARIABLE_SENDEVENT_YES) {
+				if (strappend(result, "\n<stateVariable sendEvents=\"yes\">") != 0) { goto error; }
+			} else {
+				if (strappend(result, "\n<stateVariable sendEvents=\"no\">") != 0) { goto error; }
+			}
+			if (strappend(result, "\n<name>") != 0) { goto error; }
+			if (strappend(result, variable->name) != 0) { goto error; }
+			if (strappend(result, "</name>") != 0) { goto error; }
+			if (strappend(result, "\n<dataType>") != 0) { goto error; }
+			if (strappend(result, datatype) != 0) { goto error; }
+			if (strappend(result, "</dataType>") != 0) { goto error; }
+			if (variable->allowedvalues != NULL) {
+				if (strappend(result, "\n<allowedValueList>") != 0) { goto error; }
+				for (j = 0; (allowedvalue = variable->allowedvalues[j]) != NULL; j++) {
+					if (strappend(result, "\n<allowedValue>") != 0) { goto error; }
+					if (strappend(result, allowedvalue) != 0) { goto error; }
+					if (strappend(result, "</allowedValue>") != 0) { goto error; }
+				}
+				if (strappend(result, "\n</allowedValueList>") != 0) { goto error; }
+			}
+			if (variable->defaultvalue) {
+				if (strappend(result, "\n<defaultValue>") != 0) { goto error; }
+				if (strappend(result, variable->defaultvalue) != 0) { goto error; }
+				if (strappend(result, "</defaultValue>") != 0) { goto error; }
+			}
+			if (strappend(result, "\n</stateVariable>") != 0) { goto error; }
+		}
+		if (strappend(result, "\n</serviceStateTable>") != 0) { goto error; }
+	}
+	if (strappend(result, "\n</scpd>\n") != 0) { goto error; }
+	return 0;
+error:
+	return -1;
 }
 
 char * description_generate_from_service (device_service_t *service)
 {
-	char *result = NULL;
-	IXML_Document *doc;
-
-	doc = generate_scpd(service);
-	if (doc != NULL) {
-       		result = ixmlDocumenttoString(doc);
-		ixmlDocument_free(doc);
-	} else {
-		debugf("generate_scdp(service) failed");
+	char *ret = NULL;
+	if (strappend(&ret, "<?xml version=\"1.0\"?>") != 0) {
+		goto error;
 	}
-	return result;
+	if (generate_scpd(&ret, service) != 0) {
+		goto error;
+	}
+	return ret;
+error:
+	free(ret);
+	return NULL;
 }
 
 char * description_generate_from_device (device_t *device)
