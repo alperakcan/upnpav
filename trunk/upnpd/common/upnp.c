@@ -37,129 +37,6 @@
 #include "upnp.h"
 #include "common.h"
 
-static void add_value_attribute (IXML_Document *doc, IXML_Element *parent, char *attrname, char *value)
-{
-	ixmlElement_setAttribute(parent, attrname, value);
-}
-
-static IXML_Element * add_value_element (IXML_Document *doc, IXML_Element *parent, char *tagname, char *value)
-{
-	IXML_Element *top;
-	IXML_Node *child;
-	top = ixmlDocument_createElement(doc, tagname);
-	child = ixmlDocument_createTextNode(doc, value);
-	ixmlNode_appendChild((IXML_Node *) top, (IXML_Node *) child);
-	ixmlNode_appendChild((IXML_Node *) parent, (IXML_Node *) top);
-	return top;
-}
-
-static void add_value_element_int (IXML_Document *doc, IXML_Element *parent, char *tagname, int value)
-{
-	char *buf;
-	asprintf(&buf, "%d", value);
-	add_value_element(doc, parent, tagname, buf);
-	free(buf);
-}
-
-static IXML_Element * generate_description_servicelist (IXML_Document *doc, device_service_t **services)
-{
-	int i;
-	char *scdpurl;
-	IXML_Element *top;
-	IXML_Element *parent;
-	device_service_t *service;
-
-	top = ixmlDocument_createElement(doc, "serviceList");
-	for (i = 0; (service = services[i]) != NULL; i++) {
-		if (asprintf(&scdpurl, "%s", service->scpdurl) < 0) {
-			continue;
-		}
-		parent = ixmlDocument_createElement(doc, "service");
-		ixmlNode_appendChild((IXML_Node *) top, (IXML_Node *) parent);
-		add_value_element(doc, parent, "serviceId", service->id);
-		add_value_element(doc, parent, "serviceType", service->type);
-		add_value_element(doc, parent, "SCPDURL", scdpurl);
-		add_value_element(doc, parent, "controlURL", service->controlurl);
-		add_value_element(doc, parent, "eventSubURL", service->eventurl);
-		free(scdpurl);
-        }
-
-	return top;
-}
-
-static IXML_Element * generate_description_iconlist (IXML_Document *doc, icon_t **icons)
-{
-	int i;
-	icon_t *icon;
-	IXML_Element *top;
-	IXML_Element *parent;
-
-	top = ixmlDocument_createElement(doc, "iconList");
-	for (i = 0; (icon = icons[i]) != NULL; i++) {
-		parent = ixmlDocument_createElement(doc, "icon");
-		ixmlNode_appendChild((IXML_Node *) top,(IXML_Node *) parent);
-		add_value_element(doc, parent, "mimetype", icon->mimetype);
-		add_value_element_int(doc, parent, "width", icon->width);
-		add_value_element_int(doc, parent, "height", icon->height);
-		add_value_element_int(doc, parent, "depth", icon->depth);
-		add_value_element(doc, parent, "url", icon->url);
-	}
-
-	return top;
-}
-
-static IXML_Element * generate_specversion (IXML_Document *doc, int major, int minor)
-{
-	IXML_Element *top;
-	top = ixmlDocument_createElement(doc, "specVersion");
-	add_value_element_int(doc, top, "major", major);
-	add_value_element_int(doc, top, "minor", minor);
-	return top;
-}
-
-static IXML_Document * generate_description (device_t *device)
-{
-	IXML_Document *doc;
-	IXML_Element *root;
-	IXML_Element *child;
-	IXML_Element *parent;
-
-	doc = ixmlDocument_createDocument();
-
-	root = ixmlDocument_createElementNS(doc, "urn:schemas-upnp-org:device-1-0", "root");
-	ixmlElement_setAttribute(root, "xmlns", "urn:schemas-upnp-org:device-1-0");
-	ixmlNode_appendChild((IXML_Node *) doc, (IXML_Node *) root);
-
-	child = generate_specversion(doc,1,0);
-	ixmlNode_appendChild((IXML_Node *) root, (IXML_Node *) child);
-
-	parent = ixmlDocument_createElement(doc, "device");
-	ixmlNode_appendChild((IXML_Node *) root, (IXML_Node *) parent);
-
-	add_value_element(doc, parent, "deviceType", device->devicetype);
-	add_value_element(doc, parent, "presentationURL", device->presentationurl);
-	add_value_element(doc, parent, "friendlyName", device->friendlyname);
-	add_value_element(doc, parent, "manufacturer", device->manufacturer);
-	add_value_element(doc, parent, "manufacturerURL", device->manufacturerurl);
-	add_value_element(doc, parent, "modelDescription", device->modeldescription);
-	add_value_element(doc, parent, "modelName", device->modelname);
-	add_value_element(doc, parent, "modelURL", device->modelurl);
-	add_value_element(doc, parent, "UDN", device->uuid);
-	child = add_value_element(doc, parent, "dlna:X_DLNADOC", "DMS-1.50");
-	add_value_attribute(doc, child, "xmlns:dlna", "urn:schemas-dlna-org:device-1-0");
-
-	if (device->icons) {
-		child = generate_description_iconlist(doc, device->icons);
-		ixmlNode_appendChild((IXML_Node *) parent,(IXML_Node *) child);
-	}
-	if (device->services) {
-		child = generate_description_servicelist(doc, device->services);
-		ixmlNode_appendChild((IXML_Node *) parent,(IXML_Node *) child);
-	}
-
-	return doc;
-}
-
 static int strappend (char **to, char *append)
 {
 	int l;
@@ -190,6 +67,58 @@ static int strappend (char **to, char *append)
 	return 0;
 }
 
+#define APPEND(a) if (strappend(result, a) != 0) { goto error; }
+
+static int generate_description (char **result, device_t *device)
+{
+	int i;
+	icon_t *icon;
+	device_service_t *service;
+	APPEND("\n<root xmlns=\"urn:schemas-upnp-org:service-1-0\">");
+	APPEND("\n<specVersion>\n<major>1</major>\n<minor>0</minor>\n</specVersion>");
+	APPEND("\n<device>");
+	APPEND("\n<deviceType>"); APPEND(device->devicetype); APPEND("</deviceType>");
+	APPEND("\n<presentationURL>"); APPEND(device->presentationurl); APPEND("</presentationURL>");
+	APPEND("\n<friendlyName>"); APPEND(device->friendlyname); APPEND("</friendlyName>");
+	APPEND("\n<manufacturer>"); APPEND(device->manufacturer); APPEND("</manufacturer>");
+	APPEND("\n<manufacturerURL>"); APPEND(device->manufacturerurl); APPEND("</manufacturerURL>");
+	APPEND("\n<modelDescription>"); APPEND(device->modeldescription); APPEND("</modelDescription>");
+	APPEND("\n<modelName>"); APPEND(device->modelname); APPEND("</modelName>");
+	APPEND("\n<modelURL>"); APPEND(device->modelurl); APPEND("</modelURL>");
+	APPEND("\n<UDN>"); APPEND(device->uuid); APPEND("</UDN>");
+	APPEND("\n<dlna:X_DLNADOC xmlns:dlna=\"urn:schemas-dlna-org:device-1-0\">DMS-1.50</dlna:X_DLNADOC>");
+	if (device->icons != NULL) {
+		APPEND("\n<iconList>");
+		for (i = 0; (icon = device->icons[i]) != NULL; i++) {
+			APPEND("\n<icon>");
+			APPEND("\n<mimetype>"); APPEND(icon->mimetype); APPEND("</mimetype>");
+			//APPEND("\n<width>"); APPEND(icon->width); APPEND("</width>");
+			//APPEND("\n<height>"); APPEND(icon->height); APPEND("</height>");
+			//APPEND("\n<depth>"); APPEND(icon->depth); APPEND("</depth>");
+			APPEND("\n<url>"); APPEND(icon->url); APPEND("</url>");
+			APPEND("\n</icon>");
+		}
+		APPEND("\n</iconList>");
+	}
+	if (device->services) {
+		APPEND("\n<serviceList>");
+		for (i = 0; (service = device->services[i]) != NULL; i++) {
+			APPEND("\n<service>");
+			APPEND("\n<serviceId>"); APPEND(service->id); APPEND("</serviceId>");
+			APPEND("\n<serviceType>"); APPEND(service->type); APPEND("</serviceType>");
+			APPEND("\n<SCPDURL>"); APPEND(service->scpdurl); APPEND("</SCPDURL>");
+			APPEND("\n<controlURL>"); APPEND(service->controlurl); APPEND("</controlURL>");
+			APPEND("\n<eventSubURL>"); APPEND(service->eventurl); APPEND("</eventSubURL>");
+			APPEND("\n</service>");
+		}
+		APPEND("\n</serviceList>");
+	}
+	APPEND("\n</device>\n</root>");
+	return 0;
+error:
+	return -1;
+}
+
 static int generate_scpd (char **result, device_service_t *service)
 {
 	int i;
@@ -200,40 +129,34 @@ static int generate_scpd (char **result, device_service_t *service)
 	action_argument_t *argument;
 	service_variable_t *variable;
 
-	if (strappend(result, "\n<scpd xmlns=\"urn:schemas-upnp-org:service-1-0\">") != 0) { goto error; }
-	if (strappend(result, "\n<specVersion>\n<major>1</major>\n<minor>0</minor>\n</specVersion>") != 0) { goto error; }
+	APPEND("\n<scpd xmlns=\"urn:schemas-upnp-org:service-1-0\">");
+	APPEND("\n<specVersion>\n<major>1</major>\n<minor>0</minor>\n</specVersion>");
 	if (service->actions != NULL) {
-		if (strappend(result, "\n<actionList>") != 0) { goto error; }
+		APPEND("\n<actionList>");
 		for (i = 0; (action = service->actions[i]) != NULL; i++) {
-			if (strappend(result, "\n<action>") != 0) { goto error; }
-			if (strappend(result, "\n<name>") != 0) { goto error; }
-			if (strappend(result, action->name) != 0) { goto error; }
-			if (strappend(result, "</name>") != 0) { goto error; }
+			APPEND("\n<action>");
+			APPEND("\n<name>"); APPEND(action->name); APPEND("</name>");
 			if (action->arguments != NULL) {
-				if (strappend(result, "\n<argumentList>") != 0) { goto error; }
+				APPEND("\n<argumentList>");
 				for (j = 0; (argument = action->arguments[j]) != NULL; j++) {
-					if (strappend(result, "\n<argument>") != 0) { goto error; }
-					if (strappend(result, "\n<name>") != 0) { goto error; }
-					if (strappend(result, argument->name) != 0) { goto error; }
-					if (strappend(result, "</name>") != 0) { goto error; }
+					APPEND("\n<argument>");
+					APPEND("\n<name>"); APPEND(argument->name); APPEND("</name>");
 					if (argument->direction == ARGUMENT_DIRECTION_IN) {
-						if (strappend(result, "\n<direction>in</direction>") != 0) { goto error; }
+						APPEND("\n<direction>in</direction>");
 					} else {
-						if (strappend(result, "\n<direction>out</direction>") != 0) { goto error; }
+						APPEND("\n<direction>out</direction>");
 					}
-					if (strappend(result, "\n<relatedStateVariable>") != 0) { goto error; }
-					if (strappend(result, argument->relatedstatevariable) != 0) { goto error; }
-					if (strappend(result, "</relatedStateVariable>") != 0) { goto error; }
-					if (strappend(result, "\n</argument>") != 0) { goto error; }
+					APPEND("\n<relatedStateVariable>"); APPEND(argument->relatedstatevariable); APPEND("</relatedStateVariable>");
+					APPEND("\n</argument>");
 				}
-				if (strappend(result, "\n</argumentList>") != 0) { goto error; }
+				APPEND("\n</argumentList>");
 			}
-			if (strappend(result, "\n</action>") != 0) { goto error; }
+			APPEND("\n</action>");
 		}
-		if (strappend(result, "\n</actionList>") != 0) { goto error; }
+		APPEND("\n</actionList>");
 	}
 	if (service->variables != NULL) {
-		if (strappend(result, "\n<serviceStateTable>") != 0) { goto error; }
+		APPEND("\n<serviceStateTable>");
 		for (i = 0; (variable = service->variables[i]) != NULL; i++) {
 			datatype = NULL;
 			switch (variable->datatype) {
@@ -243,35 +166,27 @@ static int generate_scpd (char **result, device_service_t *service)
 				default: assert(0); break;
 			}
 			if (variable->sendevent == VARIABLE_SENDEVENT_YES) {
-				if (strappend(result, "\n<stateVariable sendEvents=\"yes\">") != 0) { goto error; }
+				APPEND("\n<stateVariable sendEvents=\"yes\">");
 			} else {
-				if (strappend(result, "\n<stateVariable sendEvents=\"no\">") != 0) { goto error; }
+				APPEND("\n<stateVariable sendEvents=\"no\">");
 			}
-			if (strappend(result, "\n<name>") != 0) { goto error; }
-			if (strappend(result, variable->name) != 0) { goto error; }
-			if (strappend(result, "</name>") != 0) { goto error; }
-			if (strappend(result, "\n<dataType>") != 0) { goto error; }
-			if (strappend(result, datatype) != 0) { goto error; }
-			if (strappend(result, "</dataType>") != 0) { goto error; }
+			APPEND("\n<name>"); APPEND(variable->name); APPEND("</name>");
+			APPEND("\n<dataType>"); APPEND(datatype); APPEND("</dataType>");
 			if (variable->allowedvalues != NULL) {
-				if (strappend(result, "\n<allowedValueList>") != 0) { goto error; }
+				APPEND("\n<allowedValueList>");
 				for (j = 0; (allowedvalue = variable->allowedvalues[j]) != NULL; j++) {
-					if (strappend(result, "\n<allowedValue>") != 0) { goto error; }
-					if (strappend(result, allowedvalue) != 0) { goto error; }
-					if (strappend(result, "</allowedValue>") != 0) { goto error; }
+					APPEND("\n<allowedValue>"); APPEND(allowedvalue); APPEND("</allowedValue>");
 				}
-				if (strappend(result, "\n</allowedValueList>") != 0) { goto error; }
+				APPEND("\n</allowedValueList>");
 			}
 			if (variable->defaultvalue) {
-				if (strappend(result, "\n<defaultValue>") != 0) { goto error; }
-				if (strappend(result, variable->defaultvalue) != 0) { goto error; }
-				if (strappend(result, "</defaultValue>") != 0) { goto error; }
+				APPEND("\n<defaultValue>"); APPEND(variable->defaultvalue); APPEND("</defaultValue>");
 			}
-			if (strappend(result, "\n</stateVariable>") != 0) { goto error; }
+			APPEND("\n</stateVariable>");
 		}
-		if (strappend(result, "\n</serviceStateTable>") != 0) { goto error; }
+		APPEND("\n</serviceStateTable>");
 	}
-	if (strappend(result, "\n</scpd>\n") != 0) { goto error; }
+	APPEND("\n</scpd>\n");
 	return 0;
 error:
 	return -1;
@@ -295,18 +210,18 @@ error:
 
 char * description_generate_from_device (device_t *device)
 {
-	char *result;
-	IXML_Document *doc;
-
-	result = NULL;
-	doc = generate_description(device);
-	if (doc != NULL) {
-		result = ixmlDocumenttoString(doc);
-		ixmlDocument_free(doc);
-	} else {
-		debugf("generate_description(device) failed");
+	char *ret = NULL;
+	if (strappend(&ret, "<?xml version=\"1.0\"?>") != 0) {
+		goto error;
 	}
-	return result;
+	if (generate_description(&ret, device) != 0) {
+		goto error;
+	}
+	return ret;
+error:
+	debugf("generate_description(device) failed");
+	free(ret);
+	return NULL;
 }
 
 int upnp_add_response (upnp_event_action_t *request, char *servicetype, char *key, const char *value)
