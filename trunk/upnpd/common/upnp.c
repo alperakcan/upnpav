@@ -174,6 +174,9 @@ static int strappend (char **to, char *append)
 		return 0;
 	}
 	j = strlen(append);
+	if (j == 0) {
+		return 0;
+	}
 	tmp = (char *) malloc(l + j + 1);
 	if (tmp == NULL) {
 		return -1;
@@ -285,6 +288,7 @@ char * description_generate_from_service (device_service_t *service)
 	}
 	return ret;
 error:
+	debugf("generate_scpd(service) failed");
 	free(ret);
 	return NULL;
 }
