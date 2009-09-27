@@ -128,8 +128,7 @@ FOR EACH WORKSPACE
           PRINTNL 	@cd %(¯~@PATH) && makesis -d$(EPOCROOT) %(PROJECT_PATH).pkg
           PRINTNL 	@if not exist %(~@OUTPUTPATH) md %(~@OUTPUTPATH)
           IF DEFINED(SYMBIAN90) && %(SYMBIAN_CERT) && %(SYMBIAN_KEY)
-            PRINTNL 	@signsis "%(¯~!PATH)%(PROJECT_PATH).sis" "%(~!OUTPUTPATH)%(PROJECT_PATH).sis" "%(~!SYMBIAN_CERT)" "%(~!SYMBIAN_KEY)" %(SYMBIAN_PASS)
-            PRINTNL 	@del /q "%(¯~!PATH)%(PROJECT_PATH).sis"
+            PRINTNL 	@signsis "%(¯~!PATH)%(PROJECT_PATH).sis" "%(~!OUTPUTPATH)%(PROJECT_PATH).sis" "%(~!SYMBIAN_CERT)" "%(~!SYMBIAN_KEY)" %(SYMBIAN_PASS) && del /q "%(¯~!PATH)%(PROJECT_PATH).sis"
           ELSE
             PRINTNL 	@cmd /c move /y "%(¯~!PATH)%(PROJECT_PATH).sis" "%(~!OUTPUTPATH)%(PROJECT_PATH).sis"
           ENDIF

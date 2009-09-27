@@ -15,7 +15,9 @@ IF %(CAB)!="" && %(CABWIZ)!=""
   PRINTNLDOS InstallDir=%CE1%\%(PROJECT_PATH)
   PRINTNLDOS 
   PRINTNLDOS [CEDevice] 
-  PRINTNLDOS ProcessorType = %(CABCPU)
+  IF %(CABCPU)
+    PRINTNLDOS ProcessorType = %(CABCPU)
+  ENDIF
   IFDEF CONFIG_WINCE2
     PRINTNLDOS VersionMin = 2.0
     PRINTNLDOS VersionMax = 2.999
@@ -24,7 +26,9 @@ IF %(CAB)!="" && %(CABWIZ)!=""
     PRINTNLDOS VersionMax = 100.0
     IFDEF ARM
       PRINTNLDOS BuildMax = 0xE0000000
-      PRINTNLDOS UnsupportedPlatforms = %(CABUNSUPPORTED)
+      IF %(CABUNSUPPORTED)
+        PRINTNLDOS UnsupportedPlatforms = %(CABUNSUPPORTED)
+      ENDIF
     ENDIF
   ENDIF
   PRINTNLDOS 

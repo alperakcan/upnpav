@@ -32,8 +32,8 @@ FOR EACH LIB,DLL,EXE,CON,CAB,LIB_CSHARP,DLL_CSHARP,EXE_CSHARP,CON_CSHARP
   REMOVE %(¯PATH)%(NAME).aps
   REMOVE %(¯PATH)%(NAME).vcproj.*.user
   REMOVE %(¯PATH)%(NAME).vcproj.user
-  REMOVE %(¯PATH)%(NAME).csproj.*.user
-  REMOVE %(¯PATH)%(NAME).csproj.user
+  REMOVE %(!ROOTPATH)%(PATH)%(NAME).csproj.*.user
+  REMOVE %(!ROOTPATH)%(PATH)%(NAME).csproj.user
   REMOVE %(¯PATH)%(NAME).vcl
   REMOVE %(¯PATH)*.pbxuser
   REMOVE %(¯PATH)*.mode1
