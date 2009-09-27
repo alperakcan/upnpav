@@ -42,6 +42,7 @@ executable will be under release directory.
 linux# route add -net 239.0.0.0 netmask 255.0.0.0 eth0
 macos# route add -net 239.0.0.0 -netmask 255.0.0.0 -interface en0
 
+# upnpd -d mediaserver -i eth0 -o help
 # upnpd -d mediaserver -i eth0 -o directory=/path/to/share,friendlyname=friendlyname -v
 # upnpd -d controller -i eth0 -v
 
