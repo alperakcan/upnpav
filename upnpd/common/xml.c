@@ -106,18 +106,27 @@ char * xml_get_first_document_item (IXML_Document *doc, const char *item)
 	const char *val;
 	char *ret = NULL;
 
+	debugf("get item value for '%s'", item);
 	nodeList = ixmlDocument_getElementsByTagName(doc, (char *) item);
 	if (nodeList == NULL) {
+		debugf("ixmlDocument_getElementsByTagNam() failed");
 		return NULL;
 	}
 	if ((tmpNode = ixmlNodeList_item(nodeList, 0)) == NULL) {
 		ixmlNodeList_free(nodeList);
+		debugf("ixmlNodeList_item() failed");
 		return NULL;
 	}
 	textNode = ixmlNode_getFirstChild(tmpNode);
+	if (textNode == NULL) {
+		debugf("ixmlNode_getFirstChild() failed");
+	}
 	val = ixmlNode_getNodeValue(textNode);
 	if (val != NULL) {
+		debugf("value for '%s':'%s'", item, val);
 		ret = strdup(val);
+	} else {
+		debugf("ixmlNode_getNodeValue() failed for '%s'", item);
 	}
 	ixmlNodeList_free(nodeList);
 

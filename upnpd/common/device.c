@@ -374,7 +374,7 @@ int device_init (device_t *device)
 	device->port = upnp_getport(device->upnp);
 	device->ipaddress = upnp_getaddress(device->upnp);
 	debugf("enabling internal web server");
-	uuid_generate(&uuid);
+	upnp_uuid_generate(&uuid);
 	if (device->uuid == NULL) {
 		device->uuid = (char *) malloc(sizeof(char) * (strlen("uuid:") + 44 + 1));
 		if (device->uuid == NULL) {

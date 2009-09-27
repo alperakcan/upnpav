@@ -35,7 +35,7 @@
 #include "platform.h"
 #include "uuid.h"
 
-void uuid_generate (uuid_gen_t *uuid)
+void upnp_uuid_generate (uuid_gen_t *uuid)
 {
 	unsigned long long tm;
 	const char *uuid_format = "%08x-%04x-%04x-%04x-%02x%02x%02x%02x%02x%02x";
@@ -59,4 +59,5 @@ void uuid_generate (uuid_gen_t *uuid)
 		uuid->clock_seq,
 		uuid->node[0], uuid->node[1], uuid->node[2],
 		uuid->node[3], uuid->node[4], uuid->node[5]);
+	debugf("generated uuid:'%s'", uuid->uuid);
 }

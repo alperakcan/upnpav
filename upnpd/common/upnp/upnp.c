@@ -272,39 +272,123 @@ static int gena_callback_close (void *cookie, void *handle)
 	return 0;
 }
 
+static char * strdup_escaped (const char *p )
+{
+	int i;
+	int j;
+	int plen;
+	int dlen;
+	char *buf;
+	if (p == NULL) {
+		return NULL;
+	}
+	buf = NULL;
+	dlen = 0;
+	plen = strlen(p);
+	for (i = 0; i < plen; i++) {
+		switch (p[i]) {
+			case '<':
+				dlen += 4;
+				break;
+			case '>':
+				dlen += 4;
+				break;
+			case '&':
+				dlen += 5;
+				break;
+			case '\'':
+				dlen += 6;
+				break;
+			case '\"':
+				dlen += 6;
+				break;
+			default:
+				dlen += 1;
+				break;
+		}
+	}
+	buf = (char *) malloc(dlen + 1);
+	if (buf == NULL) {
+		return NULL;
+	}
+	for (j = 0, i = 0; i < plen; i++) {
+		switch (p[i]) {
+			case '<':
+				buf[j++] = '&';
+				buf[j++] = 'l';
+				buf[j++] = 't';
+				buf[j++] = ';';
+				break;
+			case '>':
+				buf[j++] = '&';
+				buf[j++] = 'g';
+				buf[j++] = 't';
+				buf[j++] = ';';
+				break;
+			case '&':
+				buf[j++] = '&';
+				buf[j++] = 'a';
+				buf[j++] = 'm';
+				buf[j++] = 'p';
+				buf[j++] = ';';
+				break;
+			case '\'':
+				buf[j++] = '&';
+				buf[j++] = 'a';
+				buf[j++] = 'p';
+				buf[j++] = 'o';
+				buf[j++] = 's';
+				buf[j++] = ';';
+				break;
+			case '\"':
+				buf[j++] = '&';
+				buf[j++] = 'q';
+				buf[j++] = 'u';
+				buf[j++] = 'o';
+				buf[j++] = 't';
+				buf[j++] = ';';
+				break;
+			default:
+				buf[j++] = p[i];
+				break;
+		}
+	}
+	buf[j] = '\0';
+	return buf;
+}
+
 int upnp_addtoactionresponse (upnp_event_action_t *response, const char *service, const char *variable, const char *value)
 {
-	int rc;
-	char *buf;
-	const char *fmt =
-		"<u:%sResponse xmlns:u=\"%s\">\r\n"
-		"</u:%sResponse>";
-
-	IXML_Node *node = NULL;
-	IXML_Node *text = NULL;
-	IXML_Element *elem = NULL;
-
 	if (service == NULL) {
 		return -1;
 	}
-	if (response->response == NULL) {
-		if (asprintf(&buf, fmt, response->action, service, response->action) < 0) {
+	if (response->response.service == NULL) {
+		response->response.service = strdup(service);
+		if (response->response.service == NULL) {
 			return -1;
 		}
-	        rc = ixmlParseBufferEx(buf, &response->response);
-	        free(buf);
-	        if (rc != IXML_SUCCESS) {
-	        	return -1;
-	        }
 	}
 	if (variable != NULL) {
-		node = ixmlNode_getFirstChild((IXML_Node *) response->response);
-		elem = ixmlDocument_createElement(response->response, variable);
-	        if (value != NULL) {
-	        	text = ixmlDocument_createTextNode(response->response, value);
-	        	ixmlNode_appendChild((IXML_Node *) elem, text);
-	        }
-	        ixmlNode_appendChild(node, (IXML_Node *) elem);
+		upnp_event_action_node_t *node;
+		node = (upnp_event_action_node_t *) malloc(sizeof(*node));
+		if (node == NULL) {
+			return -1;
+		}
+		memset(node, 0, sizeof(*node));
+		node->variable = strdup(variable);
+		if (node->variable == NULL) {
+			free(node);
+			return -1;
+		}
+		if (value != NULL) {
+			node->value = strdup_escaped(value);
+			if (node->value == NULL) {
+				free(node->variable);
+				free(node);
+				return -1;
+			}
+		}
+		list_add_tail(&node->head, &response->response.nodes);
 	}
 	return 0;
 }
@@ -494,7 +578,7 @@ static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subsc
 				goto out;
 			}
 			memset(c, 0, sizeof(upnp_subscribe_t));
-			uuid_generate(&uuid);
+			upnp_uuid_generate(&uuid);
 			sprintf(c->sid, "uuid:%s", uuid.uuid);
 			subscribe->sid = strdup(c->sid);
 			if (subscribe->sid == NULL) {
@@ -596,6 +680,9 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 	upnp_event_t e;
 	upnp_service_t *s;
 	char *response;
+	char *tmp;
+	upnp_event_action_node_t *n;
+	upnp_event_action_node_t *n_;
 	const char *envelope =
 	        "<s:Envelope "
 	        "xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" "
@@ -636,12 +723,52 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 			}
 			e.event.action.serviceid = s->serviceid;
 			e.event.action.udn = s->udn;
+			list_init(&e.event.action.response.nodes);
 			thread_mutex_unlock(upnp->mutex);
 			if (upnp->type.device.callback != NULL) {
 				upnp->type.device.callback(upnp->type.device.cookie, &e);
 			}
 			if (e.event.action.errcode == 0) {
-				response = ixmlPrintNode((IXML_Node *) e.event.action.response);
+				tmp = NULL;
+				if (asprintf(&tmp,
+						"<u:%sResponse xmlns:u=\"%s\">\n",
+						 e.event.action.action,
+						 e.event.action.response.service) < 0) {
+					response = NULL;
+					tmp = NULL;
+				} else {
+					response = tmp;
+					tmp = NULL;
+					list_for_each_entry(n, &e.event.action.response.nodes, head) {
+						if (asprintf(&tmp,
+								"%s<%s>%s</%s>\n",
+								response,
+								n->variable,
+								n->value,
+								n->variable) < 0) {
+							free(response);
+							response = NULL;
+							tmp = NULL;
+							break;
+						} else {
+							response = tmp;
+							tmp = NULL;
+						}
+					}
+					if (response != NULL) {
+						if (asprintf(&tmp,
+								"%s</u:%sResponse>",
+								response,
+								e.event.action.action) < 0) {
+							free(response);
+							response = NULL;
+							tmp = NULL;
+						} else {
+							response = tmp;
+							tmp = NULL;
+						}
+					}
+				}
 				if (response != NULL) {
 					if (asprintf(&action->response,
 							envelope,
@@ -656,7 +783,13 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 				}
 			}
 			ixmlDocument_free(e.event.action.request);
-			ixmlDocument_free(e.event.action.response);
+			free(e.event.action.response.service);
+			list_for_each_entry_safe(n, n_, &e.event.action.response.nodes, head) {
+				list_del(&n->head);
+				free(n->variable);
+				free(n->value);
+				free(n);
+			}
 			thread_mutex_lock(upnp->mutex);
 			ret = 0;
 			goto out;
@@ -813,17 +946,20 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 	upnp->type.device.callback = callback;
 	upnp->type.device.cookie = cookie;
 	if (upnp->type.device.description == NULL) {
+		debugf("upnp->type.device.description can not be null");
 		thread_mutex_unlock(upnp->mutex);
 		return -1;
 	}
 	if (asprintf(&upnp->type.device.location, "http://%s:%d/description.xml", upnp->host, upnp->port) < 0) {
 		free(upnp->type.device.description);
+		debugf("upnp->type.device.location can not be null");
 		thread_mutex_unlock(upnp->mutex);
 		return -1;
 	}
 
 	rc = ixmlParseBufferEx(description, &desc);
 	if (rc != IXML_SUCCESS) {
+		debugf("could not parse description:\n'%s'", description);
 		thread_mutex_unlock(upnp->mutex);
 		return -1;
 	}
