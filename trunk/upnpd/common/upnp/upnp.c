@@ -707,6 +707,7 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 							tmp = NULL;
 							break;
 						} else {
+							free(response);
 							response = tmp;
 							tmp = NULL;
 						}
@@ -720,6 +721,7 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 							response = NULL;
 							tmp = NULL;
 						} else {
+							free(response);
 							response = tmp;
 							tmp = NULL;
 						}
@@ -732,6 +734,7 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 						action->response = NULL;
 					}
 					free(response);
+					response = NULL;
 				}
 			} else {
 				if (asprintf(&action->response, fault, upnp_errors[e.event.action.errcode].code, upnp_errors[e.event.action.errcode].str) < 0) {
@@ -746,6 +749,7 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 				free(n->value);
 				free(n);
 			}
+			free(response);
 			thread_mutex_lock(upnp->mutex);
 			ret = 0;
 			goto out;
