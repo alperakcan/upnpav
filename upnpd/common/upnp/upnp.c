@@ -1143,14 +1143,13 @@ int upnp_uninit (upnp_t *upnp)
 char * upnp_makeaction (upnp_t *upnp, const char *actionname, const char *controlurl, const char *servicetype, const int param_count, char **param_name, char **param_val)
 {
 	int p;
+	char *tmp;
+	char *ptr;
+	char *str;
 	char *data;
 	char *result;
 	char *buffer;
 	upnp_url_t url;
-	IXML_Node *text;
-	IXML_Node *node;
-	IXML_Element *elem;
-	IXML_Document *action;
 	const char *format_post =
 		"POST /%s HTTP/1.1\r\n"
 		"HOST: %s:%d\r\n"
@@ -1158,56 +1157,64 @@ char * upnp_makeaction (upnp_t *upnp, const char *actionname, const char *contro
 		"CONTENT-TYPE: text/xml; charset=\"utf-8\"\r\n"
 		"SOAPACTION: \"%s#%s\"\r\n"
 		"\r\n"
-		"%s%s%s";
+		"%s";
 	const char *format_envelope_start =
 		"<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\""
 		" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n"
-		"<s:Body>\n";
+		"<s:Body>\n"
+		"<u:%s xmlns:u=\"%s\">\n";
 	const char *format_envelope_end =
+		"%s</u:%s>\n"
 		"</s:Body>\n"
 		"</s:Envelope>\n";
-	const char *format_action =
-		"<u:%s xmlns:u=\"%s\">\n"
-		"</u:%s>\n";
 	buffer = NULL;
-	action = NULL;
 	if (upnp_url_parse(controlurl, &url) != 0) {
 		return NULL;
 	}
-	if (asprintf(&buffer, format_action, actionname, servicetype, actionname) < 0) {
-		upnp_url_uninit(&url);
-		return NULL;
-	}
-	if (ixmlParseBufferEx(buffer, &action) != IXML_SUCCESS) {
+	tmp = NULL;
+	buffer = tmp;
+	if (asprintf(&tmp, format_envelope_start, actionname, servicetype) < 0) {
 		upnp_url_uninit(&url);
 		free(buffer);
 		return NULL;
 	}
 	free(buffer);
-	if (action == NULL) {
+	buffer = tmp;
+	tmp = NULL;
+	for (p = 0; p < param_count; p++) {
+		ptr = strdup_escaped(param_name[p]);
+		str = strdup_escaped(param_val[p]);
+		if (asprintf(&tmp, "%s<%s>%s</%s>\n", buffer, ptr, (str != NULL) ? str : "", ptr) < 0) {
+			free(ptr);
+			free(str);
+			upnp_url_uninit(&url);
+			free(buffer);
+			return NULL;
+		}
+		free(ptr);
+		free(str);
+		free(buffer);
+		buffer = tmp;
+		tmp = NULL;
+	}
+	if (asprintf(&tmp, format_envelope_end, buffer, actionname) < 0) {
 		upnp_url_uninit(&url);
+		free(buffer);
 		return NULL;
 	}
-	for (p = 0; p < param_count; p++) {
-                node = ixmlNode_getFirstChild((IXML_Node *) action);
-                elem = ixmlDocument_createElement(action, param_name[p]);
-                if (param_val[p] != NULL) {
-                        text = ixmlDocument_createTextNode(action, param_val[p]);
-                        ixmlNode_appendChild((IXML_Node *) elem, text);
-                }
-                ixmlNode_appendChild(node, (IXML_Node *) elem);
-	}
-	buffer = ixmlPrintNode((IXML_Node *) action);
-	ixmlDocument_free(action);
-	data = NULL;
+	free(buffer);
+	buffer = tmp;
+	tmp = NULL;
+	p = strlen(buffer);
 	if (asprintf(&data, format_post,
 			url.path,
 			url.host, url.port,
-			strlen(buffer) + strlen(format_envelope_start) + strlen(format_envelope_end),
+			p,
 			servicetype, actionname,
-			format_envelope_start, buffer, format_envelope_end) < 0) {
+			buffer) < 0) {
 	}
 	free(buffer);
+	debugf("sending action data:\n'%s'\n", data);
 	result = gena_send_recv(upnp->gena, url.host, url.port, data, NULL);
 	free(data);
 	debugf("result: '%s'", result);
