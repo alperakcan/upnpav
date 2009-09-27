@@ -287,24 +287,12 @@ static char * strdup_escaped (const char *p )
 	plen = strlen(p);
 	for (i = 0; i < plen; i++) {
 		switch (p[i]) {
-			case '<':
-				dlen += 4;
-				break;
-			case '>':
-				dlen += 4;
-				break;
-			case '&':
-				dlen += 5;
-				break;
-			case '\'':
-				dlen += 6;
-				break;
-			case '\"':
-				dlen += 6;
-				break;
-			default:
-				dlen += 1;
-				break;
+			case '<':  dlen += 4; break;
+			case '>':  dlen += 4; break;
+			case '&':  dlen += 5; break;
+			case '\'': dlen += 6; break;
+			case '\"': dlen += 6; break;
+			default:   dlen += 1; break;
 		}
 	}
 	buf = (char *) malloc(dlen + 1);
