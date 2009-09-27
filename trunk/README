@@ -10,7 +10,7 @@ upnpavd:
 upnpfs:
   requires at least fuse version 2.6.0, you get the latest fuse packages
 for your os from:
-  
+
   linux : http://fuse.sourceforge.net/
   mac os: http://code.google.com/p/macfuse/
 
