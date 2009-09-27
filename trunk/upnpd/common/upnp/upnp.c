@@ -1140,7 +1140,7 @@ int upnp_uninit (upnp_t *upnp)
 	return 0;
 }
 
-IXML_Document * upnp_makeaction (upnp_t *upnp, const char *actionname, const char *controlurl, const char *servicetype, const int param_count, char **param_name, char **param_val)
+char * upnp_makeaction (upnp_t *upnp, const char *actionname, const char *controlurl, const char *servicetype, const int param_count, char **param_name, char **param_val)
 {
 	int p;
 	char *data;
@@ -1151,7 +1151,6 @@ IXML_Document * upnp_makeaction (upnp_t *upnp, const char *actionname, const cha
 	IXML_Node *node;
 	IXML_Element *elem;
 	IXML_Document *action;
-	IXML_Document *response;
 	const char *format_post =
 		"POST /%s HTTP/1.1\r\n"
 		"HOST: %s:%d\r\n"
@@ -1172,7 +1171,6 @@ IXML_Document * upnp_makeaction (upnp_t *upnp, const char *actionname, const cha
 		"</u:%s>\n";
 	buffer = NULL;
 	action = NULL;
-	response = NULL;
 	if (upnp_url_parse(controlurl, &url) != 0) {
 		return NULL;
 	}
@@ -1213,15 +1211,8 @@ IXML_Document * upnp_makeaction (upnp_t *upnp, const char *actionname, const cha
 	result = gena_send_recv(upnp->gena, url.host, url.port, data, NULL);
 	free(data);
 	debugf("result: '%s'", result);
-	if (result != NULL) {
-		if (ixmlParseBufferEx(result, &response) != IXML_SUCCESS) {
-			response = NULL;
-	        }
-
-	}
-	free(result);
 	upnp_url_uninit(&url);
-	return response;
+	return result;
 }
 
 int upnp_search (upnp_t *upnp, int timeout, const char *uuid)

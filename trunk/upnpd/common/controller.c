@@ -131,6 +131,7 @@ entry_t * controller_browse_children (client_t *controller, const char *device, 
 	entry_t *pentry;
 	char *params[6];
 	char *values[6];
+	char *action;
 	IXML_Document *response;
 
 	uint32_t count;
@@ -141,6 +142,7 @@ entry_t * controller_browse_children (client_t *controller, const char *device, 
 	count = 0;
 	entry = NULL;
 	result = NULL;
+	action = NULL;
 	response = NULL;
 
 	params[0] = "ObjectID";
@@ -165,7 +167,15 @@ entry_t * controller_browse_children (client_t *controller, const char *device, 
 		values[5] = "+dc:title";
 
 		debugf("browsing '%s':'%s'", device, object);
-		response = client_action(controller, (char *) device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
+		action = client_action(controller, (char *) device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
+		if (action == NULL) {
+			debugf("client_action() failed");
+			goto out;
+		}
+		if (ixmlParseBufferEx(action, &response) != IXML_SUCCESS) {
+			response = NULL;
+	        }
+		free(action);
 		if (response == NULL) {
 			debugf("client_action() failed");
 			goto out;
@@ -246,6 +256,7 @@ entry_t * controller_browse_metadata (client_t *controller, const char *device, 
 	char *result;
 	char *params[6];
 	char *values[6];
+	char *action;
 	IXML_Document *response;
 
 	uint32_t totalmatches;
@@ -254,6 +265,8 @@ entry_t * controller_browse_metadata (client_t *controller, const char *device, 
 
 	entry = NULL;
 	result = NULL;
+	action = NULL;
+	response = NULL;
 
 	params[0] = "ObjectID";
 	params[1] = "BrowseFlag";
@@ -270,7 +283,15 @@ entry_t * controller_browse_metadata (client_t *controller, const char *device, 
 	values[5] = "+dc:title";
 
 	debugf("browsing '%s':'%s'", device, object);
-	response = client_action(controller, (char *) device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
+	action = client_action(controller, (char *) device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
+	if (action == NULL) {
+		debugf("client_action() failed");
+		goto out;
+	}
+	if (ixmlParseBufferEx(action, &response) != IXML_SUCCESS) {
+		response = NULL;
+        }
+	free(action);
 	if (response == NULL) {
 		debugf("client_action() failed");
 		goto out;

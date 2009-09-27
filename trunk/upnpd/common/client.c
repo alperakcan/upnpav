@@ -504,17 +504,15 @@ int client_refresh (client_t *client, int remove)
 	return ret;
 }
 
-IXML_Document * client_action (client_t *client, char *devicename, char *servicetype, char *actionname, char **param_name, char **param_val, int param_count)
+char * client_action (client_t *client, char *devicename, char *servicetype, char *actionname, char **param_name, char **param_val, int param_count)
 {
 	int rc;
-	IXML_Document *response;
-	IXML_Document *actionNode;
+	char *response;
 	client_device_t *device;
 	client_service_t *service;
 
 	rc = 0;
 	response = NULL;
-	actionNode = NULL;
 
 	thread_mutex_lock(client->mutex);
 	list_for_each_entry(device, &client->devices, head) {
