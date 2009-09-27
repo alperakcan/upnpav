@@ -31,6 +31,12 @@
 #include <ixml.h>
 
 typedef struct upnp_s upnp_t;
+typedef struct list_s list_t;
+
+struct list_s {
+	struct list_s *next;
+	struct list_s *prev;
+};
 
 typedef enum {
 	UPNP_ERROR_INVALID_ACTION,
@@ -73,13 +79,22 @@ typedef struct upnp_event_subscribe_s {
 	char *sid;
 } upnp_event_subscribe_t;
 
+typedef struct upnp_event_action_node_s {
+	list_t head;
+	char *variable;
+	char *value;
+} upnp_event_action_node_t;
+
 typedef struct upnp_event_action_s {
 	char *udn;
 	char *serviceid;
 	char *action;
 	IXML_Document *request;
 	int errcode;
-	IXML_Document *response;
+	struct {
+		char *service;
+		list_t nodes;
+	} response;
 } upnp_event_action_t;
 
 typedef struct upnp_event_advertisement_s {
@@ -125,13 +140,6 @@ int upnp_accept_subscription (upnp_t *upnp, const char *udn, const char *service
 int upnp_addtoactionresponse (upnp_event_action_t *response, const char *service, const char *variable, const char *value);
 
 /* link list derived from linux kernel */
-
-typedef struct list_s list_t;
-
-struct list_s {
-	struct list_s *next;
-	struct list_s *prev;
-};
 
 #define offsetof_(type, member) ((size_t) &((type *) 0)->member)
 
