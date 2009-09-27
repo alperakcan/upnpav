@@ -894,7 +894,7 @@ FOR EACH LIB_CSHARP,DLL_CSHARP,EXE_CSHARP,CON_CSHARP
   PRINTNL   <PropertyGroup>
   PRINTNL     <Configuration Condition=" '$(Configuration)' == '' ">%(TARG_DEBUG)</Configuration>
   PRINTNL     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-  PRINTNL     <ProductVersion>8.0.50727</ProductVersion>
+  PRINTNL     <ProductVersion>%(CSPROJVERSION)</ProductVersion>
   PRINTNL     <SchemaVersion>2.0</SchemaVersion>
   PRINTNL     <ProjectGuid>%(GUID)</ProjectGuid>
   IF %(TYPE)==LIB_CSHARP || %(TYPE)==DLL_CSHARP
@@ -919,9 +919,13 @@ FOR EACH LIB_CSHARP,DLL_CSHARP,EXE_CSHARP,CON_CSHARP
     PRINTNL     <PlatformID>%(WINCE_CS_UUID)</PlatformID>
     PRINTNL     <OSVersion>%(WINCE_VERSION)</OSVersion>
     PRINTNL     <DeployDirSuffix>%(PLATFORMNAME)</DeployDirSuffix>
-    PRINTNL     <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
     PRINTNL     <FormFactorID>
     PRINTNL     </FormFactorID>
+  ENDIF
+  IFDEF COREMAKE_NET_FRAMEWORK_35
+    PRINTNL     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+  ELSE
+    PRINTNL     <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
   ENDIF
   PRINTNL   </PropertyGroup>
   PRINTNL   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == '%(TARG_DEBUG)|AnyCPU' ">
@@ -963,6 +967,11 @@ FOR EACH LIB_CSHARP,DLL_CSHARP,EXE_CSHARP,CON_CSHARP
   PRINTNL   <ItemGroup>
   IFDEF TARGET_WINCE
     PRINTNL     <Reference Include="mscorlib" />
+  ENDIF
+  IFDEF COREMAKE_NET_FRAMEWORK_35
+    PRINTNL     <Reference Include="System.Core">
+    PRINTNL       <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    PRINTNL     </Reference>
   ENDIF
   FOR EACH REFERENCES
     PRINTNL     <Reference Include="%(NAME)" />
@@ -1044,7 +1053,7 @@ FOR EACH LIB_CSHARP,DLL_CSHARP,EXE_CSHARP,CON_CSHARP
   PRINTNL   </ItemGroup>
   IFDEF TARGET_WINCE
     PRINTNL   <Import Condition="'$(TargetFrameworkVersion)' == 'v1.0'" Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.v1.targets" />
-    PRINTNL   <Import Condition="'$(TargetFrameworkVersion)' == 'v2.0'" Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />
+    PRINTNL   <Import Condition="'$(TargetFrameworkVersion)' != 'v1.0'" Project="$(MSBuildBinPath)\Microsoft.CompactFramework.CSharp.targets" />
     PRINTNL   <ProjectExtensions>
     PRINTNL     <VisualStudio>
     PRINTNL       <FlavorProperties GUID="{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}">
