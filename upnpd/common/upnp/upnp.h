@@ -124,7 +124,7 @@ int upnp_url_uninit (upnp_url_t *url);
 int upnp_url_parse (const char *uri, upnp_url_t *url);
 
 char * upnp_download (upnp_t *upnp, const char *location);
-IXML_Document * upnp_makeaction (upnp_t *upnp, const char *actionname, const char *controlurl, const char *servicetype, const int param_count, char **param_name, char **param_val);
+char * upnp_makeaction (upnp_t *upnp, const char *actionname, const char *controlurl, const char *servicetype, const int param_count, char **param_name, char **param_val);
 int upnp_search (upnp_t *upnp, int timeout, const char *uuid);
 int upnp_subscribe (upnp_t *upnp, const char *serviceurl, int *timeout, char **sid);
 int upnp_resolveurl (const char *baseurl, const char *relativeurl, char *absoluteurl);
