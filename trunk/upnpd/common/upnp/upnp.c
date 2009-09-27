@@ -301,44 +301,12 @@ static char * strdup_escaped (const char *p )
 	}
 	for (j = 0, i = 0; i < plen; i++) {
 		switch (p[i]) {
-			case '<':
-				buf[j++] = '&';
-				buf[j++] = 'l';
-				buf[j++] = 't';
-				buf[j++] = ';';
-				break;
-			case '>':
-				buf[j++] = '&';
-				buf[j++] = 'g';
-				buf[j++] = 't';
-				buf[j++] = ';';
-				break;
-			case '&':
-				buf[j++] = '&';
-				buf[j++] = 'a';
-				buf[j++] = 'm';
-				buf[j++] = 'p';
-				buf[j++] = ';';
-				break;
-			case '\'':
-				buf[j++] = '&';
-				buf[j++] = 'a';
-				buf[j++] = 'p';
-				buf[j++] = 'o';
-				buf[j++] = 's';
-				buf[j++] = ';';
-				break;
-			case '\"':
-				buf[j++] = '&';
-				buf[j++] = 'q';
-				buf[j++] = 'u';
-				buf[j++] = 'o';
-				buf[j++] = 't';
-				buf[j++] = ';';
-				break;
-			default:
-				buf[j++] = p[i];
-				break;
+			case '<':  buf[j++] = '&'; buf[j++] = 'l'; buf[j++] = 't'; buf[j++] = ';'; break;
+			case '>':  buf[j++] = '&'; buf[j++] = 'g'; buf[j++] = 't'; buf[j++] = ';'; break;
+			case '&':  buf[j++] = '&'; buf[j++] = 'a'; buf[j++] = 'm'; buf[j++] = 'p'; buf[j++] = ';'; break;
+			case '\'': buf[j++] = '&'; buf[j++] = 'a'; buf[j++] = 'p'; buf[j++] = 'o'; buf[j++] = 's'; buf[j++] = ';'; break;
+			case '\"': buf[j++] = '&'; buf[j++] = 'q'; buf[j++] = 'u'; buf[j++] = 'o'; buf[j++] = 't'; buf[j++] = ';'; break;
+			default:   buf[j++] = p[i]; break;
 		}
 	}
 	buf[j] = '\0';
