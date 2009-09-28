@@ -279,6 +279,29 @@ enable_database_corec=no
 AC_DEFINE(ENABLE_DATABASE_SQLITE3, 1, [Define to 1 if you want 'sqlite3' platform support.])
 )
 
+AC_ARG_ENABLE([xml],
+[  --enable-xmlparser=[[xmlparser]] xmlparser can be one of [[expat (default),corec]]],
+if test "$enableval" = "sqlite3"
+then
+	enable_xmlparser_expat=yes
+	enable_xmlparser_corec=no
+	AC_DEFINE(ENABLE_XMLPARSER_EXPAT, 1, [Define to 1 if you want 'expat' platform support.])
+elif test "$enableval" = "corec"
+then
+	enable_xmlparser_expat=yes
+	enable_xmlparser_sqlite3=no
+	AC_DEFINE(ENABLE_XMLPARSER_COREC, 1, [Define to 1 if you want 'corec' platform support.])
+else
+	enable_xmlparser_expat=yes
+	enable_xmlparser_corec=no
+	AC_DEFINE(ENABLE_XMLPARSER_EXPAT, 1, [Define to 1 if you want 'expat' platform support.])
+fi
+,
+enable_xmlparser_expat=yes
+enable_xmlparser_corec=no
+AC_DEFINE(ENABLE_XMLPARSER_EXPAT, 1, [Define to 1 if you want 'expat' platform support.])
+)
+
 AC_ARG_ENABLE([controller],
 [  --disable-controller    disable controller application [[default=yes]]],
 if test "$enableval" = "no"
