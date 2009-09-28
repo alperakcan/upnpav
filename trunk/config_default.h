@@ -1,6 +1,9 @@
 /* config.h.  Generated from config.h.in by configure.  */
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* 1234 = LIL_ENDIAN, 4321 = BIGENDIAN */
+#define BYTEORDER 1234
+
 /* Define to 1 if you want 'controller' support. */
 #define ENABLE_CONTROLLER 1
 
@@ -25,8 +28,17 @@
 /* Define to 1 if you want 'upnpfs' support. */
 #define ENABLE_UPNPFS 1
 
+/* Define to 1 if you want 'corec' platform support. */
+/* #undef ENABLE_XMLPARSER_COREC */
+
+/* Define to 1 if you want 'expat' platform support. */
+#define ENABLE_XMLPARSER_EXPAT 1
+
 /* Version of FUSE interface */
 #define FUSE_USE_VERSION FUSE_VERSION
+
+/* Define to 1 if you have the `bcopy' function. */
+#define HAVE_BCOPY 1
 
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
@@ -34,6 +46,12 @@
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #define HAVE_DLFCN_H 1
+
+/* Define to 1 if you have the <fcntl.h> header file. */
+#define HAVE_FCNTL_H 1
+
+/* Define to 1 if you have the `getpagesize' function. */
+#define HAVE_GETPAGESIZE 1
 
 /* Define to 1 if you have the <history.h> header file. */
 /* #undef HAVE_HISTORY_H */
@@ -51,11 +69,17 @@
    to 0 otherwise. */
 #define HAVE_MALLOC 1
 
+/* Define to 1 if you have the `memmove' function. */
+#define HAVE_MEMMOVE 1
+
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
 
 /* Define to 1 if you have the `memset' function. */
 #define HAVE_MEMSET 1
+
+/* Define to 1 if you have a working `mmap' system call. */
+#define HAVE_MMAP 1
 
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 /* #undef HAVE_NDIR_H */
@@ -157,6 +181,9 @@
 # define __EXTENSIONS__ 1
 #endif
 
+
+/* whether byteorder is bigendian */
+/* #undef WORDS_BIGENDIAN */
 
 /* File Offset size */
 #define _FILE_OFFSET_BITS 64
