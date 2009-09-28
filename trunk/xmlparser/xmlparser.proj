@@ -4,7 +4,30 @@ LIB upnpd_xmlparser
   EXPINCLUDE .
 
   IF ENABLE_XMLPARSER_EXPAT
+  DEFINE XML_NS
+  DEFINE XML_DTD
+
   SOURCE expat/xmlparser.c
+
+  SOURCE expat/xmlparse.c
+  SOURCE expat/xmlparser.c
+  SOURCE expat/xmlrole.c
+  SOURCE expat/xmltok.c
+  SOURCE expat/xmltok_impl.c
+  SOURCE expat/xmltok_ns.c
+
+  HEADER expat/ascii.h
+  HEADER expat/asciitab.h
+  HEADER expat/expat.h
+  HEADER expat/expat_external.h
+  HEADER expat/iasciitab.h
+  HEADER expat/internal.h
+  HEADER expat/latin1tab.h
+  HEADER expat/nametab.h
+  HEADER expat/utf8tab.h
+  HEADER expat/xmlrole.h
+  HEADER expat/xmltok.h
+  HEADER expat/xmltok_impl.h
   ENDIF
 
   HEADER xmlparser.h
