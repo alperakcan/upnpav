@@ -27,10 +27,11 @@
 
 #include <config.h>
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <fnmatch.h>
@@ -67,6 +68,7 @@ static inline int file_mode_open (file_mode_t mode)
 	} else {
 		m = O_RDWR;
 	}
+	m |= O_LARGEFILE;
 	return m;
 }
 
@@ -143,11 +145,13 @@ int file_write (file_t *file, const void *buffer, int length)
 	return write(file->fd, buffer, length);
 }
 
-long file_seek (file_t *file, long offset, file_seek_t whence)
+unsigned long long file_seek (file_t *file, unsigned long long offset, file_seek_t whence)
 {
 	int s;
+	unsigned long long r;
 	s = file_whence_seek(whence);
-	return lseek(file->fd, offset, s);
+	r = lseek64(file->fd, (unsigned long long) offset, s);
+	return r;
 }
 
 int file_close (file_t *file)

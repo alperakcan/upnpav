@@ -156,10 +156,10 @@ static int device_vfswrite (void *cookie, void *handle, char *buffer, unsigned i
 	return 0;
 }
 
-static unsigned long device_vfsseek (void *cookie, void *handle, long offset, gena_seek_t whence)
+static unsigned long long device_vfsseek (void *cookie, void *handle, unsigned long long offset, gena_seek_t whence)
 {
 	upnp_file_t *file;
-	unsigned long off;
+	unsigned long long off;
 	debugf("device vfs seek");
 	file = (upnp_file_t *) handle;
 	if (file == NULL) {
@@ -182,7 +182,7 @@ static unsigned long device_vfsseek (void *cookie, void *handle, long offset, ge
 	    file->service->vfscallbacks->seek != NULL) {
 		debugf("calling service seek function");
 		off = file->service->vfscallbacks->seek(file->service, handle, offset, whence);
-		debugf("requested offset: %lu, returned offset: %lu", offset, off);
+		debugf("requested offset: %llu, returned offset: %llu", offset, off);
 		return off;
 	}
 	return -1;

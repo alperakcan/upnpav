@@ -38,8 +38,8 @@ typedef struct upnpfs_http_s {
 	char *lines;
 	unsigned int lines_length;
 	unsigned int lines_count;
-	unsigned int offset;
-	unsigned int size;
+	unsigned long long offset;
+	unsigned long long size;
 	socket_t *socket;
 	int code;
 	int seek;
@@ -189,7 +189,7 @@ static int http_process (upnpfs_http_t *http, char *line, int line_count)
 			/* "bytes $from-$to/$document_size" */
 			if (!strncmp (p, "bytes ", 6)) {
 				p += 6;
-				http->offset = atol(p);
+				http->offset = atoll(p);
 				if ((slash = strchr(p, '/')) && strlen(slash) > 0) {
 					http->size = atoll(slash + 1);
 				}
@@ -201,7 +201,7 @@ static int http_process (upnpfs_http_t *http, char *line, int line_count)
 	return 1;
 }
 
-static int http_open (upnpfs_http_t *http, unsigned int offset)
+static int http_open (upnpfs_http_t *http, unsigned long long offset)
 {
 	int err;
 	int line;
@@ -240,7 +240,7 @@ static int http_open (upnpfs_http_t *http, unsigned int offset)
 			"GET /%s HTTP/1.1\r\n"
 			"User-Agent: upnpfs\r\n"
 			"Accept: */*\r\n"
-			"Range: bytes=%u-\r\n"
+			"Range: bytes=%llu-\r\n"
 			"Host: %s:%u\r\n"
 			"Connection: close\r\n"
 			"\r\n",
