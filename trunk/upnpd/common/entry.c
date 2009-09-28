@@ -851,6 +851,7 @@ static entry_t * entry_from_element (xml_node_t *elem, int container)
 			break;
 	}
 
+	printf("metadata (%d)\n%s\n", container, entry->metadata);
 	if (container == 0) {
 		list_for_each_entry(nres, &elem->nodes, head) {
 			if (strcmp(nres->name, "res") == 0) {
@@ -918,7 +919,7 @@ entry_t * entry_from_result (char *result)
 
 	list_for_each_entry(item, &res->nodes, head) {
 		if (strcmp(item->name, "item") == 0 ) {
-			tmp = entry_from_element(item, 1);
+			tmp = entry_from_element(item, 0);
 			if (tmp == NULL) {
 				continue;
 			}
