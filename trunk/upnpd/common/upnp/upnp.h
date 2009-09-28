@@ -107,8 +107,8 @@ typedef struct upnp_event_advertisement_s {
 typedef struct upnp_event_s {
 	upnp_event_type_t type;
 	union {
-		upnp_event_subscribe_t subscribe;
 		upnp_event_action_t action;
+		upnp_event_subscribe_t subscribe;
 		upnp_event_advertisement_t advertisement;
 	} event;
 } upnp_event_t;

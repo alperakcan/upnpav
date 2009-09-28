@@ -1,0 +1,11 @@
+
+LIB upnpd_xmlparser
+{
+  EXPINCLUDE .
+
+  IF ENABLE_XMLPARSER_EXPAT
+  SOURCE expat/expat.c
+  ENDIF
+
+  HEADER xmlparser.h
+}
