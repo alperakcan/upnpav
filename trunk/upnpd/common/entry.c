@@ -29,12 +29,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <inttypes.h>
+#include <assert.h>
 
 #include "platform.h"
 #include "metadata.h"
 #include "database.h"
+#include "xmlparser.h"
 #include "gena.h"
 #include "upnp.h"
 #include "common.h"
@@ -778,71 +781,69 @@ static didl_upnp_object_type_t entry_upnp_type_from_class (const char *class)
 	}
 }
 
-static entry_t * entry_from_element (IXML_Element *elem, int container)
+#define entry_strdup(s) ((s) ? strdup(s) : NULL);
+static entry_t * entry_from_element (xml_node_t *elem, int container)
 {
-	int i;
-	int n;
 	char *tmp;
 	entry_t *entry;
-	IXML_Element *eres;
-	IXML_NodeList *nres;
+	xml_node_t *nres;
 	entry = (entry_t *) malloc(sizeof(entry_t));
 	if (entry == NULL) {
 		return NULL;
 	}
 	memset(entry, 0, sizeof(entry_t));
-	entry->metadata = ixmlDocumenttoString((IXML_Document *)elem);
-	entry->didl.entryid = strdup(ixmlElement_getAttribute(elem, "id"));
-	entry->didl.parentid = strdup(ixmlElement_getAttribute(elem, "parentID"));
-	entry->didl.childcount = strtouint32(ixmlElement_getAttribute(elem, "childCount"));
-	entry->didl.restricted = strtouint32(ixmlElement_getAttribute(elem, "restricted"));
-	entry->didl.dc.contributor = xml_get_first_element_item(elem, "dc:contributor");
-	entry->didl.dc.coverage = xml_get_first_element_item(elem, "dc:coverage");
-	entry->didl.dc.creator = xml_get_first_element_item(elem, "dc:creator");
-	entry->didl.dc.date = xml_get_first_element_item(elem, "dc:date");
-	entry->didl.dc.description = xml_get_first_element_item(elem, "dc:description");
-	entry->didl.dc.format = xml_get_first_element_item(elem, "dc:format");
-	entry->didl.dc.identifier = xml_get_first_element_item(elem, "dc:identifier");
-	entry->didl.dc.language = xml_get_first_element_item(elem, "dc:language");
-	entry->didl.dc.publisher = xml_get_first_element_item(elem, "dc:publisher");
-	entry->didl.dc.relation = xml_get_first_element_item(elem, "dc:relation");
-	entry->didl.dc.rights = xml_get_first_element_item(elem, "dc:rights");
-	entry->didl.dc.source = xml_get_first_element_item(elem, "dc:source");
-	entry->didl.dc.subject = xml_get_first_element_item(elem, "dc:subject");
-	entry->didl.dc.title = xml_get_first_element_item(elem, "dc:title");
-	entry->didl.dc.type = xml_get_first_element_item(elem, "dc:type");
-	entry->didl.upnp.object.class = xml_get_first_element_item(elem, "upnp:class");
+	entry->metadata = xml_node_print(elem);
+	entry->didl.entryid = strdup(xml_node_get_attr_value(elem, "id"));
+	entry->didl.parentid = strdup(xml_node_get_attr_value(elem, "parentID"));
+	entry->didl.childcount = strtouint32(xml_node_get_attr_value(elem, "childCount"));
+	entry->didl.restricted = strtouint32(xml_node_get_attr_value(elem, "restricted"));
+	entry->didl.dc.contributor = entry_strdup(xml_node_get_path_value(elem, "dc:contributor"));
+	entry->didl.dc.coverage = entry_strdup(xml_node_get_path_value(elem, "dc:coverage"));
+	entry->didl.dc.creator = entry_strdup(xml_node_get_path_value(elem, "dc:creator"));
+	entry->didl.dc.date = entry_strdup(xml_node_get_path_value(elem, "dc:date"));
+	entry->didl.dc.description = entry_strdup(xml_node_get_path_value(elem, "dc:description"));
+	entry->didl.dc.format = entry_strdup(xml_node_get_path_value(elem, "dc:format"));
+	entry->didl.dc.identifier = entry_strdup(xml_node_get_path_value(elem, "dc:identifier"));
+	entry->didl.dc.language = entry_strdup(xml_node_get_path_value(elem, "dc:language"));
+	entry->didl.dc.publisher = entry_strdup(xml_node_get_path_value(elem, "dc:publisher"));
+	entry->didl.dc.relation = entry_strdup(xml_node_get_path_value(elem, "dc:relation"));
+	entry->didl.dc.rights = entry_strdup(xml_node_get_path_value(elem, "dc:rights"));
+	entry->didl.dc.source = entry_strdup(xml_node_get_path_value(elem, "dc:source"));
+	entry->didl.dc.subject = entry_strdup(xml_node_get_path_value(elem, "dc:subject"));
+	entry->didl.dc.title = entry_strdup(xml_node_get_path_value(elem, "dc:title"));
+	entry->didl.dc.type = entry_strdup(xml_node_get_path_value(elem, "dc:type"));
+	entry->didl.upnp.object.class = entry_strdup(xml_node_get_path_value(elem, "upnp:class"));
 	entry->didl.upnp.type = entry_upnp_type_from_class(entry->didl.upnp.object.class);
 	switch (entry->didl.upnp.type) {
 		case DIDL_UPNP_OBJECT_TYPE_MUSICTRACK:
-			entry->didl.upnp.musictrack.album = xml_get_first_element_item(elem, "upnp:album");
-			entry->didl.upnp.musictrack.artist = xml_get_first_element_item(elem, "upnp:artist");
-			tmp = xml_get_first_element_item(elem, "upnp:originalTrackNumber");
+			entry->didl.upnp.musictrack.album = entry_strdup(xml_node_get_path_value(elem, "upnp:album"));
+			entry->didl.upnp.musictrack.artist = entry_strdup(xml_node_get_path_value(elem, "upnp:artist"));
+			tmp = entry_strdup(xml_node_get_path_value(elem, "upnp:originalTrackNumber"));
 			entry->didl.upnp.musictrack.originaltracknumber = strtouint32(tmp);
 			free(tmp);
-			entry->didl.upnp.musictrack.playlist = xml_get_first_element_item(elem, "upnp:playlist");
+			entry->didl.upnp.musictrack.playlist = entry_strdup(xml_node_get_path_value(elem, "upnp:playlist"));
 		case DIDL_UPNP_OBJECT_TYPE_AUDIOITEM:
-			entry->didl.upnp.audioitem.genre = xml_get_first_element_item(elem, "upnp:genre");
-			entry->didl.upnp.audioitem.longdescription = xml_get_first_element_item(elem, "upnp:longDescription");
+			entry->didl.upnp.audioitem.genre = entry_strdup(xml_node_get_path_value(elem, "upnp:genre"));
+			entry->didl.upnp.audioitem.longdescription = entry_strdup(xml_node_get_path_value(elem, "upnp:longDescription"));
 			break;
 		case DIDL_UPNP_OBJECT_TYPE_MOVIE:
 		case DIDL_UPNP_OBJECT_TYPE_VIDEOITEM:
-			entry->didl.upnp.videoitem.actor = xml_get_first_element_item(elem, "upnp:actor");
-			entry->didl.upnp.videoitem.director = xml_get_first_element_item(elem, "upnp:director");
-			entry->didl.upnp.videoitem.genre = xml_get_first_element_item(elem, "upnp:genre");
-			entry->didl.upnp.videoitem.longdescription = xml_get_first_element_item(elem, "upnp:longdescription");
-			entry->didl.upnp.videoitem.producer = xml_get_first_element_item(elem, "upnp:producer");
-			entry->didl.upnp.videoitem.rating = xml_get_first_element_item(elem, "upnp:rating");
+			entry->didl.upnp.videoitem.actor = entry_strdup(xml_node_get_path_value(elem, "upnp:actor"));
+			entry->didl.upnp.videoitem.director = entry_strdup(xml_node_get_path_value(elem, "upnp:director"));
+			entry->didl.upnp.videoitem.genre = entry_strdup(xml_node_get_path_value(elem, "upnp:genre"));
+			entry->didl.upnp.videoitem.longdescription = entry_strdup(xml_node_get_path_value(elem, "upnp:longdescription"));
+			entry->didl.upnp.videoitem.producer = entry_strdup(xml_node_get_path_value(elem, "upnp:producer"));
+			entry->didl.upnp.videoitem.rating = entry_strdup(xml_node_get_path_value(elem, "upnp:rating"));
 			break;
 		case DIDL_UPNP_OBJECT_TYPE_PHOTO:
-			entry->didl.upnp.photo.album = xml_get_first_element_item(elem, "upnp:album");
+			entry->didl.upnp.photo.album = entry_strdup(xml_node_get_path_value(elem, "upnp:album"));
 		case DIDL_UPNP_OBJECT_TYPE_IMAGEITEM:
-			entry->didl.upnp.imageitem.longdescription = xml_get_first_element_item(elem, "upnp:longdescription");
-			entry->didl.upnp.imageitem.rating = xml_get_first_element_item(elem, "upnp:rating");
-			entry->didl.upnp.imageitem.storagemedium = xml_get_first_element_item(elem, "upnp:storagemedium");
+			entry->didl.upnp.imageitem.longdescription = entry_strdup(xml_node_get_path_value(elem, "upnp:longdescription"));
+			entry->didl.upnp.imageitem.rating = entry_strdup(xml_node_get_path_value(elem, "upnp:rating"));
+			entry->didl.upnp.imageitem.storagemedium = entry_strdup(xml_node_get_path_value(elem, "upnp:storagemedium"));
 			break;
 		case DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER:
-			tmp = xml_get_first_element_item(elem, "upnp:storageUsed");
+			tmp = entry_strdup(xml_node_get_path_value(elem, "upnp:storageUsed"));
 			entry->didl.upnp.storagefolder.storageused = strtouint32(tmp);
 			free(tmp);
 			break;
@@ -851,37 +852,32 @@ static entry_t * entry_from_element (IXML_Element *elem, int container)
 	}
 
 	if (container == 0) {
-		nres = ixmlElement_getElementsByTagName(elem, "res");
-		if (nres == NULL) {
-			entry_uninit(entry);
-			return NULL;
-		}
-		n = ixmlNodeList_length(nres);
-		for (i = 0; i < n; i++) {
-			const char *protocolinfo;
-			const char *duration;
-			const char *size;
-			eres = (IXML_Element *) ixmlNodeList_item(nres, i);
-			protocolinfo = (const char *) ixmlElement_getAttribute(eres, "protocolInfo");
-			duration = (const char *) ixmlElement_getAttribute(eres, "duration");
-			size = (const char *) ixmlElement_getAttribute(eres, "size");
-			if (protocolinfo == NULL ||
-			    size == NULL) {
-				continue;
+		list_for_each_entry(nres, &elem->nodes, head) {
+			if (strcmp(nres->name, "res") == 0) {
+				const char *protocolinfo;
+				const char *duration;
+				const char *size;
+				protocolinfo = (const char *) xml_node_get_attr_value(nres, "protocolInfo");
+				duration = (const char *) xml_node_get_attr_value(nres, "duration");
+				size = (const char *) xml_node_get_attr_value(nres, "size");
+				if (protocolinfo == NULL ||
+				    size == NULL) {
+					continue;
+				}
+				if (strncmp(protocolinfo, "http-get:", 9) != 0) {
+					continue;
+				}
+				entry->didl.res.protocolinfo = (protocolinfo != NULL) ? strdup(protocolinfo) : NULL;
+				entry->didl.res.duration = (duration != NULL) ? strdup(duration) : NULL;
+				entry->didl.res.size = strtouint32(size);
+				entry->didl.res.path = strdup(xml_node_get_value(nres));
+				goto found;
 			}
-			if (strncmp(protocolinfo, "http-get:", 9) != 0) {
-				continue;
-			}
-			entry->didl.res.protocolinfo = (protocolinfo != NULL) ? strdup(protocolinfo) : NULL;
-			entry->didl.res.duration = (duration != NULL) ? strdup(duration) : NULL;
-			entry->didl.res.size = strtouint32(size);
-			entry->didl.res.path = xml_get_element_value(eres);
-			goto found;
 		}
 		entry_uninit(entry);
 		entry = NULL;
-found:		ixmlNodeList_free(nres);
 	}
+found:
 	return entry;
 }
 
@@ -890,68 +886,52 @@ entry_t * entry_from_result (char *result)
 	entry_t *tmp;
 	entry_t *prev;
 	entry_t *entry;
-	IXML_Document *res;
+	xml_node_t *res;
 
-	int i;
-	int nitems;
-	int ncontainers;
-	IXML_Element *elem;
-	IXML_NodeList *items;
-	IXML_NodeList *containers;
+	xml_node_t *item;
+	xml_node_t *container;
 
 	tmp = NULL;
 	prev = NULL;
 	entry = NULL;
-	items = NULL;
-	containers = NULL;
 
-	res = ixmlParseBuffer(result);
+	res = xml_parse_buffer(result, strlen(result));
 	if (res == NULL) {
-		debugf("ixmlParseBuffer(result) failed\n");
+		debugf("xml_parse_buffer(result) failed\n");
 		goto out;
 	}
 
-	containers = ixmlDocument_getElementsByTagName(res, "container");
-	items = ixmlDocument_getElementsByTagName(res, "item");
-	ncontainers = ixmlNodeList_length(containers);
-	nitems = ixmlNodeList_length(items);
-
-	for (i = 0; i < ncontainers; i++) {
-		elem = (IXML_Element *) ixmlNodeList_item(containers, i);
-		tmp = entry_from_element(elem, 1);
-		if (tmp == NULL) {
-			continue;
+	list_for_each_entry(container, &res->nodes, head) {
+		if (strcmp(container->name, "container") == 0 ) {
+			tmp = entry_from_element(container, 1);
+			if (tmp == NULL) {
+				continue;
+			}
+			if (prev == NULL) {
+				entry = tmp;
+			} else {
+				prev->next = tmp;
+			}
+			prev = tmp;
 		}
-		if (prev == NULL) {
-			entry = tmp;
-		} else {
-			prev->next = tmp;
-		}
-		prev = tmp;
-	}
-	for (i = 0; i < nitems; i++) {
-		elem = (IXML_Element *) ixmlNodeList_item(items, i);
-		tmp = entry_from_element(elem, 0);
-		if (tmp == NULL) {
-			continue;
-		}
-		if (prev == NULL) {
-			entry = tmp;
-		} else {
-			prev->next = tmp;
-		}
-		prev = tmp;
 	}
 
-out:	if (containers) {
-		ixmlNodeList_free(containers);
+	list_for_each_entry(item, &res->nodes, head) {
+		if (strcmp(item->name, "item") == 0 ) {
+			tmp = entry_from_element(item, 1);
+			if (tmp == NULL) {
+				continue;
+			}
+			if (prev == NULL) {
+				entry = tmp;
+			} else {
+				prev->next = tmp;
+			}
+			prev = tmp;
+		}
 	}
-	if (items) {
-		ixmlNodeList_free(items);
-	}
-	if (result != NULL) {
-		ixmlDocument_free(res);
-	}
+
+out:	xml_node_uninit(res);
 	return entry;
 }
 

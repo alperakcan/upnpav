@@ -36,10 +36,10 @@
 #include <signal.h>
 
 #include "platform.h"
+#include "xmlparser.h"
 #include "ssdp.h"
 #include "gena.h"
 #include "upnp.h"
-#include "ixml.h"
 #include "uuid.h"
 
 #ifndef MAX
@@ -672,11 +672,7 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 			memset(&e, 0, sizeof(upnp_event_t));
 			e.type = UPNP_EVENT_TYPE_ACTION;
 			e.event.action.action = action->action;
-			ret = ixmlParseBufferEx(action->request, &e.event.action.request);
-			if (ret != IXML_SUCCESS) {
-				ret = -1;
-				goto out;
-			}
+			e.event.action.request = action->request;
 			e.event.action.serviceid = s->serviceid;
 			e.event.action.udn = s->udn;
 			list_init(&e.event.action.response.nodes);
@@ -737,11 +733,12 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 					response = NULL;
 				}
 			} else {
+				response = NULL;
 				if (asprintf(&action->response, fault, upnp_errors[e.event.action.errcode].code, upnp_errors[e.event.action.errcode].str) < 0) {
 					action->response = NULL;
 				}
 			}
-			ixmlDocument_free(e.event.action.request);
+			e.event.action.request = NULL;
 			free(e.event.action.response.service);
 			list_for_each_entry_safe(n, n_, &e.event.action.response.nodes, head) {
 				list_del(&n->head);
@@ -835,32 +832,6 @@ int upnp_advertise (upnp_t *upnp)
 	return rc;
 }
 
-static char * upnp_ixml_getfirstelementitem (IXML_Element *element, const char *item)
-{
-	IXML_NodeList *nodeList = NULL;
-	IXML_Node *textNode = NULL;
-	IXML_Node *tmpNode = NULL;
-	const char *val;
-	char *ret = NULL;
-
-	nodeList = ixmlElement_getElementsByTagName(element, (char *) item);
-	if (nodeList == NULL) {
-		return NULL;
-	}
-	if ((tmpNode = ixmlNodeList_item(nodeList, 0)) == NULL) {
-		ixmlNodeList_free(nodeList);
-		return NULL;
-	}
-	textNode = ixmlNode_getFirstChild(tmpNode);
-	val = ixmlNode_getNodeValue(textNode);
-	if (val != NULL) {
-		ret = strdup(val);
-	}
-	ixmlNodeList_free(nodeList);
-
-	return ret;
-}
-
 int upnp_register_client (upnp_t *upnp, int (*callback) (void *cookie, upnp_event_t *), void *cookie)
 {
 	thread_mutex_lock(upnp->mutex);
@@ -873,19 +844,10 @@ int upnp_register_client (upnp_t *upnp, int (*callback) (void *cookie, upnp_even
 
 int upnp_register_device (upnp_t *upnp, const char *description, int (*callback) (void *cookie, upnp_event_t *), void *cookie)
 {
-	int i;
-	int j;
-	int rc;
-
-	IXML_Node *node;
-	IXML_Document *desc;
-
-	IXML_Node *devicenode;
-	IXML_NodeList *devicelist;
-
-	IXML_Node *servicenode;
-	IXML_NodeList *services;
-	IXML_NodeList *servicelist;
+	xml_node_t *desc;
+	xml_node_t *devicenode;
+	xml_node_t *servicelist;
+	xml_node_t *servicenode;
 
 	char *devicetype;
 	char *deviceudn;
@@ -917,63 +879,54 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 		return -1;
 	}
 
-	rc = ixmlParseBufferEx(description, &desc);
-	if (rc != IXML_SUCCESS) {
+	desc = xml_parse_buffer(description, strlen(description));
+	if (desc == NULL) {
 		debugf("could not parse description:\n'%s'", description);
 		thread_mutex_unlock(upnp->mutex);
 		return -1;
 	}
 
-	devicelist = ixmlDocument_getElementsByTagName(desc, "device");
-	if (devicelist != NULL) {
-		for (i = 0; ; i++) {
-			devicenode = NULL;
-			devicetype = NULL;
-			deviceudn = NULL;
+	list_for_each_entry(devicenode, &desc->nodes, head) {
+		if (strcmp(devicenode->name, "device") != 0) {
+			continue;
+		}
+		devicetype = xml_node_get_path_value(devicenode, "deviceType");
+		deviceudn = xml_node_get_path_value(devicenode, "UDN");
+		if (devicetype == NULL || deviceudn == NULL) {
+			continue;
+		}
 
-			devicenode = ixmlNodeList_item(devicelist, i);
-			if (devicenode == NULL) {
-				break;
-			}
-			devicetype = upnp_ixml_getfirstelementitem((IXML_Element *) devicenode, "deviceType");
-			if (devicetype == NULL) {
-				goto _continue;
-			}
-			deviceudn = upnp_ixml_getfirstelementitem((IXML_Element *) devicenode, "UDN");
-			if (deviceudn == NULL) {
-				goto _continue;
-			}
+		debugf("registering device to ssdp");
+		debugf("  deviceType:'%s'", devicetype);
+		debugf("  UDN       :'%s'", deviceudn);
 
-			/* ssdp entries for device */
-			if (asprintf(&deviceusn, "%s::%s", deviceudn, "upnp:rootdevice") > 0) {
-				ssdp_register(upnp->ssdp, "upnp:rootdevice", deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
-				free(deviceusn);
-			}
-			ssdp_register(upnp->ssdp, deviceudn, deviceudn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
-			if (asprintf(&deviceusn, "%s::%s", deviceudn, devicetype) > 0) {
-				ssdp_register(upnp->ssdp, devicetype, deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
-				ssdp_register(upnp->ssdp, deviceudn, deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
-				free(deviceusn);
-			}
+		/* ssdp entries for device */
+		if (asprintf(&deviceusn, "%s::%s", deviceudn, "upnp:rootdevice") > 0) {
+			ssdp_register(upnp->ssdp, "upnp:rootdevice", deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
+			free(deviceusn);
+		}
+		ssdp_register(upnp->ssdp, deviceudn, deviceudn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
+		if (asprintf(&deviceusn, "%s::%s", deviceudn, devicetype) > 0) {
+			ssdp_register(upnp->ssdp, devicetype, deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
+			ssdp_register(upnp->ssdp, deviceudn, deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
+			free(deviceusn);
+		}
 
-			services = ixmlElement_getElementsByTagName((IXML_Element *) devicenode, "service");
-			if (services == NULL) {
-				goto _continue;
-			}
-			for (j = 0; ; j++) {
-				servicenode = NULL;
-
-				servicenode = ixmlNodeList_item(services, j);
-				if (servicenode == NULL) {
-					break;
-				}
-				servicetype = upnp_ixml_getfirstelementitem((IXML_Element *) servicenode, "serviceType");
-				serviceid = upnp_ixml_getfirstelementitem((IXML_Element *) servicenode, "serviceId");
-				eventurl = upnp_ixml_getfirstelementitem((IXML_Element *) servicenode, "eventSubURL");
-				controlurl = upnp_ixml_getfirstelementitem((IXML_Element *) servicenode, "controlURL");
+		servicelist = xml_node_get_path(devicenode, "serviceList");
+		if (servicelist != NULL) {
+			list_for_each_entry(servicenode, &servicelist->nodes, head) {
+				servicetype = xml_node_get_path_value(servicenode, "serviceType");
+				serviceid = strdup(xml_node_get_path_value(servicenode, "serviceId"));
+				eventurl = strdup(xml_node_get_path_value(servicenode, "eventSubURL"));
+				controlurl = strdup(xml_node_get_path_value(servicenode, "controlURL"));
 				if (servicetype == NULL || eventurl == NULL || controlurl == NULL || serviceid == NULL) {
 					goto __continue;
 				}
+				debugf("registering service to ssdp");
+				debugf("  serviceType:'%s'", servicetype);
+				debugf("  serviceId  :'%s'", serviceid);
+				debugf("  eventSubURL:'%s'", eventurl);
+				debugf("  controlURL :'%s'", controlurl);
 				if (asprintf(&deviceusn, "%s::%s", deviceudn, servicetype) > 0) {
 					if (ssdp_register(upnp->ssdp, servicetype, deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000) == 0) {
 						service = (upnp_service_t *) malloc(sizeof(upnp_service_t));
@@ -1002,35 +955,11 @@ __continue:
 				free(controlurl);
 				free(eventurl);
 				free(serviceid);
-				free(servicetype);
-			}
-			if (services) {
-				ixmlNodeList_free(services);
-			}
-_continue:
-			if (devicetype) {
-				free(devicetype);
-			}
-			if (deviceudn) {
-				free(deviceudn);
 			}
 		}
 	}
 
-	servicelist = ixmlDocument_getElementsByTagName(desc, "serviceList");
-	if (servicelist != NULL) {
-		for (i = 0; ; i++) {
-			node = ixmlNodeList_item(servicelist, i);
-			if (node == NULL) {
-				break;
-			}
-		}
-	}
-
-	ixmlNodeList_free(servicelist);
-	ixmlNodeList_free(devicelist);
-	ixmlDocument_free(desc);
-
+	xml_node_uninit(desc);
 	thread_mutex_unlock(upnp->mutex);
 	return 0;
 }
@@ -1048,7 +977,7 @@ unsigned short upnp_getport (upnp_t *upnp)
 upnp_t * upnp_init (const char *host, const unsigned short port, gena_callback_vfs_t *vfscallbacks, void *vfscookie)
 {
 	upnp_t *upnp;
-	debugf("setting seed\n");
+	debugf("setting seed");
 	rand_srand(time_gettimeofday());
 	debugf("ignoring sigpipe signal");
 	signal(SIGPIPE, SIG_IGN);

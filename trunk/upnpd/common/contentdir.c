@@ -29,11 +29,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <inttypes.h>
 
 #include "platform.h"
 #include "database.h"
+#include "xmlparser.h"
 #include "gena.h"
 #include "upnp.h"
 #include "common.h"
@@ -84,6 +86,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 	char str[23];
 	entry_t *tmp;
 	entry_t *entry;
+	xml_node_t *xml;
 	contentdir_t *contentdir;
 
 	/* in */
@@ -103,12 +106,18 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 
 	entry = NULL;
 
-	objectid = xml_get_string(request->request, "ObjectID");
-	browseflag = xml_get_string(request->request, "BrowseFlag");
-	filter = xml_get_string(request->request, "Filter");
-	startingindex = xml_get_ui4(request->request, "StartingIndex");
-	requestedcount = xml_get_ui4(request->request, "RequestedCount");
-	sortcriteria = xml_get_string(request->request, "SortCriteria");
+	xml = xml_parse_buffer(request->request, strlen(request->request));
+	if (xml == NULL) {
+		request->errcode = UPNP_ERROR_PARAMETER_MISMATCH;
+		return 0;
+	}
+
+	objectid = xml_node_get_path_value(xml, "/s:Envelope/s:Body/u:Browse/ObjectID");
+	browseflag = xml_node_get_path_value(xml, "/s:Envelope/s:Body/u:Browse/BrowseFlag");
+	filter = xml_node_get_path_value(xml, "/s:Envelope/s:Body/u:Browse/Filter");
+	startingindex = strtouint32(xml_node_get_path_value(xml, "/s:Envelope/s:Body/u:Browse/StartingIndex"));
+	requestedcount = strtouint32(xml_node_get_path_value(xml, "/s:Envelope/s:Body/u:Browse/RequestedCount"));
+	sortcriteria = xml_node_get_path_value(xml, "/s:Envelope/s:Body/u:Browse/SortCriteria");
 
 	debugf("contentdirectory browse:\n"
 		"  objectid      : %s\n"
@@ -181,11 +190,8 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		upnp_add_response(request, service->type, "TotalMatches", uint32tostr(str, totalmatches));
 		upnp_add_response(request, service->type, "UpdateID", uint32tostr(str, updateid));
 		free(result);
-		free(objectid);
-		free(browseflag);
-		free(filter);
-		free(sortcriteria);
 		entry_uninit(entry);
+		xml_node_uninit(xml);
 		return 0;
 	} else if (strcmp(browseflag, "BrowseDirectChildren") == 0) {
 		if (contentdir->cached == 0 && (objectid == NULL || strcmp(objectid, "0") == 0)) {
@@ -219,20 +225,14 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		upnp_add_response(request, service->type, "TotalMatches", uint32tostr(str, totalmatches));
 		upnp_add_response(request, service->type, "UpdateID", uint32tostr(str, updateid));
 		free(result);
-		free(objectid);
-		free(browseflag);
-		free(filter);
-		free(sortcriteria);
 		entry_uninit(entry);
+		xml_node_uninit(xml);
 		return 0;
 	} else {
 		request->errcode = UPNP_ERROR_INVALIG_ARGS;
 error:
-		free(objectid);
-		free(browseflag);
-		free(filter);
-		free(sortcriteria);
 		entry_uninit(entry);
+		xml_node_uninit(xml);
 		return -1;
 	}
 }

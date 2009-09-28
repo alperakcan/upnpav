@@ -29,10 +29,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <inttypes.h>
 
 #include "platform.h"
+#include "xmlparser.h"
 #include "gena.h"
 #include "upnp.h"
 #include "common.h"
@@ -132,7 +134,7 @@ entry_t * controller_browse_children (client_t *controller, const char *device, 
 	char *params[6];
 	char *values[6];
 	char *action;
-	IXML_Document *response;
+	xml_node_t *response;
 
 	uint32_t count;
 	uint32_t totalmatches;
@@ -172,37 +174,22 @@ entry_t * controller_browse_children (client_t *controller, const char *device, 
 			debugf("client_action() failed");
 			goto out;
 		}
-		if (ixmlParseBufferEx(action, &response) != IXML_SUCCESS) {
-			response = NULL;
-	        }
+		response = xml_parse_buffer(action, strlen(action));
 		free(action);
 		if (response == NULL) {
 			debugf("client_action() failed");
 			goto out;
 		}
 
-#if 0
-		{
-			char *tmp;
-			tmp = ixmlDocumenttoString(response);
-			printf("%s\n", tmp);
-			free(tmp);
-		}
-#endif
-
-		tmp = xml_get_first_document_item(response, "TotalMatches");
+		tmp = xml_node_get_path_value(response, "/s:Envelope/s:Body/u:BrowseResponse/TotalMatches");
 		totalmatches = strtouint32(tmp);
-		free(tmp);
-		tmp = xml_get_first_document_item(response, "NumberReturned");
+		tmp = xml_node_get_path_value(response, "/s:Envelope/s:Body/u:BrowseResponse/NumberReturned");
 		numberreturned = strtouint32(tmp);
-		free(tmp);
-		tmp = xml_get_first_document_item(response, "UpdateID");
+		tmp = xml_node_get_path_value(response, "/s:Envelope/s:Body/u:BrowseResponse/UpdateID");
 		updateid = strtouint32(tmp);
-		free(tmp);
-
-		result = xml_get_first_document_item(response, "Result");
+		result = xml_node_get_path_value(response, "/s:Envelope/s:Body/u:BrowseResponse/Result");
 		if (result == NULL) {
-			debugf("xml_get_first_document_item(response, Result) failed");
+			debugf("xml_node_get_path_value(response, Result) failed");
 			goto out;
 		}
 
@@ -234,18 +221,16 @@ entry_t * controller_browse_children (client_t *controller, const char *device, 
 		}
 
 		free(result);
-		ixmlDocument_free(response);
+		xml_node_uninit(response);
 		result = NULL;
 		response = NULL;
 	} while (1);
 
-out:	if (result) {
-		free(result);
-	}
+out:
 	if (values[3]) {
 		free(values[3]);
 	}
-	ixmlDocument_free(response);
+	xml_node_uninit(response);
 	return entry;
 }
 
@@ -257,7 +242,7 @@ entry_t * controller_browse_metadata (client_t *controller, const char *device, 
 	char *params[6];
 	char *values[6];
 	char *action;
-	IXML_Document *response;
+	xml_node_t *response;
 
 	uint32_t totalmatches;
 	uint32_t numberreturned;
@@ -288,28 +273,22 @@ entry_t * controller_browse_metadata (client_t *controller, const char *device, 
 		debugf("client_action() failed");
 		goto out;
 	}
-	if (ixmlParseBufferEx(action, &response) != IXML_SUCCESS) {
-		response = NULL;
-        }
+	response = xml_parse_buffer(action, strlen(action));
 	free(action);
 	if (response == NULL) {
 		debugf("client_action() failed");
 		goto out;
 	}
 
-	tmp = xml_get_first_document_item(response, "TotalMatches");
+	tmp = xml_node_get_path_value(response, "/s:Envelope/s:Body/u:BrowseResponse/TotalMatches");
 	totalmatches = strtouint32(tmp);
-	free(tmp);
-	tmp = xml_get_first_document_item(response, "NumberReturned");
+	tmp = xml_node_get_path_value(response, "/s:Envelope/s:Body/u:BrowseResponse/NumberReturned");
 	numberreturned = strtouint32(tmp);
-	free(tmp);
-	tmp = xml_get_first_document_item(response, "UpdateID");
+	tmp = xml_node_get_path_value(response, "/s:Envelope/s:Body/u:BrowseResponse/UpdateID");
 	updateid = strtouint32(tmp);
-	free(tmp);
-
-	result = xml_get_first_document_item(response, "Result");
+	result = xml_node_get_path_value(response, "/s:Envelope/s:Body/u:BrowseResponse/Result");
 	if (result == NULL) {
-		debugf("xml_get_first_document_item(response, Result) failed");
+		debugf("xml_node_get_path_value(response, Result) failed");
 		goto out;
 	}
 
@@ -319,7 +298,6 @@ entry_t * controller_browse_metadata (client_t *controller, const char *device, 
 		goto out;
 	}
 
-	free(result);
-out:	ixmlDocument_free(response);
+out:	xml_node_uninit(response);
 	return entry;
 }

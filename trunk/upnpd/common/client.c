@@ -29,10 +29,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <inttypes.h>
 
 #include "platform.h"
+#include "xmlparser.h"
 #include "gena.h"
 #include "upnp.h"
 #include "uuid.h"
@@ -65,93 +67,74 @@ static int client_service_uninit (client_service_t *service)
 	return 0;
 }
 
-static client_service_t * client_service_init (IXML_Document *desc, char *location, char *servicetype)
+static client_service_t * client_service_init (xml_node_t *desc, char *location, char *servicetype)
 {
-	int i;
-	int length;
 	int ret;
 	char *tempServiceType = NULL;
 	char *baseURL = NULL;
 	char *base;
 	char *relcontrolURL = NULL;
 	char *releventURL = NULL;
-	IXML_NodeList *serviceList = NULL;
-	IXML_Element *servicedesc = NULL;
+	xml_node_t *serviceList = NULL;
+	xml_node_t *servicedesc = NULL;
 
 	client_service_t *service = NULL;
 
-	baseURL = xml_get_first_document_item(desc, "URLBase" );
+	baseURL = xml_node_get_path_value(desc, "URLBase" );
 	if (baseURL) {
 		base = baseURL;
 	} else {
 		base = location;
 	}
-	serviceList = xml_get_first_service_list(desc);
-	length = ixmlNodeList_length(serviceList);
-	for (i = 0; i < length; i++) {
-		servicedesc = (IXML_Element *) ixmlNodeList_item(serviceList, i);
-		tempServiceType = xml_get_first_element_item((IXML_Element *) servicedesc, "serviceType");
-		if (strcmp(tempServiceType, servicetype) == 0) {
-			debugf("found service: %s", servicetype);
-			service = (client_service_t *) malloc(sizeof(client_service_t));
-			if (service == NULL) {
+	serviceList = xml_node_get_path(desc, "device/serviceList");
+	if (serviceList != NULL) {
+		list_for_each_entry(servicedesc, &serviceList->nodes, head) {
+			tempServiceType = xml_node_get_path_value(servicedesc, "serviceType");
+			if (strcmp(tempServiceType, servicetype) == 0) {
+				debugf("found service: %s", servicetype);
+				service = (client_service_t *) malloc(sizeof(client_service_t));
+				if (service == NULL) {
+					break;
+				}
+				memset(service, 0, sizeof(client_service_t));
+				list_init(&service->variables);
+				service->type = strdup(servicetype);
+				service->id = strdup(xml_node_get_path_value(servicedesc, "serviceId"));
+				relcontrolURL = xml_node_get_path_value(servicedesc, "controlURL");
+				releventURL = xml_node_get_path_value(servicedesc, "eventSubURL");
+				service->controlurl = malloc(strlen(base) + strlen(relcontrolURL) + 1);
+				if (service->controlurl) {
+					ret = upnp_resolveurl(base, relcontrolURL, service->controlurl);
+					if (ret != 0) {
+						debugf("error generating control url from '%s' + '%s'", base, relcontrolURL);
+						free(service->controlurl);
+						service->controlurl = NULL;
+					}
+				}
+				service->eventurl = malloc(strlen(base) + strlen(releventURL) + 1);
+				if (service->eventurl) {
+					ret = upnp_resolveurl(base, releventURL, service->eventurl);
+					if (ret != 0) {
+						debugf("error generating event url from '%s' + '%s'", base, releventURL);
+						free(service->eventurl);
+						service->eventurl = NULL;
+					}
+				}
+				if (service->type == NULL ||
+				    service->id == NULL ||
+				    service->controlurl == NULL ||
+				    service->eventurl == NULL) {
+					client_service_uninit(service);
+					service = NULL;
+				}
+				debugf("adding new service:");
+				debugf("  type      :'%s'", service->type);
+				debugf("  id        :'%s'", service->id);
+				debugf("  controlurl:'%s'", service->controlurl);
+				debugf("  eventurl  :'%s'", service->eventurl);
 				break;
 			}
-			memset(service, 0, sizeof(client_service_t));
-			list_init(&service->variables);
-			service->type = strdup(servicetype);
-			service->id = xml_get_first_element_item(servicedesc, "serviceId");
-			relcontrolURL = xml_get_first_element_item(servicedesc, "controlURL");
-			releventURL = xml_get_first_element_item(servicedesc, "eventSubURL");
-			service->controlurl = malloc(strlen(base) + strlen(relcontrolURL) + 1);
-			if (service->controlurl) {
-				ret = upnp_resolveurl(base, relcontrolURL, service->controlurl);
-				if (ret != 0) {
-					debugf("error generating control url from '%s' + '%s'", base, relcontrolURL);
-					free(service->controlurl);
-					service->controlurl = NULL;
-				}
-			}
-			service->eventurl = malloc(strlen(base) + strlen(releventURL) + 1);
-			if (service->eventurl) {
-				ret = upnp_resolveurl(base, releventURL, service->eventurl);
-				if (ret != 0) {
-					debugf("error generating event url from '%s' + '%s'", base, releventURL);
-					free(service->eventurl);
-					service->eventurl = NULL;
-				}
-			}
-			if (relcontrolURL) {
-				free(relcontrolURL);
-			}
-			if (releventURL) {
-				free(releventURL);
-			}
-			relcontrolURL = NULL;
-			releventURL = NULL;
-
-			if (service->type == NULL ||
-			    service->id == NULL ||
-			    service->controlurl == NULL ||
-			    service->eventurl == NULL) {
-				client_service_uninit(service);
-				service = NULL;
-			}
-			break;
 		}
-		if (tempServiceType) {
-			free(tempServiceType);
-		}
-		tempServiceType = NULL;
-	}
-	if (tempServiceType) {
-		free(tempServiceType);
-	}
-	if (serviceList) {
-		ixmlNodeList_free(serviceList);
-	}
-	if (baseURL) {
-		free(baseURL);
 	}
 	return service;
 }
@@ -224,7 +207,7 @@ static int client_event_advertisement_alive (client_t *client, upnp_event_advert
 	char *uuid = NULL;
 	char *devicetype = NULL;
 	char *friendlyname = NULL;
-	IXML_Document *desc = NULL;
+	xml_node_t *desc = NULL;
 
 	for (d = 0; (description = client->descriptions[d]) != NULL; d++) {
 		if (strcmp(advertisement->device, description->device) == 0) {
@@ -239,21 +222,22 @@ found:
 			return 0;
 		}
 	}
-	debugf("downloading device description");
+	debugf("downloading device description from '%s'", advertisement->location);
 	buffer = upnp_download(upnp, advertisement->location);
 	if (buffer == NULL) {
 		debugf("upnp_download('%s') failed", advertisement->location);
 		return 0;
 	}
-	if (ixmlParseBufferEx(buffer, &desc) != IXML_SUCCESS) {
-		debugf("ixmlParseBufferEx() failed");
+	desc = xml_parse_buffer(buffer, strlen(buffer));
+	if (desc == NULL) {
+		debugf("xml_parse_buffer() failed");
 		free(buffer);
 		return 0;
 	}
-	debugf("reading elements from document '%s'", advertisement->location);
-	uuid = xml_get_first_document_item(desc, "UDN");
-	devicetype = xml_get_first_document_item(desc, "deviceType");
-	friendlyname = xml_get_first_document_item(desc, "friendlyName");
+	debugf("reading elements from document");
+	uuid = xml_node_get_path_value(desc, "device/UDN");
+	devicetype = xml_node_get_path_value(desc, "device/deviceType");
+	friendlyname = xml_node_get_path_value(desc, "device/friendlyName");
 	debugf("elements:\n"
 		"  uuid        : %s\n"
 		"  devicetype  : %s\n"
@@ -278,11 +262,8 @@ found:
 	}
 	list_add_tail(&device->head, &client->devices);
 	debugf("added '%s' to device list", device->uuid);
-out:	free(uuid);
-	free(devicetype);
-	free(friendlyname);
-	free(buffer);
-	ixmlDocument_free(desc);
+out:	free(buffer);
+	xml_node_uninit(desc);
 	return 0;
 }
 
