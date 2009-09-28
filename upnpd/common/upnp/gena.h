@@ -57,7 +57,7 @@ typedef struct gena_file_s {
 } gena_file_t;
 
 typedef struct gena_fileinfo_s {
-	unsigned long size;
+	unsigned long long size;
 	char *mimetype;
 	unsigned long mtime;
 } gena_fileinfo_t;
@@ -67,7 +67,7 @@ typedef struct gena_callback_vfs_s {
 	void * (*open) (void *cookie, char *path, gena_filemode_t mode);
 	int (*read) (void *cookie, void *handle, char *buffer, unsigned int length);
 	int (*write) (void *cookie, void *handle, char *buffer, unsigned int length);
-	unsigned long (*seek)  (void *cookie, void *handle, long offset, gena_seek_t whence);
+	unsigned long long (*seek)  (void *cookie, void *handle, unsigned long long offset, gena_seek_t whence);
 	int (*close) (void *cookie, void *handle);
 	void *cookie;
 } gena_callback_vfs_t;

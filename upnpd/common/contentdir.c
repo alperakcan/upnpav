@@ -388,7 +388,7 @@ static int contentdirectory_vfswrite (void *cookie, void *handle, char *buffer, 
 	return -1;
 }
 
-static unsigned long contentdirectory_vfsseek (void *cookie, void *handle, long offset, gena_seek_t whence)
+static unsigned long long contentdirectory_vfsseek (void *cookie, void *handle, unsigned long long offset, gena_seek_t whence)
 {
 	upnp_file_t *file;
 	contentdir_t *contentdir;

@@ -51,9 +51,9 @@
 #define GENA_SOCKET_TIMEOUT	1000
 
 typedef struct gena_filerange_s {
-	unsigned long start;
-	unsigned long stop;
-	unsigned long size;
+	unsigned long long start;
+	unsigned long long stop;
+	unsigned long long size;
 } gena_filerange_t;
 
 typedef struct gena_fileino_internal_s {
@@ -395,19 +395,19 @@ static void gena_sendfileheader (socket_t *socket, gena_fileinfo_internal_t *fil
 	if (type == GENA_RESPONSE_TYPE_PARTIAL_CONTENT) {
 		len += sprintf(header + len,
 			"Accept-Ranges: bytes\r\n"
-			"Last-Modified: %s\r\n%s %lu\r\n",
+			"Last-Modified: %s\r\n%s %llu\r\n",
 			tmpstr,
 			"Content-length:",
 			fileinfo->filerange.size);
 		len += sprintf(header + len,
-				"Content-Range: bytes %lu-%lu/%lu\r\n",
+				"Content-Range: bytes %llu-%llu/%llu\r\n",
 				fileinfo->filerange.start,
 				fileinfo->filerange.stop,
 				fileinfo->fileinfo.size);
 	} else {
 		len += sprintf(header + len,
 			"Accept-Ranges: bytes\r\n"
-			"Last-Modified: %s\r\n%s %lu\r\n",
+			"Last-Modified: %s\r\n%s %llu\r\n",
 			tmpstr,
 			"Content-length:",
 			fileinfo->fileinfo.size);

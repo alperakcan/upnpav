@@ -442,7 +442,7 @@ typedef struct dir_s dir_t;
  */
 typedef struct file_stat_s {
 	/** file size */
-	int64_t size;
+	unsigned long long size;
 	/** file modification time */
 	unsigned int mtime;
 	/** file type */
@@ -473,7 +473,7 @@ int file_stat (const char *path, file_stat_t *stat);
 file_t * file_open (const char *path, file_mode_t mode);
 int file_read (file_t *file, void *buffer, int length);
 int file_write (file_t *file, const void *buffer, int length);
-long file_seek (file_t *file, long offset, file_seek_t whence);
+unsigned long long file_seek (file_t *file, unsigned long long offset, file_seek_t whence);
 int file_close (file_t *file);
 
 dir_t * file_opendir (const char *path);

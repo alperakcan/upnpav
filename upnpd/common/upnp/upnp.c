@@ -222,7 +222,7 @@ static int gena_callback_write (void *cookie, void *handle, char *buffer, unsign
 	return 0;
 }
 
-static unsigned long gena_callback_seek (void *cookie, void *handle, long offset, gena_seek_t whence)
+static unsigned long long gena_callback_seek (void *cookie, void *handle, unsigned long long offset, gena_seek_t whence)
 {
 	upnp_t *upnp;
 	gena_file_t *file;
