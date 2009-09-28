@@ -298,6 +298,7 @@ entry_t * controller_browse_metadata (client_t *controller, const char *device, 
 		goto out;
 	}
 
-out:	xml_node_uninit(response);
+out:
+	xml_node_uninit(response);
 	return entry;
 }
