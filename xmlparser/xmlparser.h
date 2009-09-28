@@ -1,3 +1,29 @@
+/*
+ * upnpavd - UPNP AV Daemon
+ *
+ * Copyright (C) 2009 Alper Akcan, alper.akcan@gmail.com
+ * Copyright (C) 2009 CoreCodec, Inc., http://www.CoreCodec.com
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ *
+ * Any non-LGPL usage of this software or parts of this software is strictly
+ * forbidden.
+ *
+ * Commercial non-LGPL licensing of this software is possible.
+ * For more info contact CoreCodec through info@corecodec.com
+ */
 
 /** @defgroup xmlparser XML Parser API
   * @brief XML parse and handling api.
@@ -165,13 +191,17 @@ int xml_node_uninit (xml_node_t *node);
 
 /** @brief parses the given buffer
   *
-  * @param **node  - out value
   * @param *buffer - buffer to parse
   * @param len     - buffer length
-  * @returns 0 on success
+  * @returns node on success, NULL on error
   */
 xml_node_t * xml_parse_buffer (const char *buffer, unsigned int len);
 
-char * xml_node_print (const xml_node_t *buffer);
+/** @brief dumps given node to buffer
+  *
+  * @param *node - node to dump
+  * @returns buffer on success, NULL on error
+  */
+char * xml_node_print (const xml_node_t *node);
 
 /*@}*/
