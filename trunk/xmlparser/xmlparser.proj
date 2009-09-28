@@ -1,6 +1,8 @@
 
 LIB upnpd_xmlparser
 {
+  USE upnpd_platform
+
   EXPINCLUDE .
 
   IF ENABLE_XMLPARSER_EXPAT
