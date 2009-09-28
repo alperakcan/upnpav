@@ -36,6 +36,7 @@
 #include <inttypes.h>
 
 #include "platform.h"
+#include "xmlparser.h"
 #include "gena.h"
 #include "upnp.h"
 #include "upnpd.h"

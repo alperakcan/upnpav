@@ -1111,6 +1111,7 @@ char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port
 		}
 	}
 	free(buffer);
+	buffer = NULL;
 	if (contentlength == 1) {
 		if (length <= 0) {
 			socket_close(socket);

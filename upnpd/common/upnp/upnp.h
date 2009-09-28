@@ -28,8 +28,6 @@
 #ifndef UPNP_H_
 #define UPNP_H_
 
-#include <ixml.h>
-
 typedef struct upnp_s upnp_t;
 
 typedef enum {
@@ -83,7 +81,7 @@ typedef struct upnp_event_action_s {
 	char *udn;
 	char *serviceid;
 	char *action;
-	IXML_Document *request;
+	char *request;
 	int errcode;
 	struct {
 		char *service;

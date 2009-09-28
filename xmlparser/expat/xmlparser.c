@@ -369,15 +369,14 @@ static void xml_parse_character (void *xdata, const char *txt, int txtlen)
 	}
 }
 
-int xml_parse_buffer (xml_node_t **node, char *buffer, unsigned int len)
+xml_node_t * xml_parse_buffer (const char *buffer, unsigned int len)
 {
-	int ret;
 	XML_Parser p;
 	xml_data_t *data;
-	ret = 0;
+	xml_node_t *node;
 	data = (xml_data_t *) malloc(sizeof(xml_data_t));
 	if (data == NULL) {
-		return -1;
+		return NULL;
 	}
 	memset(data, 0, sizeof(xml_data_t));
 	p = XML_ParserCreate(NULL);
@@ -385,11 +384,118 @@ int xml_parse_buffer (xml_node_t **node, char *buffer, unsigned int len)
 	XML_SetElementHandler(p, xml_parse_start, xml_parse_end);
 	XML_SetCharacterDataHandler(p, xml_parse_character);
 	if (!XML_Parse(p, buffer, len, 1)) {
-		debugf(0, "Parse error at line %d:%s", (int) XML_GetCurrentLineNumber(p), XML_ErrorString(XML_GetErrorCode(p)));
-		ret = -1;
+		debugf("Parse error at line %d:%s", (int) XML_GetCurrentLineNumber(p), XML_ErrorString(XML_GetErrorCode(p)));
+		return NULL;
 	}
 	XML_ParserFree(p);
-	*node = data->root;
+	node = data->root;
 	free(data);
-	return ret;
+	return node;
+}
+
+static int strappend (char **to, char *append)
+{
+	int l;
+	int j;
+	char *tmp;
+	if (*to == NULL) {
+		l = 0;
+	} else {
+		l = strlen(*to);
+	}
+	if (append == NULL) {
+		return 0;
+	}
+	j = strlen(append);
+	if (j == 0) {
+		return 0;
+	}
+	tmp = (char *) malloc(l + j + 1);
+	if (tmp == NULL) {
+		return -1;
+	}
+	if (l > 0) {
+		memcpy(tmp, *to, l);
+	}
+	memcpy(tmp + l, append, j + 1);
+	free(*to);
+	*to = tmp;
+	return 0;
+}
+
+static char * strdup_escaped (const char *p )
+{
+	int i;
+	int j;
+	int plen;
+	int dlen;
+	char *buf;
+	if (p == NULL) {
+		return NULL;
+	}
+	buf = NULL;
+	dlen = 0;
+	plen = strlen(p);
+	for (i = 0; i < plen; i++) {
+		switch (p[i]) {
+			case '<':  dlen += 4; break;
+			case '>':  dlen += 4; break;
+			case '&':  dlen += 5; break;
+			case '\'': dlen += 6; break;
+			case '\"': dlen += 6; break;
+			default:   dlen += 1; break;
+		}
+	}
+	buf = (char *) malloc(dlen + 1);
+	if (buf == NULL) {
+		return NULL;
+	}
+	for (j = 0, i = 0; i < plen; i++) {
+		switch (p[i]) {
+			case '<':  buf[j++] = '&'; buf[j++] = 'l'; buf[j++] = 't'; buf[j++] = ';'; break;
+			case '>':  buf[j++] = '&'; buf[j++] = 'g'; buf[j++] = 't'; buf[j++] = ';'; break;
+			case '&':  buf[j++] = '&'; buf[j++] = 'a'; buf[j++] = 'm'; buf[j++] = 'p'; buf[j++] = ';'; break;
+			case '\'': buf[j++] = '&'; buf[j++] = 'a'; buf[j++] = 'p'; buf[j++] = 'o'; buf[j++] = 's'; buf[j++] = ';'; break;
+			case '\"': buf[j++] = '&'; buf[j++] = 'q'; buf[j++] = 'u'; buf[j++] = 'o'; buf[j++] = 't'; buf[j++] = ';'; break;
+			default:   buf[j++] = p[i]; break;
+		}
+	}
+	buf[j] = '\0';
+	return buf;
+}
+
+static int xml_node_print_ (char **buffer, const xml_node_t *node)
+{
+	char *e;
+	xml_node_t *n;
+	xml_node_attr_t *a;
+	strappend(buffer, "<");
+	strappend(buffer, node->name);
+	list_for_each_entry(a, &node->attrs, head) {
+		strappend(buffer, " ");
+		strappend(buffer, a->name);
+		strappend(buffer, "=\"");
+		strappend(buffer, a->value);
+		strappend(buffer, "\"");
+	}
+	strappend(buffer, ">");
+	e = strdup_escaped(node->value);
+	strappend(buffer, e);
+	free(e);
+	list_for_each_entry(n, &node->nodes, head) {
+		xml_node_print_(buffer, n);
+	}
+	strappend(buffer, "</");
+	strappend(buffer, node->name);
+	strappend(buffer, ">");
+	return 0;
+}
+
+char * xml_node_print (const xml_node_t *node)
+{
+	char *b;
+	b = NULL;
+	strappend(&b, "<?xml version=\"1.0\"?>\n");
+	xml_node_print_(&b, node);
+	return b;
 }

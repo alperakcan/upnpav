@@ -29,11 +29,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
 #include <inttypes.h>
 
 #include "platform.h"
+#include "xmlparser.h"
 #include "gena.h"
 #include "upnp.h"
 #include "common.h"
@@ -165,6 +167,8 @@ static int connectionmanager_get_current_connection_ids (device_service_t *servi
 
 static int connectionmanager_get_current_connection_info (device_service_t *service, upnp_event_action_t *request)
 {
+	xml_node_t *xml;
+
 	uint32_t connectionid;
 	connection_instance_t *cinstance;
 
@@ -175,10 +179,18 @@ static int connectionmanager_get_current_connection_info (device_service_t *serv
 	char *status;
 
 	debugf("connectionmanager get current connection info");
-	connectionid = xml_get_ui4(request->request, "ConnectionID");
+
+	xml = xml_parse_buffer(request->request, strlen(request->request));
+	if (xml == NULL) {
+		request->errcode = UPNP_ERROR_PARAMETER_MISMATCH;
+		return 0;
+	}
+
+	connectionid = xml_get_ui4(xml, "ConnectionID");
 	cinstance = connection_instance_get(connectionid);
 	if (cinstance == NULL) {
 		request->errcode = UPNP_ERROR_PARAMETER_MISMATCH;
+		xml_node_uninit(xml);
 		return 0;
 	}
 
@@ -198,6 +210,7 @@ static int connectionmanager_get_current_connection_info (device_service_t *serv
 	free(protocolinfo);
 	free(peerconnectionmanager);
 	free(direction);
+	xml_node_uninit(xml);
 
 	return 0;
 }

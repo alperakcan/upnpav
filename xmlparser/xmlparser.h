@@ -170,6 +170,8 @@ int xml_node_uninit (xml_node_t *node);
   * @param len     - buffer length
   * @returns 0 on success
   */
-int xml_parse_buffer (xml_node_t **node, char *buffer, unsigned int len);
+xml_node_t * xml_parse_buffer (const char *buffer, unsigned int len);
+
+char * xml_node_print (const xml_node_t *buffer);
 
 /*@}*/

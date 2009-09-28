@@ -29,10 +29,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <inttypes.h>
 
 #include "platform.h"
+#include "xmlparser.h"
 #include "gena.h"
 #include "upnp.h"
 #include "common.h"
@@ -96,115 +98,4 @@ char * xml_escape (const char *str, int attribute)
 	out = malloc(len + 1);
 	xmlescape_real(str, out, NULL, attribute);
 	return out;
-}
-
-char * xml_get_first_document_item (IXML_Document *doc, const char *item)
-{
-	IXML_NodeList *nodeList = NULL;
-	IXML_Node *textNode = NULL;
-	IXML_Node *tmpNode = NULL;
-	const char *val;
-	char *ret = NULL;
-
-	debugf("get item value for '%s'", item);
-	nodeList = ixmlDocument_getElementsByTagName(doc, (char *) item);
-	if (nodeList == NULL) {
-		debugf("ixmlDocument_getElementsByTagNam() failed");
-		return NULL;
-	}
-	if ((tmpNode = ixmlNodeList_item(nodeList, 0)) == NULL) {
-		ixmlNodeList_free(nodeList);
-		debugf("ixmlNodeList_item() failed");
-		return NULL;
-	}
-	textNode = ixmlNode_getFirstChild(tmpNode);
-	if (textNode == NULL) {
-		debugf("ixmlNode_getFirstChild() failed");
-	}
-	val = ixmlNode_getNodeValue(textNode);
-	if (val != NULL) {
-		debugf("value for '%s':'%s'", item, val);
-		ret = strdup(val);
-	} else {
-		debugf("ixmlNode_getNodeValue() failed for '%s'", item);
-	}
-	ixmlNodeList_free(nodeList);
-
-	return ret;
-}
-
-char * xml_get_first_element_item (IXML_Element *element, const char *item)
-{
-	IXML_NodeList *nodeList = NULL;
-	IXML_Node *textNode = NULL;
-	IXML_Node *tmpNode = NULL;
-	const char *val;
-	char *ret = NULL;
-
-	nodeList = ixmlElement_getElementsByTagName(element, (char *) item);
-	if (nodeList == NULL) {
-		return NULL;
-	}
-	if ((tmpNode = ixmlNodeList_item(nodeList, 0)) == NULL) {
-		ixmlNodeList_free(nodeList);
-		return NULL;
-	}
-	textNode = ixmlNode_getFirstChild(tmpNode);
-	val = ixmlNode_getNodeValue(textNode);
-	if (val != NULL) {
-		ret = strdup(val);
-	}
-	ixmlNodeList_free(nodeList);
-
-	return ret;
-}
-
-IXML_NodeList * xml_get_first_service_list (IXML_Document *doc)
-{
-	IXML_NodeList *ServiceList = NULL;
-	IXML_NodeList *servlistnodelist = NULL;
-	IXML_Node *servlistnode = NULL;
-	servlistnodelist = ixmlDocument_getElementsByTagName(doc, "serviceList");
-	if (servlistnodelist && ixmlNodeList_length( servlistnodelist)) {
-		/* we only care about the first service list, from the root device
-		 */
-		servlistnode = ixmlNodeList_item(servlistnodelist, 0);
-		/* create as list of DOM nodes
-		 */
-		ServiceList = ixmlElement_getElementsByTagName((IXML_Element *) servlistnode, "service");
-	}
-	if (servlistnodelist) {
-		ixmlNodeList_free(servlistnodelist);
-	}
-	return ServiceList;
-}
-
-char * xml_get_element_value (IXML_Element *element)
-{
-	char *temp = NULL;
-	IXML_Node *child = ixmlNode_getFirstChild((IXML_Node *) element);
-	if ((child != 0) && (ixmlNode_getNodeType(child) == eTEXT_NODE)) {
-    		temp = strdup(ixmlNode_getNodeValue(child));
-    	}
-    	return temp;
-}
-
-char * xml_get_string (IXML_Document *doc, const char *item)
-{
-	char *value;
-	value = xml_get_first_document_item(doc, item);
-	if (value) {
-		return value;
-	}
-	return NULL;
-}
-
-uint32_t xml_get_ui4 (IXML_Document *doc, const char *item)
-{
-	uint32_t r;
-	char *value;
-	value = xml_get_first_document_item(doc, item);
-	r = strtouint32(value);
-	free(value);
-	return r;
 }

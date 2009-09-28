@@ -6,6 +6,7 @@ CON upnpd
   USE upnpd_common
   USE upnpd_controller
   USE upnpd_mediaserver
+  USE upnpd_xmlparser
   
   EXPINCLUDE .
   
