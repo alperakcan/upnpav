@@ -4,7 +4,7 @@ LIB upnpd_xmlparser
   EXPINCLUDE .
 
   IF ENABLE_XMLPARSER_EXPAT
-  SOURCE expat/expat.c
+  SOURCE expat/xmlparser.c
   ENDIF
 
   HEADER xmlparser.h

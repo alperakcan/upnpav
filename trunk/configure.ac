@@ -1,69 +1,88 @@
-
-AC_INIT([upnpd], [0.0.2], [upnpd@alperakcan.org])
-AC_CANONICAL_TARGET
-
-#AM_INIT_AUTOMAKE([-Wall -Werror foreign])
-AC_CONFIG_HEADER([config.h])
-
-# Initialize config.h
-AC_GNU_SOURCE
-
-# Enable maintainer mode
-AM_MAINTAINER_MODE
-
-# Disable shared
-AC_DISABLE_SHARED
-
-# Enable large files (off_t is 64bits or more)
-#AC_SYS_LARGEFILE
-
-# Checks for programs.
-AC_PROG_CXX
-AC_PROG_AWK
-AC_PROG_CC
-AC_PROG_INSTALL
-AC_PROG_LIBTOOL
-AC_PROG_RANLIB
-
-AC_PATH_PROG(CHMOD, chmod, :)
-
-case $target_os in
-     *linux*)	arch=linux;;
-     *darwin*)	arch=darwin;;
-     *)		arch=unknown;;
-esac
-
-# Large file support
-AC_TYPE_SIZE_T
-AC_TYPE_OFF_T
-AC_DEFINE([_LARGE_FILE_SOURCE], [], [Large files support])
-AC_DEFINE([_FILE_OFFSET_BITS], [64], [File Offset size])
-
-# Checks for header files.
-AC_HEADER_DIRENT
-AC_HEADER_STDC
-AC_HEADER_MAJOR
-AC_CHECK_HEADERS([	\
-	stdio.h		\
-	stdlib.h	\
-	string.h	\
-])
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_C_INLINE
-
-# Checks for library functions.
-AC_FUNC_MALLOC
-AC_CHECK_FUNCS([	\
-	printf		\
-	strcmp		\
-	memset		\
-])
-
 #
 # M4 Commands
 #
+
+dnl @synopsis AC_C_BIGENDIAN_CROSS
+dnl
+dnl Check endianess even when crosscompiling
+dnl (partially based on the original AC_C_BIGENDIAN).
+dnl
+dnl The implementation will create a binary, and instead of running
+dnl the binary it will be grep'ed for some symbols that will look
+dnl different for different endianess of the binary.
+dnl
+dnl @version $Id: ac_c_bigendian_cross.m4,v 1.2 2001/10/01 20:03:13 fdrake Exp $
+dnl @author Guido Draheim <guidod@gmx.de>
+dnl
+AC_DEFUN([AC_C_BIGENDIAN_CROSS],
+[AC_CACHE_CHECK(whether byte ordering is bigendian, ac_cv_c_bigendian,
+[ac_cv_c_bigendian=unknown
+# See if sys/param.h defines the BYTE_ORDER macro.
+AC_TRY_COMPILE([#include <sys/types.h>
+#include <sys/param.h>], [
+#if !BYTE_ORDER || !BIG_ENDIAN || !LITTLE_ENDIAN
+ bogus endian macros
+#endif], [# It does; now see whether it defined to BIG_ENDIAN or not.
+AC_TRY_COMPILE([#include <sys/types.h>
+#include <sys/param.h>], [
+#if BYTE_ORDER != BIG_ENDIAN
+ not big endian
+#endif], ac_cv_c_bigendian=yes, ac_cv_c_bigendian=no)])
+if test $ac_cv_c_bigendian = unknown; then
+AC_TRY_RUN([main () {
+  /* Are we little or big endian?  From Harbison&Steele.  */
+  union
+  {
+    long l;
+    char c[sizeof (long)];
+  } u;
+  u.l = 1;
+  exit (u.c[sizeof (long) - 1] == 1);
+}], ac_cv_c_bigendian=no, ac_cv_c_bigendian=yes,
+[ echo $ac_n "cross-compiling... " 2>&AC_FD_MSG ])
+fi])
+if test $ac_cv_c_bigendian = unknown; then
+AC_MSG_CHECKING(to probe for byte ordering)
+[
+cat >conftest.c <<EOF
+short ascii_mm[] = { 0x4249, 0x4765, 0x6E44, 0x6961, 0x6E53, 0x7953, 0 };
+short ascii_ii[] = { 0x694C, 0x5454, 0x656C, 0x6E45, 0x6944, 0x6E61, 0 };
+void _ascii() { char* s = (char*) ascii_mm; s = (char*) ascii_ii; }
+short ebcdic_ii[] = { 0x89D3, 0xE3E3, 0x8593, 0x95C5, 0x89C4, 0x9581, 0 };
+short ebcdic_mm[] = { 0xC2C9, 0xC785, 0x95C4, 0x8981, 0x95E2, 0xA8E2, 0 };
+void _ebcdic() { char* s = (char*) ebcdic_mm; s = (char*) ebcdic_ii; }
+int main() { _ascii (); _ebcdic (); return 0; }
+EOF
+] if test -f conftest.c ; then
+     if ${CC-cc} -c conftest.c -o conftest.o && test -f conftest.o ; then
+        if test `grep -l BIGenDianSyS conftest.o` ; then
+           echo $ac_n ' big endian probe OK, ' 1>&AC_FD_MSG
+           ac_cv_c_bigendian=yes
+        fi
+        if test `grep -l LiTTleEnDian conftest.o` ; then
+           echo $ac_n ' little endian probe OK, ' 1>&AC_FD_MSG
+           if test $ac_cv_c_bigendian = yes ; then
+            ac_cv_c_bigendian=unknown;
+           else
+            ac_cv_c_bigendian=no
+           fi
+        fi
+        echo $ac_n 'guessing bigendian ...  ' >&AC_FD_MSG
+     fi
+  fi
+AC_MSG_RESULT($ac_cv_c_bigendian)
+fi
+if test $ac_cv_c_bigendian = yes; then
+  AC_DEFINE(WORDS_BIGENDIAN, 1, [whether byteorder is bigendian])
+  BYTEORDER=4321
+else
+  BYTEORDER=1234
+fi
+AC_DEFINE_UNQUOTED(BYTEORDER, $BYTEORDER, [1234 = LIL_ENDIAN, 4321 = BIGENDIAN])
+if test $ac_cv_c_bigendian = unknown; then
+  AC_MSG_ERROR(unknown endianess - sorry, please pre-set ac_cv_c_bigendian)
+fi
+])
 
 dnl @synopsis VL_LIB_READLINE
 dnl
@@ -175,7 +194,75 @@ AC_DEFUN([VL_LIB_READLINE], [
   # patch R. Turboult 2005-11-06
   AC_SUBST(READLINE_LIBS)
 
-])dnl
+])
+
+AC_INIT([upnpd], [0.0.2], [upnpd@alperakcan.org])
+AC_CANONICAL_TARGET
+
+#AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AC_CONFIG_HEADER([config.h])
+
+# Initialize config.h
+AC_GNU_SOURCE
+
+# Enable maintainer mode
+AM_MAINTAINER_MODE
+
+# Disable shared
+AC_DISABLE_SHARED
+
+# Checks for programs.
+AC_PROG_CXX
+AC_PROG_AWK
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_PROG_LIBTOOL
+AC_PROG_RANLIB
+
+AC_PATH_PROG(CHMOD, chmod, :)
+
+case $target_os in
+     *linux*)	arch=linux;;
+     *darwin*)	arch=darwin;;
+     *)		arch=unknown;;
+esac
+
+# Endian test
+AC_C_BIGENDIAN_CROSS
+
+# Large file support
+#AC_SYS_LARGEFILE
+AC_TYPE_SIZE_T
+AC_TYPE_OFF_T
+AC_DEFINE([_LARGE_FILE_SOURCE], [], [Large files support])
+AC_DEFINE([_FILE_OFFSET_BITS], [64], [File Offset size])
+
+# Checks for header files.
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_HEADER_MAJOR
+AC_CHECK_HEADERS([ \
+	stdio.h \
+	stdlib.h \
+	string.h \
+	fcntl.h \
+	unistd.h \
+])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_C_INLINE
+
+# Checks for library functions.
+AC_FUNC_MALLOC
+AC_FUNC_MMAP
+AC_CHECK_FUNCS([ \
+	printf \
+	strcmp \
+	memset \
+	memmove \
+	bcopy \
+])
 
 CFLAGS="$CFLAGS -Wall -Werror"
 
