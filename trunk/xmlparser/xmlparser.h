@@ -144,30 +144,6 @@ xml_node_attr_t * xml_node_get_attr (xml_node_t *node, const char *attr);
   */
 char * xml_node_get_attr_value (xml_node_t *node, const char *attr);
 
-/** @brief dublicates the given node
-  *
-  * @param *node - node to dublicate
-  * @param **dub - dublicated value
-  * @returns 0 on success
-  */
-int xml_node_dublicate (xml_node_t *node, xml_node_t **dub);
-
-/** @brief dublicates the given attribute
-  *
-  * @param *attr - node to dublicate
-  * @param **dub - dublicated value
-  * @returns 0 on success
-  */
-int xml_node_attr_dublicate (xml_node_attr_t *attr, xml_node_attr_t **dub);
-
-/** @brief return the parent of node with the name "name"
-  *
-  * @param *node - the node
-  * @param *name - name of the parent
-  * @returns the parent, or NULL if not found
-  */
-xml_node_t * xml_node_get_parent (xml_node_t *node, char *name);
-
 /** @brief initializes the attribute struct
   *
   * @param **attr - out value
