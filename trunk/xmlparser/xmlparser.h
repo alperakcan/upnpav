@@ -76,9 +76,9 @@ struct xml_node_attr_s {
 	/** list head */
 	list_t head;
 	/** attr name */
-	char *name_;
+	char *name;
 	/** attr value */
-	char *value_;
+	char *value;
 };
 
 /** xml node struct
@@ -87,9 +87,9 @@ struct xml_node_s {
 	/** list head */
 	list_t head;
 	/** node name */
-	char *name_;
+	char *name;
 	/** node value */
-	char *value_;
+	char *value;
 	/** node attributes */
 	list_t attrs;
 	/** child nodes */
