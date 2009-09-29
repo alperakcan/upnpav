@@ -887,7 +887,7 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 	}
 
 	list_for_each_entry(devicenode, &desc->nodes, head) {
-		if (strcmp(devicenode->name, "device") != 0) {
+		if (strcmp(xml_node_get_name(devicenode), "device") != 0) {
 			continue;
 		}
 		devicetype = xml_node_get_path_value(devicenode, "deviceType");

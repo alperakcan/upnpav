@@ -854,7 +854,7 @@ static entry_t * entry_from_element (xml_node_t *elem, int container)
 	printf("metadata (%d)\n%s\n", container, entry->metadata);
 	if (container == 0) {
 		list_for_each_entry(nres, &elem->nodes, head) {
-			if (strcmp(nres->name, "res") == 0) {
+			if (strcmp(xml_node_get_name(nres), "res") == 0) {
 				const char *protocolinfo;
 				const char *duration;
 				const char *size;
@@ -903,7 +903,7 @@ entry_t * entry_from_result (char *result)
 	}
 
 	list_for_each_entry(container, &res->nodes, head) {
-		if (strcmp(container->name, "container") == 0 ) {
+		if (strcmp(xml_node_get_name(container), "container") == 0 ) {
 			tmp = entry_from_element(container, 1);
 			if (tmp == NULL) {
 				continue;
@@ -918,7 +918,7 @@ entry_t * entry_from_result (char *result)
 	}
 
 	list_for_each_entry(item, &res->nodes, head) {
-		if (strcmp(item->name, "item") == 0 ) {
+		if (strcmp(xml_node_get_name(item), "item") == 0 ) {
 			tmp = entry_from_element(item, 0);
 			if (tmp == NULL) {
 				continue;
