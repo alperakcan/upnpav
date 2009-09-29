@@ -219,52 +219,6 @@ char * xml_node_get_attr_value (xml_node_t *node, const char *attr)
 	return NULL;
 }
 
-static void xml_node_dublicate_ (xml_node_t *node, xml_node_t *dub)
-{
-	xml_node_t *tmp;
-	xml_node_t *dmp;
-	xml_node_attr_t *atmp;
-	xml_node_attr_t *admp;
-	dub->name = (node->name) ? strdup(node->name) : NULL;
-	dub->value = (node->value) ? strdup(node->value) : NULL;
-	list_for_each_entry(atmp, &node->attrs, head) {
-		xml_node_attr_dublicate(atmp, &admp);
-		list_add_tail(&admp->head, &dub->attrs);
-	}
-	list_for_each_entry(tmp, &node->nodes, head) {
-    		xml_node_init(&dmp);
-    		xml_node_dublicate_(tmp, dmp);
-    		list_add_tail(&dmp->head, &dub->attrs);
-    		dmp->parent = dub;
-	}
-}
-
-int xml_node_dublicate (xml_node_t *node, xml_node_t **dub)
-{
-	xml_node_init(dub);
-	xml_node_dublicate_(node, *dub);
-	return 0;
-}
-
-int xml_node_attr_dublicate (xml_node_attr_t *attr, xml_node_attr_t **dub)
-{
-	xml_node_attr_init(dub);
-	(*dub)->name = (attr->name) ? strdup(attr->name) : NULL;
-	(*dub)->value = (attr->value) ? strdup(attr->value) : NULL;
-	return 0;
-}
-
-xml_node_t * xml_node_get_parent (xml_node_t *node, char *name)
-{
-	while (node->parent) {
-		if (strcmp(node->parent->name, name) == 0) {
-			return node->parent;
-		}
-		node = node->parent;
-	}
-	return NULL;
-}
-
 int xml_node_attr_init (xml_node_attr_t **attr)
 {
 	xml_node_attr_t *a;
