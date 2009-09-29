@@ -68,7 +68,7 @@ static inline int file_mode_open (file_mode_t mode)
 	} else {
 		m = O_RDWR;
 	}
-	m |= O_LARGEFILE;
+//	m |= O_LARGEFILE;
 	return m;
 }
 
@@ -150,7 +150,7 @@ unsigned long long file_seek (file_t *file, unsigned long long offset, file_seek
 	int s;
 	unsigned long long r;
 	s = file_whence_seek(whence);
-	r = lseek64(file->fd, (unsigned long long) offset, s);
+	r = lseek(file->fd, (unsigned long long) offset, s);
 	return r;
 }
 

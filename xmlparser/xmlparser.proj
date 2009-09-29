@@ -12,7 +12,6 @@ LIB upnpd_xmlparser
   SOURCE expat/xmlparser.c
 
   SOURCE expat/xmlparse.c
-  SOURCE expat/xmlparser.c
   SOURCE expat/xmlrole.c
   SOURCE expat/xmltok.c
   SOURCE expat/xmltok_impl.c

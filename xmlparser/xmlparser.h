@@ -76,9 +76,9 @@ struct xml_node_attr_s {
 	/** list head */
 	list_t head;
 	/** attr name */
-	char *name;
+	char *name_;
 	/** attr value */
-	char *value;
+	char *value_;
 };
 
 /** xml node struct
@@ -87,9 +87,9 @@ struct xml_node_s {
 	/** list head */
 	list_t head;
 	/** node name */
-	char *name;
+	char *name_;
 	/** node value */
-	char *value;
+	char *value_;
 	/** node attributes */
 	list_t attrs;
 	/** child nodes */
@@ -105,6 +105,13 @@ struct xml_node_s {
   * @returns node for given path, or NULL if not found.
   */
 xml_node_t * xml_node_get_path (xml_node_t *node, const char *path);
+
+/** @brief returns the value for given node
+  *
+  * @param *node - the node
+  * @returns name for given node, or NULL if no value.
+  */
+char * xml_node_get_name (xml_node_t *node);
 
 /** @brief returns the value for given node
   *
