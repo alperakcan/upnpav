@@ -118,13 +118,13 @@ static xml_node_t * xml_node_get_path_ (xml_node_t *node, const char *path)
 		}
 		str = strchr(path, '/');
 		if (str == NULL &&
-		    strcmp(node->name_, path) == 0) {
+		    strcmp(node->name, path) == 0) {
 			path = str + 1;
 			goto ok;
 		}
 		if (str != NULL &&
-		    strncmp(node->name_, path, str - path) == 0 &&
-		    strlen(node->name_) == str - path) {
+		    strncmp(node->name, path, str - path) == 0 &&
+		    strlen(node->name) == str - path) {
 			path = str + 1;
 			goto ok;
 		}
@@ -134,13 +134,13 @@ ok:
 	list_for_each_entry(tmp, &node->nodes, head) {
 		str = strchr(path,  '/');
 		if (str == NULL) {
-			if (strcmp(tmp->name_, path) == 0) {
+			if (strcmp(tmp->name, path) == 0) {
 				res = tmp;
 				break;
 			}
 		} else {
-			if (strncmp(tmp->name_, path, str - path) == 0 &&
-			    strlen(tmp->name_) == str - path) {
+			if (strncmp(tmp->name, path, str - path) == 0 &&
+			    strlen(tmp->name) == str - path) {
 			    	ptr = strchr(path, '/');
 			    	if (ptr != NULL) {
 			    		ptr++;
@@ -177,12 +177,12 @@ xml_node_t * xml_node_get_path (xml_node_t *node, const char *path)
 
 char * xml_node_get_name (xml_node_t *node)
 {
-	return node->name_;
+	return node->name;
 }
 
 char * xml_node_get_value (xml_node_t *node)
 {
-	return node->value_;
+	return node->value;
 }
 
 char * xml_node_get_path_value (xml_node_t *node, const char *path)
@@ -202,7 +202,7 @@ xml_node_attr_t * xml_node_get_attr (xml_node_t *node, const char *attr)
 		return NULL;
 	}
 	list_for_each_entry(tmp, &node->attrs, head) {
-		if (strcmp(tmp->name_, attr) == 0) {
+		if (strcmp(tmp->name, attr) == 0) {
 			return tmp;
 		}
 	}
@@ -214,7 +214,7 @@ char * xml_node_get_attr_value (xml_node_t *node, const char *attr)
 	xml_node_attr_t *tmp;
 	tmp = xml_node_get_attr(node, attr);
 	if (tmp) {
-		return tmp->value_;
+		return tmp->value;
 	}
 	return NULL;
 }
@@ -225,8 +225,8 @@ static void xml_node_dublicate_ (xml_node_t *node, xml_node_t *dub)
 	xml_node_t *dmp;
 	xml_node_attr_t *atmp;
 	xml_node_attr_t *admp;
-	dub->name_ = (node->name_) ? strdup(node->name_) : NULL;
-	dub->value_ = (node->value_) ? strdup(node->value_) : NULL;
+	dub->name = (node->name) ? strdup(node->name) : NULL;
+	dub->value = (node->value) ? strdup(node->value) : NULL;
 	list_for_each_entry(atmp, &node->attrs, head) {
 		xml_node_attr_dublicate(atmp, &admp);
 		list_add_tail(&admp->head, &dub->attrs);
@@ -249,15 +249,15 @@ int xml_node_dublicate (xml_node_t *node, xml_node_t **dub)
 int xml_node_attr_dublicate (xml_node_attr_t *attr, xml_node_attr_t **dub)
 {
 	xml_node_attr_init(dub);
-	(*dub)->name_ = (attr->name_) ? strdup(attr->name_) : NULL;
-	(*dub)->value_ = (attr->value_) ? strdup(attr->value_) : NULL;
+	(*dub)->name = (attr->name) ? strdup(attr->name) : NULL;
+	(*dub)->value = (attr->value) ? strdup(attr->value) : NULL;
 	return 0;
 }
 
 xml_node_t * xml_node_get_parent (xml_node_t *node, char *name)
 {
 	while (node->parent) {
-		if (strcmp(node->parent->name_, name) == 0) {
+		if (strcmp(node->parent->name, name) == 0) {
 			return node->parent;
 		}
 		node = node->parent;
@@ -279,8 +279,8 @@ int xml_node_attr_init (xml_node_attr_t **attr)
 
 int xml_node_attr_uninit (xml_node_attr_t *attr)
 {
-	free(attr->name_);
-	free(attr->value_);
+	free(attr->name);
+	free(attr->value);
 	free(attr);
 	return 0;
 }
@@ -314,8 +314,8 @@ int xml_node_uninit (xml_node_t *node)
 		list_del(&a->head);
 		xml_node_attr_uninit(a);
 	}
-	free(node->name_);
-	free(node->value_);
+	free(node->name);
+	free(node->value);
 	free(node);
 	return 0;
 }
@@ -330,11 +330,11 @@ static void xml_parse_start (void *xdata, const char *el, const char **xattr)
 	free(data->path);
 	data->path = (char *) strdup(el);
 	xml_node_init(&node);
-	node->name_ = (char *) strdup(el);
+	node->name = (char *) strdup(el);
 	for (p = 0; xattr[p] && xattr[p + 1]; p += 2) {
 		xml_node_attr_init(&attr);
-		attr->name_ = (char *) strdup(xattr[p]);
-		attr->value_ = (char *) strdup(xattr[p + 1]);
+		attr->name = (char *) strdup(xattr[p]);
+		attr->value = (char *) strdup(xattr[p + 1]);
 		list_add_tail(&attr->head, &node->attrs);
 	}
 	if (data->active) {
@@ -383,19 +383,19 @@ static void xml_parse_character (void *xdata, const char *txt, int txtlen)
 	if (data->active == NULL) {
 		return;
 	}
-	if (data->active->value_ != NULL) {
-		total_old = strlen(data->active->value_);
+	if (data->active->value != NULL) {
+		total_old = strlen(data->active->value);
 	}
 	total = (total_old + txtlen + 1) * sizeof(char);
-	data->active->value_ = (char *) realloc(data->active->value_, total);
+	data->active->value = (char *) realloc(data->active->value, total);
 	if (total_old == 0) {
-		data->active->value_[0] = '\0';
+		data->active->value[0] = '\0';
 	}
-	strncat(data->active->value_, txt, txtlen);
-	str = data->active->value_;
+	strncat(data->active->value, txt, txtlen);
+	str = data->active->value;
 	if (data->path) {
-	    	if (data->active && data->active->value_) {
-	    		xml_parse_character_fixup(data->active->value_);
+	    	if (data->active && data->active->value) {
+	    		xml_parse_character_fixup(data->active->value);
 	    	}
 	}
 }
@@ -502,23 +502,23 @@ static int xml_node_print_ (char **buffer, const xml_node_t *node)
 	xml_node_t *n;
 	xml_node_attr_t *a;
 	strappend(buffer, "<");
-	strappend(buffer, node->name_);
+	strappend(buffer, node->name);
 	list_for_each_entry(a, &node->attrs, head) {
 		strappend(buffer, " ");
-		strappend(buffer, a->name_);
+		strappend(buffer, a->name);
 		strappend(buffer, "=\"");
-		strappend(buffer, a->value_);
+		strappend(buffer, a->value);
 		strappend(buffer, "\"");
 	}
 	strappend(buffer, ">");
-	e = strdup_escaped(node->value_);
+	e = strdup_escaped(node->value);
 	strappend(buffer, e);
 	free(e);
 	list_for_each_entry(n, &node->nodes, head) {
 		xml_node_print_(buffer, n);
 	}
 	strappend(buffer, "</");
-	strappend(buffer, node->name_);
+	strappend(buffer, node->name);
 	strappend(buffer, ">");
 	return 0;
 }
