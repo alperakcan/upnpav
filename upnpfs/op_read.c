@@ -322,11 +322,10 @@ int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse
 			if (n == NULL) {
 				debugf("http_open('%s', '%llu') failed", f->cache->source, offset);
 			} else {
-				f->protocol = n;
 				http_close(h);
+				h = n;
+				f->protocol = (void *) n;
 			}
-			f->protocol = (void *) n;
-			h = (upnpfs_http_t *) f->protocol;
 		}
 		len = http_read(h, buf, size);
 		if (len > 0) {
