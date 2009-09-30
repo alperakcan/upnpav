@@ -51,7 +51,7 @@ static int http_read (upnpfs_http_t *http, char *buffer, unsigned int size)
 	t = 0;
 	while (t != size) {
 		rc = socket_poll(http->socket, SOCKET_EVENT_IN, &presult, 1000);
-		if (rc <= 0 || presult != SOCKET_EVENT_IN) {
+		if (rc <= 0 || (presult & SOCKET_EVENT_IN) == 0) {
 			debugfs("poll() %d failed", rc);
 			return 0;
 		}
