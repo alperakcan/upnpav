@@ -129,6 +129,7 @@ static int http_close (upnpfs_http_t *http)
 	if (http->socket != NULL) {
 		socket_close(http->socket);
 	}
+	upnp_url_uninit(&http->url);
 	free(http);
 	return 0;
 }
@@ -262,7 +263,7 @@ static upnpfs_http_t * http_open (const char *path, unsigned long long offset)
 	return h;
 error:
 	http_close(h);
-	debugfs("http_opem failed for '%s'", path);
+	debugfs("http_open failed for '%s'", path);
 	return NULL;
 }
 
