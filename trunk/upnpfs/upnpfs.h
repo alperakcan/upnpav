@@ -73,6 +73,7 @@ typedef struct upnpfs_cache_s {
 typedef struct upnpfs_file_s {
 	int metadata;
 	upnpfs_cache_t *cache;
+	void *protocol;
 } upnpfs_file_t;
 
 struct options_s {
@@ -113,6 +114,8 @@ static inline void debugfs_printf (const char *function, char *file, int line, c
 #define debugfs(a...) { \
 	debugfs_printf(__FUNCTION__, __FILE__, __LINE__, a); \
 }
+
+int do_releasefile (upnpfs_file_t *file);
 
 int do_releasecache (upnpfs_cache_t *cache);
 

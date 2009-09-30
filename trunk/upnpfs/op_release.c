@@ -32,7 +32,7 @@ int op_release (const char *path, struct fuse_file_info *fi)
 	upnpfs_file_t *f;
 	debugfs("enter");
 	f = (upnpfs_file_t *) (unsigned long) fi->fh;
-	do_releasecache(f->cache);
+	do_releasefile(f);
 	free(f);
 	debugfs("leave");
 	return 0;

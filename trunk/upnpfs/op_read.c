@@ -35,9 +35,6 @@ typedef struct upnpfs_http_s {
 	upnp_url_t url;
 	char *buffer;
 	unsigned int buffer_length;
-	char *lines;
-	unsigned int lines_length;
-	unsigned int lines_count;
 	unsigned long long offset;
 	unsigned long long size;
 	socket_t *socket;
@@ -125,21 +122,14 @@ static int http_getline (socket_t *socket, int timeout, char *buf, int buflen)
 
 static int http_close (upnpfs_http_t *http)
 {
-	free(http->lines);
-	http->lines = NULL;
+	if (http == NULL) {
+		return 0;
+	}
 	free(http->buffer);
-	http->buffer = NULL;
 	if (http->socket != NULL) {
 		socket_close(http->socket);
 	}
-	http->socket = NULL;
-	http->buffer_length =  0;
-	http->lines_length = 0;
-	http->size = 0;
-	http->offset = 0;
-	http->size = 0;
-	http->code = 0;
-	http->seek = 0;
+	free(http);
 	return 0;
 }
 
@@ -201,42 +191,39 @@ static int http_process (upnpfs_http_t *http, char *line, int line_count)
 	return 1;
 }
 
-static int http_open (upnpfs_http_t *http, unsigned long long offset)
+static upnpfs_http_t * http_open (const char *path, unsigned long long offset)
 {
 	int err;
 	int line;
+	upnpfs_http_t *h;
 
-	http->lines = NULL;
-	http->buffer = NULL;
-	http->buffer_length =  0;
-	http->lines_length = 0;
-	http->lines = 0;
-	http->size = 0;
-	http->offset = 0;
-	http->size = 0;
-	http->code = 0;
-	http->seek = 0;
-
-	http->socket = socket_open(SOCKET_TYPE_STREAM);
-	if (http->socket == NULL) {
+	h = (upnpfs_http_t *) malloc(sizeof(upnpfs_http_t));
+	if (h == NULL) {
+		return NULL;
+	}
+	memset(h, 0, sizeof(upnpfs_http_t));
+	if (upnp_url_parse(path, &h->url) != 0) {
+		debugf("upnp_url_parse('%s') failed", path);
+		goto error;
+	}
+	h->socket = socket_open(SOCKET_TYPE_STREAM);
+	if (h->socket == NULL) {
 		debugfs("socket() failed");
 		goto error;
 	}
-	if (socket_connect(http->socket, http->url.host, http->url.port, 10000) < 0) {
+	if (socket_connect(h->socket, h->url.host, h->url.port, 10000) < 0) {
 		debugfs("connect() failed");
 		goto error;
 	}
 
-	http->lines = (char *) malloc(sizeof(unsigned char) * 4096);
-	http->buffer = (char *) malloc(sizeof(unsigned char) * 4096);
-	if (http->buffer == NULL || http->lines == NULL) {
+	h->buffer_length = 4096;
+	h->buffer = (char *) malloc(h->buffer_length);
+	if (h->buffer == NULL) {
 		debugfs("malloc() failed");
 		goto error;
 	}
-	http->buffer_length = 4096;
-	http->lines_length = 4096;
 
-	snprintf(http->buffer, 4096,
+	snprintf(h->buffer, h->buffer_length,
 			"GET /%s HTTP/1.1\r\n"
 			"User-Agent: upnpfs\r\n"
 			"Accept: */*\r\n"
@@ -244,24 +231,24 @@ static int http_open (upnpfs_http_t *http, unsigned long long offset)
 			"Host: %s:%u\r\n"
 			"Connection: close\r\n"
 			"\r\n",
-			http->url.path,
+			h->url.path,
 			offset,
-			http->url.host,
-			http->url.port);
-	if (http_write(http, http->buffer, strlen(http->buffer)) <= 0) {
+			h->url.host,
+			h->url.port);
+	if (http_write(h, h->buffer, strlen(h->buffer)) <= 0) {
 		debugfs("http_write() failed");
 		goto error;
 	}
 
 	line = 0;
 	while (1) {
-		if (http_getline(http->socket, 1000, http->lines, http->lines_length) <= 0) {
+		if (http_getline(h->socket, 10000, h->buffer, h->buffer_length) <= 0) {
 			break;
 		}
-        	err = http_process(http, http->lines, line);
+        	err = http_process(h, h->buffer, line);
         	if (err < 0) {
-        		debugfs("http_process() failed");
-        		return err;
+        		debugfs("http_process() failed with '%d'", err);
+        		goto error;
         	}
         	if (err == 0) {
         		break;
@@ -269,19 +256,33 @@ static int http_open (upnpfs_http_t *http, unsigned long long offset)
         	line++;
 	}
 
-	return (offset == http->offset) ? 0 : -1;
+	if (offset != h->offset) {
+		goto error;
+	}
+	return h;
 error:
-	http_close(http);
-	debugfs("failed");
-	return -1;
+	http_close(h);
+	debugfs("http_opem failed for '%s'", path);
+	return NULL;
 }
 
+int do_releasefile (upnpfs_file_t *file)
+{
+	if (file) {
+		do_releasecache(file->cache);
+		http_close(file->protocol);
+		file->cache = NULL;
+		file->protocol = NULL;
+	}
+	return 0;
+}
 int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
 	int siz;
 	int len;
 	entry_t *e;
-	upnpfs_http_t h;
+	upnpfs_http_t *h;
+	upnpfs_http_t *n;
 	upnpfs_file_t *f;
 	debugfs("enter (fi: %p)", fi);
 	f = (upnpfs_file_t *) (unsigned long) fi->fh;
@@ -307,30 +308,32 @@ int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse
 		debugfs("leave, size: %u, offset: %u, len: %d", (unsigned int) size, (unsigned int) offset, siz);
 		return siz;
 	} else {
-		memset(&h, 0, sizeof(upnpfs_http_t));
-		if (upnp_url_parse(f->cache->source, &h.url) != 0) {
-			debugf("upnp_url_parse('%s') failed", f->cache->source);
-			return -EIO;
-		}
-		if (http_open(&h, offset) != 0) {
-			debugfs("http_open() failed");
-			return -EIO;
-		}
-		if (h.buffer_length < size) {
-			h.buffer = (char *) realloc(h.buffer, sizeof(unsigned char) * size);
-			if (h.buffer == NULL) {
-				http_close(&h);
+		if (f->protocol == NULL) {
+			h = http_open(f->cache->source, offset);
+			if (h == NULL) {
+				debugf("http_open('%s', '%llu') failed", f->cache->source, offset);
 				return -EIO;
 			}
-			h.buffer_length = size;
+			f->protocol = (void *) h;
 		}
-		len = http_read(&h, h.buffer, size);
-		memcpy(buf, h.buffer, len);
+		h = (upnpfs_http_t *) f->protocol;
+		if (h->offset != offset) {
+			n = http_open(f->cache->source, offset);
+			if (n == NULL) {
+				debugf("http_open('%s', '%llu') failed", f->cache->source, offset);
+			} else {
+				f->protocol = n;
+				http_close(h);
+			}
+			f->protocol = (void *) n;
+			h = (upnpfs_http_t *) f->protocol;
+		}
+		len = http_read(h, buf, size);
 		if (len > 0) {
-			h.offset += len;
+			h->offset += len;
 		}
-		http_close(&h);
-		upnp_url_uninit(&h.url);
+		//http_close(h);
+		//f->protocol = NULL;
 		debugfs("leave, size: %u, offset: %u, len: %d", (unsigned int) size, (unsigned int) offset, len);
 		return len;
 	}
