@@ -31,6 +31,8 @@
 #include <ctype.h>
 #include <assert.h>
 
+#define UPNPFS_HTTP_CACHED 1
+
 typedef struct upnpfs_http_s {
 	upnp_url_t url;
 	char *buffer;
@@ -332,8 +334,11 @@ int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse
 		if (len > 0) {
 			h->offset += len;
 		}
-		//http_close(h);
-		//f->protocol = NULL;
+#if defined(UPNPFS_HTTP_CACHED)
+#else
+		http_close(h);
+		f->protocol = NULL;
+#endif
 		debugfs("leave, size: %u, offset: %u, len: %d", (unsigned int) size, (unsigned int) offset, len);
 		return len;
 	}
