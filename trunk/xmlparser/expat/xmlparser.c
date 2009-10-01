@@ -32,7 +32,7 @@
 #include <inttypes.h>
 
 #include "platform.h"
-#include "xmlparser.h"
+#include "parser.h"
 
 #include "expat.h"
 

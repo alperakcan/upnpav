@@ -36,7 +36,7 @@
 #include <signal.h>
 
 #include "platform.h"
-#include "xmlparser.h"
+#include "parser.h"
 #include "ssdp.h"
 #include "gena.h"
 #include "upnp.h"

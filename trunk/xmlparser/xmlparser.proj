@@ -1,5 +1,5 @@
 
-LIB upnpd_xmlparser
+LIB upnpd_parser
 {
   USE upnpd_platform
 
@@ -9,7 +9,7 @@ LIB upnpd_xmlparser
   DEFINE XML_NS
   DEFINE XML_DTD
 
-  SOURCE expat/xmlparser.c
+  SOURCE expat/parser.c
 
   SOURCE expat/xmlparse.c
   SOURCE expat/xmlrole.c
@@ -31,5 +31,5 @@ LIB upnpd_xmlparser
   HEADER expat/xmltok_impl.h
   ENDIF
 
-  HEADER xmlparser.h
+  HEADER parser.h
 }
