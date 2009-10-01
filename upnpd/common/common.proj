@@ -2,11 +2,10 @@
 
 LIB upnpd_common
 {
-  USE upnpd_upnp
+  USE upnpd_platform
   USE upnpd_metadata
   USE upnpd_database
-  USE upnpd_platform
-  USE upnpd_xmlparser
+  USE upnpd_upnp
 
   EXPINCLUDE .
 

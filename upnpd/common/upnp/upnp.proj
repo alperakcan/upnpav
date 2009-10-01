@@ -1,7 +1,7 @@
 LIB upnpd_upnp
 {
   USE upnpd_platform
-  USE upnpd_xmlparser
+  USE upnpd_parser
 
   EXPINCLUDE .
 
