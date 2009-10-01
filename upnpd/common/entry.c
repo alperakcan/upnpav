@@ -37,7 +37,7 @@
 #include "platform.h"
 #include "metadata.h"
 #include "database.h"
-#include "xmlparser.h"
+#include "parser.h"
 #include "gena.h"
 #include "upnp.h"
 #include "common.h"

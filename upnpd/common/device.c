@@ -35,7 +35,7 @@
 #include <assert.h>
 
 #include "platform.h"
-#include "xmlparser.h"
+#include "parser.h"
 #include "gena.h"
 #include "upnp.h"
 
