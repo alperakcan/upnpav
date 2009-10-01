@@ -38,6 +38,7 @@
 
 typedef struct xml_data_s {
 	char *path;
+	char *relative;
 	xml_node_t *active;
 	xml_node_t *root;
 	xml_node_t *elem;
@@ -277,12 +278,24 @@ int xml_node_uninit (xml_node_t *node)
 static void xml_parse_start (void *xdata, const char *el, const char **xattr)
 {
 	int p;
+	int l;
+	char *tmp;
 	xml_data_t *data;
 	xml_node_t *node;
 	xml_node_attr_t *attr;
 	data = (xml_data_t *) xdata;
+	if (data->path == NULL) {
+		data->path = strdup("");
+	}
+	l = strlen(data->path) + strlen("/") + strlen(el);
+	tmp = (char *) malloc(l + 1);
+	if (tmp == NULL) {
+		return;
+	}
+	sprintf(tmp, "%s/%s", data->path, el);
 	free(data->path);
-	data->path = (char *) strdup(el);
+	data->path = tmp;
+	printf("path: %s, %s\n", data->path, el);
 	xml_node_init(&node);
 	node->name = (char *) strdup(el);
 	for (p = 0; xattr[p] && xattr[p + 1]; p += 2) {
@@ -302,10 +315,17 @@ static void xml_parse_start (void *xdata, const char *el, const char **xattr)
 
 static void xml_parse_end (void *xdata, const char *el)
 {
+	char *ptr;
 	xml_data_t *data;
 	data = (xml_data_t *) xdata;
-	free(data->path);
-	data->path = NULL;
+	ptr = strrchr(data->path, '/');
+	if (ptr != NULL) {
+		*ptr = '\0';
+	}
+	if (strlen(data->path) == 0) {
+		free(data->path);
+		data->path = NULL;
+	}
 	data->active = data->active->parent;
 }
 
@@ -325,16 +345,15 @@ static void xml_parse_character_fixup (char *out)
 
 static void xml_parse_character (void *xdata, const char *txt, int txtlen)
 {
-	char *str;
 	xml_data_t *data;
 	unsigned int total = 0;
 	unsigned int total_old = 0;
 	data = (xml_data_t *) xdata;
-	if (txtlen > 0 && txt && data->path) {
-	} else {
+	if (data->active == NULL) {
 		return;
 	}
-	if (data->active == NULL) {
+	if (txtlen > 0 && txt && data->active->name) {
+	} else {
 		return;
 	}
 	if (data->active->value != NULL) {
@@ -346,12 +365,7 @@ static void xml_parse_character (void *xdata, const char *txt, int txtlen)
 		data->active->value[0] = '\0';
 	}
 	strncat(data->active->value, txt, txtlen);
-	str = data->active->value;
-	if (data->path) {
-	    	if (data->active && data->active->value) {
-	    		xml_parse_character_fixup(data->active->value);
-	    	}
-	}
+	xml_parse_character_fixup(data->active->value);
 }
 
 xml_node_t * xml_parse_buffer (const char *buffer, unsigned int len)
@@ -371,6 +385,7 @@ xml_node_t * xml_parse_buffer (const char *buffer, unsigned int len)
 	if (!XML_Parse(p, buffer, len, 1)) {
 		debugf("Parse error at line %d:%s", (int) XML_GetCurrentLineNumber(p), XML_ErrorString(XML_GetErrorCode(p)));
 		XML_ParserFree(p);
+		free(data->path);
 		free(data);
 		return NULL;
 	}
