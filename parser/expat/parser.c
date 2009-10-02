@@ -354,8 +354,9 @@ static void xml_parse_character_fixup (char *out)
 	/* Convert "&amp;" to "&" */
 	for (i = 0; out[i] && out[i + 1] && out[i + 2] && out[i + 3] && out[i + 4]; i++) {
 		if (out[i] == '&' && out[i + 1] == 'a' && out[i + 2] == 'm' && out[i + 3] == 'p' && out[i + 4] == ';') {
-			for (j = i + 1; out[j]; j++)
+			for (j = i + 1; out[j]; j++) {
 				out[j] = out[j + 4];
+			}
 			i--;
 		}
 	}
