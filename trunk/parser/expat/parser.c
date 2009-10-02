@@ -291,6 +291,15 @@ static void xml_parse_start (void *xdata, const char *el, const char **xattr)
 	xml_node_t *node;
 	xml_node_attr_t *attr;
 	data = (xml_data_t *) xdata;
+	if (data->callback != NULL) {
+		if (data->starts) {
+			debugf("callback (%d) (%d);", data->starts, data->ends);
+			debugf("  path : '%s'", data->path);
+			debugf("  name : '%s'", data->name);
+			debugf("  value: '%s'", data->value);
+			data->callback(data->context, data->path, data->name, (const char **) data->attrs, data->value);
+		}
+	}
 	if (data->path == NULL) {
 		data->path = strdup("");
 	}
@@ -321,9 +330,10 @@ static void xml_parse_start (void *xdata, const char *el, const char **xattr)
 		node->parent = data->active;
 		data->active = node;
 	} else {
-		data->starts += 1;
 		tmp = strrchr(data->path, '/');
 		data->name = tmp + 1;
+		free(data->value);
+		data->value = NULL;
 		for (p = 0; data->attrs && data->attrs[p] && data->attrs[p + 1]; p += 2) {
 			free(data->attrs[p]);
 			free(data->attrs[p + 1]);
@@ -340,12 +350,7 @@ static void xml_parse_start (void *xdata, const char *el, const char **xattr)
 			data->attrs[p] = NULL;
 			data->attrs[p + 1] = NULL;
 		}
-		if (data->starts > data->ends) {
-			debugf("callback;");
-			debugf("  path: '%s'", data->path);
-			debugf("  name: '%s'", data->name);
-			data->callback(data->context, data->path, data->name, (const char **) data->attrs, data->value);
-		}
+		data->starts = 1;
 	}
 }
 
@@ -356,6 +361,15 @@ static void xml_parse_end (void *xdata, const char *el)
 	xml_data_t *data;
 	xml_node_attr_t *attr;
 	data = (xml_data_t *) xdata;
+	if (data->callback != NULL) {
+		if (data->name != NULL) {
+			debugf("callback;");
+			debugf("  path : '%s'", data->path);
+			debugf("  name : '%s'", data->name);
+			debugf("  value: '%s'", data->value);
+			data->callback(data->context, data->path, data->name, (const char **) data->attrs, data->value);
+		}
+	}
 	ptr = strrchr(data->path, '/');
 	if (ptr != NULL) {
 		*ptr = '\0';
@@ -380,13 +394,7 @@ static void xml_parse_end (void *xdata, const char *el)
 		}
 		data->active = data->active->parent;
 	} else {
-		data->ends += 1;
-		if (data->starts == data->ends) {
-			debugf("callback;");
-			debugf("  path: '%s'", data->path);
-			debugf("  name: '%s'", data->name);
-			data->callback(data->context, data->path, data->name, (const char **) data->attrs, data->value);
-		}
+		data->starts = 0;
 	}
 	for (p = 0; data->attrs && data->attrs[p] && data->attrs[p + 1]; p += 2) {
 		free(data->attrs[p]);
@@ -397,21 +405,6 @@ static void xml_parse_end (void *xdata, const char *el)
 	data->name = NULL;
 	free(data->value);
 	data->value = NULL;
-}
-
-static void xml_parse_character_fixup (char *out)
-{
-	int i;
-	int j;
-	/* Convert "&amp;" to "&" */
-	for (i = 0; out[i] && out[i + 1] && out[i + 2] && out[i + 3] && out[i + 4]; i++) {
-		if (out[i] == '&' && out[i + 1] == 'a' && out[i + 2] == 'm' && out[i + 3] == 'p' && out[i + 4] == ';') {
-			for (j = i + 1; out[j]; j++) {
-				out[j] = out[j + 4];
-			}
-			i--;
-		}
-	}
 }
 
 static void xml_parse_character (void *xdata, const char *txt, int txtlen)
@@ -433,7 +426,6 @@ static void xml_parse_character (void *xdata, const char *txt, int txtlen)
 			data->active->value[0] = '\0';
 		}
 		strncat(data->active->value, txt, txtlen);
-		xml_parse_character_fixup(data->active->value);
 	} else {
 		if (txtlen <= 0 || txt == NULL || data->name == NULL) {
 			return;
@@ -447,7 +439,6 @@ static void xml_parse_character (void *xdata, const char *txt, int txtlen)
 			data->value[0] = '\0';
 		}
 		strncat(data->value, txt, txtlen);
-		xml_parse_character_fixup(data->value);
 	}
 }
 
@@ -466,7 +457,6 @@ int xml_parse_buffer_callback (const char *buffer, unsigned int len, int (*callb
 	XML_SetUserData(p, data);
 	XML_SetElementHandler(p, xml_parse_start, xml_parse_end);
 	XML_SetCharacterDataHandler(p, xml_parse_character);
-	printf("parsing buffer\n'%s'\n", buffer);
 	if (!XML_Parse(p, buffer, len, 1)) {
 		debugf("Parse error at line %d:%s", (int) XML_GetCurrentLineNumber(p), XML_ErrorString(XML_GetErrorCode(p)));
 		XML_ParserFree(p);
