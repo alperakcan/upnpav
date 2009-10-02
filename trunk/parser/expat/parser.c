@@ -330,8 +330,8 @@ static void xml_parse_end (void *xdata, const char *el)
 	}
 	{
 		debugf("active;");
-		debugf("  path : '%s'", data->active->path);
-		debugf("  name : '%s'", data->active->name);
+		debugf("  path: '%s'", data->active->path);
+		debugf("  name: '%s'", data->active->name);
 		if (list_count(&data->active->nodes) == 0) {
 			debugf("  value: '%s'", data->active->value);
 		}
