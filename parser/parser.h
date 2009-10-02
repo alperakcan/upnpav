@@ -86,6 +86,8 @@ struct xml_node_attr_s {
 struct xml_node_s {
 	/** list head */
 	list_t head;
+	/** node path */
+	char *path;
 	/** node name */
 	char *name;
 	/** node value */
