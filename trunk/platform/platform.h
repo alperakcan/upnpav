@@ -533,7 +533,7 @@ struct list_s {
 	     &pos->member != (head); 					\
 	     pos = n, n = list_entry(n->member.next, typeof(*n), member))
 
-static inline int list_count (list_t *head)
+static inline int list_count (const list_t *head)
 {
 	int count;
 	list_t *entry;

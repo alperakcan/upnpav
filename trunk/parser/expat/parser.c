@@ -485,11 +485,16 @@ static char * strdup_escaped (const char *p )
 	return buf;
 }
 
-static int xml_node_print_ (char **buffer, const xml_node_t *node)
+static int xml_node_print_ (char **buffer, const xml_node_t *node, unsigned int *depth)
 {
 	char *e;
+	unsigned int d;
 	xml_node_t *n;
 	xml_node_attr_t *a;
+	for (d = 0; d < *depth; d++) {
+		strappend(buffer, "  ");
+	}
+	*depth += 1;
 	strappend(buffer, "<");
 	strappend(buffer, node->name);
 	list_for_each_entry(a, &node->attrs, head) {
@@ -500,23 +505,32 @@ static int xml_node_print_ (char **buffer, const xml_node_t *node)
 		strappend(buffer, "\"");
 	}
 	strappend(buffer, ">");
-	e = strdup_escaped(node->value);
-	strappend(buffer, e);
-	free(e);
-	list_for_each_entry(n, &node->nodes, head) {
-		xml_node_print_(buffer, n);
+	if (list_count(&node->nodes) == 0) {
+		if (node->value) {
+			e = strdup_escaped(node->value);
+			strappend(buffer, e);
+			free(e);
+		}
+	} else {
+		strappend(buffer, "\n");
+		list_for_each_entry(n, &node->nodes, head) {
+			xml_node_print_(buffer, n, depth);
+		}
 	}
 	strappend(buffer, "</");
 	strappend(buffer, node->name);
-	strappend(buffer, ">");
+	strappend(buffer, ">\n");
+	*depth -= 1;
 	return 0;
 }
 
 char * xml_node_print (const xml_node_t *node)
 {
 	char *b;
+	unsigned int d;
+	d = 0;
 	b = NULL;
 	strappend(&b, "<?xml version=\"1.0\"?>\n");
-	xml_node_print_(&b, node);
+	xml_node_print_(&b, node,  &d);
 	return b;
 }
