@@ -39,10 +39,16 @@
 
 typedef struct xml_data_s {
 	char *path;
-	char *relative;
+	char *name;
+	char *value;
+	char **attrs;
 	xml_node_t *active;
 	xml_node_t *root;
 	xml_node_t *elem;
+	unsigned int starts;
+	unsigned int ends;
+	int (*callback) (void *context, const char *path, const char *name, const char **atrr, const char *value);
+	void *context;
 } xml_data_t;
 
 static int xml_node_path_normalize (char *out, int len);
@@ -296,29 +302,59 @@ static void xml_parse_start (void *xdata, const char *el, const char **xattr)
 	sprintf(tmp, "%s/%s", data->path, el);
 	free(data->path);
 	data->path = tmp;
-	xml_node_init(&node);
-	node->path = (char *) strdup(data->path);
-	tmp = strrchr(node->path, '/');
-	node->name = tmp + 1;
-	for (p = 0; xattr[p] && xattr[p + 1]; p += 2) {
-		xml_node_attr_init(&attr);
-		attr->name = (char *) strdup(xattr[p]);
-		attr->value = (char *) strdup(xattr[p + 1]);
-		list_add_tail(&attr->head, &node->attrs);
-	}
-	if (data->active) {
-		list_add_tail(&node->head, &data->active->nodes);
+	if (data->callback == NULL) {
+		xml_node_init(&node);
+		node->path = (char *) strdup(data->path);
+		tmp = strrchr(node->path, '/');
+		node->name = tmp + 1;
+		for (p = 0; xattr[p] && xattr[p + 1]; p += 2) {
+			xml_node_attr_init(&attr);
+			attr->name = (char *) strdup(xattr[p]);
+			attr->value = (char *) strdup(xattr[p + 1]);
+			list_add_tail(&attr->head, &node->attrs);
+		}
+		if (data->active) {
+			list_add_tail(&node->head, &data->active->nodes);
+		} else {
+			data->root = node;
+		}
+		node->parent = data->active;
+		data->active = node;
 	} else {
-		data->root = node;
+		data->starts += 1;
+		tmp = strrchr(data->path, '/');
+		data->name = tmp + 1;
+		for (p = 0; data->attrs && data->attrs[p] && data->attrs[p + 1]; p += 2) {
+			free(data->attrs[p]);
+			free(data->attrs[p + 1]);
+		}
+		free(data->attrs);
+		for (p = 0; xattr[p] && xattr[p + 1]; p += 2) {
+		}
+		data->attrs = (char **) malloc(sizeof(char *) * (p + 2));
+		if (data->attrs != NULL) {
+			for (p = 0; xattr[p] && xattr[p + 1]; p += 2) {
+				data->attrs[p] = strdup(xattr[p]);
+				data->attrs[p + 1] = strdup(xattr[p + 1]);
+			}
+			data->attrs[p] = NULL;
+			data->attrs[p + 1] = NULL;
+		}
+		if (data->starts > data->ends) {
+			debugf("callback;");
+			debugf("  path: '%s'", data->path);
+			debugf("  name: '%s'", data->name);
+			data->callback(data->context, data->path, data->name, (const char **) data->attrs, data->value);
+		}
 	}
-	node->parent = data->active;
-	data->active = node;
 }
 
 static void xml_parse_end (void *xdata, const char *el)
 {
+	int p;
 	char *ptr;
 	xml_data_t *data;
+	xml_node_attr_t *attr;
 	data = (xml_data_t *) xdata;
 	ptr = strrchr(data->path, '/');
 	if (ptr != NULL) {
@@ -328,7 +364,7 @@ static void xml_parse_end (void *xdata, const char *el)
 		free(data->path);
 		data->path = NULL;
 	}
-	{
+	if (data->callback == NULL) {
 		debugf("active;");
 		debugf("  path: '%s'", data->active->path);
 		debugf("  name: '%s'", data->active->name);
@@ -336,15 +372,31 @@ static void xml_parse_end (void *xdata, const char *el)
 			debugf("  value: '%s'", data->active->value);
 		}
 		if (list_count(&data->active->attrs) != 0) {
-			xml_node_attr_t *a;
 			debugf("  attributes;");
-			list_for_each_entry(a, &data->active->attrs, head) {
-				debugf("    name : '%s'", a->name);
-				debugf("    value: '%s'", a->value);
+			list_for_each_entry(attr, &data->active->attrs, head) {
+				debugf("    name : '%s'", attr->name);
+				debugf("    value: '%s'", attr->value);
 			}
 		}
+		data->active = data->active->parent;
+	} else {
+		data->ends += 1;
+		if (data->starts == data->ends) {
+			debugf("callback;");
+			debugf("  path: '%s'", data->path);
+			debugf("  name: '%s'", data->name);
+			data->callback(data->context, data->path, data->name, (const char **) data->attrs, data->value);
+		}
 	}
-	data->active = data->active->parent;
+	for (p = 0; data->attrs && data->attrs[p] && data->attrs[p + 1]; p += 2) {
+		free(data->attrs[p]);
+		free(data->attrs[p + 1]);
+	}
+	free(data->attrs);
+	data->attrs = NULL;
+	data->name = NULL;
+	free(data->value);
+	data->value = NULL;
 }
 
 static void xml_parse_character_fixup (char *out)
@@ -368,23 +420,64 @@ static void xml_parse_character (void *xdata, const char *txt, int txtlen)
 	unsigned int total = 0;
 	unsigned int total_old = 0;
 	data = (xml_data_t *) xdata;
-	if (data->active == NULL) {
-		return;
-	}
-	if (txtlen > 0 && txt && data->active->name) {
+	if (data->callback == NULL) {
+		if (txtlen <= 0 || txt == NULL || data->active == NULL || data->active->name == NULL) {
+			return;
+		}
+		if (data->active->value != NULL) {
+			total_old = strlen(data->active->value);
+		}
+		total = (total_old + txtlen + 1) * sizeof(char);
+		data->active->value = (char *) realloc(data->active->value, total);
+		if (total_old == 0) {
+			data->active->value[0] = '\0';
+		}
+		strncat(data->active->value, txt, txtlen);
+		xml_parse_character_fixup(data->active->value);
 	} else {
-		return;
+		if (txtlen <= 0 || txt == NULL || data->name == NULL) {
+			return;
+		}
+		if (data->value != NULL) {
+			total_old = strlen(data->value);
+		}
+		total = (total_old + txtlen + 1) * sizeof(char);
+		data->value = (char *) realloc(data->value, total);
+		if (total_old == 0) {
+			data->value[0] = '\0';
+		}
+		strncat(data->value, txt, txtlen);
+		xml_parse_character_fixup(data->value);
 	}
-	if (data->active->value != NULL) {
-		total_old = strlen(data->active->value);
+}
+
+int xml_parse_buffer_callback (const char *buffer, unsigned int len, int (*callback) (void *context, const char *path, const char *name, const char **atrr, const char *value), void *context)
+{
+	XML_Parser p;
+	xml_data_t *data;
+	data = (xml_data_t *) malloc(sizeof(xml_data_t));
+	if (data == NULL) {
+		return -1;
 	}
-	total = (total_old + txtlen + 1) * sizeof(char);
-	data->active->value = (char *) realloc(data->active->value, total);
-	if (total_old == 0) {
-		data->active->value[0] = '\0';
+	memset(data, 0, sizeof(xml_data_t));
+	data->callback = callback;
+	data->context = context;
+	p = XML_ParserCreate(NULL);
+	XML_SetUserData(p, data);
+	XML_SetElementHandler(p, xml_parse_start, xml_parse_end);
+	XML_SetCharacterDataHandler(p, xml_parse_character);
+	printf("parsing buffer\n'%s'\n", buffer);
+	if (!XML_Parse(p, buffer, len, 1)) {
+		debugf("Parse error at line %d:%s", (int) XML_GetCurrentLineNumber(p), XML_ErrorString(XML_GetErrorCode(p)));
+		XML_ParserFree(p);
+		free(data->path);
+		free(data);
+		return -1;
 	}
-	strncat(data->active->value, txt, txtlen);
-	xml_parse_character_fixup(data->active->value);
+	XML_ParserFree(p);
+	free(data->path);
+	free(data);
+	return 0;
 }
 
 xml_node_t * xml_parse_buffer (const char *buffer, unsigned int len)
@@ -410,6 +503,7 @@ xml_node_t * xml_parse_buffer (const char *buffer, unsigned int len)
 	}
 	XML_ParserFree(p);
 	node = data->root;
+	free(data->path);
 	free(data);
 	return node;
 }

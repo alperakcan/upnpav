@@ -124,6 +124,12 @@ int controller_uninit (client_t *controller)
 	return 0;
 }
 
+int controller_browse_children_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
+{
+	printf("path: %s\n", path);
+	return 0;
+}
+
 entry_t * controller_browse_children (client_t *controller, const char *device, const char *object)
 {
 	char *tmp;
@@ -174,13 +180,17 @@ entry_t * controller_browse_children (client_t *controller, const char *device, 
 			debugf("client_action() failed");
 			goto out;
 		}
+		if (xml_parse_buffer_callback(action, strlen(action), controller_browse_children_callback, controller) != 0) {
+			debugf("xml_parse_buffer_callback() failed");
+			goto out;
+		}
+
 		response = xml_parse_buffer(action, strlen(action));
 		free(action);
 		if (response == NULL) {
 			debugf("client_action() failed");
 			goto out;
 		}
-
 		tmp = xml_node_get_path_value(response, "/s:Envelope/s:Body/u:BrowseResponse/TotalMatches");
 		totalmatches = strtouint32(tmp);
 		tmp = xml_node_get_path_value(response, "/s:Envelope/s:Body/u:BrowseResponse/NumberReturned");
