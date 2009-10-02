@@ -27,6 +27,7 @@
 
 #include <config.h>
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
@@ -269,7 +270,7 @@ int xml_node_uninit (xml_node_t *node)
 		list_del(&a->head);
 		xml_node_attr_uninit(a);
 	}
-	free(node->name);
+	free(node->path);
 	free(node->value);
 	free(node);
 	return 0;
@@ -295,9 +296,10 @@ static void xml_parse_start (void *xdata, const char *el, const char **xattr)
 	sprintf(tmp, "%s/%s", data->path, el);
 	free(data->path);
 	data->path = tmp;
-	printf("path: %s, %s\n", data->path, el);
 	xml_node_init(&node);
-	node->name = (char *) strdup(el);
+	node->path = (char *) strdup(data->path);
+	tmp = strrchr(node->path, '/');
+	node->name = tmp + 1;
 	for (p = 0; xattr[p] && xattr[p + 1]; p += 2) {
 		xml_node_attr_init(&attr);
 		attr->name = (char *) strdup(xattr[p]);
@@ -325,6 +327,22 @@ static void xml_parse_end (void *xdata, const char *el)
 	if (strlen(data->path) == 0) {
 		free(data->path);
 		data->path = NULL;
+	}
+	{
+		debugf("active;");
+		debugf("  path : '%s'", data->active->path);
+		debugf("  name : '%s'", data->active->name);
+		if (list_count(&data->active->nodes) == 0) {
+			debugf("  value: '%s'", data->active->value);
+		}
+		if (list_count(&data->active->attrs) != 0) {
+			xml_node_attr_t *a;
+			debugf("  attributes;");
+			list_for_each_entry(a, &data->active->attrs, head) {
+				debugf("    name : '%s'", a->name);
+				debugf("    value: '%s'", a->value);
+			}
+		}
 	}
 	data->active = data->active->parent;
 }
