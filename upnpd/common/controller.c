@@ -136,9 +136,6 @@ int controller_browse_children_callback (void *context, const char *path, const 
 {
 	controller_browse_data_t *data;
 	data = (controller_browse_data_t *) context;
-	if (path == NULL) {
-		return 0;
-	}
 	if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/TotalMatches") == 0) {
 		if (value != NULL) {
 			data->totalmatches = strtouint32(value);
