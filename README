@@ -52,7 +52,7 @@ macos# route add -net 239.0.0.0 -netmask 255.0.0.0 -interface en0
 
 --enable-platform=[posix,corec] [posix by default]
 --enable-database=[sqlite3,corec] [sqlite3 by default]
---enable-xmlparser=[expat,corec] [expat by default]
+--enable-parser=[expat,corec] [expat by default]
 --disable-mediaserver [enabled by default]
 --disable-controller [enabled by default]
 --disable-upnpfs [enabled by default]

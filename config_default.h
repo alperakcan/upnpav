@@ -20,6 +20,12 @@
 /* #undef ENABLE_OPTIONAL */
 
 /* Define to 1 if you want 'corec' platform support. */
+/* #undef ENABLE_PARSER_COREC */
+
+/* Define to 1 if you want 'expat' platform support. */
+#define ENABLE_PARSER_EXPAT 1
+
+/* Define to 1 if you want 'corec' platform support. */
 /* #undef ENABLE_PLATFORM_COREC */
 
 /* Define to 1 if you want 'posix' platform support. */
@@ -27,12 +33,6 @@
 
 /* Define to 1 if you want 'upnpfs' support. */
 #define ENABLE_UPNPFS 1
-
-/* Define to 1 if you want 'corec' platform support. */
-/* #undef ENABLE_XMLPARSER_COREC */
-
-/* Define to 1 if you want 'expat' platform support. */
-#define ENABLE_XMLPARSER_EXPAT 1
 
 /* Version of FUSE interface */
 #define FUSE_USE_VERSION FUSE_VERSION
