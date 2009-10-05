@@ -25,7 +25,7 @@
  * For more info contact CoreCodec through info@corecodec.com
  */
 
-/** @defgroup xmlparser XML Parser API
+/** @defgroup parser XML Parser API
   * @brief XML parse and handling api.
   *
   * @example
@@ -64,7 +64,7 @@
   * @endcode
   */
 
-/** @addtogroup xmlparser */
+/** @addtogroup parser */
 /*@{*/
 
 typedef struct xml_node_attr_s xml_node_attr_t;
