@@ -185,7 +185,7 @@ entry_t * controller_browse_children (client_t *controller, const char *device, 
 
 	count = 0;
 	action = NULL;
-	data.entry = NULL;
+	memset(&data, 0, sizeof(data));
 
 	params[0] = "ObjectID";
 	params[1] = "BrowseFlag";
@@ -239,22 +239,13 @@ out:
 
 entry_t * controller_browse_metadata (client_t *controller, const char *device, const char *object)
 {
-	entry_t *entry;
-	char *tmp;
-	char *result;
 	char *params[6];
 	char *values[6];
 	char *action;
-	xml_node_t *response;
+	controller_browse_data_t data;
 
-	uint32_t totalmatches;
-	uint32_t numberreturned;
-	uint32_t updateid;
-
-	entry = NULL;
-	result = NULL;
 	action = NULL;
-	response = NULL;
+	memset(&data, 0, sizeof(data));
 
 	params[0] = "ObjectID";
 	params[1] = "BrowseFlag";
@@ -276,32 +267,12 @@ entry_t * controller_browse_metadata (client_t *controller, const char *device, 
 		debugf("client_action() failed");
 		goto out;
 	}
-	response = xml_parse_buffer(action, strlen(action));
+	memset(&data, 0, sizeof(data));
+	data.controller = controller;
+	if (xml_parse_buffer_callback(action, strlen(action), controller_browse_children_callback, &data) != 0) {
+		debugf("xml_parse_buffer_callback() failed");
+	}
 	free(action);
-	if (response == NULL) {
-		debugf("client_action() failed");
-		goto out;
-	}
-
-	tmp = xml_node_get_path_value(response, "/s:Envelope/s:Body/u:BrowseResponse/TotalMatches");
-	totalmatches = strtouint32(tmp);
-	tmp = xml_node_get_path_value(response, "/s:Envelope/s:Body/u:BrowseResponse/NumberReturned");
-	numberreturned = strtouint32(tmp);
-	tmp = xml_node_get_path_value(response, "/s:Envelope/s:Body/u:BrowseResponse/UpdateID");
-	updateid = strtouint32(tmp);
-	result = xml_node_get_path_value(response, "/s:Envelope/s:Body/u:BrowseResponse/Result");
-	if (result == NULL) {
-		debugf("xml_node_get_path_value(response, Result) failed");
-		goto out;
-	}
-
-	entry = entry_from_result(result);
-	if (entry == NULL) {
-		debugf("entry_from_result() failed");
-		goto out;
-	}
-
 out:
-	xml_node_uninit(response);
-	return entry;
+	return data.entry;
 }
