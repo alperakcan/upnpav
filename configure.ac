@@ -372,21 +372,21 @@ if test "$enableval" = "sqlite3"
 then
 	enable_parser_expat=yes
 	enable_parser_corec=no
-	AC_DEFINE(ENABLE_PARSER_EXPAT, 1, [Define to 1 if you want 'expat' platform support.])
+	AC_DEFINE(ENABLE_PARSER_EXPAT, 1, [Define to 1 if you want 'expat' parser support.])
 elif test "$enableval" = "corec"
 then
 	enable_parser_expat=yes
 	enable_parser_sqlite3=no
-	AC_DEFINE(ENABLE_PARSER_COREC, 1, [Define to 1 if you want 'corec' platform support.])
+	AC_DEFINE(ENABLE_PARSER_COREC, 1, [Define to 1 if you want 'corec' parser support.])
 else
 	enable_parser_expat=yes
 	enable_parser_corec=no
-	AC_DEFINE(ENABLE_PARSER_EXPAT, 1, [Define to 1 if you want 'expat' platform support.])
+	AC_DEFINE(ENABLE_PARSER_EXPAT, 1, [Define to 1 if you want 'expat' parser support.])
 fi
 ,
 enable_parser_expat=yes
 enable_parser_corec=no
-AC_DEFINE(ENABLE_PARSER_EXPAT, 1, [Define to 1 if you want 'expat' platform support.])
+AC_DEFINE(ENABLE_PARSER_EXPAT, 1, [Define to 1 if you want 'expat' parser support.])
 )
 
 AC_ARG_ENABLE([controller],
