@@ -812,13 +812,13 @@ static void * gena_thread_loop (void *arg)
 			if (strncmp(tmpptr, "bytes=", strlen("bytes=")) == 0) {
 				rangerequest = 1;
 				tmpptr += strlen("bytes=");
-				fileinfo.filerange.start = strtoul(tmpptr, &tmpptr, 10);
+				fileinfo.filerange.start = strtoull(tmpptr, &tmpptr, 10);
 				if (tmpptr[0] != '-' || fileinfo.filerange.start < 0) {
 					fileinfo.filerange.start = 0;
 					fileinfo.filerange.stop = 0;
 					fileinfo.filerange.size = 0;
 				} else if (tmpptr[1] != '\0') {
-					fileinfo.filerange.stop = strtoul(tmpptr + 1, NULL, 10);
+					fileinfo.filerange.stop = strtoull(tmpptr + 1, NULL, 10);
 					if (fileinfo.filerange.stop < 0 || fileinfo.filerange.stop < fileinfo.filerange.start) {
 						fileinfo.filerange.start = 0;
 						fileinfo.filerange.stop = 0;
