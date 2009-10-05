@@ -1005,7 +1005,7 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)
 				" <upnp:playlist>%s</upnp:playlist>"
 				" <upnp:genre>%s</upnp:genre>"
 				" <upnp:longDescription>%s</upnp:longDescription>"
-				" <res protocolInfo=\"%s\" size=\"%u\">http://%s:%d/upnp/contentdirectory?id=%s</res>"
+				" <res protocolInfo=\"%s\" size=\"%llu\">http://%s:%d/upnp/contentdirectory?id=%s</res>"
 				"</item>";
 			album = xml_escape(entry->didl.upnp.musictrack.album, 0);
 			artist = xml_escape(entry->didl.upnp.musictrack.artist, 0);
@@ -1085,7 +1085,7 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)
 				" <upnp:storagemedium>%s</upnp:storagemedium>"
 				" <upnp:rating>%u</upnp:rating>"
 				" <upnp:album>%s</upnp:album>"
-				" <res protocolInfo=\"%s\" size=\"%u\">http://%s:%d/upnp/contentdirectory?id=%s</res>"
+				" <res protocolInfo=\"%s\" size=\"%llu\">http://%s:%d/upnp/contentdirectory?id=%s</res>"
 				"</item>";
 			rc = asprintf(&tmp, ifmt,
 				id, pid, (entry->didl.restricted == 1) ? "true" : "false",
