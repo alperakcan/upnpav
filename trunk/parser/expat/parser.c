@@ -45,8 +45,7 @@ typedef struct xml_data_s {
 	xml_node_t *active;
 	xml_node_t *root;
 	xml_node_t *elem;
-	unsigned int starts;
-	unsigned int ends;
+	unsigned int started;
 	int (*callback) (void *context, const char *path, const char *name, const char **atrr, const char *value);
 	void *context;
 } xml_data_t;
@@ -291,8 +290,8 @@ static void xml_parse_start (void *xdata, const char *el, const char **xattr)
 	xml_node_attr_t *attr;
 	data = (xml_data_t *) xdata;
 	if (data->callback != NULL) {
-		if (data->starts) {
-			debugf("callback (%d) (%d);", data->starts, data->ends);
+		if (data->started) {
+			debugf("callback;");
 			debugf("  path : '%s'", data->path);
 			debugf("  name : '%s'", data->name);
 			debugf("  value: '%s'", data->value);
@@ -349,7 +348,7 @@ static void xml_parse_start (void *xdata, const char *el, const char **xattr)
 			data->attrs[p] = NULL;
 			data->attrs[p + 1] = NULL;
 		}
-		data->starts = 1;
+		data->started = 1;
 	}
 }
 
@@ -393,7 +392,7 @@ static void xml_parse_end (void *xdata, const char *el)
 		}
 		data->active = data->active->parent;
 	} else {
-		data->starts = 0;
+		data->started = 0;
 	}
 	for (p = 0; data->attrs && data->attrs[p] && data->attrs[p + 1]; p += 2) {
 		free(data->attrs[p]);
