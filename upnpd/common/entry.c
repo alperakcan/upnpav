@@ -391,7 +391,7 @@ int entry_print (entry_t *entry)
 		if (c->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER) {
 			printf("%s - %s (class: %s, size:%u, childs: %u)\n", c->didl.entryid, c->didl.dc.title, c->didl.upnp.object.class, c->didl.upnp.storagefolder.storageused, c->didl.childcount);
 		} else {
-			printf("%s - %s (class: %s, size:%u)\n", c->didl.entryid, c->didl.dc.title, c->didl.upnp.object.class, c->didl.res.size);
+			printf("%s - %s (class: %s, size:%llu)\n", c->didl.entryid, c->didl.dc.title, c->didl.upnp.object.class, c->didl.res.size);
 		}
 		c = c->next;
 	}
@@ -460,7 +460,7 @@ int entry_dump (entry_t *entry)
 				break;
 		}
 		printf("  didl.res.protocolinfo: %s\n", c->didl.res.protocolinfo);
-		printf("  didl.res.size        : %u\n", c->didl.res.size);
+		printf("  didl.res.size        : %llu\n", c->didl.res.size);
 		printf("  didl.res.path        : %s\n", c->didl.res.path);
 		c = c->next;
 	}
@@ -922,7 +922,7 @@ int entry_parser_callback (void *context, const char *path, const char *name, co
 						free(data->curr->didl.res.duration);
 						data->curr->didl.res.duration = strdup(atrr[a + 1]);
 					} else if (strcmp(atrr[a], "size") == 0) {
-						data->curr->didl.res.size = strtoint32(atrr[a + 1]);
+						data->curr->didl.res.size = atoll(atrr[a + 1]);
 					}
 				}
 				free(data->curr->didl.res.path);
@@ -1049,7 +1049,7 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)
 				" <upnp:rating>%s</upnp:rating>"
 				" <upnp:actor>%s</upnp:actor>"
 				" <upnp:director>%s</upnp:director>"
-				" <res protocolInfo=\"%s\" size=\"%u\">http://%s:%d/upnp/contentdirectory?id=%s</res>"
+				" <res protocolInfo=\"%s\" size=\"%llu\">http://%s:%d/upnp/contentdirectory?id=%s</res>"
 				"</item>";
 			rc = asprintf(&tmp, ifmt,
 				id, pid, (entry->didl.restricted == 1) ? "true" : "false",

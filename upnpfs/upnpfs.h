@@ -66,7 +66,7 @@ typedef struct upnpfs_cache_s {
 	char *device;
 	char *object;
 	int container;
-	unsigned int size;
+	uint64_t size;
 	char *source;
 } upnpfs_cache_t;
 
