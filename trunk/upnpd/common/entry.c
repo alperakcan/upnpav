@@ -881,7 +881,7 @@ found:
 	return entry;
 }
 
-entry_t * entry_from_result (char *result)
+entry_t * entry_from_result (const char *result)
 {
 	entry_t *tmp;
 	entry_t *prev;

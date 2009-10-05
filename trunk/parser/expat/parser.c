@@ -55,7 +55,6 @@ static int xml_node_path_normalize (char *out, int len);
 static xml_node_t * xml_node_get_path_ (xml_node_t *node, const char *path);
 static void xml_parse_start (void *xdata, const char *el, const char **xattr);
 static void xml_parse_end (void *xdata, const char *el);
-static void xml_parse_character_fixup (char *out);
 static void xml_parse_character (void *xdata, const char *txt, int txtlen);
 
 static int xml_node_path_normalize (char *out, int len)
