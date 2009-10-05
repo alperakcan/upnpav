@@ -54,7 +54,7 @@ struct metadata_s {
 	int image_width;
 	int image_height;
 	unsigned char *image;
-	size_t size;
+	uint64_t size;
 };
 
 metadata_t * metadata_init (const char *path);

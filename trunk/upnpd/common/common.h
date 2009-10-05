@@ -241,7 +241,7 @@ typedef struct didl_res_s {
 	/** */
 	char *duration;
 	/** */
-	uint32_t size;
+	uint64_t size;
 	/** */
 	char *path;
 } didl_res_t;
