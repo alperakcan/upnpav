@@ -129,11 +129,13 @@ typedef struct controller_browse_data_s {
 	uint32_t totalmatches;
 	uint32_t numberreturned;
 	uint32_t updateid;
-	char *result;
+	entry_t *entry;
 } controller_browse_data_t;
 
 int controller_browse_children_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
 {
+	entry_t *pentry;
+	entry_t *tentry;
 	controller_browse_data_t *data;
 	data = (controller_browse_data_t *) context;
 	if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/TotalMatches") == 0) {
@@ -150,7 +152,23 @@ int controller_browse_children_callback (void *context, const char *path, const 
 		}
 	} else if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/Result") == 0) {
 		if (value != NULL) {
-			data->result = strdup(value);
+			tentry = entry_from_result(value);
+			if (tentry == NULL) {
+				debugf("entry_from_result() failed");
+			} else {
+				if (data->entry == NULL) {
+					data->entry = tentry;
+				} else {
+					pentry = data->entry;
+					while (1) {
+						if (pentry->next == NULL) {
+							pentry->next = tentry;
+							break;
+						}
+						pentry = pentry->next;
+					}
+				}
+			}
 		}
 	}
 	return 0;
@@ -158,9 +176,6 @@ int controller_browse_children_callback (void *context, const char *path, const 
 
 entry_t * controller_browse_children (client_t *controller, const char *device, const char *object)
 {
-	entry_t *entry;
-	entry_t *tentry;
-	entry_t *pentry;
 	char *params[6];
 	char *values[6];
 	char *action;
@@ -169,9 +184,8 @@ entry_t * controller_browse_children (client_t *controller, const char *device, 
 	controller_browse_data_t data;
 
 	count = 0;
-	entry = NULL;
 	action = NULL;
-	data.result = NULL;
+	data.entry = NULL;
 
 	params[0] = "ObjectID";
 	params[1] = "BrowseFlag";
@@ -208,27 +222,6 @@ entry_t * controller_browse_children (client_t *controller, const char *device, 
 			goto out;
 		}
 		free(action);
-		if (data.result == NULL) {
-			debugf("result is null");
-			goto out;
-		}
-		tentry = entry_from_result(data.result);
-		if (tentry == NULL) {
-			debugf("entry_from_result() failed");
-			goto out;
-		}
-		if (entry == NULL) {
-			entry = tentry;
-		} else {
-			pentry = entry;
-			while (1) {
-				if (pentry->next == NULL) {
-					pentry->next = tentry;
-					break;
-				}
-				pentry = pentry->next;
-			}
-		}
 		if (data.totalmatches == 0 || data.numberreturned == 0) {
 			debugf("total matches (%d) or number returned (%d) is zero", data.totalmatches, data.numberreturned);
 			goto out;
@@ -237,14 +230,11 @@ entry_t * controller_browse_children (client_t *controller, const char *device, 
 		if (count >= data.totalmatches) {
 			goto out;
 		}
-		free(data.result);
-		data.result = NULL;
 	} while (1);
 
 out:
 	free(values[3]);
-	free(data.result);
-	return entry;
+	return data.entry;
 }
 
 entry_t * controller_browse_metadata (client_t *controller, const char *device, const char *object)
