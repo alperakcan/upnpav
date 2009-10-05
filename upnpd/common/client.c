@@ -485,7 +485,7 @@ int client_refresh (client_t *client, int remove)
 	return ret;
 }
 
-char * client_action (client_t *client, char *devicename, char *servicetype, char *actionname, char **param_name, char **param_val, int param_count)
+char * client_action (client_t *client, const char *devicename, const char *servicetype, const char *actionname, char **param_name, char **param_val, int param_count)
 {
 	int rc;
 	char *response;

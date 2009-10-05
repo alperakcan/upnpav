@@ -125,7 +125,6 @@ int controller_uninit (client_t *controller)
 }
 
 typedef struct controller_browse_data_s {
-	client_t *controller;
 	uint32_t totalmatches;
 	uint32_t numberreturned;
 	uint32_t updateid;
@@ -209,13 +208,12 @@ entry_t * controller_browse_children (client_t *controller, const char *device, 
 		values[5] = "+dc:title";
 
 		debugf("browsing '%s':'%s'", device, object);
-		action = client_action(controller, (char *) device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
+		action = client_action(controller, device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
 		if (action == NULL) {
 			debugf("client_action() failed");
 			goto out;
 		}
 		memset(&data, 0, sizeof(data));
-		data.controller = controller;
 		if (xml_parse_buffer_callback(action, strlen(action), controller_browse_children_callback, &data) != 0) {
 			debugf("xml_parse_buffer_callback() failed");
 			free(action);
@@ -262,13 +260,12 @@ entry_t * controller_browse_metadata (client_t *controller, const char *device, 
 	values[5] = "+dc:title";
 
 	debugf("browsing '%s':'%s'", device, object);
-	action = client_action(controller, (char *) device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
+	action = client_action(controller, device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
 	if (action == NULL) {
 		debugf("client_action() failed");
 		goto out;
 	}
 	memset(&data, 0, sizeof(data));
-	data.controller = controller;
 	if (xml_parse_buffer_callback(action, strlen(action), controller_browse_children_callback, &data) != 0) {
 		debugf("xml_parse_buffer_callback() failed");
 	}

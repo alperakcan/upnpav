@@ -525,7 +525,7 @@ struct device_s {
 int client_init (client_t *client);
 int client_uninit (client_t *client);
 int client_refresh (client_t *client, int remove);
-char * client_action (client_t *client, char *devicename, char *servicetype, char *actionname, char **param_name, char **param_val, int param_count);
+char * client_action (client_t *client, const char *devicename, const char *servicetype, const char *actionname, char **param_name, char **param_val, int param_count);
 
 /* controller.c */
 
