@@ -124,19 +124,19 @@ int controller_uninit (client_t *controller)
 	return 0;
 }
 
-typedef struct controller_browse_data_s {
+typedef struct controller_parser_data_s {
 	uint32_t totalmatches;
 	uint32_t numberreturned;
 	uint32_t updateid;
 	entry_t *entry;
-} controller_browse_data_t;
+} controller_parser_data_t;
 
-int controller_browse_children_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
+int controller_parser_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
 {
 	entry_t *pentry;
 	entry_t *tentry;
-	controller_browse_data_t *data;
-	data = (controller_browse_data_t *) context;
+	controller_parser_data_t *data;
+	data = (controller_parser_data_t *) context;
 	if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/TotalMatches") == 0) {
 		if (value != NULL) {
 			data->totalmatches = strtouint32(value);
@@ -180,7 +180,7 @@ entry_t * controller_browse_children (client_t *controller, const char *device, 
 	char *action;
 
 	uint32_t count;
-	controller_browse_data_t data;
+	controller_parser_data_t data;
 
 	count = 0;
 	action = NULL;
@@ -213,8 +213,10 @@ entry_t * controller_browse_children (client_t *controller, const char *device, 
 			debugf("client_action() failed");
 			goto out;
 		}
-		memset(&data, 0, sizeof(data));
-		if (xml_parse_buffer_callback(action, strlen(action), controller_browse_children_callback, &data) != 0) {
+		data.numberreturned = 0;
+		data.totalmatches = 0;
+		data.updateid = 0;
+		if (xml_parse_buffer_callback(action, strlen(action), controller_parser_callback, &data) != 0) {
 			debugf("xml_parse_buffer_callback() failed");
 			free(action);
 			goto out;
@@ -240,7 +242,7 @@ entry_t * controller_browse_metadata (client_t *controller, const char *device, 
 	char *params[6];
 	char *values[6];
 	char *action;
-	controller_browse_data_t data;
+	controller_parser_data_t data;
 
 	action = NULL;
 	memset(&data, 0, sizeof(data));
@@ -266,7 +268,7 @@ entry_t * controller_browse_metadata (client_t *controller, const char *device, 
 		goto out;
 	}
 	memset(&data, 0, sizeof(data));
-	if (xml_parse_buffer_callback(action, strlen(action), controller_browse_children_callback, &data) != 0) {
+	if (xml_parse_buffer_callback(action, strlen(action), controller_parser_callback, &data) != 0) {
 		debugf("xml_parse_buffer_callback() failed");
 	}
 	free(action);

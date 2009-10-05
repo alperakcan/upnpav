@@ -781,158 +781,166 @@ static didl_upnp_object_type_t entry_upnp_type_from_class (const char *class)
 	}
 }
 
-#define entry_strdup(s) ((s) ? strdup(s) : NULL);
-static entry_t * entry_from_element (xml_node_t *elem, int container)
-{
-	char *tmp;
-	entry_t *entry;
-	xml_node_t *nres;
-	entry = (entry_t *) malloc(sizeof(entry_t));
-	if (entry == NULL) {
-		return NULL;
-	}
-	memset(entry, 0, sizeof(entry_t));
-	entry->metadata = xml_node_print(elem);
-	entry->didl.entryid = strdup(xml_node_get_attr_value(elem, "id"));
-	entry->didl.parentid = strdup(xml_node_get_attr_value(elem, "parentID"));
-	entry->didl.childcount = strtouint32(xml_node_get_attr_value(elem, "childCount"));
-	entry->didl.restricted = strtouint32(xml_node_get_attr_value(elem, "restricted"));
-	entry->didl.dc.contributor = entry_strdup(xml_node_get_path_value(elem, "dc:contributor"));
-	entry->didl.dc.coverage = entry_strdup(xml_node_get_path_value(elem, "dc:coverage"));
-	entry->didl.dc.creator = entry_strdup(xml_node_get_path_value(elem, "dc:creator"));
-	entry->didl.dc.date = entry_strdup(xml_node_get_path_value(elem, "dc:date"));
-	entry->didl.dc.description = entry_strdup(xml_node_get_path_value(elem, "dc:description"));
-	entry->didl.dc.format = entry_strdup(xml_node_get_path_value(elem, "dc:format"));
-	entry->didl.dc.identifier = entry_strdup(xml_node_get_path_value(elem, "dc:identifier"));
-	entry->didl.dc.language = entry_strdup(xml_node_get_path_value(elem, "dc:language"));
-	entry->didl.dc.publisher = entry_strdup(xml_node_get_path_value(elem, "dc:publisher"));
-	entry->didl.dc.relation = entry_strdup(xml_node_get_path_value(elem, "dc:relation"));
-	entry->didl.dc.rights = entry_strdup(xml_node_get_path_value(elem, "dc:rights"));
-	entry->didl.dc.source = entry_strdup(xml_node_get_path_value(elem, "dc:source"));
-	entry->didl.dc.subject = entry_strdup(xml_node_get_path_value(elem, "dc:subject"));
-	entry->didl.dc.title = entry_strdup(xml_node_get_path_value(elem, "dc:title"));
-	entry->didl.dc.type = entry_strdup(xml_node_get_path_value(elem, "dc:type"));
-	entry->didl.upnp.object.class = entry_strdup(xml_node_get_path_value(elem, "upnp:class"));
-	entry->didl.upnp.type = entry_upnp_type_from_class(entry->didl.upnp.object.class);
-	switch (entry->didl.upnp.type) {
-		case DIDL_UPNP_OBJECT_TYPE_MUSICTRACK:
-			entry->didl.upnp.musictrack.album = entry_strdup(xml_node_get_path_value(elem, "upnp:album"));
-			entry->didl.upnp.musictrack.artist = entry_strdup(xml_node_get_path_value(elem, "upnp:artist"));
-			tmp = entry_strdup(xml_node_get_path_value(elem, "upnp:originalTrackNumber"));
-			entry->didl.upnp.musictrack.originaltracknumber = strtouint32(tmp);
-			free(tmp);
-			entry->didl.upnp.musictrack.playlist = entry_strdup(xml_node_get_path_value(elem, "upnp:playlist"));
-		case DIDL_UPNP_OBJECT_TYPE_AUDIOITEM:
-			entry->didl.upnp.audioitem.genre = entry_strdup(xml_node_get_path_value(elem, "upnp:genre"));
-			entry->didl.upnp.audioitem.longdescription = entry_strdup(xml_node_get_path_value(elem, "upnp:longDescription"));
-			break;
-		case DIDL_UPNP_OBJECT_TYPE_MOVIE:
-		case DIDL_UPNP_OBJECT_TYPE_VIDEOITEM:
-			entry->didl.upnp.videoitem.actor = entry_strdup(xml_node_get_path_value(elem, "upnp:actor"));
-			entry->didl.upnp.videoitem.director = entry_strdup(xml_node_get_path_value(elem, "upnp:director"));
-			entry->didl.upnp.videoitem.genre = entry_strdup(xml_node_get_path_value(elem, "upnp:genre"));
-			entry->didl.upnp.videoitem.longdescription = entry_strdup(xml_node_get_path_value(elem, "upnp:longdescription"));
-			entry->didl.upnp.videoitem.producer = entry_strdup(xml_node_get_path_value(elem, "upnp:producer"));
-			entry->didl.upnp.videoitem.rating = entry_strdup(xml_node_get_path_value(elem, "upnp:rating"));
-			break;
-		case DIDL_UPNP_OBJECT_TYPE_PHOTO:
-			entry->didl.upnp.photo.album = entry_strdup(xml_node_get_path_value(elem, "upnp:album"));
-		case DIDL_UPNP_OBJECT_TYPE_IMAGEITEM:
-			entry->didl.upnp.imageitem.longdescription = entry_strdup(xml_node_get_path_value(elem, "upnp:longdescription"));
-			entry->didl.upnp.imageitem.rating = entry_strdup(xml_node_get_path_value(elem, "upnp:rating"));
-			entry->didl.upnp.imageitem.storagemedium = entry_strdup(xml_node_get_path_value(elem, "upnp:storagemedium"));
-			break;
-		case DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER:
-			tmp = entry_strdup(xml_node_get_path_value(elem, "upnp:storageUsed"));
-			entry->didl.upnp.storagefolder.storageused = strtouint32(tmp);
-			free(tmp);
-			break;
-		default:
-			break;
-	}
+typedef struct entry_parser_data_s {
+	entry_t *curr;
+	entry_t *prev;
+	entry_t *root;
+} entry_parser_data_t;
 
-	if (container == 0) {
-		list_for_each_entry(nres, &elem->nodes, head) {
-			if (strcmp(xml_node_get_name(nres), "res") == 0) {
-				const char *protocolinfo;
-				const char *duration;
-				const char *size;
-				protocolinfo = (const char *) xml_node_get_attr_value(nres, "protocolInfo");
-				duration = (const char *) xml_node_get_attr_value(nres, "duration");
-				size = (const char *) xml_node_get_attr_value(nres, "size");
-				if (protocolinfo == NULL ||
-				    size == NULL) {
-					continue;
+int entry_parser_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
+{
+	int a;
+	entry_parser_data_t *data;
+	data = (entry_parser_data_t *) context;
+	if (strcmp(path, "/DIDL-Lite/item") == 0 ||
+	    strcmp(path, "/DIDL-Lite/container") == 0) {
+		data->curr = (entry_t *) malloc(sizeof(entry_t));
+		if (data->curr != NULL) {
+			memset(data->curr, 0, sizeof(entry_t));
+			for (a = 0; atrr[a] && atrr[a + 1]; a += 2) {
+				if (strcmp(atrr[a], "id") == 0) {
+					data->curr->didl.entryid = strdup(atrr[a + 1]);
+				} else if (strcmp(atrr[a], "parentID") == 0) {
+					data->curr->didl.parentid = strdup(atrr[a + 1]);
+				} else if (strcmp(atrr[a], "childCount") == 0) {
+					data->curr->didl.childcount = strtoint32(atrr[a + 1]);
+				} else if (strcmp(atrr[a], "restricted") == 0) {
+					data->curr->didl.restricted = strtoint32(atrr[a + 1]);
 				}
-				if (strncmp(protocolinfo, "http-get:", 9) != 0) {
-					continue;
+			}
+			if (data->curr->didl.entryid && data->curr->didl.parentid) {
+				if (data->prev == NULL) {
+					data->root = data->curr;
+				} else {
+					data->prev->next = data->curr;
 				}
-				entry->didl.res.protocolinfo = (protocolinfo != NULL) ? strdup(protocolinfo) : NULL;
-				entry->didl.res.duration = (duration != NULL) ? strdup(duration) : NULL;
-				entry->didl.res.size = strtouint32(size);
-				entry->didl.res.path = strdup(xml_node_get_value(nres));
-				goto found;
+				data->prev = data->curr;
+			} else {
+				free(data->curr->didl.entryid);
+				free(data->curr->didl.parentid);
+				free(data->curr);
+				data->curr = NULL;
 			}
 		}
-		entry_uninit(entry);
-		entry = NULL;
+	} else if (value != NULL && data->curr != NULL && strcmp(path, "/DIDL-Lite/item/dc:contributor") == 0) {
+		data->curr->didl.dc.contributor = strdup(value);
+	} else if (value != NULL && data->curr != NULL && strcmp(path, "/DIDL-Lite/item/dc:coverage") == 0) {
+		data->curr->didl.dc.coverage = strdup(value);
+	} else if (value != NULL && data->curr != NULL && strcmp(path, "/DIDL-Lite/item/dc:creator") == 0) {
+		data->curr->didl.dc.creator = strdup(value);
+	} else if (value != NULL && data->curr != NULL && strcmp(path, "/DIDL-Lite/item/dc:date") == 0) {
+		data->curr->didl.dc.date = strdup(value);
+	} else if (value != NULL && data->curr != NULL && strcmp(path, "/DIDL-Lite/item/dc:description") == 0) {
+		data->curr->didl.dc.description = strdup(value);
+	} else if (value != NULL && data->curr != NULL && strcmp(path, "/DIDL-Lite/item/dc:format") == 0) {
+		data->curr->didl.dc.format = strdup(value);
+	} else if (value != NULL && data->curr != NULL && strcmp(path, "/DIDL-Lite/item/dc:identifier") == 0) {
+		data->curr->didl.dc.identifier = strdup(value);
+	} else if (value != NULL && data->curr != NULL && strcmp(path, "/DIDL-Lite/item/dc:language") == 0) {
+		data->curr->didl.dc.language = strdup(value);
+	} else if (value != NULL && data->curr != NULL && strcmp(path, "/DIDL-Lite/item/dc:publisher") == 0) {
+		data->curr->didl.dc.publisher = strdup(value);
+	} else if (value != NULL && data->curr != NULL && strcmp(path, "/DIDL-Lite/item/dc:relation") == 0) {
+		data->curr->didl.dc.relation = strdup(value);
+	} else if (value != NULL && data->curr != NULL && strcmp(path, "/DIDL-Lite/item/dc:rights") == 0) {
+		data->curr->didl.dc.rights = strdup(value);
+	} else if (value != NULL && data->curr != NULL && strcmp(path, "/DIDL-Lite/item/dc:source") == 0) {
+		data->curr->didl.dc.source = strdup(value);
+	} else if (value != NULL && data->curr != NULL && strcmp(path, "/DIDL-Lite/item/dc:subject") == 0) {
+		data->curr->didl.dc.subject = strdup(value);
+	} else if (value != NULL && data->curr != NULL && (strcmp(path, "/DIDL-Lite/item/dc:title") == 0 || strcmp(path, "/DIDL-Lite/container/dc:title") == 0)) {
+		data->curr->didl.dc.title = strdup(value);
+	} else if (value != NULL && data->curr != NULL && strcmp(path, "/DIDL-Lite/item/dc:type") == 0) {
+		data->curr->didl.dc.type = strdup(value);
+	} else if (value != NULL && data->curr != NULL && (strcmp(path, "/DIDL-Lite/item/upnp:class") == 0 || strcmp(path, "/DIDL-Lite/container/upnp:class") == 0)) {
+		data->curr->didl.upnp.object.class = strdup(value);
+		data->curr->didl.upnp.type = entry_upnp_type_from_class(value);
 	}
-found:
-	return entry;
+	if (value != NULL && data->curr != NULL) {
+		switch (data->curr->didl.upnp.type) {
+			case DIDL_UPNP_OBJECT_TYPE_MUSICTRACK:
+				if (strcmp(path, "/DIDL-Lite/item/upnp:album") == 0) {
+					data->curr->didl.upnp.musictrack.album = strdup(value);
+				} else if (strcmp(path, "/DIDL-Lite/item/upnp:artist") == 0) {
+					data->curr->didl.upnp.musictrack.artist = strdup(value);
+				} else if (strcmp(path, "/DIDL-Lite/item/upnp:originalTrackNumber") == 0) {
+					data->curr->didl.upnp.musictrack.originaltracknumber = strtouint32(value);
+				} else if (strcmp(path, "/DIDL-Lite/item/upnp:playlist") == 0) {
+					data->curr->didl.upnp.musictrack.playlist = strdup(value);
+				}
+			case DIDL_UPNP_OBJECT_TYPE_AUDIOITEM:
+				if (strcmp(path, "/DIDL-Lite/item/upnp:genre") == 0) {
+					data->curr->didl.upnp.audioitem.genre= strdup(value);
+				} else if (strcmp(path, "/DIDL-Lite/item/upnp:longDescription") == 0) {
+					data->curr->didl.upnp.audioitem.longdescription = strdup(value);
+				}
+				break;
+			case DIDL_UPNP_OBJECT_TYPE_MOVIE:
+			case DIDL_UPNP_OBJECT_TYPE_VIDEOITEM:
+				if (strcmp(path, "/DIDL-Lite/item/upnp:actor") == 0) {
+					data->curr->didl.upnp.videoitem.actor = strdup(value);
+				} else if (strcmp(path, "/DIDL-Lite/item/upnp:director") == 0) {
+					data->curr->didl.upnp.videoitem.director = strdup(value);
+				} else if (strcmp(path, "/DIDL-Lite/item/upnp:genre") == 0) {
+					data->curr->didl.upnp.videoitem.genre = strdup(value);
+				} else if (strcmp(path, "/DIDL-Lite/item/upnp:longdescription") == 0) {
+					data->curr->didl.upnp.videoitem.longdescription = strdup(value);
+				} else if (strcmp(path, "/DIDL-Lite/item/upnp:producer") == 0) {
+					data->curr->didl.upnp.videoitem.producer = strdup(value);
+				} else if (strcmp(path, "/DIDL-Lite/item/upnp:rating") == 0) {
+					data->curr->didl.upnp.videoitem.rating = strdup(value);
+				}
+				break;
+			case DIDL_UPNP_OBJECT_TYPE_PHOTO:
+				if (strcmp(path, "/DIDL-Lite/item/upnp:album") == 0) {
+					data->curr->didl.upnp.photo.album = strdup(value);
+				}
+			case DIDL_UPNP_OBJECT_TYPE_IMAGEITEM:
+				if (strcmp(path, "/DIDL-Lite/item/upnp:longdescription") == 0) {
+					data->curr->didl.upnp.imageitem.longdescription = strdup(value);
+				} else if (strcmp(path, "/DIDL-Lite/item/upnp:rating") == 0) {
+					data->curr->didl.upnp.imageitem.rating = strdup(value);
+				} else if (strcmp(path, "/DIDL-Lite/item/upnp:storagemedium") == 0) {
+					data->curr->didl.upnp.imageitem.storagemedium = strdup(value);
+				}
+				break;
+			case DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER:
+				if (strcmp(path, "/DIDL-Lite/container/upnp:storageUsed") == 0) {
+					data->curr->didl.upnp.storagefolder.storageused = strtoint32(value);
+				}
+				break;
+			default:
+				break;
+		}
+		if (strcmp(path, "/DIDL-Lite/item/res") == 0) {
+			if (strncmp(value, "http://", 7) == 0 && data->curr->didl.res.path == NULL) {
+				for (a = 0; atrr[a] && atrr[a + 1]; a += 2) {
+					if (strcmp(atrr[a], "protocolInfo") == 0) {
+						free(data->curr->didl.res.protocolinfo);
+						data->curr->didl.res.protocolinfo = strdup(atrr[a + 1]);
+					} else if (strcmp(atrr[a], "duration") == 0) {
+						free(data->curr->didl.res.duration);
+						data->curr->didl.res.duration = strdup(atrr[a + 1]);
+					} else if (strcmp(atrr[a], "size") == 0) {
+						data->curr->didl.res.size = strtoint32(atrr[a + 1]);
+					}
+				}
+				free(data->curr->didl.res.path);
+				data->curr->didl.res.path = strdup(value);
+			}
+		}
+	}
+	return 0;
 }
 
 entry_t * entry_from_result (const char *result)
 {
-	entry_t *tmp;
-	entry_t *prev;
-	entry_t *entry;
-	xml_node_t *res;
-
-	xml_node_t *item;
-	xml_node_t *container;
-
-	tmp = NULL;
-	prev = NULL;
-	entry = NULL;
-
-	res = xml_parse_buffer(result, strlen(result));
-	if (res == NULL) {
-		debugf("xml_parse_buffer(result) failed\n");
-		goto out;
+	entry_parser_data_t data;
+	memset(&data, 0, sizeof(data));
+	if (xml_parse_buffer_callback(result, strlen(result), entry_parser_callback, &data) != 0) {
+		debugf("xml_parse_buffer_callback(result) failed\n");
 	}
-
-	list_for_each_entry(container, &res->nodes, head) {
-		if (strcmp(xml_node_get_name(container), "container") == 0 ) {
-			tmp = entry_from_element(container, 1);
-			if (tmp == NULL) {
-				continue;
-			}
-			if (prev == NULL) {
-				entry = tmp;
-			} else {
-				prev->next = tmp;
-			}
-			prev = tmp;
-		}
-	}
-
-	list_for_each_entry(item, &res->nodes, head) {
-		if (strcmp(xml_node_get_name(item), "item") == 0 ) {
-			tmp = entry_from_element(item, 0);
-			if (tmp == NULL) {
-				continue;
-			}
-			if (prev == NULL) {
-				entry = tmp;
-			} else {
-				prev->next = tmp;
-			}
-			prev = tmp;
-		}
-	}
-
-out:	xml_node_uninit(res);
-	return entry;
+	return data.root;
 }
 
 char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)

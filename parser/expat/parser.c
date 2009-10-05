@@ -294,8 +294,7 @@ static void xml_parse_start (void *xdata, const char *el, const char **xattr)
 			debugf("callback;");
 			debugf("  path : '%s'", data->path);
 			debugf("  name : '%s'", data->name);
-			debugf("  value: '%s'", data->value);
-			data->callback(data->context, data->path, data->name, (const char **) data->attrs, data->value);
+			data->callback(data->context, data->path, data->name, (const char **) data->attrs, NULL);
 		}
 	}
 	if (data->path == NULL) {
