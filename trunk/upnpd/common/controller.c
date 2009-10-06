@@ -137,35 +137,30 @@ int controller_parser_callback (void *context, const char *path, const char *nam
 	entry_t *tentry;
 	controller_parser_data_t *data;
 	data = (controller_parser_data_t *) context;
+	if (value == NULL) {
+		return 0;
+	}
 	if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/TotalMatches") == 0) {
-		if (value != NULL) {
-			data->totalmatches = strtouint32(value);
-		}
+		data->totalmatches = strtouint32(value);
 	} else if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/NumberReturned") == 0) {
-		if (value != NULL) {
-			data->numberreturned = strtouint32(value);
-		}
+		data->numberreturned = strtouint32(value);
 	} else if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/UpdateID") == 0) {
-		if (value != NULL) {
-			data->updateid = strtouint32(value);
-		}
+		data->updateid = strtouint32(value);
 	} else if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/Result") == 0) {
-		if (value != NULL) {
-			tentry = entry_from_result(value);
-			if (tentry == NULL) {
-				debugf("entry_from_result() failed");
+		tentry = entry_from_result(value);
+		if (tentry == NULL) {
+			debugf("entry_from_result() failed");
+		} else {
+			if (data->entry == NULL) {
+				data->entry = tentry;
 			} else {
-				if (data->entry == NULL) {
-					data->entry = tentry;
-				} else {
-					pentry = data->entry;
-					while (1) {
-						if (pentry->next == NULL) {
-							pentry->next = tentry;
-							break;
-						}
-						pentry = pentry->next;
+				pentry = data->entry;
+				while (1) {
+					if (pentry->next == NULL) {
+						pentry->next = tentry;
+						break;
 					}
+					pentry = pentry->next;
 				}
 			}
 		}

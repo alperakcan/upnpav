@@ -637,14 +637,15 @@ entry_t * entry_init_from_path (const char *path, unsigned int start, unsigned i
 			free(ptr);
 			continue;
 		}
-		debugf("found: %s, %s", next->didl.dc.title, next->didl.entryid);
+		debugf("found: %s, %s, 0x%08x", next->didl.dc.title, next->didl.entryid, next->didl.upnp.type);
 		if (entry == NULL) {
 			entry = next;
 		} else {
 			tmp = entry;
 			prev = NULL;
 			while (tmp != NULL) {
-				if (strcmp(next->didl.dc.title, tmp->didl.dc.title) < 0) {
+				if ((next->didl.upnp.type == tmp->didl.upnp.type && (strcmp(next->didl.dc.title, tmp->didl.dc.title) < 0)) ||
+				    (next->didl.upnp.type != tmp->didl.upnp.type && next->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER)) {
 					if (tmp == entry) {
 						next->next = entry;
 						entry = next;

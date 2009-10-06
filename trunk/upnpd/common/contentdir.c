@@ -80,45 +80,59 @@ static int contentdirectory_get_system_update_id (device_service_t *service, upn
 	return rc;
 }
 
-static int contentdirectory_browse (device_service_t *service, upnp_event_action_t *request)
-{
-	char *id;
-	char str[23];
-	entry_t *tmp;
-	entry_t *entry;
-	xml_node_t *xml;
-	contentdir_t *contentdir;
-
-	/* in */
+typedef struct contentdirectory_parser_data_s {
 	char *objectid;
 	char *browseflag;
 	char *filter;
 	uint32_t startingindex;
 	uint32_t requestedcount;
 	char *sortcriteria;
+} contentdirectory_parser_data_t;
+
+int contentdirectory_parser_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
+{
+	contentdirectory_parser_data_t *data;
+	data = (contentdirectory_parser_data_t *) context;
+	if (strcmp(path, "/s:Envelope/s:Body/u:Browse/ObjectID") == 0) {
+		data->objectid = strdup(value);
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/BrowseFlag") == 0) {
+		data->browseflag = strdup(value);
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/Filter") == 0) {
+		data->filter = strdup(value);
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/StartingIndex") == 0) {
+		data->startingindex = strtouint32(value);
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/RequestedCount") == 0) {
+		data->requestedcount = strtouint32(value);
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/SortCriteria") == 0) {
+		data->sortcriteria = strdup(value);
+	}
+	return 0;
+}
+
+static int contentdirectory_browse (device_service_t *service, upnp_event_action_t *request)
+{
+	char *id;
+	char str[23];
+	entry_t *tmp;
+	entry_t *entry;
+	contentdir_t *contentdir;
+	contentdirectory_parser_data_t data;
+
 	/* out */
 	char *result;
 	uint32_t totalmatches;
 	uint32_t numberreturned;
 	uint32_t updateid;
 
+	entry = NULL;
 	contentdir = (contentdir_t *) service;
 
-	entry = NULL;
-
-	xml = xml_parse_buffer(request->request, strlen(request->request));
-	if (xml == NULL) {
+	memset(&data, 0, sizeof(data));
+	if (xml_parse_buffer_callback(request->request, strlen(request->request), contentdirectory_parser_callback, &data) != 0) {
+		debugf("xml_parse_buffer_callback() failed");
 		request->errcode = UPNP_ERROR_PARAMETER_MISMATCH;
 		return 0;
 	}
-
-	objectid = xml_node_get_path_value(xml, "/s:Envelope/s:Body/u:Browse/ObjectID");
-	browseflag = xml_node_get_path_value(xml, "/s:Envelope/s:Body/u:Browse/BrowseFlag");
-	filter = xml_node_get_path_value(xml, "/s:Envelope/s:Body/u:Browse/Filter");
-	startingindex = strtouint32(xml_node_get_path_value(xml, "/s:Envelope/s:Body/u:Browse/StartingIndex"));
-	requestedcount = strtouint32(xml_node_get_path_value(xml, "/s:Envelope/s:Body/u:Browse/RequestedCount"));
-	sortcriteria = xml_node_get_path_value(xml, "/s:Envelope/s:Body/u:Browse/SortCriteria");
-
 	debugf("contentdirectory browse:\n"
 		"  objectid      : %s\n"
 		"  browseflag    : %s\n"
@@ -126,15 +140,15 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		"  startingindex : %u\n"
 		"  requestedcount: %u\n"
 		"  sortcriteria  : %s\n",
-		objectid,
-		browseflag,
-		filter,
-		startingindex,
-		requestedcount,
-		sortcriteria);
+		data.objectid,
+		data.browseflag,
+		data.filter,
+		data.startingindex,
+		data.requestedcount,
+		data.sortcriteria);
 
-	if (strcmp(browseflag, "BrowseMetadata") == 0) {
-		if (objectid == NULL || strcmp(objectid, "0") == 0) {
+	if (strcmp(data.browseflag, "BrowseMetadata") == 0) {
+		if (data.objectid == NULL || strcmp(data.objectid, "0") == 0) {
 			entry = entry_didl_from_path(contentdir->rootpath);
 			debugf("found entry %p", entry);
 			tmp = entry;
@@ -152,8 +166,8 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 				tmp = tmp->next;
 			}
 		} else {
-			debugf("looking for '%s'", objectid);
-			entry = entry_didl_from_id(contentdir->database, objectid);
+			debugf("looking for '%s'", data.objectid);
+			entry = entry_didl_from_id(contentdir->database, data.objectid);
 		}
 		if (entry != NULL) {
 			if (contentdir->cached == 0) {
@@ -169,7 +183,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 				free(id);
 			}
 		} else {
-			debugf("could not find object '%s'",objectid);
+			debugf("could not find object '%s'", data.objectid);
 		}
 		if (entry == NULL) {
 			request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
@@ -189,13 +203,16 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		upnp_add_response(request, service->type, "NumberReturned", uint32tostr(str, numberreturned));
 		upnp_add_response(request, service->type, "TotalMatches", uint32tostr(str, totalmatches));
 		upnp_add_response(request, service->type, "UpdateID", uint32tostr(str, updateid));
+		free(data.browseflag);
+		free(data.filter);
+		free(data.objectid);
+		free(data.sortcriteria);
 		free(result);
 		entry_uninit(entry);
-		xml_node_uninit(xml);
 		return 0;
-	} else if (strcmp(browseflag, "BrowseDirectChildren") == 0) {
-		if (contentdir->cached == 0 && (objectid == NULL || strcmp(objectid, "0") == 0)) {
-			entry = entry_init_from_path(contentdir->rootpath, startingindex, requestedcount, &numberreturned, &totalmatches);
+	} else if (strcmp(data.browseflag, "BrowseDirectChildren") == 0) {
+		if (contentdir->cached == 0 && (data.objectid == NULL || strcmp(data.objectid, "0") == 0)) {
+			entry = entry_init_from_path(contentdir->rootpath, data.startingindex, data.requestedcount, &numberreturned, &totalmatches);
 			tmp = entry;
 			while (tmp != NULL) {
 				free(tmp->didl.parentid);
@@ -208,7 +225,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 				tmp = tmp->next;
 			}
 		} else {
-			entry = entry_init_from_id(contentdir->database, objectid, startingindex, requestedcount, &numberreturned, &totalmatches);
+			entry = entry_init_from_id(contentdir->database, data.objectid, data.startingindex, data.requestedcount, &numberreturned, &totalmatches);
 		}
 		if (entry == NULL) {
 			request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
@@ -224,15 +241,21 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		upnp_add_response(request, service->type, "NumberReturned", uint32tostr(str, numberreturned));
 		upnp_add_response(request, service->type, "TotalMatches", uint32tostr(str, totalmatches));
 		upnp_add_response(request, service->type, "UpdateID", uint32tostr(str, updateid));
+		free(data.browseflag);
+		free(data.filter);
+		free(data.objectid);
+		free(data.sortcriteria);
 		free(result);
 		entry_uninit(entry);
-		xml_node_uninit(xml);
 		return 0;
 	} else {
 		request->errcode = UPNP_ERROR_INVALIG_ARGS;
 error:
+		free(data.browseflag);
+		free(data.filter);
+		free(data.objectid);
+		free(data.sortcriteria);
 		entry_uninit(entry);
-		xml_node_uninit(xml);
 		return -1;
 	}
 }
