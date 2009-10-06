@@ -165,12 +165,24 @@ static int connectionmanager_get_current_connection_ids (device_service_t *servi
 	return 0;
 }
 
+typedef struct connectionmanager_parser_data_s {
+	uint32_t connectionid;
+} connectionmanager_parser_data_t;
+
+int connectionmanager_parser_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
+{
+	connectionmanager_parser_data_t *data;
+	data = (connectionmanager_parser_data_t *) context;
+	if (strcmp(path, "/s:Envelope/s:Body/u:GetCurrentConnectionInfo/ConnectionID") == 0) {
+		data->connectionid = strtouint32(value);
+	}
+	return 0;
+}
+
 static int connectionmanager_get_current_connection_info (device_service_t *service, upnp_event_action_t *request)
 {
-	xml_node_t *xml;
-
-	uint32_t connectionid;
 	connection_instance_t *cinstance;
+	connectionmanager_parser_data_t data;
 
 	char str[23];
 	char *protocolinfo;
@@ -180,17 +192,15 @@ static int connectionmanager_get_current_connection_info (device_service_t *serv
 
 	debugf("connectionmanager get current connection info");
 
-	xml = xml_parse_buffer(request->request, strlen(request->request));
-	if (xml == NULL) {
+	memset(&data, 0, sizeof(data));
+	if (xml_parse_buffer_callback(request->request, strlen(request->request), connectionmanager_parser_callback, &data) != 0) {
+		debugf("xml_parse_buffer_callback() failed");
 		request->errcode = UPNP_ERROR_PARAMETER_MISMATCH;
 		return 0;
 	}
-
-	connectionid = strtouint32(xml_node_get_path_value(xml, "/s:Envelope/s:Body/u:GetCurrentConnectionInfo/ConnectionID"));
-	cinstance = connection_instance_get(connectionid);
+	cinstance = connection_instance_get(data.connectionid);
 	if (cinstance == NULL) {
 		request->errcode = UPNP_ERROR_PARAMETER_MISMATCH;
-		xml_node_uninit(xml);
 		return 0;
 	}
 
@@ -210,8 +220,6 @@ static int connectionmanager_get_current_connection_info (device_service_t *serv
 	free(protocolinfo);
 	free(peerconnectionmanager);
 	free(direction);
-	xml_node_uninit(xml);
-
 	return 0;
 }
 
