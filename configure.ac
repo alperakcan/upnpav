@@ -480,3 +480,18 @@ AM_CONDITIONAL(ENABLE_OPTIONAL, test "$enable_optional" = "yes")
 #])
 
 AC_OUTPUT
+
+# coremake
+echo "Building coremake tools/coremake/coremake.c"
+gcc -O2 tools/coremake/coremake.c -o tools/coremake/coremake
+if test "$arch" = "linux"
+then
+echo "Generating Makefiles (gcc_linux_debug)..."
+tools/coremake/coremake -v gcc_linux_debug
+else
+if test "$arch" = "darwin"
+then
+echo "Generating Xcode Project (xcode_uni)..."
+tools/coremake/coremake -v xcode_uni
+fi
+fi
