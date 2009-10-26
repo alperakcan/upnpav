@@ -1031,6 +1031,9 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 			free(data.devices[d].services[s].serviceId);
 			free(data.devices[d].services[s].serviceType);
 		}
+		free(data.device[d].UDN);
+		free(data.device[d].deviceType);
+		free(data.device[d].friendlyName);
 		free(data.devices[d].services);
 	}
 	free(data.devices);
