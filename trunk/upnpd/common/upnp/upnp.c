@@ -842,24 +842,98 @@ int upnp_register_client (upnp_t *upnp, int (*callback) (void *cookie, upnp_even
 	return 0;
 }
 
+typedef struct upnp_parser_service_s {
+	char *serviceId;
+	char *serviceType;
+	char *SCPDURL;
+	char *controlURL;
+	char *eventSubURL;
+} upnp_parser_service_t;
+
+typedef struct upnp_parser_device_s {
+	char *deviceType;
+	char *UDN;
+	char *friendlyName;
+	int nservices;
+	upnp_parser_service_t *service;
+	upnp_parser_service_t *services;
+} upnp_parser_device_t;
+
+typedef struct upnp_parser_data_s {
+	int ndevices;
+	upnp_parser_device_t *device;
+	upnp_parser_device_t *devices;
+	char *URLBase;
+} upnp_parser_data_t;
+
+static int upnp_parser_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
+{
+	upnp_parser_data_t *data;
+	upnp_parser_device_t *devices;
+	upnp_parser_service_t *services;
+	data = (upnp_parser_data_t *) context;
+	if (strcmp(path, "/root/URLBase") == 0) {
+		data->URLBase = strdup(value);
+	} else if (strcmp(path, "/root/device") == 0) {
+		devices = (upnp_parser_device_t *) malloc(sizeof(upnp_parser_device_t) * (data->ndevices + 1));
+		if (devices == NULL) {
+			data->device = NULL;
+			return 0;
+		}
+		memset(devices, 0, sizeof(upnp_parser_device_t) * (data->ndevices + 1));
+		if (data->ndevices > 0) {
+			memcpy(devices, data->devices, sizeof(upnp_parser_device_t) * data->ndevices);
+		}
+		data->device = &devices[data->ndevices];
+		free(data->devices);
+		data->devices = devices;
+		data->ndevices += 1;
+	} else if (data->device != NULL) {
+		if (strcmp(path, "/root/device/deviceType") == 0) {
+			data->device->deviceType = strdup(value);
+		} else if (strcmp(path, "/root/device/UDN") == 0) {
+			data->device->UDN = strdup(value);
+		} else if (strcmp(path, "/root/device/friendlyName") == 0) {
+			data->device->friendlyName = strdup(value);
+		} else if (strcmp(path, "/root/device/serviceList/service") == 0) {
+			services = (upnp_parser_service_t *) malloc(sizeof(upnp_parser_service_t) * (data->device->nservices + 1));
+			if (services == NULL) {
+				data->device->service = NULL;
+				return 0;
+			}
+			memset(services, 0, sizeof(upnp_parser_service_t) * (data->device->nservices + 1));
+			if (data->device->nservices > 0) {
+				memcpy(services, data->device->services, sizeof(upnp_parser_service_t) * data->device->nservices);
+			}
+			data->device->service = &services[data->device->nservices];
+			free(data->device->services);
+			data->device->services = services;
+			data->device->nservices += 1;
+		} else if (data->device->service != NULL) {
+			if (strcmp(path, "/root/device/serviceList/service/serviceId") == 0) {
+				data->device->service->serviceId = strdup(value);
+			} else if (strcmp(path, "/root/device/serviceList/service/serviceType") == 0) {
+				data->device->service->serviceType = strdup(value);
+			} else if (strcmp(path, "/root/device/serviceList/service/SCPDURL") == 0) {
+				data->device->service->SCPDURL = strdup(value);
+			} else if (strcmp(path, "/root/device/serviceList/service/controlURL") == 0) {
+				data->device->service->controlURL = strdup(value);
+			} else if (strcmp(path, "/root/device/serviceList/service/eventSubURL") == 0) {
+				data->device->service->eventSubURL = strdup(value);
+			}
+		}
+	}
+	return 0;
+}
+
 int upnp_register_device (upnp_t *upnp, const char *description, int (*callback) (void *cookie, upnp_event_t *), void *cookie)
 {
-	xml_node_t *desc;
-	xml_node_t *devicenode;
-	xml_node_t *servicelist;
-	xml_node_t *servicenode;
-
-	char *devicetype;
-	char *deviceudn;
-
-	char *servicetype;
-	char *serviceid;
-	char *eventurl;
-	char *controlurl;
-
 	char *deviceusn;
-
 	upnp_service_t *service;
+
+	int d;
+	int s;
+	upnp_parser_data_t data;
 
 	thread_mutex_lock(upnp->mutex);
 	upnp->type.type = UPNP_TYPE_DEVICE;
@@ -879,88 +953,88 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 		return -1;
 	}
 
-	desc = xml_parse_buffer(description, strlen(description));
-	if (desc == NULL) {
-		debugf("could not parse description:\n'%s'", description);
+	memset(&data, 0, sizeof(upnp_parser_data_t));
+	if (xml_parse_buffer_callback(description, strlen(description), upnp_parser_callback, &data) != 0) {
+		debugf("xml_parse_buffer_callback() failed");
+		free(upnp->type.device.description);
+		free(upnp->type.device.location);
 		thread_mutex_unlock(upnp->mutex);
 		return -1;
 	}
 
-	list_for_each_entry(devicenode, &desc->nodes, head) {
-		if (strcmp(xml_node_get_name(devicenode), "device") != 0) {
-			continue;
-		}
-		devicetype = xml_node_get_path_value(devicenode, "deviceType");
-		deviceudn = xml_node_get_path_value(devicenode, "UDN");
-		if (devicetype == NULL || deviceudn == NULL) {
+	for (d = 0; d < data.ndevices; d++) {
+		if (data.devices[d].deviceType == NULL || data.devices[d].UDN == NULL) {
 			continue;
 		}
 
 		debugf("registering device to ssdp");
-		debugf("  deviceType:'%s'", devicetype);
-		debugf("  UDN       :'%s'", deviceudn);
+		debugf("  deviceType:'%s'", data.devices[d].deviceType);
+		debugf("  UDN       :'%s'", data.devices[d].UDN);
 
 		/* ssdp entries for device */
-		if (asprintf(&deviceusn, "%s::%s", deviceudn, "upnp:rootdevice") > 0) {
+		if (asprintf(&deviceusn, "%s::%s", data.devices[d].UDN, "upnp:rootdevice") > 0) {
 			ssdp_register(upnp->ssdp, "upnp:rootdevice", deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
 			free(deviceusn);
 		}
-		ssdp_register(upnp->ssdp, deviceudn, deviceudn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
-		if (asprintf(&deviceusn, "%s::%s", deviceudn, devicetype) > 0) {
-			ssdp_register(upnp->ssdp, devicetype, deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
-			ssdp_register(upnp->ssdp, deviceudn, deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
+		ssdp_register(upnp->ssdp, data.devices[d].UDN, data.devices[d].UDN, upnp->type.device.location, "mini upnp stack 1.0", 100000);
+		if (asprintf(&deviceusn, "%s::%s", data.devices[d].UDN, data.devices[d].deviceType) > 0) {
+			ssdp_register(upnp->ssdp, data.devices[d].deviceType, deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
+			ssdp_register(upnp->ssdp, data.devices[d].UDN, deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
 			free(deviceusn);
 		}
 
-		servicelist = xml_node_get_path(devicenode, "serviceList");
-		if (servicelist != NULL) {
-			list_for_each_entry(servicenode, &servicelist->nodes, head) {
-				servicetype = xml_node_get_path_value(servicenode, "serviceType");
-				serviceid = strdup(xml_node_get_path_value(servicenode, "serviceId"));
-				eventurl = strdup(xml_node_get_path_value(servicenode, "eventSubURL"));
-				controlurl = strdup(xml_node_get_path_value(servicenode, "controlURL"));
-				if (servicetype == NULL || eventurl == NULL || controlurl == NULL || serviceid == NULL) {
-					goto __continue;
-				}
-				debugf("registering service to ssdp");
-				debugf("  serviceType:'%s'", servicetype);
-				debugf("  serviceId  :'%s'", serviceid);
-				debugf("  eventSubURL:'%s'", eventurl);
-				debugf("  controlURL :'%s'", controlurl);
-				if (asprintf(&deviceusn, "%s::%s", deviceudn, servicetype) > 0) {
-					if (ssdp_register(upnp->ssdp, servicetype, deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000) == 0) {
-						service = (upnp_service_t *) malloc(sizeof(upnp_service_t));
-						if (service != NULL) {
-							memset(service, 0, sizeof(upnp_service_t));
-							list_init(&service->head);
-							list_init(&service->subscribers);
-							service->udn = strdup(deviceudn);
-							if (service->udn == NULL) {
-								free(service);
-							} else {
-								service->eventurl = eventurl;
-								service->controlurl = controlurl;
-								service->serviceid = serviceid;
-								debugf("adding service: %s", serviceid);
-								list_add(&service->head, &upnp->type.device.services);
-								controlurl = NULL;
-								eventurl = NULL;
-								serviceid = NULL;
-							}
+		for (s = 0; s < data.devices[d].nservices; s++) {
+			if (data.devices[d].services[s].serviceType == NULL ||
+			    data.devices[d].services[s].eventSubURL == NULL ||
+			    data.devices[d].services[s].controlURL == NULL ||
+			    data.devices[d].services[s].serviceId == NULL) {
+				continue;
+			}
+			debugf("registering service to ssdp");
+			debugf("  serviceType:'%s'", data.devices[d].services[s].serviceType);
+			debugf("  serviceId  :'%s'", data.devices[d].services[s].serviceId);
+			debugf("  eventSubURL:'%s'", data.devices[d].services[s].eventSubURL);
+			debugf("  controlURL :'%s'", data.devices[d].services[s].controlURL);
+			if (asprintf(&deviceusn, "%s::%s", data.devices[d].UDN, data.devices[d].services[s].serviceType) > 0) {
+				if (ssdp_register(upnp->ssdp, data.devices[d].services[s].serviceType, deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000) == 0) {
+					service = (upnp_service_t *) malloc(sizeof(upnp_service_t));
+					if (service != NULL) {
+						memset(service, 0, sizeof(upnp_service_t));
+						list_init(&service->head);
+						list_init(&service->subscribers);
+						service->udn = strdup(data.devices[d].UDN);
+						if (service->udn == NULL) {
+							free(service);
+						} else {
+							service->eventurl = data.devices[d].services[s].eventSubURL;
+							service->controlurl = data.devices[d].services[s].controlURL;
+							service->serviceid = data.devices[d].services[s].serviceId;
+							debugf("adding service: %s", data.devices[d].services[s].serviceId);
+							list_add(&service->head, &upnp->type.device.services);
+							data.devices[d].services[s].controlURL = NULL;
+							data.devices[d].services[s].eventSubURL = NULL;
+							data.devices[d].services[s].serviceId = NULL;
 						}
 					}
-					free(deviceusn);
 				}
-__continue:
-				free(controlurl);
-				free(eventurl);
-				free(serviceid);
+				free(deviceusn);
 			}
 		}
 	}
 
-	xml_node_uninit(desc);
 	thread_mutex_unlock(upnp->mutex);
+	for (d = 0; d < data.ndevices; d++) {
+		for (s = 0; s < data.devices[d].nservices; s++) {
+			free(data.devices[d].services[s].SCPDURL);
+			free(data.devices[d].services[s].controlURL);
+			free(data.devices[d].services[s].eventSubURL);
+			free(data.devices[d].services[s].serviceId);
+			free(data.devices[d].services[s].serviceType);
+		}
+		free(data.devices[d].services);
+	}
+	free(data.devices);
+	free(data.URLBase);
 	return 0;
 }
 

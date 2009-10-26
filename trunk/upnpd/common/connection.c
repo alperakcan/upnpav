@@ -169,7 +169,7 @@ typedef struct connectionmanager_parser_data_s {
 	uint32_t connectionid;
 } connectionmanager_parser_data_t;
 
-int connectionmanager_parser_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
+static int connectionmanager_parser_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
 {
 	connectionmanager_parser_data_t *data;
 	data = (connectionmanager_parser_data_t *) context;

@@ -67,78 +67,6 @@ static int client_service_uninit (client_service_t *service)
 	return 0;
 }
 
-static client_service_t * client_service_init (xml_node_t *desc, char *location, char *servicetype)
-{
-	int ret;
-	char *tempServiceType = NULL;
-	char *baseURL = NULL;
-	char *base;
-	char *relcontrolURL = NULL;
-	char *releventURL = NULL;
-	xml_node_t *serviceList = NULL;
-	xml_node_t *servicedesc = NULL;
-
-	client_service_t *service = NULL;
-
-	baseURL = xml_node_get_path_value(desc, "URLBase" );
-	if (baseURL) {
-		base = baseURL;
-	} else {
-		base = location;
-	}
-	serviceList = xml_node_get_path(desc, "device/serviceList");
-	if (serviceList != NULL) {
-		list_for_each_entry(servicedesc, &serviceList->nodes, head) {
-			tempServiceType = xml_node_get_path_value(servicedesc, "serviceType");
-			if (strcmp(tempServiceType, servicetype) == 0) {
-				debugf("found service: %s", servicetype);
-				service = (client_service_t *) malloc(sizeof(client_service_t));
-				if (service == NULL) {
-					break;
-				}
-				memset(service, 0, sizeof(client_service_t));
-				list_init(&service->variables);
-				service->type = strdup(servicetype);
-				service->id = strdup(xml_node_get_path_value(servicedesc, "serviceId"));
-				relcontrolURL = xml_node_get_path_value(servicedesc, "controlURL");
-				releventURL = xml_node_get_path_value(servicedesc, "eventSubURL");
-				service->controlurl = malloc(strlen(base) + strlen(relcontrolURL) + 1);
-				if (service->controlurl) {
-					ret = upnp_resolveurl(base, relcontrolURL, service->controlurl);
-					if (ret != 0) {
-						debugf("error generating control url from '%s' + '%s'", base, relcontrolURL);
-						free(service->controlurl);
-						service->controlurl = NULL;
-					}
-				}
-				service->eventurl = malloc(strlen(base) + strlen(releventURL) + 1);
-				if (service->eventurl) {
-					ret = upnp_resolveurl(base, releventURL, service->eventurl);
-					if (ret != 0) {
-						debugf("error generating event url from '%s' + '%s'", base, releventURL);
-						free(service->eventurl);
-						service->eventurl = NULL;
-					}
-				}
-				if (service->type == NULL ||
-				    service->id == NULL ||
-				    service->controlurl == NULL ||
-				    service->eventurl == NULL) {
-					client_service_uninit(service);
-					service = NULL;
-				}
-				debugf("adding new service:");
-				debugf("  type      :'%s'", service->type);
-				debugf("  id        :'%s'", service->id);
-				debugf("  controlurl:'%s'", service->controlurl);
-				debugf("  eventurl  :'%s'", service->eventurl);
-				break;
-			}
-		}
-	}
-	return service;
-}
-
 static int client_device_uninit (client_device_t *device)
 {
 	client_service_t *service;
@@ -195,19 +123,165 @@ static int client_service_subscribe (client_t *client, client_service_t *service
 	return 0;
 }
 
+typedef struct client_parser_service_s {
+	char *serviceId;
+	char *serviceType;
+	char *SCPDURL;
+	char *controlURL;
+	char *eventSubURL;
+} client_parser_service_t;
+
+typedef struct client_parser_device_s {
+	char *deviceType;
+	char *UDN;
+	char *friendlyName;
+	int nservices;
+	client_parser_service_t *service;
+	client_parser_service_t *services;
+} client_parser_device_t;
+
+typedef struct client_parser_data_s {
+	int ndevices;
+	client_parser_device_t *device;
+	client_parser_device_t *devices;
+	char *URLBase;
+} client_parser_data_t;
+
+static int client_parser_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
+{
+	client_parser_data_t *data;
+	client_parser_device_t *devices;
+	client_parser_service_t *services;
+	data = (client_parser_data_t *) context;
+	if (strcmp(path, "/root/URLBase") == 0) {
+		data->URLBase = strdup(value);
+	} else if (strcmp(path, "/root/device") == 0) {
+		devices = (client_parser_device_t *) malloc(sizeof(client_parser_device_t) * (data->ndevices + 1));
+		if (devices == NULL) {
+			data->device = NULL;
+			return 0;
+		}
+		memset(devices, 0, sizeof(client_parser_device_t) * (data->ndevices + 1));
+		if (data->ndevices > 0) {
+			memcpy(devices, data->devices, sizeof(client_parser_device_t) * data->ndevices);
+		}
+		data->device = &devices[data->ndevices];
+		free(data->devices);
+		data->devices = devices;
+		data->ndevices += 1;
+	} else if (data->device != NULL) {
+		if (strcmp(path, "/root/device/deviceType") == 0) {
+			data->device->deviceType = strdup(value);
+		} else if (strcmp(path, "/root/device/UDN") == 0) {
+			data->device->UDN = strdup(value);
+		} else if (strcmp(path, "/root/device/friendlyName") == 0) {
+			data->device->friendlyName = strdup(value);
+		} else if (strcmp(path, "/root/device/serviceList/service") == 0) {
+			services = (client_parser_service_t *) malloc(sizeof(client_parser_service_t) * (data->device->nservices + 1));
+			if (services == NULL) {
+				data->device->service = NULL;
+				return 0;
+			}
+			memset(services, 0, sizeof(client_parser_service_t) * (data->device->nservices + 1));
+			if (data->device->nservices > 0) {
+				memcpy(services, data->device->services, sizeof(client_parser_service_t) * data->device->nservices);
+			}
+			data->device->service = &services[data->device->nservices];
+			free(data->device->services);
+			data->device->services = services;
+			data->device->nservices += 1;
+		} else if (data->device->service != NULL) {
+			if (strcmp(path, "/root/device/serviceList/service/serviceId") == 0) {
+				data->device->service->serviceId = strdup(value);
+			} else if (strcmp(path, "/root/device/serviceList/service/serviceType") == 0) {
+				data->device->service->serviceType = strdup(value);
+			} else if (strcmp(path, "/root/device/serviceList/service/SCPDURL") == 0) {
+				data->device->service->SCPDURL = strdup(value);
+			} else if (strcmp(path, "/root/device/serviceList/service/controlURL") == 0) {
+				data->device->service->controlURL = strdup(value);
+			} else if (strcmp(path, "/root/device/serviceList/service/eventSubURL") == 0) {
+				data->device->service->eventSubURL = strdup(value);
+			}
+		}
+	}
+	return 0;
+}
+
+static client_service_t * client_service_init (client_parser_device_t *device, char *baseURL, char *location, char *servicetype)
+{
+	int s;
+	int ret;
+	char *base;
+	char *relcontrolURL = NULL;
+	char *releventURL = NULL;
+
+	client_service_t *service = NULL;
+
+	if (baseURL) {
+		base = baseURL;
+	} else {
+		base = location;
+	}
+	for (s = 0; s < device->nservices; s++) {
+		if (strcmp(device->services[s].serviceType, servicetype) == 0) {
+			debugf("found service: %s", servicetype);
+			service = (client_service_t *) malloc(sizeof(client_service_t));
+			if (service == NULL) {
+				break;
+			}
+			memset(service, 0, sizeof(client_service_t));
+			list_init(&service->variables);
+			service->type = strdup(servicetype);
+			service->id = device->services[s].serviceId;
+			relcontrolURL = device->services[s].controlURL;
+			releventURL = device->services[s].eventSubURL;
+			service->controlurl = malloc(strlen(base) + strlen(relcontrolURL) + 1);
+			if (service->controlurl) {
+				ret = upnp_resolveurl(base, relcontrolURL, service->controlurl);
+				if (ret != 0) {
+					debugf("error generating control url from '%s' + '%s'", base, relcontrolURL);
+					free(service->controlurl);
+					service->controlurl = NULL;
+				}
+			}
+			service->eventurl = malloc(strlen(base) + strlen(releventURL) + 1);
+			if (service->eventurl) {
+				ret = upnp_resolveurl(base, releventURL, service->eventurl);
+				if (ret != 0) {
+					debugf("error generating event url from '%s' + '%s'", base, releventURL);
+					free(service->eventurl);
+					service->eventurl = NULL;
+				}
+			}
+			if (service->type == NULL ||
+			    service->id == NULL ||
+			    service->controlurl == NULL ||
+			    service->eventurl == NULL) {
+				client_service_uninit(service);
+				service = NULL;
+			} else {
+				debugf("adding new service:");
+				debugf("  type      :'%s'", service->type);
+				debugf("  id        :'%s'", service->id);
+				debugf("  controlurl:'%s'", service->controlurl);
+				debugf("  eventurl  :'%s'", service->eventurl);
+			}
+			break;
+		}
+	}
+	return service;
+}
+
 static int client_event_advertisement_alive (client_t *client, upnp_event_advertisement_t *advertisement)
 {
-	int d;
 	int s;
+	int d;
 	char *buffer;
 	client_device_t *device;
 	client_service_t *service;
 	device_description_t *description;
 
-	char *uuid = NULL;
-	char *devicetype = NULL;
-	char *friendlyname = NULL;
-	xml_node_t *desc = NULL;
+	client_parser_data_t data;
 
 	for (d = 0; (description = client->descriptions[d]) != NULL; d++) {
 		if (strcmp(advertisement->device, description->device) == 0) {
@@ -223,47 +297,58 @@ found:
 		}
 	}
 	debugf("downloading device description from '%s'", advertisement->location);
+	memset(&data, 0, sizeof(client_parser_data_t));
 	buffer = upnp_download(upnp, advertisement->location);
 	if (buffer == NULL) {
 		debugf("upnp_download('%s') failed", advertisement->location);
-		return 0;
-	}
-	desc = xml_parse_buffer(buffer, strlen(buffer));
-	if (desc == NULL) {
-		debugf("xml_parse_buffer() failed");
-		free(buffer);
-		return 0;
-	}
-	debugf("reading elements from document");
-	uuid = xml_node_get_path_value(desc, "device/UDN");
-	devicetype = xml_node_get_path_value(desc, "device/deviceType");
-	friendlyname = xml_node_get_path_value(desc, "device/friendlyName");
-	debugf("elements:\n"
-		"  uuid        : %s\n"
-		"  devicetype  : %s\n"
-		"  friendlyname: %s\n",
-		uuid,
-		devicetype,
-		friendlyname);
-	device = client_device_init(devicetype, uuid, friendlyname, advertisement->expires);
-	if (device == NULL) {
 		goto out;
 	}
-	for (s = 0; description->services[s] != NULL; s++) {
-		service = client_service_init(desc, advertisement->location, description->services[s]);
-		if (service != NULL) {
-			list_add(&service->head, &device->services);
-			if (client_service_subscribe(client, service) != 0) {
-				debugf("client_service_subscribe(service); failed");
-				client_device_uninit(device);
-				goto out;
+	if (xml_parse_buffer_callback(buffer, strlen(buffer), client_parser_callback, &data) != 0) {
+		debugf("xml_parse_buffer_callback() failed");
+		goto out;
+	}
+	for (d = 0; d < data.ndevices; d++) {
+		if (data.devices[d].UDN != NULL &&
+			data.devices[d].deviceType != NULL &&
+			data.devices[d].friendlyName != NULL) {
+			debugf("new device:\n"
+				   "  UDN         : '%s'\n"
+				   "  devceType   : '%s'\n"
+				   "  friendlyName: '%s'\n",
+				   data.devices[d].UDN,
+				   data.devices[d].deviceType,
+				   data.devices[d].friendlyName);
+			device = client_device_init(data.devices[d].deviceType, data.devices[d].UDN, data.devices[d].friendlyName, advertisement->expires);
+			if (device != NULL) {
+				for (s = 0; description->services[s] != NULL; s++) {
+					service = client_service_init(&data.devices[d], data.URLBase, advertisement->location, description->services[s]);
+					if (service != NULL) {
+						list_add(&service->head, &device->services);
+						if (client_service_subscribe(client, service) != 0) {
+							debugf("client_service_subscribe(service); failed");
+							client_device_uninit(device);
+							goto out;
+						}
+					}
+				}
 			}
 		}
 	}
 	list_add_tail(&device->head, &client->devices);
 	debugf("added '%s' to device list", device->uuid);
 out:	free(buffer);
-	xml_node_uninit(desc);
+	for (d = 0; d < data.ndevices; d++) {
+		for (s = 0; s < data.devices[d].nservices; s++) {
+			free(data.devices[d].services[s].SCPDURL);
+			free(data.devices[d].services[s].controlURL);
+			free(data.devices[d].services[s].eventSubURL);
+			free(data.devices[d].services[s].serviceId);
+			free(data.devices[d].services[s].serviceType);
+		}
+		free(data.devices[d].services);
+	}
+	free(data.devices);
+	free(data.URLBase);
 	return 0;
 }
 

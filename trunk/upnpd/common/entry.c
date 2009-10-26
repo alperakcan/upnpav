@@ -788,7 +788,7 @@ typedef struct entry_parser_data_s {
 	entry_t *root;
 } entry_parser_data_t;
 
-int entry_parser_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
+static int entry_parser_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
 {
 	int a;
 	entry_parser_data_t *data;
