@@ -232,7 +232,7 @@ static client_service_t * client_service_init (client_parser_device_t *device, c
 			memset(service, 0, sizeof(client_service_t));
 			list_init(&service->variables);
 			service->type = strdup(servicetype);
-			service->id = device->services[s].serviceId;
+			service->id = strdup(device->services[s].serviceId);
 			relcontrolURL = device->services[s].controlURL;
 			releventURL = device->services[s].eventSubURL;
 			service->controlurl = malloc(strlen(base) + strlen(relcontrolURL) + 1);
@@ -345,6 +345,9 @@ out:	free(buffer);
 			free(data.devices[d].services[s].serviceId);
 			free(data.devices[d].services[s].serviceType);
 		}
+		free(data.device[d].UDN);
+		free(data.device[d].deviceType);
+		free(data.device[d].friendlyName);
 		free(data.devices[d].services);
 	}
 	free(data.devices);
