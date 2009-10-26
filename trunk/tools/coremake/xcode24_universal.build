@@ -5,6 +5,6 @@
 SDK = /Developer/SDKs/MacOSX10.4u.sdk
 FRAMEWORK_PATH = /
 GCC_VERSION = 4.0
-XCODECOMPATVERSION = 3.1
+XCODECOMPATVERSION = 2.4
 
 #include "xcode.inc"

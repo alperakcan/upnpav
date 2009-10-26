@@ -467,6 +467,9 @@ FOR EACH WORKSPACE
   PRINTNL /* Begin PBXProject section */
   PRINTNL 		91B15E841AA80083484172DE /* Project object */ = {
   PRINTNL 			isa = PBXProject;
+  PRINTNL 			attributes = {
+  PRINTNL 				BuildIndependentTargetsInParallel = YES;
+  PRINTNL 			};
   PRINTNL 			buildConfigurationList = AA277BB30B5E830800EA36F7 /* Build configuration list for PBXProject "%(NAME)" */;
   PRINTNL 			compatibilityVersion = "Xcode %(XCODECOMPATVERSION)";
   PRINTNL 			hasScannedForEncodings = 0;
