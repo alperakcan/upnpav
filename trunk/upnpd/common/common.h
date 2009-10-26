@@ -603,12 +603,6 @@ int upnp_add_response (upnp_event_action_t *request, char *servicetype, char *ke
 /* xml.c */
 
 char * xml_escape (const char *str, int attribute);
-char * xml_get_first_document_item (xml_node_t *doc, const char *item);
-char * xml_get_first_element_item (xml_node_t *element, const char *item);
-xml_node_t * xml_get_first_service_list (xml_node_t *doc);
-char * xml_get_element_value (xml_node_t *element);
-uint32_t xml_get_ui4 (xml_node_t *doc, const char *item);
-char * xml_get_string (xml_node_t *doc, const char *item);
 
 /* uri.c */
 
