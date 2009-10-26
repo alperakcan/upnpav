@@ -89,7 +89,7 @@ typedef struct contentdirectory_parser_data_s {
 	char *sortcriteria;
 } contentdirectory_parser_data_t;
 
-int contentdirectory_parser_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
+static int contentdirectory_parser_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
 {
 	contentdirectory_parser_data_t *data;
 	data = (contentdirectory_parser_data_t *) context;

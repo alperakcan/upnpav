@@ -131,7 +131,7 @@ typedef struct controller_parser_data_s {
 	entry_t *entry;
 } controller_parser_data_t;
 
-int controller_parser_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
+static int controller_parser_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
 {
 	entry_t *pentry;
 	entry_t *tentry;
