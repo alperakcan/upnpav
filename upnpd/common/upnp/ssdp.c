@@ -676,7 +676,7 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 		return -1;
 	}
 	sock = socket_open(SOCKET_TYPE_DGRAM);
-	if (sock < 0) {
+	if (sock == NULL) {
 		free(buffer);
 		return -1;
 	}
