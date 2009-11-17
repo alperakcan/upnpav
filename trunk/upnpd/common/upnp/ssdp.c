@@ -484,7 +484,7 @@ static void * ssdp_thread_loop (void *arg)
 			thread_mutex_lock(ssdp->mutex);
 			ssdp_request_uninit(r);
 		}
-		if (ssdp->running == 0 || ssdp->socket < 0) {
+		if (ssdp->running == 0 || ssdp->socket == NULL) {
 			thread_mutex_unlock(ssdp->mutex);
 			break;
 		}
@@ -805,7 +805,7 @@ int ssdp_uninit (ssdp_t *ssdp)
 		list_del(&d->head);
 		ssdp_device_uninit(d);
 	}
-	list_for_each_entry_safe(r, rn, &ssdp->devices, head) {
+	list_for_each_entry_safe(r, rn, &ssdp->requests, head) {
 		list_del(&r->head);
 		ssdp_request_uninit(r);
 	}
