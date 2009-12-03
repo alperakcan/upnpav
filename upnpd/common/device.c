@@ -372,6 +372,7 @@ int device_init (device_t *device)
 	if (device->upnp == NULL) {
 		debugf("upnp_init('%s') failed", device->interface);
 		thread_mutex_destroy(device->mutex);
+		device->mutex = NULL;
 		goto out;
 	}
 	device->port = upnp_getport(device->upnp);
@@ -432,7 +433,9 @@ int device_uninit (device_t *device)
 	device_service_t *service;
 	ret = -1;
 	debugf("uninitializing device '%s'", device->name);
-	thread_mutex_lock(device->mutex);
+	if (device->mutex) {
+		thread_mutex_lock(device->mutex);
+	}
 	debugf("uninitializing services");
 	for (i = 0; device->services && ((service = device->services[i]) != NULL); i++) {
 		debugf("uninitializing service '%s'", service->name);
@@ -441,8 +444,10 @@ int device_uninit (device_t *device)
 	}
 	debugf("unregistering device '%s'", device->name);
 	upnp_uninit(device->upnp);
-	thread_mutex_unlock(device->mutex);
-	thread_mutex_destroy(device->mutex);
+	if (device->mutex) {
+		thread_mutex_unlock(device->mutex);
+		thread_mutex_destroy(device->mutex);
+	}
 	free(device->services);
 	free(device->description);
 	free(device->uuid);
