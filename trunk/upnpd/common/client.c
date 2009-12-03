@@ -471,7 +471,7 @@ int client_init (client_t *client)
 	debugf("initializing devices list");
 	list_init(&client->devices);
 	debugf("initializing upnp stack");
-	upnp = upnp_init(client->interface, 0, NULL, NULL);
+	upnp = upnp_init(client->interface, client->ifmask, 0, NULL, NULL);
 	if (upnp == NULL) {
 		debugf("upnp_init() failed");
 		thread_cond_destroy(client->cond);

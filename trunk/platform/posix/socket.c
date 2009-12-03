@@ -253,3 +253,17 @@ int socket_option_multicastttl (socket_t *socket, int ttl)
 {
 	return setsockopt(socket->fd, IPPROTO_IP, IP_MULTICAST_TTL, (char *) &ttl, sizeof(ttl));
 }
+
+int socket_inet_aton (const char *address, unsigned int *baddress)
+{
+	int r;
+	struct in_addr b;
+	r = inet_aton(address, &b);
+	if (r == 0) {
+		return -1;
+	}
+	if (baddress != NULL) {
+		*baddress = b.s_addr;
+	}
+	return 0;
+}

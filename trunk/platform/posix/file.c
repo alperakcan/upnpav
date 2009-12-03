@@ -36,6 +36,7 @@
 #include <fcntl.h>
 #include <fnmatch.h>
 #include <dirent.h>
+#include <inttypes.h>
 
 #include "platform.h"
 

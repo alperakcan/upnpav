@@ -41,10 +41,12 @@
 
 typedef enum {
 	OPT_INTERFACE    = 0,
+	OPT_NETMASK      = 1,
 } mediaserver_options_t;
 
 static char *mediaserver_options[] = {
 	[OPT_INTERFACE]    = "interface",
+	[OPT_NETMASK]      = "netmask",
 	NULL,
 };
 
@@ -80,6 +82,7 @@ client_t * controller_init (char *options)
 	int rc;
 	int err;
 	char *value;
+	char *netmask;
 	char *interface;
 	char *suboptions;
 
@@ -97,14 +100,25 @@ client_t * controller_init (char *options)
 				}
 				interface = value;
 				break;
+			case OPT_NETMASK:
+				if (value == NULL) {
+					debugf("value is missing for interface option");
+					err = 1;
+					continue;
+				}
+				netmask = value;
+				break;
 		}
 	}
 
 	debugf("starting controller;\n"
-	       "\tinterface   : %s\n",
-	       (interface) ? interface : "null");
+	       "\tinterface   : %s\n"
+	       "\tnetmask     : %s\n",
+	       (interface) ? interface : "null",
+	       (netmask) ? netmask : "null");
 
 	controller.interface = interface;
+	controller.ifmask = netmask;
 
 	debugf("initializing controller client");
 	rc = client_init(&controller);
