@@ -415,6 +415,8 @@ struct client_s {
 	device_description_t **descriptions;
 	/** */
 	char *interface;
+	/** */
+	char *ifmask;
 
 	/** */
 	int running;
@@ -473,6 +475,8 @@ struct device_s {
 	char *name;
 	/** */
 	char *interface;
+	/** */
+	char *ifmask;
 	/** */
 	char *devicetype;
 	/** */

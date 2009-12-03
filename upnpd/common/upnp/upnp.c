@@ -122,6 +122,7 @@ typedef struct upnp_client_s {
 
 struct upnp_s {
 	char *host;
+	char *mask;
 	unsigned short port;
 	ssdp_t *ssdp;
 	gena_t *gena;
@@ -1051,7 +1052,7 @@ unsigned short upnp_getport (upnp_t *upnp)
 	return upnp->port;
 }
 
-upnp_t * upnp_init (const char *host, const unsigned short port, gena_callback_vfs_t *vfscallbacks, void *vfscookie)
+upnp_t * upnp_init (const char *host, const char *mask, const unsigned short port, gena_callback_vfs_t *vfscallbacks, void *vfscookie)
 {
 	upnp_t *upnp;
 	debugf("setting seed");
@@ -1065,14 +1066,17 @@ upnp_t * upnp_init (const char *host, const unsigned short port, gena_callback_v
 	}
 	memset(upnp, 0, sizeof(upnp_t));
 	upnp->host = strdup(host);
-	if (upnp->host == NULL) {
+	upnp->mask = strdup(mask);
+	if (upnp->host == NULL ||
+	    upnp->mask == NULL) {
 		free(upnp);
 		return NULL;
 	}
 	upnp->port = port;
-	upnp->ssdp = ssdp_init(ssdp_callback_event, upnp);
+	upnp->ssdp = ssdp_init(upnp->host, upnp->mask, ssdp_callback_event, upnp);
 	if (upnp->ssdp == NULL) {
 		free(upnp->host);
+		free(upnp->mask);
 		free(upnp);
 		return NULL;
 	}
@@ -1097,6 +1101,7 @@ upnp_t * upnp_init (const char *host, const unsigned short port, gena_callback_v
 	if (upnp->gena == NULL) {
 		ssdp_uninit(upnp->ssdp);
 		free(upnp->host);
+		free(upnp->mask);
 		free(upnp);
 		return NULL;
 	}
@@ -1142,6 +1147,7 @@ int upnp_uninit (upnp_t *upnp)
 	}
 	thread_mutex_destroy(upnp->mutex);
 	free(upnp->host);
+	free(upnp->mask);
 	free(upnp);
 	return 0;
 }

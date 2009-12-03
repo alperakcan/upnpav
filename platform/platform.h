@@ -376,6 +376,17 @@ int socket_option_membership (socket_t *socket, const char *address, int on);
  */
 int socket_option_multicastttl (socket_t *socket, int ttl);
 
+/**
+ * @brief  converts the Internet host address from the IPv4 numbers-and-dots
+ *         notation into binary form (in network byte order).
+ *
+ * @param address - address to convert
+ * @param baddress - binary representation of address
+ *
+ * @returns 0 on success, -1 on error
+ */
+int socket_inet_aton (const char *address, unsigned int *baddress);
+
 /*@}*/
 
 #ifndef FILE_MAX_LENGTH
@@ -489,6 +500,7 @@ unsigned long long time_gettimeofday (void);
 int time_strftime (char *str, int max, unsigned long long tm);
 
 char * interface_getaddr (char *ifname);
+char * interface_getmask (char *ifname);
 int interface_printall (void);
 
 extern int platform_debug;

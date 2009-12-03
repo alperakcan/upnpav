@@ -79,6 +79,29 @@ char * interface_getaddr (char *ifname)
 	return __inet_ntoa__(INADDR(ifr_addr.sa_data));
 }
 
+char * interface_getmask (char *ifname)
+{
+	int sock;
+	struct ifreq *ifr;
+	struct ifreq ifrr;
+	struct sockaddr_in sa;
+
+	if ((sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP)) < 0) {
+		return NULL;
+	}
+
+	ifr = &ifrr;
+	ifrr.ifr_addr.sa_family = AF_INET;
+	strncpy(ifrr.ifr_name, ifname, sizeof(ifrr.ifr_name));
+
+	if (ioctl(sock, SIOCGIFNETMASK, ifr) < 0) {
+		return NULL;
+	}
+
+	close(sock);
+	return __inet_ntoa__(INADDR(ifr_addr.sa_data));
+}
+
 int interface_printall (void)
 {
 	int sockfd;

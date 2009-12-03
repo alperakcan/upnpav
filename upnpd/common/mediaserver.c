@@ -42,16 +42,18 @@
 
 typedef enum {
 	OPT_INTERFACE    = 0,
-	OPT_DIRECTORY    = 1,
-	OPT_CACHED       = 2,
-	OPT_FRIENDLYNAME = 3,
-	OPT_DAEMONIZE    = 4,
-	OPT_UUID         = 5,
-	OPT_HELP         = 6,
+	OPT_NETMASK      = 1,
+	OPT_DIRECTORY    = 2,
+	OPT_CACHED       = 3,
+	OPT_FRIENDLYNAME = 4,
+	OPT_DAEMONIZE    = 5,
+	OPT_UUID         = 6,
+	OPT_HELP         = 7,
 } mediaserver_options_t;
 
 static char *mediaserver_options[] = {
 	[OPT_INTERFACE]    = "interface",
+	[OPT_NETMASK]      = "netmask",
 	[OPT_DIRECTORY]    = "directory",
 	[OPT_CACHED]       = "cached",
 	[OPT_FRIENDLYNAME] = "friendlyname",
@@ -65,6 +67,7 @@ static int mediaserver_help (void)
 {
 	printf("mediaserver options;\n"
 	       "\tinterface=<interface ip>\n"
+	       "\tnetmask=<netmask>\n"
 	       "\tcached=<cached>\n"
 	       "\tdirectory=<content directory service directory>\n"
 	       "\tfriendlyname=<device friendlyname>\n"
@@ -81,6 +84,7 @@ device_t * mediaserver_init (char *options)
 	char *value;
 	int daemonize;
 	char *uuid;
+	char *netmask;
 	char *directory;
 	char *interface;
 	char *friendlyname;
@@ -107,6 +111,14 @@ device_t * mediaserver_init (char *options)
 					continue;
 				}
 				interface = value;
+				break;
+			case OPT_NETMASK:
+				if (value == NULL) {
+					debugf("value is missing for netmask option");
+					err = 1;
+					continue;
+				}
+				netmask = value;
 				break;
 			case OPT_DIRECTORY:
 				if (value == NULL) {
@@ -159,12 +171,14 @@ device_t * mediaserver_init (char *options)
 	       "\tuuid        : %s\n"
 	       "\tdaemonize   : %s\n"
 	       "\tinterface   : %s\n"
+	       "\tnetmask     : %s\n"
 	       "\tdirectory   : %s\n"
 	       "\tcached      : %d\n"
 	       "\tfriendlyname: %s\n",
 	       (uuid) ? uuid : "(default)",
 	       (daemonize) ? "yes" : "no",
 	       (interface) ? interface : "null",
+	       (netmask) ? netmask : "null",
 	       (directory) ? directory : "null",
 	       cached,
 	       (friendlyname) ? friendlyname : "mediaserver");
@@ -178,6 +192,7 @@ device_t * mediaserver_init (char *options)
 	memset(device, 0, sizeof(device_t));
 	device->name = "mediaserver";
 	device->interface = interface;
+	device->ifmask = netmask;
 	device->devicetype = "urn:schemas-upnp-org:device:MediaServer:1";
 	device->friendlyname = (friendlyname) ? friendlyname : "mediaserver";
 	device->manufacturer = "Alper Akcan";

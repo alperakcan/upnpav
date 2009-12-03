@@ -50,6 +50,8 @@ struct ssdp_s {
 	list_t requests;
 	int (*callback) (void *cookie, ssdp_event_t *event);
 	void *cookie;
+	char *address;
+	char *netmask;
 };
 
 typedef enum {
@@ -225,7 +227,47 @@ static int ssdp_request_uninit (ssdp_request_t *r)
 	return 0;
 }
 
-static int ssdp_request_valid (ssdp_request_t *request)
+static int ssdp_request_mask (const char *address, const char *netmask, ssdp_request_t *request)
+{
+	uint32_t i;
+	uint32_t m;
+	uint32_t l;
+	upnp_url_t url;
+	const char *location;
+	location = NULL;
+	if (address == NULL || netmask == NULL) {
+		return 0;
+	}
+	switch (request->type) {
+		case SSDP_TYPE_NOTIFY:
+			location = request->request.notify.location;
+			break;
+		case SSDP_TYPE_ANSWER:
+			location = request->request.answer.location;
+			break;
+		default:
+			return 0;
+	}
+	if (location == NULL) {
+		return -1;
+	}
+	if (upnp_url_parse(location, &url) != 0) {
+		return -1;
+	}
+	if (socket_inet_aton(address, &i) != 0 ||
+	    socket_inet_aton(netmask, &m) != 0 ||
+	    socket_inet_aton(url.host, &l) != 0) {
+		upnp_url_uninit(&url);
+		return -1;
+	}
+	upnp_url_uninit(&url);
+	if ((l & m) != (i & m)) {
+		return -1;
+	}
+	return 0;
+}
+
+static int ssdp_request_valid (const char *address, const char *netmask,ssdp_request_t *request)
 {
 	switch (request->type) {
 		case SSDP_TYPE_MSEARCH:
@@ -246,7 +288,7 @@ static int ssdp_request_valid (ssdp_request_t *request)
 			}
 			if (strcasecmp(request->request.notify.nts, "ssdp:alive") == 0 &&
 			   (request->request.notify.al != NULL || request->request.notify.location != NULL)) {
-				return 0;
+				return ssdp_request_mask(address, netmask, request);
 			} else if (strcasecmp(request->request.notify.nts, "ssdp:byebye") == 0) {
 				return 0;
 			}
@@ -259,14 +301,14 @@ static int ssdp_request_valid (ssdp_request_t *request)
 				debugf("answer not valid");
 				return-1;
 			}
-			return 0;
+			return ssdp_request_mask(address, netmask, request);
 		default:
 			break;
 	}
 	return -1;
 }
 
-static ssdp_request_t * ssdp_parse (char *buffer, int length)
+static ssdp_request_t * ssdp_parse (const char *address, const char *netmask, char *buffer, int length)
 {
 	char *ptr;
 	char *line;
@@ -352,7 +394,7 @@ static ssdp_request_t * ssdp_parse (char *buffer, int length)
 			}
 		}
 	}
-	if (ssdp_request_valid(request) != 0) {
+	if (ssdp_request_valid(address, netmask, request) != 0) {
 		ssdp_request_uninit(request);
 		request = NULL;
 	}
@@ -502,7 +544,7 @@ static void * ssdp_thread_loop (void *arg)
 			continue;
 		}
 		buffer[received] = '\0';
-		request = ssdp_parse(buffer, received);
+		request = ssdp_parse(ssdp->address, ssdp->netmask, buffer, received);
 		if (request != NULL) {
 			ssdp_request_handler(ssdp, request, senderip, senderport);
 			ssdp_request_uninit(request);
@@ -695,7 +737,7 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 		r = socket_recvfrom(sock, data, 4096, NULL, 0);
 		if (r > 0) {
 			data[r] = '\0';
-			request = ssdp_parse(data, r);
+			request = ssdp_parse(ssdp->address, ssdp->netmask, data, r);
 			if (request != NULL) {
 				thread_mutex_lock(ssdp->mutex);
 				list_add_tail(&request->head, &ssdp->requests);
@@ -765,7 +807,7 @@ int ssdp_register (ssdp_t *ssdp, char *nt, char *usn, char *location, char *serv
 	return ret;
 }
 
-ssdp_t * ssdp_init (int (*callback) (void *cookie, ssdp_event_t *event), void *cookie)
+ssdp_t * ssdp_init (const char *address, const char *netmask, int (*callback) (void *cookie, ssdp_event_t *event), void *cookie)
 {
 	ssdp_t *ssdp;
 	ssdp = (ssdp_t *) malloc(sizeof(ssdp_t));
@@ -773,11 +815,15 @@ ssdp_t * ssdp_init (int (*callback) (void *cookie, ssdp_event_t *event), void *c
 		return NULL;
 	}
 	memset(ssdp, 0, sizeof(ssdp_t));
+	ssdp->address = (address) ? strdup(address) : NULL;
+	ssdp->netmask = (netmask) ? strdup(netmask) : NULL;
 	ssdp->cookie = cookie;
 	ssdp->callback = callback;
 	list_init(&ssdp->devices);
 	list_init(&ssdp->requests);
 	if (ssdp_init_server(ssdp) != 0) {
+		free(ssdp->address);
+		free(ssdp->netmask);
 		free(ssdp);
 		return NULL;
 	}
@@ -813,6 +859,8 @@ int ssdp_uninit (ssdp_t *ssdp)
 	thread_mutex_destroy(ssdp->mutex);
 	thread_cond_destroy(ssdp->cond);
 	socket_close(ssdp->socket);
+	free(ssdp->address);
+	free(ssdp->netmask);
 	free(ssdp);
 	return 0;
 }

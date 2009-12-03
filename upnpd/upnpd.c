@@ -114,6 +114,7 @@ int main (int argc, char *argv[])
 	char *options;
 	char *interface;
 	char *ipaddress;
+	char *ifnetmask;
 	upnpd_application_t **a;
 
 	char *device_options;
@@ -167,8 +168,14 @@ int main (int argc, char *argv[])
 		free(device);
 		return -3;
 	}
+	ifnetmask = interface_getmask(interface);
+	if (ifnetmask == NULL) {
+		debugf("could not find interface netmask %s", interface);
+		free(device);
+		return -3;
+	}
 
-	if (asprintf(&device_options, "daemonize=%d,interface=%s%s%s", daemonize, ipaddress, (options) ? "," : "", (options) ? options : "") < 0) {
+	if (asprintf(&device_options, "daemonize=%d,interface=%s,netmask=%s%s%s", daemonize, ipaddress, ifnetmask, (options) ? "," : "", (options) ? options : "") < 0) {
 		debugf("asprintf failed for device_options");
 		free(device);
 		free(ipaddress);
@@ -207,6 +214,7 @@ int main (int argc, char *argv[])
 	debugf("could not find device %s", device);
 out:
 	free(device);
+	free(ifnetmask);
 	free(ipaddress);
 	free(device_options);
 	return ret;

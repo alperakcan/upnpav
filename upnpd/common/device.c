@@ -368,7 +368,7 @@ int device_init (device_t *device)
 		goto out;
 	}
 	debugf("initializing upnp stack");
-	device->upnp = upnp_init(device->interface, 0, &device_vfscallbacks, device);
+	device->upnp = upnp_init(device->interface, device->ifmask, 0, &device_vfscallbacks, device);
 	if (device->upnp == NULL) {
 		debugf("upnp_init('%s') failed", device->interface);
 		thread_mutex_destroy(device->mutex);
