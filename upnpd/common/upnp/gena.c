@@ -956,6 +956,7 @@ static void * gena_loop (void *arg)
 				thread_join(gena_thread->thread);
 				debugf("closing stopped gena child threads");
 				list_del(&gena_thread->head);
+				thread_mutex_unlock(gena_thread->mutex);
 				thread_mutex_destroy(gena_thread->mutex);
 				thread_cond_destroy(gena_thread->cond);
 				socket_close(gena_thread->socket);
