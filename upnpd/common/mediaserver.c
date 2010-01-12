@@ -229,6 +229,16 @@ device_t * mediaserver_init (char *options)
 		goto error;
 	}
 
+	service = registrar_init();
+	if (service == NULL) {
+		debugf("registrar_init() failed");
+		goto error;
+	}
+	if ((rc = device_service_add(device, service)) != 0) {
+		debugf("device_service_add(device, service) failed");
+		goto error;
+	}
+
 	debugf("initializing mediaserver device");
 	if ((rc = device_init(device)) != 0) {
 		debugf("device_init(device) failed");

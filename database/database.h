@@ -28,17 +28,9 @@
 typedef struct database_s database_t;
 typedef struct database_entry_s database_entry_t;
 
-typedef enum {
-	DATABASE_CLASS_UNKNOWN = 0x00,
-	DATABASE_CLASS_FOLDER  = 0x01,
-	DATABASE_CLASS_MUSIC   = 0x02,
-	DATABASE_CLASS_MOVIE   = 0x04,
-	DATABASE_CLASS_IMAGE   = 0x08,
-} database_class_t;
-
 struct database_entry_s {
 	char *id;
-	database_class_t class;
+	char *class;
 	char *parent;
 	char *path;
 	char *title;
@@ -61,8 +53,8 @@ database_entry_t * database_query_entry (database_t *database, const char *entry
 database_entry_t * database_query_parent (database_t *database, const char *parentid, unsigned long long start, unsigned long long count, unsigned long long *total);
 
 unsigned long long database_insert (database_t *database,
-		const database_class_t class,
-		const unsigned long long parentid,
+		const char *class,
+		const char *parentid,
 		const char *path,
 		const char *title,
 		const unsigned long long size,

@@ -77,8 +77,9 @@ database_t * database_init (int remove)
 
 	sqlite3_exec(db->database,
 		"CREATE TABLE OBJECT ("
-		"  ID INTEGER PRIMARY KEY AUTOINCREMENT,"
-		"  CLASS INTEGER NOT NULL,"
+		"  KEY INTEGER PRIMARY KEY AUTOINCREMENT,"
+		"  ID TEXT NOT NULL,"
+		"  CLASS TEXT NOT NULL,"
 		"  PARENT INTEGER NOT NULL,"
 		"  DETAIL INTEGER NOT NULL);",
 		0, 0, 0);
@@ -139,7 +140,7 @@ static int database_query_callback (void *args, int argc, char **argv, char **az
 	memset(entry, 0, sizeof(database_entry_t));
 
 	entry->id = strdup(argv[0]);
-	entry->class = atoi(argv[1]);
+	entry->class = strdup(argv[1]);
 	entry->parent = strdup(argv[2]);
 	entry->path = strdup(argv[3]);
 	entry->title = strdup(argv[4]);
@@ -148,7 +149,7 @@ static int database_query_callback (void *args, int argc, char **argv, char **az
 	entry->mime = strdup(argv[7]);
 	entry->dlna = strdup(argv[8]);
 
-	if (entry->class == DATABASE_CLASS_FOLDER) {
+	if (strcmp(entry->class, "object.container.storageFolder") == 0) {
 		sql = sqlite3_mprintf(
 				"SELECT count(*)"
 				"  from OBJECT o"
@@ -226,7 +227,7 @@ database_entry_t * database_query_parent (database_t *database, const char *pare
 			"       d.MIME,"
 			"       d.DLNA"
 			"  from OBJECT o left join DETAIL d on (d.ID = o.DETAIL)"
-			"  where o.PARENT = %s order by d.TITLE limit %llu, %llu;",
+			"  where o.PARENT = '%s' order by d.TITLE limit %llu, %llu;",
 			parentid,
 			start,
 			count);
@@ -241,8 +242,8 @@ database_entry_t * database_query_parent (database_t *database, const char *pare
 }
 
 unsigned long long database_insert (database_t *database,
-		const unsigned int class,
-		const unsigned long long parentid,
+		const char *class,
+		const char *parentid,
 		const char *path,
 		const char *title,
 		const unsigned long long size,
@@ -272,9 +273,11 @@ unsigned long long database_insert (database_t *database,
 
 	sql = sqlite3_mprintf(
 			"INSERT into OBJECT"
-			"  (CLASS, PARENT, DETAIL)"
+			"  (ID, CLASS, PARENT, DETAIL)"
 			"  values"
-			"  (%u, %llu, %llu)",
+			"  ('%s$%llu', '%s', '%s', %llu)",
+			parentid,
+			detailid,
 			class,
 			parentid,
 			detailid);

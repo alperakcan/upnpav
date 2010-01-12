@@ -180,6 +180,7 @@ static int generate_scpd (char **result, device_service_t *service)
 				case VARIABLE_DATATYPE_STRING:	datatype = "string"; break;
 				case VARIABLE_DATATYPE_I4:	datatype = "i4"; break;
 				case VARIABLE_DATATYPE_UI4:	datatype = "ui4"; break;
+				case VARIABLE_DATATYPE_BIN_BASE64: datatype = "bin.base64"; break;
 				default: assert(0); break;
 			}
 			if (variable->sendevent == VARIABLE_SENDEVENT_YES) {

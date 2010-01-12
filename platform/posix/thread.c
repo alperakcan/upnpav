@@ -184,12 +184,16 @@ int thread_mutex_destroy (thread_mutex_t *mutex)
 
 int thread_mutex_lock (thread_mutex_t *mutex)
 {
-        return pthread_mutex_lock(&mutex->mutex);
+	int r;
+	r = pthread_mutex_lock(&mutex->mutex);
+	return r;
 }
 
 int thread_mutex_unlock (thread_mutex_t *mutex)
 {
-        return pthread_mutex_unlock(&mutex->mutex);
+	int r;
+	r = pthread_mutex_unlock(&mutex->mutex);
+	return r;
 }
 
 static void * thread_run (void *farg)
@@ -227,16 +231,7 @@ thread_t * thread_create (const char *name, void * (*function) (void *), void *f
         arg->flag = 0;
 
         thread_mutex_lock(arg->mut);
-#ifdef __UCLIBC__
-        ret = pthread_create(&(tid->thread),  NULL, arg->r, arg);
-#else
-        pthread_attr_t attr;
-        pthread_attr_init(&attr);
-        pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-        ret = pthread_create(&(tid->thread), &attr, arg->r, arg);
-        pthread_attr_destroy(&attr);
-#endif
-
+        ret = pthread_create(&(tid->thread), NULL, arg->r, arg);
         if (ret != 0) {
                 goto out;
         }

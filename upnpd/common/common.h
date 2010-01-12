@@ -333,6 +333,7 @@ typedef enum {
 	VARIABLE_DATATYPE_STRING,
 	VARIABLE_DATATYPE_I4,
 	VARIABLE_DATATYPE_UI4,
+	VARIABLE_DATATYPE_BIN_BASE64,
 } variable_datatype_t;
 
 /** service variable struct
@@ -564,7 +565,6 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)
 
 /* contentdir.c */
 
-int contentdirectory_uninit (device_service_t *cotentdir);
 device_service_t * contentdirectory_init (char *directory, int cached);
 
 /* connection.c */
@@ -590,6 +590,9 @@ int mediaserver_refresh (device_t *mediaserver);
 
 device_t * mediarender_init (char *options);
 int mediarender_uninit (device_t *mediarender);
+
+/* registrar */
+device_service_t * registrar_init (void);
 
 /* service.c */
 

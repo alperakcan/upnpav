@@ -506,6 +506,7 @@ static void * ssdp_thread_loop (void *arg)
 	times[0] = time_gettimeofday();
 
 	while (1) {
+		thread_mutex_lock(ssdp->mutex);
 		times[1] = time_gettimeofday();
 		list_for_each_entry(d, &ssdp->devices, head) {
 			d->interval -= (times[1] - times[0]);
@@ -517,7 +518,6 @@ static void * ssdp_thread_loop (void *arg)
 			}
 		}
 		times[0] = time_gettimeofday();
-		thread_mutex_lock(ssdp->mutex);
 		while (list_count(&ssdp->requests) != 0) {
 			r = list_first_entry(&ssdp->requests, ssdp_request_t, head);
 			list_del(&r->head);
@@ -567,19 +567,23 @@ static int ssdp_init_server (ssdp_t *ssdp)
 {
 	ssdp->socket = socket_open(SOCKET_TYPE_DGRAM);
 	if (ssdp->socket == NULL) {
-		return -2;
+		debugf("socket_open() failed");
+		return -1;
 	}
 	if (socket_option_reuseaddr(ssdp->socket, 1) < 0) {
+		debugf("socket_option_reuseaddr() failed");
 		socket_close(ssdp->socket);
-		return -1;
+		return -2;
 	}
 	if (socket_bind(ssdp->socket, ssdp_ip, ssdp_port) < 0) {
+		debugf("socket_bind() failed");
 		socket_close(ssdp->socket);
-		return -1;
+		return -3;
 	}
 	if (socket_option_membership(ssdp->socket, ssdp_ip, 1) < 0) {
+		debugf("socket_option_membership() failed");
 		socket_close(ssdp->socket);
-		return -1;
+		return -4;
 	}
 	ssdp->mutex = thread_mutex_init("ssdp->mutex", 0);
 	ssdp->cond = thread_cond_init("ssdp->cond");
@@ -822,6 +826,7 @@ ssdp_t * ssdp_init (const char *address, const char *netmask, int (*callback) (v
 	list_init(&ssdp->devices);
 	list_init(&ssdp->requests);
 	if (ssdp_init_server(ssdp) != 0) {
+		debugf("ssdp_init_server() failed");
 		free(ssdp->address);
 		free(ssdp->netmask);
 		free(ssdp);

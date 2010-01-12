@@ -386,8 +386,11 @@ static void gena_sendfileheader (socket_t *socket, gena_fileinfo_internal_t *fil
 	}
 
 	time_strftime(tmpstr, sizeof(tmpstr), timer);
-	len = sprintf(header, "HTTP/1.0 %d %s\r\nContent-type: %s\r\n"
-			      "Date: %s\r\nConnection: close\r\n",
+	len = sprintf(header, "HTTP/1.0 %d %s\r\n"
+	                      "Content-type: %s\r\n"
+			      "Date: %s\r\n"
+			      "Server: " SERVER_NAME "\r\n"
+			      "Connection: close\r\n",
 			      responseNum, responseString, fileinfo->fileinfo.mimetype, tmpstr);
 
 	t = fileinfo->fileinfo.mtime;
@@ -490,6 +493,7 @@ static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, co
 		"Timeout: Second-%d\r\n"
 		"Connection: close\r\n"
 		"Content-Type: text/xml\r\n"
+		"Server: " SERVER_NAME "\r\n"
 		"Content-Length: 0\r\n"
 		"\r\n";
 
@@ -762,6 +766,7 @@ static void * gena_thread_loop (void *arg)
 		gena_senderrorheader(gena_thread->socket, GENA_RESPONSE_TYPE_NOT_IMPLEMENTED);
 		goto out;
 	}
+	debugf("header: %s", header);
 	while (*urlptr && (*urlptr == ' ' || *urlptr == '\t')) {
 		urlptr++;
 	}
@@ -842,11 +847,13 @@ static void * gena_thread_loop (void *arg)
 		goto out;
 	}
 
+	debugf("reading file info");
 	if (gena_thread->callbacks->vfs.info(gena_thread->callbacks->vfs.cookie, pathptr, &fileinfo.fileinfo) < 0) {
 		debugf("info failed");
 		gena_senderrorheader(gena_thread->socket, GENA_RESPONSE_TYPE_NOT_FOUND);
 		goto out;
 	}
+	debugf("opening file");
 	filehandle = gena_thread->callbacks->vfs.open(gena_thread->callbacks->vfs.cookie, pathptr, GENA_FILEMODE_READ);
 	if (filehandle == NULL) {
 		debugf("open failed");
@@ -854,6 +861,7 @@ static void * gena_thread_loop (void *arg)
 		goto out;
 	}
 
+	debugf("calculating actual size");
 	/* calculate actual size */
 	if (fileinfo.filerange.stop == 0 && rangerequest == 1) {
 		/* we do support range as requested */
@@ -866,6 +874,7 @@ static void * gena_thread_loop (void *arg)
 		fileinfo.filerange.size = fileinfo.filerange.stop - fileinfo.filerange.start + 1;
 	}
 
+	debugf("sending file header");
 	/* send header */
 	gena_sendfileheader(gena_thread->socket, &fileinfo);
 	if (strcasecmp(header, request_head) == 0) {
@@ -873,6 +882,7 @@ static void * gena_thread_loop (void *arg)
 		goto close_out;
 	}
 
+	debugf("seeking file");
 	/* seek if requested */
 	if (gena_thread->callbacks->vfs.seek(gena_thread->callbacks->vfs.cookie, filehandle, fileinfo.filerange.start, GENA_SEEK_SET) != fileinfo.filerange.start) {
 		debugf("seek failed");
@@ -880,6 +890,7 @@ static void * gena_thread_loop (void *arg)
 		goto close_out;
 	}
 
+	debugf("sending file");
 	/* send file */
 	readlen = 0;
 	while (readlen < fileinfo.filerange.size) {
@@ -907,6 +918,7 @@ static void * gena_thread_loop (void *arg)
 	}
 
 close_out:
+	debugf("closing file");
 	gena_thread->callbacks->vfs.close(gena_thread->callbacks->vfs.cookie, filehandle);
 out:
 	free(pathptr);
@@ -1098,12 +1110,11 @@ char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port
 			return NULL;
 		}
 	}
-	debugf("request sent, waiting response");
 	length = 0;
 	contentlength = 0;
 	buffer = malloc(GENA_HEADER_SIZE);
 	while (1) {
-		if (gena_getline(socket, 100000, buffer, GENA_HEADER_SIZE) <= 0) {
+		if (gena_getline(socket, GENA_SOCKET_TIMEOUT, buffer, GENA_HEADER_SIZE) <= 0) {
 			break;
 		}
 		if (strncasecmp(buffer, "Content-length:", strlen("Content-length:")) == 0) {
@@ -1116,7 +1127,7 @@ char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port
 	if (contentlength == 1) {
 		if (length <= 0) {
 			socket_close(socket);
-			debugf("no data received %d", length);
+			debugf("no data received %d\n", length);
 			return NULL;
 		}
 		buffer = malloc(sizeof(char) * (length + 1));
@@ -1159,6 +1170,7 @@ again:
 		while (t < length) {
 			r = socket_poll(socket, SOCKET_EVENT_IN, &presult, GENA_SOCKET_TIMEOUT);
 			if (r <= 0 || (presult & SOCKET_EVENT_IN) == 0) {
+				goto done;
 				break;
 			}
 			r = socket_recv(socket, buffer + t, length - t);
@@ -1166,6 +1178,7 @@ again:
 				goto done;
 			}
 			t += r;
+			buffer[t] = '\0';
 		}
 		goto again;
 done:
