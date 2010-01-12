@@ -80,31 +80,37 @@ static int contentdirectory_get_system_update_id (device_service_t *service, upn
 	return rc;
 }
 
-typedef struct contentdirectory_parser_data_s {
+typedef struct contentdirectory_browse_data_s {
 	char *objectid;
 	char *browseflag;
 	char *filter;
 	uint32_t startingindex;
 	uint32_t requestedcount;
 	char *sortcriteria;
-} contentdirectory_parser_data_t;
+} contentdirectory_browse_data_t;
 
-static int contentdirectory_parser_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
+static int contentdirectory_browse_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
 {
-	contentdirectory_parser_data_t *data;
-	data = (contentdirectory_parser_data_t *) context;
-	if (strcmp(path, "/s:Envelope/s:Body/u:Browse/ObjectID") == 0) {
-		data->objectid = strdup(value);
-	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/BrowseFlag") == 0) {
-		data->browseflag = strdup(value);
-	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/Filter") == 0) {
-		data->filter = strdup(value);
-	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/StartingIndex") == 0) {
+	contentdirectory_browse_data_t *data;
+	data = (contentdirectory_browse_data_t *) context;
+	if (strcmp(path, "/s:Envelope/s:Body/u:Browse/ObjectID") == 0 ||
+	    strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Browse/ObjectID") == 0) {
+		data->objectid = (value) ? strdup(value) : NULL;
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/BrowseFlag") == 0 ||
+		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Browse/BrowseFlag") == 0) {
+		data->browseflag = (value) ? strdup(value) : NULL;
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/Filter") == 0 ||
+		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Browse/Filter") == 0) {
+		data->filter = (value) ? strdup(value) : NULL;
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/StartingIndex") == 0 ||
+		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Browse/StartingIndex") == 0) {
 		data->startingindex = strtouint32(value);
-	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/RequestedCount") == 0) {
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/RequestedCount") == 0 ||
+		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Browse/RequestedCount") == 0) {
 		data->requestedcount = strtouint32(value);
-	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/SortCriteria") == 0) {
-		data->sortcriteria = strdup(value);
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/SortCriteria") == 0 ||
+		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Browse/SortCriteria") == 0) {
+		data->sortcriteria = (value) ? strdup(value) : NULL;
 	}
 	return 0;
 }
@@ -116,7 +122,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 	entry_t *tmp;
 	entry_t *entry;
 	contentdir_t *contentdir;
-	contentdirectory_parser_data_t data;
+	contentdirectory_browse_data_t data;
 
 	/* out */
 	char *result;
@@ -128,7 +134,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 	contentdir = (contentdir_t *) service;
 
 	memset(&data, 0, sizeof(data));
-	if (xml_parse_buffer_callback(request->request, strlen(request->request), contentdirectory_parser_callback, &data) != 0) {
+	if (xml_parse_buffer_callback(request->request, strlen(request->request), contentdirectory_browse_callback, &data) != 0) {
 		debugf("xml_parse_buffer_callback() failed");
 		request->errcode = UPNP_ERROR_PARAMETER_MISMATCH;
 		return 0;
@@ -260,6 +266,77 @@ error:
 	}
 }
 
+typedef struct contentdirectory_search_data_s {
+	char *objectid;
+	char *searchflag;
+	char *filter;
+	uint32_t startingindex;
+	uint32_t requestedcount;
+	char *sortcriteria;
+} contentdirectory_search_data_t;
+
+static int contentdirectory_search_callback (void *context, const char *path, const char *name, const char **atrr, const char *value)
+{
+	contentdirectory_search_data_t *data;
+	data = (contentdirectory_search_data_t *) context;
+	if (strcmp(path, "/s:Envelope/s:Body/u:Search/ContainerID") == 0 ||
+	    strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Search/ContainerID") == 0) {
+		data->objectid = (value) ? strdup(value) : NULL;
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/SearchCriteria") == 0 ||
+		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Search/SearchCriteria") == 0) {
+		data->searchflag = (value) ? strdup(value) : NULL;
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:Search/Filter") == 0 ||
+		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Search/Filter") == 0) {
+		data->filter = (value) ? strdup(value) : NULL;
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:Search/StartingIndex") == 0 ||
+		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Search/StartingIndex") == 0) {
+		data->startingindex = strtouint32(value);
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:Search/RequestedCount") == 0 ||
+		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Search/RequestedCount") == 0) {
+		data->requestedcount = strtouint32(value);
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:Search/SortCriteria") == 0 ||
+		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Search/SortCriteria") == 0) {
+		data->sortcriteria = (value) ? strdup(value) : NULL;
+	}
+	return 0;
+}
+
+static int contentdirectory_search (device_service_t *service, upnp_event_action_t *request)
+{
+	contentdir_t *contentdir;
+	contentdirectory_search_data_t data;
+
+	/* out */
+	char *result;
+	uint32_t totalmatches;
+	uint32_t numberreturned;
+	uint32_t updateid;
+
+	contentdir = (contentdir_t *) service;
+
+	memset(&data, 0, sizeof(data));
+	if (xml_parse_buffer_callback(request->request, strlen(request->request), contentdirectory_search_callback, &data) != 0) {
+		debugf("xml_parse_buffer_callback() failed");
+		request->errcode = UPNP_ERROR_PARAMETER_MISMATCH;
+		return 0;
+	}
+	debugf("contentdirectory search:\n"
+		"  objectid      : %s\n"
+		"  searchflag    : %s\n"
+		"  filter        : %s\n"
+		"  startingindex : %u\n"
+		"  requestedcount: %u\n"
+		"  sortcriteria  : %s\n",
+		data.objectid,
+		data.searchflag,
+		data.filter,
+		data.startingindex,
+		data.requestedcount,
+		data.sortcriteria);
+	request->errcode = UPNP_ERROR_INVALIG_ARGS;
+	return -1;
+}
+
 static char *allowed_values_browseflag[] = {
 	"BrowseMetadata",
 	"BrowseDirectChildren",
@@ -273,6 +350,7 @@ static service_variable_t *contentdirectory_variables[] = {
 	& (service_variable_t) {"A_ARG_TYPE_BrowseFlag", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, allowed_values_browseflag, NULL},
 	& (service_variable_t) {"A_ARG_TYPE_Filter", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
 	& (service_variable_t) {"A_ARG_TYPE_SortCriteria", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	& (service_variable_t) {"A_ARG_TYPE_SearchCriteria", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
 	& (service_variable_t) {"A_ARG_TYPE_Index", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_NO, NULL, NULL},
 	& (service_variable_t) {"A_ARG_TYPE_Count", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_NO, NULL, NULL},
 	& (service_variable_t) {"A_ARG_TYPE_UpdateID", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_NO, NULL, NULL},
@@ -311,12 +389,27 @@ static action_argument_t *arguments_browse[] = {
 	NULL,
 };
 
+static action_argument_t *arguments_search[] = {
+	& (action_argument_t) {"ContainerID", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_ObjectID"},
+	& (action_argument_t) {"SearchCriteria", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_SearchCriteria"},
+	& (action_argument_t) {"Filter", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_Filter"},
+	& (action_argument_t) {"StartingIndex", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_Index"},
+	& (action_argument_t) {"RequestedCount", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_Count"},
+	& (action_argument_t) {"SortCriteria", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_SortCriteria"},
+	& (action_argument_t) {"Result", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Result"},
+	& (action_argument_t) {"NumberReturned", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Count"},
+	& (action_argument_t) {"TotalMatches", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Count"},
+	& (action_argument_t) {"UpdateID", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_UpdateID"},
+	NULL,
+};
+
 static service_action_t *contentdirectory_actions[] = {
 	/* required */
 	& (service_action_t) {"GetSearchCapabilities", arguments_get_search_capabilities, contentdirectory_get_search_capabilities},
 	& (service_action_t) {"GetSortCapabilities", arguments_get_sort_capabilities, contentdirectory_get_sort_capabilities},
 	& (service_action_t) {"GetSystemUpdateID", arguments_get_system_update_id, contentdirectory_get_system_update_id},
 	& (service_action_t) {"Browse", arguments_browse, contentdirectory_browse},
+	& (service_action_t) {"Search", arguments_search, contentdirectory_search},
 	NULL,
 };
 
@@ -447,7 +540,7 @@ static gena_callback_vfs_t contentdir_vfscallbacks = {
 	contentdirectory_vfsclose,
 };
 
-int contentdirectory_uninit (device_service_t *contentdir)
+static int contentdirectory_uninit (device_service_t *contentdir)
 {
 	int i;
 	service_variable_t *variable;
@@ -484,7 +577,7 @@ device_service_t * contentdirectory_init (char *directory, int cached)
 	contentdir->service.id = "urn:upnp-org:serviceId:ContentDirectory";
 	contentdir->service.type = "urn:schemas-upnp-org:service:ContentDirectory:1";
 	contentdir->service.scpdurl = "/upnp/contentdirectory.xml";
-	contentdir->service.eventurl = "/upnp/event/contendirectory1";
+	contentdir->service.eventurl = "/upnp/event/contentdirectory1";
 	contentdir->service.controlurl = "/upnp/control/contentdirectory1";
 	contentdir->service.actions = contentdirectory_actions;
 	contentdir->service.variables = contentdirectory_variables;

@@ -150,11 +150,11 @@ static int gena_callback_info (void *cookie, char *path, gena_fileinfo_t *info)
 		thread_mutex_unlock(upnp->mutex);
 		return 0;
 	}
+	thread_mutex_unlock(upnp->mutex);
 	if (upnp->vfscallbacks != NULL &&
 	    upnp->vfscallbacks->info != NULL) {
 		ret = upnp->vfscallbacks->info(upnp->vfscallbacks->cookie, path, info);
 	}
-	thread_mutex_unlock(upnp->mutex);
 	return ret;
 }
 
@@ -177,6 +177,7 @@ static void * gena_callback_open (void *cookie, char *path, gena_filemode_t mode
 		thread_mutex_unlock(upnp->mutex);
 		return file;
 	}
+	thread_mutex_unlock(upnp->mutex);
 	if (upnp->vfscallbacks != NULL &&
 	    upnp->vfscallbacks->open != NULL) {
 		file->data = upnp->vfscallbacks->open(upnp->vfscallbacks->cookie, path, mode);
@@ -184,10 +185,8 @@ static void * gena_callback_open (void *cookie, char *path, gena_filemode_t mode
 			free(file);
 			file = NULL;
 		}
-		thread_mutex_unlock(upnp->mutex);
 		return file;
 	}
-	thread_mutex_unlock(upnp->mutex);
 	return NULL;
 }
 
@@ -370,10 +369,10 @@ static char * upnp_propertyset (const char **names, const char **values, unsigne
 	}
 	memset(buffer, 0, size + 1);
 
-	strcpy(buffer, "<e:propertyset xmlns:e=\"urn:schemas-upnp-org:event-1-0\">\n");
+	strcpy(buffer, "<e:propertyset xmlns:e=\"urn:schemas-upnp-org:event-1-0\">");
 	for (counter = 0; counter < count; counter++) {
-		strcat(buffer, "<e:property>\n");
-		sprintf(&buffer[strlen(buffer)], "<%s>%s</%s>\n</e:property>\n", names[counter], values[counter], names[counter]);
+		strcat(buffer, "<e:property>");
+		sprintf(&buffer[strlen(buffer)], "<%s>%s</%s></e:property>", names[counter], values[counter], names[counter]);
 	}
 	strcat(buffer, "</e:propertyset>\n\n");
 	return buffer;
@@ -387,7 +386,7 @@ int upnp_accept_subscription (upnp_t *upnp, const char *udn, const char *service
 	upnp_service_t *s;
 	upnp_subscribe_t *c;
 	const char *format =
-		"NOTIFY %s HTTP/1.1\r\n"
+		"NOTIFY /%s HTTP/1.1\r\n"
 		"HOST: %s:%d\r\n"
 		"CONTENT-TYPE: text/xml\r\n"
 		"CONTENT-LENGTH: %u\r\n"
@@ -395,6 +394,8 @@ int upnp_accept_subscription (upnp_t *upnp, const char *udn, const char *service
 		"NTS: upnp:propchange\r\n"
 		"SID: %s\r\n"
 		"SEQ: %u\r\n"
+		"Connection: close\r\n"
+		"Cache-Control: no-cache\r\n"
 		"\r\n";
 	thread_mutex_lock(upnp->mutex);
 	list_for_each_entry(s, &upnp->type.device.services, head) {
@@ -408,15 +409,19 @@ int upnp_accept_subscription (upnp_t *upnp, const char *udn, const char *service
 			break;
 		}
 	}
-	goto out;
+	debugf("cannot find subscription: %s\n", sid);
+	thread_mutex_unlock(upnp->mutex);
+	return 0;
 
 found:
+	debugf("found subscription: %s\n", sid);
+	thread_mutex_unlock(upnp->mutex);
 	propset = upnp_propertyset(variable_names, variable_values, variables_count);
 	if (propset == NULL) {
 		goto out;
 	}
 	if (asprintf(&header, format,
-			s->eventurl,
+			c->url.path,
 			c->url.host, c->url.port,
 			strlen(propset),
 			c->sid,
@@ -431,15 +436,13 @@ found:
 
 	data = gena_send_recv(upnp->gena, c->url.host, c->url.port, header, propset);
 	if (data == NULL) {
-		debugf("gena_send_recv() failed");
+		//debugf("gena_send_recv() failed");
 	}
 
 	free(data);
 	free(header);
 	free(propset);
-out:
-	thread_mutex_unlock(upnp->mutex);
-	return 0;
+out:	return 0;
 }
 
 static size_t __strnlen (const char *string, size_t maxlen)
@@ -476,17 +479,24 @@ int upnp_url_parse (const char *uri, upnp_url_t *url)
 	char *i;
 	char *p;
 	char *e;
+	char *t;
 	memset(url, 0, sizeof(upnp_url_t));
 	url->url = strdup(uri);
 	if (url->url == NULL) {
 		return -1;
+	}
+	if (url->url[0] == '<') {
+		memmove(url->url, url->url + 1, strlen(url->url) - 1);
+		t = strchr(url->url, '>');
+		if (t != NULL) {
+			*t = '\0';
+		}
 	}
 	if (strncasecmp(url->url, "http://", 7) == 0) {
 		i = url->url + 7;
 	} else {
 		i = url->url;
 	}
-
 	p = strchr(i, ':');
 	e = strchr(i, '/');
 	if (p == NULL || e < p) {
@@ -527,7 +537,7 @@ static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subsc
 	debugf("enter");
 	thread_mutex_lock(upnp->mutex);
 	list_for_each_entry(s, &upnp->type.device.services, head) {
-		debugf("eventurl: %s", s->eventurl);
+		debugf("eventurl: %s, callback: %s", s->eventurl, subscribe->callback);
 		if (strcmp(subscribe->path, s->eventurl) == 0) {
 			c = (upnp_subscribe_t *) malloc(sizeof(upnp_subscribe_t));
 			if (c == NULL) {
@@ -543,7 +553,8 @@ static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subsc
 				ret = -1;
 				goto out;
 			}
-			if (upnp_url_parse(subscribe->callback + 1, &c->url) != 0) {
+			if (upnp_url_parse(subscribe->callback, &c->url) != 0) {
+				debugf("upnp_url_parse(%s) failed", subscribe->callback);
 				free(c);
 				ret = -1;
 				goto out;
@@ -974,13 +985,13 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 
 		/* ssdp entries for device */
 		if (asprintf(&deviceusn, "%s::%s", data.devices[d].UDN, "upnp:rootdevice") > 0) {
-			ssdp_register(upnp->ssdp, "upnp:rootdevice", deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
+			ssdp_register(upnp->ssdp, "upnp:rootdevice", deviceusn, upnp->type.device.location, SERVER_NAME, 100000);
 			free(deviceusn);
 		}
-		ssdp_register(upnp->ssdp, data.devices[d].UDN, data.devices[d].UDN, upnp->type.device.location, "mini upnp stack 1.0", 100000);
+		ssdp_register(upnp->ssdp, data.devices[d].UDN, data.devices[d].UDN, upnp->type.device.location, SERVER_NAME, 100000);
 		if (asprintf(&deviceusn, "%s::%s", data.devices[d].UDN, data.devices[d].deviceType) > 0) {
-			ssdp_register(upnp->ssdp, data.devices[d].deviceType, deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
-			ssdp_register(upnp->ssdp, data.devices[d].UDN, deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000);
+			ssdp_register(upnp->ssdp, data.devices[d].deviceType, deviceusn, upnp->type.device.location, SERVER_NAME, 100000);
+			ssdp_register(upnp->ssdp, data.devices[d].UDN, deviceusn, upnp->type.device.location, SERVER_NAME, 100000);
 			free(deviceusn);
 		}
 
@@ -997,7 +1008,7 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 			debugf("  eventSubURL:'%s'", data.devices[d].services[s].eventSubURL);
 			debugf("  controlURL :'%s'", data.devices[d].services[s].controlURL);
 			if (asprintf(&deviceusn, "%s::%s", data.devices[d].UDN, data.devices[d].services[s].serviceType) > 0) {
-				if (ssdp_register(upnp->ssdp, data.devices[d].services[s].serviceType, deviceusn, upnp->type.device.location, "mini upnp stack 1.0", 100000) == 0) {
+				if (ssdp_register(upnp->ssdp, data.devices[d].services[s].serviceType, deviceusn, upnp->type.device.location, SERVER_NAME, 100000) == 0) {
 					service = (upnp_service_t *) malloc(sizeof(upnp_service_t));
 					if (service != NULL) {
 						memset(service, 0, sizeof(upnp_service_t));
@@ -1065,6 +1076,7 @@ upnp_t * upnp_init (const char *host, const char *mask, const unsigned short por
 		return NULL;
 	}
 	memset(upnp, 0, sizeof(upnp_t));
+	upnp->mutex = thread_mutex_init("upnp->mutex", 0);
 	upnp->host = strdup(host);
 	upnp->mask = strdup(mask);
 	if (upnp->host == NULL ||
@@ -1073,13 +1085,6 @@ upnp_t * upnp_init (const char *host, const char *mask, const unsigned short por
 		return NULL;
 	}
 	upnp->port = port;
-	upnp->ssdp = ssdp_init(upnp->host, upnp->mask, ssdp_callback_event, upnp);
-	if (upnp->ssdp == NULL) {
-		free(upnp->host);
-		free(upnp->mask);
-		free(upnp);
-		return NULL;
-	}
 
 	upnp->gena_callbacks.vfs.info = gena_callback_info;
 	upnp->gena_callbacks.vfs.open = gena_callback_open;
@@ -1099,15 +1104,23 @@ upnp_t * upnp_init (const char *host, const char *mask, const unsigned short por
 
 	upnp->gena = gena_init(upnp->host, upnp->port, &upnp->gena_callbacks);
 	if (upnp->gena == NULL) {
-		ssdp_uninit(upnp->ssdp);
 		free(upnp->host);
 		free(upnp->mask);
+		thread_mutex_destroy(upnp->mutex);
 		free(upnp);
 		return NULL;
 	}
 	upnp->port = gena_getport(upnp->gena);
 
-	upnp->mutex = thread_mutex_init("upnp->mutex", 0);
+	upnp->ssdp = ssdp_init(upnp->host, upnp->mask, ssdp_callback_event, upnp);
+	if (upnp->ssdp == NULL) {
+		gena_uninit(upnp->gena);
+		free(upnp->host);
+		free(upnp->mask);
+		thread_mutex_destroy(upnp->mutex);
+		free(upnp);
+		return NULL;
+	}
 
 	return upnp;
 }

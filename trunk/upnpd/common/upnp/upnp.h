@@ -28,6 +28,8 @@
 #ifndef UPNP_H_
 #define UPNP_H_
 
+#define SERVER_NAME "MiniUPnP/1.0 Alper Akcan <alper.akcan@gmail.com>"
+
 typedef struct upnp_s upnp_t;
 
 typedef enum {

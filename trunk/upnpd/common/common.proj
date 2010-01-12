@@ -15,6 +15,7 @@ LIB upnpd_common
   SOURCE upnp.c
   SOURCE connection.c
   SOURCE contentdir.c
+  SOURCE registrar.c
   SOURCE service.c
   SOURCE inttool.c
   SOURCE xml.c

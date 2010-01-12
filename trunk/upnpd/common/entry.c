@@ -144,7 +144,7 @@ entry_t * entry_init_from_database (database_entry_t *dentry)
 		return NULL;
 	}
 	memset(entry, 0, sizeof(entry_t));
-	if (dentry->class == DATABASE_CLASS_FOLDER) {
+	if (strcmp(dentry->class, "object.container.storageFolder") == 0) {
 		entry->didl.entryid = strdup(dentry->id);
 		entry->didl.parentid = strdup(dentry->parent);
 		entry->path = strdup(dentry->path);
@@ -154,7 +154,7 @@ entry_t * entry_init_from_database (database_entry_t *dentry)
 		entry->didl.upnp.type = DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER;
 		entry->didl.upnp.object.class = strdup("object.container.storageFolder");
 		entry->didl.upnp.storagefolder.storageused = 0;
-	} else if (dentry->class == DATABASE_CLASS_MUSIC) {
+	} else if (strcmp(dentry->class, "object.item.audioItem.musicTrack") == 0) {
 		entry->didl.entryid = strdup(dentry->id);
 		entry->didl.parentid = strdup(dentry->parent);
 		entry->path = strdup(dentry->path);
@@ -180,7 +180,7 @@ entry_t * entry_init_from_database (database_entry_t *dentry)
 		entry->didl.upnp.musictrack.audioitem.longdescription = NULL;
 		asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
 		entry->didl.res.size = dentry->size;
-	} else if (dentry->class == DATABASE_CLASS_MOVIE) {
+	} else if (strcmp(dentry->class, "object.item.videoItem.movie") == 0) {
 		entry->didl.entryid = strdup(dentry->id);
 		entry->didl.parentid = strdup(dentry->parent);
 		entry->path = strdup(dentry->path);
@@ -206,7 +206,7 @@ entry_t * entry_init_from_database (database_entry_t *dentry)
 		entry->didl.upnp.movie.videoitem.rating = NULL;
 		asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
 		entry->didl.res.size = dentry->size;
-	} else if (dentry->class == DATABASE_CLASS_IMAGE) {
+	} else if (strcmp(dentry->class, "object.item.imageItem.photo") == 0) {
 		entry->didl.entryid = strdup(dentry->id);
 		entry->didl.parentid = strdup(dentry->parent);
 		entry->path = strdup(dentry->path);
@@ -467,13 +467,13 @@ int entry_dump (entry_t *entry)
 	return 0;
 }
 
-static int entry_scan_path (database_t *database, const char *path, unsigned long long parentid)
+static int entry_scan_path (database_t *database, const char *path, const char *parentid)
 {
+	char *tmp;
 	char *ptr;
 	dir_t *dir;
 	entry_t *entry;
 	dir_entry_t *current;
-	database_class_t class;
 	unsigned long long size;
 	unsigned long long objectid;
 
@@ -502,20 +502,10 @@ static int entry_scan_path (database_t *database, const char *path, unsigned lon
 			continue;
 		}
 		debugf("found: %s", entry->path);
-		class = DATABASE_CLASS_UNKNOWN;
-		if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER) {
-			class = DATABASE_CLASS_FOLDER;
-		} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_MUSICTRACK) {
-			class = DATABASE_CLASS_MUSIC;
-		} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_MOVIE) {
-			class = DATABASE_CLASS_MOVIE;
-		} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_PHOTO) {
-			class = DATABASE_CLASS_IMAGE;
-		}
-		if (class != DATABASE_CLASS_UNKNOWN) {
+		if (entry->didl.upnp.type != DIDL_UPNP_OBJECT_TYPE_UNKNOWN) {
 			size = entry->didl.res.size;
 			objectid = database_insert(database,
-					class,
+					entry->didl.upnp.object.class,
 					parentid,
 					entry->path,
 					entry->didl.dc.title,
@@ -523,8 +513,11 @@ static int entry_scan_path (database_t *database, const char *path, unsigned lon
 					entry->didl.dc.date,
 					entry->mime,
 					"*");
-			if (class == DATABASE_CLASS_FOLDER) {
-				entry_scan_path(database, entry->path, objectid);
+			if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER) {
+				if (asprintf(&tmp, "%s$%llu", parentid, objectid) > 0) {
+					entry_scan_path(database, entry->path, tmp);
+					free(tmp);
+				}
 			}
 		}
 		entry_uninit(entry);
@@ -540,7 +533,7 @@ void * entry_scan (const char *path)
 	int ret;
 	database_t *database;
 	database = database_init(1);
-	ret = entry_scan_path(database, path, 0);
+	ret = entry_scan_path(database, path, "0");
 	database_index(database);
 	return (void *) database;
 }

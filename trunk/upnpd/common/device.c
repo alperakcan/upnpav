@@ -432,7 +432,7 @@ int device_uninit (device_t *device)
 	int ret;
 	device_service_t *service;
 	ret = -1;
-	debugf("uninitializing device '%s'", device->name);
+	debugf("uninitializing device '%s'\n", device->name);
 	if (device->mutex) {
 		thread_mutex_lock(device->mutex);
 	}
