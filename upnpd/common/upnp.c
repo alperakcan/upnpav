@@ -91,7 +91,7 @@ static int generate_description (char **result, device_t *device)
 	int i;
 	icon_t *icon;
 	device_service_t *service;
-	APPEND("\n<root xmlns=\"urn:schemas-upnp-org:service-1-0\">");
+	APPEND("\n<root xmlns=\"urn:schemas-upnp-org:device-1-0\">");
 	APPEND("\n<specVersion>\n<major>1</major>\n<minor>0</minor>\n</specVersion>");
 	APPEND("\n<device>");
 	APPEND("\n<deviceType>"); APPEND(device->devicetype); APPEND("</deviceType>");
@@ -130,7 +130,7 @@ static int generate_description (char **result, device_t *device)
 		}
 		APPEND("\n</serviceList>");
 	}
-	APPEND("\n</device>\n</root>");
+	APPEND("\n</device>\n</root>\n");
 	return 0;
 error:
 	return -1;
