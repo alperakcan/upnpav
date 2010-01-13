@@ -191,7 +191,7 @@ database_entry_t * database_query_entry (database_t *database, const char *entry
 			"       d.MIME,"
 			"       d.DLNA"
 			"  from OBJECT o left join DETAIL d on (d.ID = o.DETAIL)"
-			"  where o.ID = %s;",
+			"  where o.ID = '%s';",
 			entryid);
 	darg.database = database->database;
 	darg.args = (void *) &e;
@@ -209,7 +209,7 @@ database_entry_t * database_query_parent (database_t *database, const char *pare
 	sql = sqlite3_mprintf(
 			"SELECT count(*)"
 			"  from OBJECT o"
-			"  where o.PARENT = %s;",
+			"  where o.PARENT = '%s';",
 			parentid);
 	sqlite3_exec(database->database, sql, database_count_callback, (void *) total, 0);
 	sqlite3_free(sql);
@@ -303,6 +303,7 @@ int database_entry_free (database_entry_t *entry)
 		free(p->date);
 		free(p->dlna);
 		free(p->id);
+		free(p->class);
 		free(p->mime);
 		free(p->parent);
 		free(p->path);
