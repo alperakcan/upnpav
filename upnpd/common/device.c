@@ -57,7 +57,7 @@ static int device_vfsgetinfo (void *cookie, char *path, gena_fileinfo_t *info)
 	for (s = 0; (service = device->services[s]) != NULL; s++) {
 		if (strcmp(path, service->scpdurl) == 0) {
 			info->size = strlen(service->description);
-			info->mtime = 0;
+			info->mtime = (time_gettimeofday() / 1000);
 			info->mimetype = strdup("text/xml");
 			debugf("found service scpd url (%d)", info->size);
 			thread_mutex_unlock(device->mutex);

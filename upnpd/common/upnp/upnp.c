@@ -145,7 +145,7 @@ static int gena_callback_info (void *cookie, char *path, gena_fileinfo_t *info)
 	thread_mutex_lock(upnp->mutex);
 	if (strcmp(path, "/description.xml") == 0) {
 		info->size = strlen(upnp->type.device.description);
-		info->mtime = 0;
+		info->mtime = (time_gettimeofday() / 1000);
 		info->mimetype = strdup("text/xml");
 		thread_mutex_unlock(upnp->mutex);
 		return 0;
