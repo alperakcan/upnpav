@@ -231,9 +231,11 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 				tmp = tmp->next;
 			}
 		} else {
+			debugf("looking for '%s'", data.objectid);
 			entry = entry_init_from_id(contentdir->database, data.objectid, data.startingindex, data.requestedcount, &numberreturned, &totalmatches);
 		}
 		if (entry == NULL) {
+			debugf("could not find any object");
 			request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
 			goto error;
 		}
