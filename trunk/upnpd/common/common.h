@@ -559,6 +559,7 @@ int entry_normalize_root (entry_t *entry);
 void * entry_scan (const char *path);
 entry_t * entry_init_from_id (void *database, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total);
 entry_t * entry_init_from_path (const char *path, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total);
+entry_t * entry_init_from_search (void *database, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total, const char *serach);
 int entry_uninit (entry_t *root);
 entry_t * entry_from_result (const char *result);
 char * entry_to_result (device_service_t *service, entry_t *entry, int metadata);

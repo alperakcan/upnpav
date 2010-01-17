@@ -52,6 +52,8 @@ database_entry_t * database_query_entry (database_t *database, const char *entry
 
 database_entry_t * database_query_parent (database_t *database, const char *parentid, unsigned long long start, unsigned long long count, unsigned long long *total);
 
+database_entry_t * database_query_search (database_t *database, const char *parentid, unsigned long long start, unsigned long long count, unsigned long long *total, const char *searchflag);
+
 unsigned long long database_insert (database_t *database,
 		const char *class,
 		const char *parentid,

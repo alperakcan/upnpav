@@ -308,6 +308,9 @@ static int contentdirectory_search (device_service_t *service, upnp_event_action
 	contentdir_t *contentdir;
 	contentdirectory_search_data_t data;
 
+	char str[23];
+	entry_t *entry;
+
 	/* out */
 	char *result;
 	uint32_t totalmatches;
@@ -335,7 +338,38 @@ static int contentdirectory_search (device_service_t *service, upnp_event_action
 		data.startingindex,
 		data.requestedcount,
 		data.sortcriteria);
+
+	entry = entry_init_from_search(contentdir->database, data.objectid, data.startingindex, data.requestedcount, &numberreturned, &totalmatches, data.searchflag);
+	if (entry == NULL) {
+		debugf("could not find any object");
+		request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
+		goto error;
+	}
+	updateid = contentdir->updateid;
+	result = entry_to_result(service, entry, 0);
+	if (result == NULL) {
+		request->errcode = UPNP_ERROR_CANNOT_PROCESS;
+		goto error;
+	}
+	upnp_add_response(request, service->type, "Result", result);
+	upnp_add_response(request, service->type, "NumberReturned", uint32tostr(str, numberreturned));
+	upnp_add_response(request, service->type, "TotalMatches", uint32tostr(str, totalmatches));
+	upnp_add_response(request, service->type, "UpdateID", uint32tostr(str, updateid));
+	free(data.searchflag);
+	free(data.filter);
+	free(data.objectid);
+	free(data.sortcriteria);
+	free(result);
+	entry_uninit(entry);
+	return 0;
+
 	request->errcode = UPNP_ERROR_INVALIG_ARGS;
+error:
+	free(data.searchflag);
+	free(data.filter);
+	free(data.objectid);
+	free(data.sortcriteria);
+	entry_uninit(entry);
 	return -1;
 }
 
@@ -417,6 +451,7 @@ static service_action_t *contentdirectory_actions[] = {
 
 static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_t *info)
 {
+	char *ptr;
 	entry_t *entry;
 	file_stat_t stat;
 	const char *ename;
@@ -428,6 +463,10 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 		return -1;
 	}
 	ename = path + strlen("/upnp/contentdirectory?id=");
+	ptr = strstr(ename, "&");
+	if (ptr != NULL) {
+		*ptr = '\0';
+	}
 	debugf("entry name is '%s'", ename);
 	entry = entry_didl_from_id(contentdir->database, ename);
 	if (entry == NULL) {

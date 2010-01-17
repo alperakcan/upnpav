@@ -133,7 +133,7 @@ static char * entryid_parentid_from_path (const char *path)
 	return parentid;
 }
 
-entry_t * entry_init_from_database (database_entry_t *dentry)
+static entry_t * entry_init_from_database (database_entry_t *dentry)
 {
 	entry_t *entry;
 	if (dentry == NULL) {
@@ -555,6 +555,57 @@ entry_t * entry_init_from_id (void *database, const char *id, unsigned int start
 		return entry;
 	} else {
 		de = database_query_parent(db, id, start, count, &ds);
+		*total = ds;
+		if (*total == 0) {
+			return NULL;
+		}
+		entry = NULL;
+		tentry = NULL;
+		for (dt = de; dt != NULL; dt = dt->next) {
+			if (tentry == NULL) {
+				tentry = entry_init_from_database(dt);
+				if (tentry == NULL) {
+					break;
+				}
+				entry = tentry;
+			} else {
+				tentry->next = entry_init_from_database(dt);
+				if (tentry->next == NULL) {
+					break;
+				}
+				tentry = tentry->next;
+			}
+		}
+		*returned = 0;
+		tentry = entry;
+		while (tentry != NULL) {
+			*returned = *returned + 1;
+			tentry = tentry->next;
+		}
+		database_entry_free(de);
+		debugf("returned: %d, total: %d\n", *returned, *total);
+		tentry = entry;
+		while (tentry != NULL) {
+			tentry = tentry->next;
+		}
+		return entry;
+	}
+}
+
+entry_t * entry_init_from_search (void *database, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total, const char *serach)
+{
+	entry_t *entry;
+	entry_t *tentry;
+	database_t *db;
+	database_entry_t *de;
+	database_entry_t *dt;
+	unsigned long long ds;
+	db = (database_t *) database;
+	if (db == NULL) {
+		debugf("search is not supported without database");
+		return NULL;
+	} else {
+		de = database_query_search(db, id, start, count, &ds, serach);
 		*total = ds;
 		if (*total == 0) {
 			return NULL;
