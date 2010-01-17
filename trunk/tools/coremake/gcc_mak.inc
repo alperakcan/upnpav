@@ -314,7 +314,7 @@
   IF defined(TARGET_PALMOS)
     IF (%(TYPE)==lib)
       PRINTNL $(OUTPUT): $(OBJS) 
-      PRINTNL 	@echo linking
+      PRINTNL 	@echo linking $@
       PRINTNL 	@mkdir -p %(¯!OUTPUTPATH)%(OUTPUT_DIR)
       PRINTNL 	@$(AR) rcs $@ $(OBJS)
     ELSE
@@ -394,7 +394,7 @@
     ENDIF
 
     PRINTNL $(OUTPUT): $(OBJS) $(LIBS) $(USEBUILT) $(ICON) $(INSTALL) $(PLIST)
-    PRINTNL 	@echo linking
+    PRINTNL 	@echo linking $@
     PRINTNL 	@mkdir -p %(¯!OUTPUTPATH)%(OUTPUT_DIR)
     IF (%(TYPE)==lib)
       PRINTNL 	@$(AR) rcs $@ $(OBJS)
