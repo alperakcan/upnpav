@@ -241,6 +241,64 @@ database_entry_t * database_query_parent (database_t *database, const char *pare
 	return e;
 }
 
+database_entry_t * database_query_search (database_t *database, const char *parentid, unsigned long long start, unsigned long long count, unsigned long long *total, const char *searchflag)
+{
+	char *sql;
+	char *nsearch;
+	database_arg_t darg;
+	database_entry_t *e;
+	e = NULL;
+	if (searchflag == NULL) {
+		nsearch = strdup("1 = 1");
+	} else {
+		if (strstr(searchflag, "upnp:class derivedfrom \"object.item.audio")) {
+			nsearch = strdup("o.CLASS glob 'object.item.audio*'");
+		} else if (strstr(searchflag, "upnp:class derivedfrom \"object.item.video")) {
+			nsearch = strdup("o.CLASS glob 'object.item.video*'");
+		} else if (strstr(searchflag, "upnp:class derivedfrom \"object.item.image")) {
+			nsearch = strdup("o.CLASS glob 'object.item.image*'");
+		} else {
+			nsearch = strdup("1 = 1");
+		}
+	}
+	sql = sqlite3_mprintf(
+			"SELECT count(*)"
+			"  from OBJECT o"
+			"  where o.PARENT glob '%s*' and %s;",
+			parentid, nsearch);
+	sqlite3_exec(database->database, sql, database_count_callback, (void *) total, 0);
+	sqlite3_free(sql);
+	if (*total == 0) {
+		free(nsearch);
+		return NULL;
+	}
+	sql = sqlite3_mprintf(
+			"SELECT o.ID,"
+			"       o.CLASS,"
+			"       o.PARENT,"
+			"       d.PATH,"
+			"       d.TITLE,"
+			"       d.SIZE,"
+			"       d.DATE,"
+			"       d.MIME,"
+			"       d.DLNA"
+			"  from OBJECT o left join DETAIL d on (d.ID = o.DETAIL)"
+			"  where o.PARENT glob '%s*' and %s order by d.TITLE limit %llu, %llu;",
+			parentid,
+			nsearch,
+			start,
+			count);
+	darg.database = database->database;
+	darg.args = (void *) &e;
+	sqlite3_exec(database->database, sql, database_query_callback, (void *) &darg, 0);
+	sqlite3_free(sql);
+	if (e == NULL) {
+		*total = 0;
+	}
+	free(nsearch);
+	return e;
+}
+
 unsigned long long database_insert (database_t *database,
 		const char *class,
 		const char *parentid,
