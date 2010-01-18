@@ -34,6 +34,11 @@
 #include <inttypes.h>
 #include <time.h>
 
+#if defined(HAVE_LIBFFMPEG)
+#include <libavformat/avformat.h>
+#include <libavcodec/avcodec.h>
+#endif
+
 #include "platform.h"
 #include "metadata.h"
 
@@ -44,6 +49,57 @@ typedef struct metadata_info_s {
 	int (*metadata) (metadata_t *metadata);
 } metadata_info_t;
 
+static int metadata_video_ffmpeg (metadata_t *metadata)
+{
+#if defined(HAVE_LIBFFMPEG)
+	int i;
+	int astream;
+	int vstream;
+	AVFormatContext *ctx;
+	av_register_all();
+	if (av_open_input_file(&ctx, metadata->pathname, NULL, 0, NULL) != 0) {
+		debugf("av_open_input_file(%s) failed", metadata->pathname);
+		return 0;
+	}
+	av_find_stream_info(ctx);
+	astream = -1;
+	vstream = -1;
+	for (i = 0; i < ctx->nb_streams; i++) {
+		if (astream == -1 && ctx->streams[i]->codec->codec_type == CODEC_TYPE_AUDIO) {
+			astream = i;
+		}
+		if (vstream == -1 && ctx->streams[i]->codec->codec_type == CODEC_TYPE_VIDEO) {
+			vstream = i;
+		}
+	}
+	if (vstream == -1) {
+		debugf("%s is not a video file", metadata->pathname);
+		av_close_input_file(ctx);
+		return -1;
+	}
+	debugf("%s info:", metadata->basename);
+	debugf("  resolution: %d, %d", ctx->streams[vstream]->codec->width, ctx->streams[vstream]->codec->height);
+	if (ctx->bit_rate > 8) {
+		debugf("  bitrate: %u", ctx->bit_rate / 8);
+	}
+	if (ctx->duration > 0) {
+		int duration = (int) (ctx->duration / AV_TIME_BASE);
+		int hours = (int) (duration / 3600);
+		int min = (int) (duration / 60 % 60);
+		int sec = (int) (duration % 60);
+		int ms = (int) (ctx->duration / (AV_TIME_BASE/1000) % 1000);
+		debugf("  duration: %d:%02d:%02d.%03d", hours, min, sec, ms);
+	}
+	switch (ctx->streams[vstream]->codec->codec_id) {
+		default:
+			debugf("unknown codec_id: 0x%08x (%u)", ctx->streams[vstream]->codec->codec_id, ctx->streams[vstream]->codec->codec_id);
+			break;
+	}
+	av_close_input_file(ctx);
+#endif
+	return 0;
+}
+
 static int metadata_video (metadata_t *metadata)
 {
 	metadata->type = METADATA_TYPE_VIDEO;
@@ -51,6 +107,7 @@ static int metadata_video (metadata_t *metadata)
 	if (metadata->title == NULL) {
 		return -1;
 	}
+	metadata_video_ffmpeg(metadata);
 	return 0;
 }
 
@@ -84,6 +141,7 @@ static metadata_info_t *metadata_info[] = {
 	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.wmv", "video/x-ms-wmv", metadata_video},
 	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mkv", "video/x-matroska", metadata_video},
 	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mts", "video/vnd.dlna.mpeg-tts", metadata_video},
+	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.flv", "video/x-flv", metadata_video},
 	/* audio */
 	& (metadata_info_t) {METADATA_TYPE_AUDIO, "*.mp3", "audio/mpeg", metadata_audio},
 	& (metadata_info_t) {METADATA_TYPE_AUDIO, "*.ogg", "audio/ogg", metadata_audio},
