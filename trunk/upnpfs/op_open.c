@@ -38,8 +38,8 @@ static inline upnpfs_cache_t * do_findmetadata (const char *path)
 	if (p == NULL) {
 		return NULL;
 	}
-	t = p + strlen(p) - strlen(".xml");
-	if (strcmp(t, ".xml") != 0) {
+	t = p + strlen(p) - strlen(".txt");
+	if (strcmp(t, ".txt") != 0) {
 		free(p);
 		return NULL;
 	}

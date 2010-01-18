@@ -981,6 +981,19 @@ static int entry_parser_callback (void *context, const char *path, const char *n
 			}
 		}
 	}
+	if (data->curr != NULL) {
+		char *tmp = NULL;
+		if (asprintf(&tmp, "%s%s%s%s\n", (data->curr->metadata) ? data->curr->metadata : "", path, (value) ? " = " : "", (value) ? value : "") > 0) {
+			free(data->curr->metadata);
+			data->curr->metadata = tmp;
+		}
+		for (a = 0; atrr[a] && atrr[a + 1]; a += 2) {
+			if (asprintf(&tmp, "%s  %s = %s\n", (data->curr->metadata) ? data->curr->metadata : "", atrr[a] , atrr[a + 1]) > 0) {
+				free(data->curr->metadata);
+				data->curr->metadata = tmp;
+			}
+		}
+	}
 	return 0;
 }
 

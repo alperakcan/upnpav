@@ -105,7 +105,7 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 		r = e;
 		while (e) {
 			p = NULL;
-			if (asprintf(&p, "%s.xml", e->didl.dc.title) >= 0) {
+			if (asprintf(&p, "%s.txt", e->didl.dc.title) >= 0) {
 				filler(buffer, p, NULL, 0);
 				free(p);
 			}
