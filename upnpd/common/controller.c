@@ -88,6 +88,7 @@ client_t * controller_init (char *options)
 	char *suboptions;
 
 	err = 0;
+	netmask = NULL;
 	interface = NULL;
 	suboptions = options;
 	debugf("%s\n", options);
