@@ -275,6 +275,7 @@ int do_releasefile (upnpfs_file_t *file)
 	if (file) {
 		do_releasecache(file->cache);
 		http_close(file->protocol);
+		free(file->dname);
 		file->cache = NULL;
 		file->protocol = NULL;
 	}
@@ -282,12 +283,18 @@ int do_releasefile (upnpfs_file_t *file)
 }
 int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
+	int i;
 	int siz;
 	int len;
+	char *ptr;
+	char *tmp;
 	entry_t *e;
 	upnpfs_http_t *h;
 	upnpfs_http_t *n;
 	upnpfs_file_t *f;
+	client_device_t *device;
+	client_service_t *service;
+	client_variable_t *variable;
 	debugfs("enter (fi: %p)", fi);
 	f = (upnpfs_file_t *) (unsigned long) fi->fh;
 	if (f->metadata == 1) {
@@ -310,6 +317,51 @@ int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse
 		memcpy(buf, e->metadata, siz);
 		entry_uninit(e);
 		debugfs("leave, size: %u, offset: %u, len: %d", (unsigned int) size, (unsigned int) offset, siz);
+		return siz;
+	} else if (f->device == 1) {
+		len = 0;
+		siz = 0;
+		ptr = NULL;
+		debugf("reading '%s' info", f->dname);
+		thread_mutex_lock(priv.controller->mutex);
+		list_for_each_entry(device, &priv.controller->devices, head) {
+			if (strcmp(device->name, f->dname) == 0) {
+				i = asprintf(&tmp, "%s\n", device->name);
+				if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
+				i = asprintf(&tmp, "%s  type         : %s\n", ptr, device->type);
+				if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
+				i = asprintf(&tmp, "%s  uuid         : %s\n", ptr, device->uuid);
+				if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
+				i = asprintf(&tmp, "%s  expiretime   : %d\n", ptr, device->expiretime);
+				if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
+				list_for_each_entry(service, &device->services, head) {
+					i = asprintf(&tmp, "%s  -- type       : %s\n", ptr, service->type);
+					if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
+					i = asprintf(&tmp, "%s     id         : %s\n", ptr, service->id);
+					if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
+					i = asprintf(&tmp, "%s     sid        : %s\n", ptr, service->sid);
+					if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
+					i = asprintf(&tmp, "%s     controlurl : %s\n", ptr, service->controlurl);
+					if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
+					i = asprintf(&tmp, "%s     eventurl   : %s\n", ptr, service->eventurl);
+					if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
+					list_for_each_entry(variable, &service->variables, head) {
+						i = asprintf(&tmp, "%s    -- name  : %s\n", ptr, variable->name);
+						if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
+						i = asprintf(&tmp, "%s       value : %s\n", ptr, variable->value);
+						if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
+					}
+				}
+				break;
+			}
+		}
+		thread_mutex_unlock(priv.controller->mutex);
+		if (len > 0) {
+			len = strlen(ptr);
+			siz = (size < (len - offset)) ? siz : (len - offset);
+			memcpy(buf, ptr, siz);
+		}
+		free(ptr);
 		return siz;
 	} else {
 		if (f->protocol == NULL) {
