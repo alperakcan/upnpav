@@ -181,6 +181,7 @@ static entry_t * entry_init_from_database (database_entry_t *dentry)
 		entry->didl.upnp.musictrack.audioitem.longdescription = NULL;
 		asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
 		entry->didl.res.size = dentry->size;
+		entry->didl.res.duration = strdup(dentry->duration);
 	} else if (strcmp(dentry->class, "object.item.videoItem.movie") == 0) {
 		entry->didl.entryid = strdup(dentry->id);
 		entry->didl.parentid = strdup(dentry->parent);
@@ -207,6 +208,7 @@ static entry_t * entry_init_from_database (database_entry_t *dentry)
 		entry->didl.upnp.movie.videoitem.rating = NULL;
 		asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
 		entry->didl.res.size = dentry->size;
+		entry->didl.res.duration = strdup(dentry->duration);
 	} else if (strcmp(dentry->class, "object.item.imageItem.photo") == 0) {
 		entry->didl.entryid = strdup(dentry->id);
 		entry->didl.parentid = strdup(dentry->parent);
@@ -344,6 +346,7 @@ entry_t * entry_didl_from_path (const char *path)
 		entry->didl.upnp.movie.videoitem.rating = NULL;
 		asprintf(&entry->didl.res.protocolinfo, "http-get:*:%s:%s", entry->mime, entry->ext_info);
 		entry->didl.res.size = metadata->size;
+		entry->didl.res.duration = (metadata->duration) ? strdup(metadata->duration) : NULL;
 	} else if (metadata->type == METADATA_TYPE_IMAGE) {
 		entry->didl.entryid = entryid_init_value(path);
 		if (entry->didl.entryid == NULL) {
@@ -462,6 +465,7 @@ int entry_dump (entry_t *entry)
 		}
 		printf("  didl.res.protocolinfo: %s\n", c->didl.res.protocolinfo);
 		printf("  didl.res.size        : %llu\n", c->didl.res.size);
+		printf("  didl.res.duration    : %s\n", c->didl.res.duration);
 		printf("  didl.res.path        : %s\n", c->didl.res.path);
 		c = c->next;
 	}
@@ -511,6 +515,7 @@ static int entry_scan_path (database_t *database, const char *path, const char *
 					entry->path,
 					entry->didl.dc.title,
 					size,
+					entry->didl.res.duration,
 					entry->didl.dc.date,
 					entry->mime,
 					"*");
@@ -1051,7 +1056,7 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)
 				" <upnp:playlist>%s</upnp:playlist>"
 				" <upnp:genre>%s</upnp:genre>"
 				" <upnp:longDescription>%s</upnp:longDescription>"
-				" <res protocolInfo=\"%s\" size=\"%llu\">http://%s:%d/upnp/contentdirectory?id=%s</res>"
+				" <res protocolInfo=\"%s\" size=\"%llu\" %s%s%s>http://%s:%d/upnp/contentdirectory?id=%s</res>"
 				"</item>";
 			album = xml_escape(entry->didl.upnp.musictrack.album, 0);
 			artist = xml_escape(entry->didl.upnp.musictrack.artist, 0);
@@ -1073,7 +1078,12 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)
 				entry->didl.upnp.musictrack.playlist,
 				genre,
 				entry->didl.upnp.audioitem.longdescription,
-				entry->didl.res.protocolinfo, entry->didl.res.size, upnp_getaddress(service->device->upnp), upnp_getport(service->device->upnp), path);
+				entry->didl.res.protocolinfo,
+				entry->didl.res.size,
+				(entry->didl.res.duration) ? "duration=\"" : "",
+				(entry->didl.res.duration) ? entry->didl.res.duration : "",
+				(entry->didl.res.duration) ? "\"" : "",
+				upnp_getaddress(service->device->upnp), upnp_getport(service->device->upnp), path);
 			free(album);
 			free(artist);
 			free(genre);
@@ -1095,7 +1105,7 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)
 				" <upnp:rating>%s</upnp:rating>"
 				" <upnp:actor>%s</upnp:actor>"
 				" <upnp:director>%s</upnp:director>"
-				" <res protocolInfo=\"%s\" size=\"%llu\">http://%s:%d/upnp/contentdirectory?id=%s</res>"
+				" <res protocolInfo=\"%s\" size=\"%llu\" %s%s%s>http://%s:%d/upnp/contentdirectory?id=%s</res>"
 				"</item>";
 			rc = asprintf(&tmp, ifmt,
 				id, pid, (entry->didl.restricted == 1) ? "true" : "false",
@@ -1114,7 +1124,12 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)
 				entry->didl.upnp.videoitem.rating,
 				entry->didl.upnp.videoitem.actor,
 				entry->didl.upnp.videoitem.director,
-				entry->didl.res.protocolinfo, entry->didl.res.size, upnp_getaddress(service->device->upnp), upnp_getport(service->device->upnp), path);
+				entry->didl.res.protocolinfo,
+				entry->didl.res.size,
+				(entry->didl.res.duration) ? "duration=\"" : "",
+				(entry->didl.res.duration) ? entry->didl.res.duration : "",
+				(entry->didl.res.duration) ? "\"" : "",
+				upnp_getaddress(service->device->upnp), upnp_getport(service->device->upnp), path);
 		} else if (strcmp(entry->didl.upnp.object.class, "object.item.imageItem.photo") == 0) {
 			static char *ifmt =
 				"<item id=\"%s\" parentID=\"%s\" restricted=\"%s\">"

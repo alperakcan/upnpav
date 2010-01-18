@@ -36,6 +36,7 @@ struct database_entry_s {
 	char *path;
 	char *title;
 	unsigned long long size;
+	char *duration;
 	char *date;
 	char *mime;
 	char *dlna;
@@ -61,6 +62,7 @@ unsigned long long database_insert (database_t *database,
 		const char *path,
 		const char *title,
 		const unsigned long long size,
+		const char *duration,
 		const char *date,
 		const char *mime,
 		const char *dlna);
