@@ -67,7 +67,7 @@ database_t * database_init (int remove)
 	}
 	memset(db, 0, sizeof(database_t));
 
-	db->name = "upnpd.sqlite3";
+	db->name = "/tmp/upnpd.sqlite3";
 
 	if (remove == 1) {
 		unlink(db->name);
@@ -91,6 +91,7 @@ database_t * database_init (int remove)
 		"  PATH TEXT NOT NULL,"
 		"  TITLE TEXT NOT NULL,"
 		"  SIZE TEXT NOT NULL,"
+		"  DURATION TEXT NOT NULL,"
 		"  DATE TEXT NOT NULL,"
 		"  MIME TEXT NOT NULL,"
 		"  DLNA TEXT NOT NULL);",
@@ -146,9 +147,10 @@ static int database_query_callback (void *args, int argc, char **argv, char **az
 	entry->path = strdup(argv[3]);
 	entry->title = strdup(argv[4]);
 	entry->size = atoll(argv[5]);
-	entry->date = strdup(argv[6]);
-	entry->mime = strdup(argv[7]);
-	entry->dlna = strdup(argv[8]);
+	entry->duration = strdup(argv[6]);
+	entry->date = strdup(argv[7]);
+	entry->mime = strdup(argv[8]);
+	entry->dlna = strdup(argv[9]);
 
 	if (strcmp(entry->class, "object.container.storageFolder") == 0) {
 		sql = sqlite3_mprintf(
@@ -188,6 +190,7 @@ database_entry_t * database_query_entry (database_t *database, const char *entry
 			"       d.PATH,"
 			"       d.TITLE,"
 			"       d.SIZE,"
+			"       d.DURATION,"
 			"       d.DATE,"
 			"       d.MIME,"
 			"       d.DLNA"
@@ -224,6 +227,7 @@ database_entry_t * database_query_parent (database_t *database, const char *pare
 			"       d.PATH,"
 			"       d.TITLE,"
 			"       d.SIZE,"
+			"       d.DURATION,"
 			"       d.DATE,"
 			"       d.MIME,"
 			"       d.DLNA"
@@ -280,6 +284,7 @@ database_entry_t * database_query_search (database_t *database, const char *pare
 			"       d.PATH,"
 			"       d.TITLE,"
 			"       d.SIZE,"
+			"       d.DURATION,"
 			"       d.DATE,"
 			"       d.MIME,"
 			"       d.DLNA"
@@ -306,6 +311,7 @@ unsigned long long database_insert (database_t *database,
 		const char *path,
 		const char *title,
 		const unsigned long long size,
+		const char *duration,
 		const char *date,
 		const char *mime,
 		const char *dlna)
@@ -316,12 +322,13 @@ unsigned long long database_insert (database_t *database,
 	detailid = 0;
 	sql = sqlite3_mprintf(
 			"INSERT into DETAIL"
-			"  (PATH, TITLE, SIZE, DATE, MIME, DLNA)"
+			"  (PATH, TITLE, SIZE, DURATION, DATE, MIME, DLNA)"
 			"  values"
-			"  ('%s', '%s', %llu, '%s', '%s', '%s')",
+			"  ('%s', '%s', %llu, '%s', '%s', '%s', '%s')",
 			path,
 			title,
 			size,
+			(duration) ? duration : "00:00:00.000",
 			date,
 			mime,
 			dlna);
@@ -361,6 +368,7 @@ int database_entry_free (database_entry_t *entry)
 		n = n->next;
 		free(p->date);
 		free(p->dlna);
+		free(p->duration);
 		free(p->id);
 		free(p->class);
 		free(p->mime);

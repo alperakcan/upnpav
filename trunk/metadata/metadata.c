@@ -90,6 +90,7 @@ static int metadata_video_ffmpeg (metadata_t *metadata)
 		int sec = (int) (duration % 60);
 		int ms = (int) (ctx->duration / (AV_TIME_BASE/1000) % 1000);
 		debugf("  duration: %d:%02d:%02d.%03d", hours, min, sec, ms);
+		asprintf(&metadata->duration, "%d:%02d:%02d.%03d", hours, min, sec, ms);
 	}
 	switch (ctx->streams[vstream]->codec->codec_id) {
 		default:
