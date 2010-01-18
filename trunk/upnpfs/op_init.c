@@ -31,20 +31,26 @@
 void * op_init (struct fuse_conn_info *conn)
 {
 	char *ipaddr;
+	char *netmask;
 	debugfs("enter");
 	ipaddr = interface_getaddr(opts.interface);
 	if (ipaddr == NULL) {
 		debugfs("interface_getaddr('%s') failed", opts.interface);
 		exit(-1);
 	}
-	if (asprintf(&priv.options, "aemonize=0,interface=%s", ipaddr) < 0) {
-		debugfs("interface_getaddr('%s') failed", opts.interface);
+	netmask = interface_getmask(opts.interface);
+	if (netmask == NULL) {
+		debugfs("interface_getmask('%s') failed", opts.interface);
 		exit(-2);
+	}
+	if (asprintf(&priv.options, "daemonize=0,interface=%s,netmask=%s", ipaddr, netmask) < 0) {
+		debugfs("interface_getaddr('%s') failed", opts.interface);
+		exit(-3);
 	}
 	priv.controller = controller_init(priv.options);
 	if (priv.controller == NULL) {
 		debugfs("controller_init('%s') failed", priv.options);
-		exit(-3);
+		exit(-4);
 	}
 	list_init(&priv.cache);
 	priv.cache_size = opts.cache_size;
