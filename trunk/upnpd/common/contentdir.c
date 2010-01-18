@@ -235,9 +235,15 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 			entry = entry_init_from_id(contentdir->database, data.objectid, data.startingindex, data.requestedcount, &numberreturned, &totalmatches);
 		}
 		if (entry == NULL) {
-			debugf("could not find any object");
-			request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
-			goto error;
+			debugf("could not find any child object");
+			entry = entry_didl_from_id(contentdir->database, data.objectid);
+			if (entry == NULL) {
+				debugf("could not find any object");
+				request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
+				goto error;
+			}
+			entry_uninit(entry);
+			entry = NULL;
 		}
 		updateid = contentdir->updateid;
 		result = entry_to_result(service, entry, 0);
