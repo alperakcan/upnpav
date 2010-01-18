@@ -548,7 +548,6 @@ device_service_t * device_service_find (device_t *device, char *serviceid);
 
 /* entry.c */
 
-char * entryid_path_from_id (const char *id);
 char * entryid_id_from_path (const char *path);
 entry_t * entry_didl_from_id (void *database, const char *id);
 entry_t * entry_didl_from_path (const char *path);
