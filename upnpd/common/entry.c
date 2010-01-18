@@ -62,7 +62,7 @@ static char entryid_convert (const char c)
 	return 0;
 }
 
-char * entryid_path_from_id (const char *id)
+static char * entryid_path_from_id (const char *id)
 {
 	int i;
 	int l;
