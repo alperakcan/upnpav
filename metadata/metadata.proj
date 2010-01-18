@@ -5,6 +5,15 @@ LIB upnpd_metadata
   EXPINCLUDE .
 
   SOURCE metadata.c
-  SOURCE snapshot.c
   HEADER metadata.h
+  
+  SOURCE snapshot.c
+
+  INCLUDE /usr/local/include
+  LIBS(HAVE_LIBFFMPEG) avformat
+  LIBS(HAVE_LIBFFMPEG) avcodec
+  LIBS(HAVE_LIBFFMPEG) swscale
+  LIBS(HAVE_LIBFFMPEG) avutil
+  LIBS(HAVE_LIBFFMPEG) z
+  LIBS(HAVE_LIBFFMPEG) bz2
 }
