@@ -2,6 +2,7 @@
  * upnpavd - UPNP AV Daemon
  *
  * Copyright (C) 2009 Alper Akcan, alper.akcan@gmail.com
+ * Copyright (C) 2010 Alper Akcan, alper.akcan@gmail.com
  * Copyright (C) 2009 CoreCodec, Inc., http://www.CoreCodec.com
  *
  * This library is free software; you can redistribute it and/or
