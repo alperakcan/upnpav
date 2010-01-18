@@ -72,6 +72,8 @@ typedef struct upnpfs_cache_s {
 } upnpfs_cache_t;
 
 typedef struct upnpfs_file_s {
+	int device;
+	char *dname;
 	int metadata;
 	upnpfs_cache_t *cache;
 	void *protocol;

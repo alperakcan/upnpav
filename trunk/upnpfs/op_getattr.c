@@ -55,7 +55,7 @@ int op_getattr (const char *path, struct stat *stbuf)
 		} else {
 			stbuf->st_mode = S_IFREG | 0444;
 			stbuf->st_nlink = 1;
-			stbuf->st_size = 0;
+			stbuf->st_size = 65536;
 			stbuf->st_atime = t;
 			stbuf->st_mtime = t;
 			stbuf->st_ctime = t;

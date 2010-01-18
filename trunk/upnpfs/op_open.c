@@ -74,15 +74,32 @@ int op_open (const char *path, struct fuse_file_info *fi)
 		c = do_findmetadata(path);
 		if (c == NULL) {
 			debugfs("do_findmetadata('%s') failed", path);
+			free(f);
 			return -ENOENT;
 		}
 		f->metadata = 1;
 		f->cache = c;
 		fi->fh = (unsigned long) f;
+	} else if (strncmp(path, "/.devices/", 10) == 0) {
+		debugfs("looking for device information");
+		t = strdup(path + 10);
+		if (t == NULL) {
+			free(f);
+			return -ENOENT;
+		}
+		if (strcmp(t + strlen(t) - strlen(".txt"), ".txt") != 0) {
+			free(f);
+			return -ENOENT;
+		}
+		*(t + strlen(t) - strlen(".txt")) = '\0';
+		f->device = 1;
+		f->dname = t;
+		fi->fh = (unsigned long) f;
 	} else {
 		c = do_findpath(path);
 		if (c == NULL) {
 			debugfs("do_findpath('%s') failed", path);
+			free(f);
 			return -ENOENT;
 		}
 		f->metadata = 0;

@@ -80,6 +80,41 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 		if (j > 0) {
 			filler(buffer, ".devices", NULL, 0);
 		}
+	} else if (strcmp(path, "/.devices") == 0) {
+		thread_mutex_lock(priv.controller->mutex);
+		if (list_count(&priv.controller->devices) <= 0) {
+			goto out;
+		}
+		d = (char **) malloc(sizeof(char *) * list_count(&priv.controller->devices));
+		if (d == NULL) {
+			thread_mutex_unlock(priv.controller->mutex);
+			goto out;
+		}
+		nd = 0;
+		list_for_each_entry(device, &priv.controller->devices, head) {
+			d[nd] = strdup(device->name);
+			if (d[nd] != NULL) {
+				nd++;
+			}
+		}
+		thread_mutex_unlock(priv.controller->mutex);
+
+		if (nd <= 0) {
+			goto out;
+		}
+		for (i = 0, j = 0; i < nd; i++) {
+			e = controller_browse_metadata(priv.controller, d[i], "0");
+			if (e != NULL) {
+				j++;
+				if (asprintf(&p, "%s.txt", d[i]) > 0) {
+					filler(buffer, p, NULL, 0);
+					free(p);
+				}
+			}
+			entry_uninit(e);
+			free(d[i]);
+		}
+		free(d);
 	} else if (((t = strstr(path, "/.metadata")) != NULL) &&
 		   (strcmp(t, "/.metadata") == 0)) {
 		p = strdup(path);
