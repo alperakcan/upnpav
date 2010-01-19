@@ -60,7 +60,7 @@
 #define HAVE_INTTYPES_H 1
 
 /* Define to 1 if you want 'libffmpeg' support. */
-#define HAVE_LIBFFMPEG 1
+/* #undef HAVE_LIBFFMPEG */
 
 /* Define if you have a readline compatible library */
 #define HAVE_LIBREADLINE 1
