@@ -48,7 +48,9 @@
 
 static int device_vfsgetinfo (void *cookie, char *path, gena_fileinfo_t *info)
 {
+	int c;
 	int s;
+	icon_t *icon;
 	device_t *device;
 	device_service_t *service;
 	debugf("device vfs get info (%s)", path);
@@ -61,6 +63,17 @@ static int device_vfsgetinfo (void *cookie, char *path, gena_fileinfo_t *info)
 			info->mtime = (time_gettimeofday() / 1000);
 			info->mimetype = strdup("text/xml");
 			debugf("found service scpd url (%d)", info->size);
+			thread_mutex_unlock(device->mutex);
+			return 0;
+		}
+	}
+	/* is icon file */
+	for (c = 0; (icon = device->icons[c]) != NULL; c++) {
+		if (strcmp(path, icon->url) == 0) {
+			info->size = icon->size;
+			info->mtime = (time_gettimeofday() / 1000);
+			info->mimetype = strdup(icon->mimetype);
+			debugf("found icon url (%d)", info->size);
 			thread_mutex_unlock(device->mutex);
 			return 0;
 		}
@@ -81,9 +94,11 @@ static int device_vfsgetinfo (void *cookie, char *path, gena_fileinfo_t *info)
 
 static void * device_vfsopen (void *cookie, char *path, gena_filemode_t mode)
 {
+	int c;
 	int s;
-	upnp_file_t *file;
+	icon_t *icon;
 	device_t *device;
+	upnp_file_t *file;
 	device_service_t *service;
 	debugf("device vfs open (%s)", path);
 	device = (device_t *) cookie;
@@ -100,6 +115,28 @@ static void * device_vfsopen (void *cookie, char *path, gena_filemode_t mode)
 			file->virtual = 1;
 			file->size = strlen(service->description);
 			file->buf = strdup(service->description);
+			thread_mutex_unlock(device->mutex);
+			return file;
+		}
+	}
+	/* is icon file */
+	for (c = 0; (icon = device->icons[c]) != NULL; c++) {
+		if (strcmp(path, icon->url) == 0) {
+			file = (upnp_file_t *) malloc(sizeof(upnp_file_t));
+			if (file == NULL) {
+				thread_mutex_unlock(device->mutex);
+				return NULL;
+			}
+			memset(file, 0, sizeof(upnp_file_t));
+			file->virtual = 1;
+			file->size = icon->size;
+			file->buf = (char *) malloc(icon->size);
+			if (file->buf == NULL) {
+				free(file);
+				thread_mutex_unlock(device->mutex);
+				return NULL;
+			}
+			memcpy(file->buf, icon->buffer, icon->size);
 			thread_mutex_unlock(device->mutex);
 			return file;
 		}
