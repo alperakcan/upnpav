@@ -534,13 +534,15 @@ static int entry_scan_path (database_t *database, const char *path, const char *
 	return 0;
 }
 
-void * entry_scan (const char *path)
+void * entry_scan (const char *path, int rescan)
 {
 	int ret;
 	database_t *database;
-	database = database_init(1);
-	ret = entry_scan_path(database, path, "0");
-	database_index(database);
+	database = database_init(rescan);
+	if (rescan) {
+		ret = entry_scan_path(database, path, "0");
+		database_index(database);
+	}
 	return (void *) database;
 }
 

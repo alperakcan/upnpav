@@ -599,7 +599,7 @@ static int contentdirectory_uninit (device_service_t *contentdir)
 	debugf("contentdirectory uninit");
 	debugf("uninitializing entry database");
 	if ((database_t *) ((contentdir_t *) contentdir)->database != NULL) {
-		database_uninit((database_t *) ((contentdir_t *) contentdir)->database, 1);
+		database_uninit((database_t *) ((contentdir_t *) contentdir)->database, 0);
 	}
 	free(((contentdir_t *) contentdir)->rootpath);
 	for (i = 0; (variable = contentdir->variables[i]) != NULL; i++) {
@@ -653,7 +653,7 @@ device_service_t * contentdirectory_init (char *directory, int cached)
 	contentdir->cached = cached;
 
 	if (contentdir->cached) {
-		contentdir->database = entry_scan(contentdir->rootpath);
+		contentdir->database = entry_scan(contentdir->rootpath, (cached == 1) ? 0 :  1);
 	}
 
 	debugf("initialized content directory service");
