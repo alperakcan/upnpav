@@ -76,26 +76,28 @@ database_t * database_init (int remove)
 	sqlite3_open(db->name, &db->database);
 	sqlite3_busy_timeout(db->database, 5000);
 
-	sqlite3_exec(db->database,
-		"CREATE TABLE OBJECT ("
-		"  KEY INTEGER PRIMARY KEY AUTOINCREMENT,"
-		"  ID TEXT NOT NULL,"
-		"  CLASS TEXT NOT NULL,"
-		"  PARENT INTEGER NOT NULL,"
-		"  DETAIL INTEGER NOT NULL);",
-		0, 0, 0);
+	if (remove) {
+		sqlite3_exec(db->database,
+			"CREATE TABLE OBJECT ("
+			"  KEY INTEGER PRIMARY KEY AUTOINCREMENT,"
+			"  ID TEXT NOT NULL,"
+			"  CLASS TEXT NOT NULL,"
+			"  PARENT INTEGER NOT NULL,"
+			"  DETAIL INTEGER NOT NULL);",
+			0, 0, 0);
 
-	sqlite3_exec(db->database,
-		"CREATE TABLE DETAIL ("
-		"  ID INTEGER PRIMARY KEY AUTOINCREMENT,"
-		"  PATH TEXT NOT NULL,"
-		"  TITLE TEXT NOT NULL,"
-		"  SIZE TEXT NOT NULL,"
-		"  DURATION TEXT NOT NULL,"
-		"  DATE TEXT NOT NULL,"
-		"  MIME TEXT NOT NULL,"
-		"  DLNA TEXT NOT NULL);",
-		0, 0, 0);
+		sqlite3_exec(db->database,
+			"CREATE TABLE DETAIL ("
+			"  ID INTEGER PRIMARY KEY AUTOINCREMENT,"
+			"  PATH TEXT NOT NULL,"
+			"  TITLE TEXT NOT NULL,"
+			"  SIZE TEXT NOT NULL,"
+			"  DURATION TEXT NOT NULL,"
+			"  DATE TEXT NOT NULL,"
+			"  MIME TEXT NOT NULL,"
+			"  DLNA TEXT NOT NULL);",
+			0, 0, 0);
+	}
 
 	return db;
 }
@@ -210,6 +212,7 @@ database_entry_t * database_query_parent (database_t *database, const char *pare
 	database_arg_t darg;
 	database_entry_t *e;
 	e = NULL;
+	*total = 0;
 	sql = sqlite3_mprintf(
 			"SELECT count(*)"
 			"  from OBJECT o"

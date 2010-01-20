@@ -281,7 +281,7 @@ error:	mediaserver_uninit(device);
 
 int mediaserver_refresh (device_t *mediaserver)
 {
-	debugf("refreshing contnt directory service");
+	debugf("refreshing content directory service");
 	return 0;
 }
 
