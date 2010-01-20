@@ -41,6 +41,9 @@
 #include "upnp.h"
 #include "common.h"
 
+#include "icon/mediaserver/48x48x24.h"
+#include "icon/mediaserver/48x48x32.h"
+
 typedef enum {
 	OPT_INTERFACE    = 0,
 	OPT_NETMASK      = 1,
@@ -77,6 +80,29 @@ static int mediaserver_help (void)
 	       "\thelp\n");
 	return 0;
 }
+
+static icon_t *mediaserver_icons[] = {
+	& (icon_t) {
+		icon_mediaserver_48x48x32_width,
+		icon_mediaserver_48x48x32_height,
+		icon_mediaserver_48x48x32_depth,
+		icon_mediaserver_48x48x32_path,
+		icon_mediaserver_48x48x32_mime,
+		icon_mediaserver_48x48x32_size,
+		icon_mediaserver_48x48x32_data
+	},
+	& (icon_t) {
+		icon_mediaserver_48x48x24_width,
+		icon_mediaserver_48x48x24_height,
+		icon_mediaserver_48x48x24_depth,
+		icon_mediaserver_48x48x24_path,
+		icon_mediaserver_48x48x24_mime,
+		icon_mediaserver_48x48x24_size,
+		icon_mediaserver_48x48x24_data
+	},
+	NULL,
+};
+
 device_t * mediaserver_init (char *options)
 {
 	int rc;
@@ -99,6 +125,7 @@ device_t * mediaserver_init (char *options)
 	cached = 0;
 	daemonize = 0;
 	uuid = NULL;
+	netmask = NULL;
 	interface = NULL;
 	directory = NULL;
 	friendlyname = NULL;
@@ -205,7 +232,7 @@ device_t * mediaserver_init (char *options)
 	device->serialnumber = "1";
 	device->upc = "";
 	device->presentationurl = "";
-	device->icons = NULL;
+	device->icons = mediaserver_icons;
 	device->daemonize = daemonize;
 	device->uuid = uuid;
 
