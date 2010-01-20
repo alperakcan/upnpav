@@ -89,7 +89,7 @@ static icon_t *mediaserver_icons[] = {
 		icon_mediaserver_48x48x32_path,
 		icon_mediaserver_48x48x32_mime,
 		icon_mediaserver_48x48x32_size,
-		icon_mediaserver_48x48x32_data
+		(unsigned char *) icon_mediaserver_48x48x32_data
 	},
 	& (icon_t) {
 		icon_mediaserver_48x48x24_width,
@@ -98,7 +98,7 @@ static icon_t *mediaserver_icons[] = {
 		icon_mediaserver_48x48x24_path,
 		icon_mediaserver_48x48x24_mime,
 		icon_mediaserver_48x48x24_size,
-		icon_mediaserver_48x48x24_data
+		(unsigned char *) icon_mediaserver_48x48x24_data
 	},
 	NULL,
 };
