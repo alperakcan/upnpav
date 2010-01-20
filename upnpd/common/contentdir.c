@@ -131,8 +131,12 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 	uint32_t numberreturned;
 	uint32_t updateid;
 
-	entry = NULL;
 	contentdir = (contentdir_t *) service;
+
+	entry = NULL;
+	totalmatches = 0;
+	numberreturned = 0;
+	updateid = contentdir->updateid;
 
 	memset(&data, 0, sizeof(data));
 	if (xml_parse_buffer_callback(request->request, strlen(request->request), contentdirectory_browse_callback, &data) != 0) {
