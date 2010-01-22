@@ -462,6 +462,9 @@ static service_action_t *contentdirectory_actions[] = {
 
 static int contentdirectory_istranscode (const char *title)
 {
+	/*
+	 * mencoder -ss 0 -quiet 00.avi -oac lavc -of mpeg -lavfopts format=asf -mpegopts format=mpeg2:muxrate=500000:vbuf_size=1194:abuf_size=64 -ovc lavc -channels 6 -lavdopts debug=0:threads=4 -lavcopts autoaspect=1:vcodec=mpeg2video:acodec=ac3:abitrate=640:threads=4:keyint=1:vqscale=1:vqmin=2 -nofontconfig -subcp cp1252 -ass-color ffffff00 -ass-border-color 00000000 -ass-font-scale 1.0 -ass-force-style FontName=Arial,Outline=1,Shadow=1,MarginV=10 -subdelay 20000 -ofps 24000/1001 -mc 0.1 -af lavcresample=48000 -srate 48000 -o output
+	 */
 	if (strncmp(title, "[transcode] - ", strlen("[transcode] - ")) == 0) {
 		return 0;
 	}
