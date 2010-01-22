@@ -46,10 +46,10 @@
 
 #define ARRAY_SIZE(a)		(sizeof(a) / sizeof((a)[0]))
 #define GENA_LISTEN_PORT	10000
-#define GENA_LISTEN_MAX	100
+#define GENA_LISTEN_MAX		100
 #define GENA_HEADER_SIZE	(1024 * 4)
-#define GENA_DATA_SIZE	(1024 * 1024)
-#define GENA_SOCKET_TIMEOUT	1000
+#define GENA_DATA_SIZE		(1024 * 1024)
+#define GENA_SOCKET_TIMEOUT	20000
 
 typedef struct gena_filerange_s {
 	unsigned long long start;
@@ -897,7 +897,7 @@ static void * gena_thread_loop (void *arg)
 	while (readlen < fileinfo.filerange.size) {
 		rlen = MIN(fileinfo.filerange.size - readlen, GENA_DATA_SIZE);
 		rlen = gena_thread->callbacks->vfs.read(gena_thread->callbacks->vfs.cookie, filehandle, data, rlen);
-		if (rlen < 0) {
+		if (rlen <= 0) {
 			debugf("read failed");
 			break;
 		}

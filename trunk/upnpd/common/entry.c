@@ -524,6 +524,22 @@ static int entry_scan_path (database_t *database, const char *path, const char *
 					entry_scan_path(database, entry->path, tmp);
 					free(tmp);
 				}
+			} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_MOVIE) {
+				debugf("adding transcode mirror");
+				size = ~0ULL >> 1;
+				if (asprintf(&tmp, "[transcode] - %s", entry->didl.dc.title) > 0) {
+					objectid = database_insert(database,
+							entry->didl.upnp.object.class,
+							parentid,
+							entry->path,
+							tmp,
+							size,
+							entry->didl.res.duration,
+							entry->didl.dc.date,
+							"video/mpeg",
+							"*");
+					free(tmp);
+				}
 			}
 		}
 		entry_uninit(entry);

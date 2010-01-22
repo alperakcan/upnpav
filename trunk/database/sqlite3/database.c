@@ -148,7 +148,7 @@ static int database_query_callback (void *args, int argc, char **argv, char **az
 	entry->parent = strdup(argv[2]);
 	entry->path = strdup(argv[3]);
 	entry->title = strdup(argv[4]);
-	entry->size = atoll(argv[5]);
+	entry->size = strtoull(argv[5], NULL, 10);
 	entry->duration = strdup(argv[6]);
 	entry->date = strdup(argv[7]);
 	entry->mime = strdup(argv[8]);

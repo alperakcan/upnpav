@@ -52,6 +52,8 @@ typedef enum {
 struct upnp_file_s {
 	/** */
 	int virtual;
+	/** */
+	int transcode;
 	/** service info, show */
 	device_service_t *service;
 	/** file descriptor, only for real files */
