@@ -460,6 +460,14 @@ static service_action_t *contentdirectory_actions[] = {
 	NULL,
 };
 
+static int contentdirectory_istranscode (const char *title)
+{
+	if (strncmp(title, "[transcode] - ", strlen("[transcode] - ")) == 0) {
+		return 0;
+	}
+	return -1;
+}
+
 static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_t *info)
 {
 	char *ptr;
@@ -484,10 +492,15 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 		debugf("no entry found '%s'", ename);
 		return -1;
 	}
-	debugf("entry path is '%s'", entry->path);
+	debugf("entry path: '%s', title: '%s'", entry->path, entry->didl.dc.title);
+	if (contentdirectory_istranscode(entry->didl.dc.title) == 0) {
+		debugf("transcode not supportted yet");
+		entry_uninit(entry);
+		return -1;
+	}
 	if (file_access(entry->path, FILE_MODE_READ) == 0 &&
 	    file_stat(entry->path, &stat) == 0) {
-		info->size = stat.size;
+		info->size = entry->didl.res.size;
 		info->mtime = stat.mtime;
 		info->mimetype = strdup(entry->mime);
 		entry_uninit(entry);
@@ -517,7 +530,7 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 		debugf("no entry found '%s'", ename);
 		return NULL;
 	}
-	debugf("entry path is '%s'", entry->path);
+	debugf("entry path: '%s', title: '%s'", entry->path, entry->didl.dc.title);
 	file = (upnp_file_t *) malloc(sizeof(upnp_file_t));
 	if (file == NULL) {
 		debugf("malloc failed");
@@ -526,6 +539,7 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 	}
 	memset(file, 0, sizeof(upnp_file_t));
 	file->virtual = 0;
+	file->transcode = 0;
 	file->file = file_open(entry->path, FILE_MODE_READ);
 	file->service = &contentdir->service;
 	if (file->file == NULL) {
