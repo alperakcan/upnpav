@@ -56,14 +56,14 @@ typedef enum {
 } mediaserver_options_t;
 
 static char *mediaserver_options[] = {
-	[OPT_INTERFACE]    = "interface",
-	[OPT_NETMASK]      = "netmask",
-	[OPT_DIRECTORY]    = "directory",
-	[OPT_CACHED]       = "cached",
-	[OPT_FRIENDLYNAME] = "friendlyname",
-	[OPT_DAEMONIZE]    = "daemonize",
-	[OPT_UUID]         = "uuid",
-	[OPT_HELP]         = "help",
+	"interface",
+	"netmask",
+	"directory",
+	"cached",
+	"friendlyname",
+	"daemonize",
+	"uuid",
+	"help",
 	NULL,
 };
 

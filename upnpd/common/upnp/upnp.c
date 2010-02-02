@@ -53,35 +53,37 @@
 #define UPNP_SUBSCRIPTION_MAX 100
 
 typedef struct upnp_error_s {
+	upnp_error_type_t error;
 	int code;
 	char *str;
 } upnp_error_t;
 
-static upnp_error_t upnp_errors[] = {
-	[UPNP_ERROR_INVALID_ACTION]             = {401, "Invalid Action"},
-	[UPNP_ERROR_INVALIG_ARGS]               = {402, "Invalid Args"},
-	[UPNP_ERROR_INVALID_VAR]                = {404, "Invalid Var"},
-	[UPNP_ERROR_ACTION_FAILED]              = {501, "Action Failed"},
-	[UPNP_ERROR_NOSUCH_OBJECT]              = {701, "No Such Object"},
-	[UPNP_ERROR_INVALID_CURRENTTAG]         = {702, "Invalid CurrentTag Value"},
-	[UPNP_ERROR_INVALID_NEWTAG]             = {703, "Invalid NewTag Value"},
-	[UPNP_ERROR_REQUIRED_TAG]               = {704, "Required Tag"},
-	[UPNP_ERROR_READONLY_TAG]               = {705, "Read only Tag"},
-	[UPNP_ERROR_PARAMETER_MISMATCH]         = {706, "Parameter Mismatch"},
-	[UPNP_ERROR_INVALID_SEARCH_CRITERIA]    = {708, "Unsupported or Invalid Search Criteria"},
-	[UPNP_ERROR_INVALID_SORT_CRITERIA]      = {709, "Unsupported or Invalid Sort Criteria"},
-	[UPNP_ERROR_NOSUCH_CONTAINER]           = {710, "No Such Container"},
-	[UPNP_ERROR_RESTRICTED_OBJECT]          = {711, "Restricted Object"},
-	[UPNP_ERROR_BAD_METADATA]               = {712, "Bad Metadata"},
-	[UPNP_ERROR_RESTRICTED_PARENT_OBJECT]   = {713, "Restricted Parent Object"},
-	[UPNP_ERROR_NOSUCH_RESOURCE]            = {714, "No Such Source Resouce"},
-	[UPNP_ERROR_RESOURCE_ACCESS_DENIED]     = {715, "Source Resource Access Denied"},
-	[UPNP_ERROR_TRANSFER_BUSY]              = {716, "Transfer Busy"},
-	[UPNP_ERROR_NOSUCH_TRANSFER]            = {717, "No Such File Transfer"},
-	[UPNP_ERROR_NOSUCH_DESTRESOURCE]        = {718, "No Such Destination Resource"},
-	[UPNP_ERROR_INVALID_INSTANCEID]         = {718, "Invalid InstanceID"},
-	[UPNP_ERROR_DESTRESOURCE_ACCESS_DENIED] = {719, "Destination Resource Access Denied"},
-	[UPNP_ERROR_CANNOT_PROCESS]             = {720, "Cannot Process The Request"},
+static upnp_error_t *upnp_errors[] = {
+	&(upnp_error_t) { UPNP_ERROR_INVALID_ACTION,             401, "Invalid Action"},
+	&(upnp_error_t) { UPNP_ERROR_INVALIG_ARGS,               402, "Invalid Args"},
+	&(upnp_error_t) { UPNP_ERROR_INVALID_VAR,                404, "Invalid Var"},
+	&(upnp_error_t) { UPNP_ERROR_ACTION_FAILED,              501, "Action Failed"},
+	&(upnp_error_t) { UPNP_ERROR_NOSUCH_OBJECT,              701, "No Such Object"},
+	&(upnp_error_t) { UPNP_ERROR_INVALID_CURRENTTAG,         702, "Invalid CurrentTag Value"},
+	&(upnp_error_t) { UPNP_ERROR_INVALID_NEWTAG,             703, "Invalid NewTag Value"},
+	&(upnp_error_t) { UPNP_ERROR_REQUIRED_TAG,               704, "Required Tag"},
+	&(upnp_error_t) { UPNP_ERROR_READONLY_TAG,               705, "Read only Tag"},
+	&(upnp_error_t) { UPNP_ERROR_PARAMETER_MISMATCH,         706, "Parameter Mismatch"},
+	&(upnp_error_t) { UPNP_ERROR_INVALID_SEARCH_CRITERIA,    708, "Unsupported or Invalid Search Criteria"},
+	&(upnp_error_t) { UPNP_ERROR_INVALID_SORT_CRITERIA,      709, "Unsupported or Invalid Sort Criteria"},
+	&(upnp_error_t) { UPNP_ERROR_NOSUCH_CONTAINER,           710, "No Such Container"},
+	&(upnp_error_t) { UPNP_ERROR_RESTRICTED_OBJECT,          711, "Restricted Object"},
+	&(upnp_error_t) { UPNP_ERROR_BAD_METADATA,               712, "Bad Metadata"},
+	&(upnp_error_t) { UPNP_ERROR_RESTRICTED_PARENT_OBJECT,   713, "Restricted Parent Object"},
+	&(upnp_error_t) { UPNP_ERROR_NOSUCH_RESOURCE,            714, "No Such Source Resouce"},
+	&(upnp_error_t) { UPNP_ERROR_RESOURCE_ACCESS_DENIED,     715, "Source Resource Access Denied"},
+	&(upnp_error_t) { UPNP_ERROR_TRANSFER_BUSY,              716, "Transfer Busy"},
+	&(upnp_error_t) { UPNP_ERROR_NOSUCH_TRANSFER,            717, "No Such File Transfer"},
+	&(upnp_error_t) { UPNP_ERROR_NOSUCH_DESTRESOURCE,        718, "No Such Destination Resource"},
+	&(upnp_error_t) { UPNP_ERROR_INVALID_INSTANCEID,         718, "Invalid InstanceID"},
+	&(upnp_error_t) { UPNP_ERROR_DESTRESOURCE_ACCESS_DENIED, 719, "Destination Resource Access Denied"},
+	&(upnp_error_t) { UPNP_ERROR_CANNOT_PROCESS,             720, "Cannot Process The Request"},
+	NULL,
 };
 
 typedef struct upnp_subscribe_s {
@@ -646,10 +648,11 @@ static int gena_callback_event_subscribe_drop (upnp_t *upnp, gena_event_unsubscr
 static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action)
 {
 	int ret;
+	char *tmp;
+	char *response;
 	upnp_event_t e;
 	upnp_service_t *s;
-	char *response;
-	char *tmp;
+	upnp_error_t **error;
 	upnp_event_action_node_t *n;
 	upnp_event_action_node_t *n_;
 	const char *envelope =
@@ -747,8 +750,13 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 				}
 			} else {
 				response = NULL;
-				if (asprintf(&action->response, fault, upnp_errors[e.event.action.errcode].code, upnp_errors[e.event.action.errcode].str) < 0) {
-					action->response = NULL;
+				for (error = upnp_errors; *error; error++) {
+					if ((*error)->error == e.event.action.errcode) {
+						if (asprintf(&action->response, fault, (*error)->code, (*error)->str) < 0) {
+							action->response = NULL;
+						}
+						break;
+					}
 				}
 			}
 			e.event.action.request = NULL;
