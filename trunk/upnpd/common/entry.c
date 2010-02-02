@@ -43,6 +43,8 @@
 #include "upnp.h"
 #include "common.h"
 
+#define TRANSCODE_PREFIX "[transcode] - "
+
 static char entryid_convert (const char c)
 {
 	switch (c) {
@@ -527,7 +529,7 @@ static int entry_scan_path (database_t *database, const char *path, const char *
 			} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_MOVIE) {
 				debugf("adding transcode mirror");
 				size = ~0ULL >> 1;
-				if (asprintf(&tmp, "[transcode] - %s", entry->didl.dc.title) > 0) {
+				if (asprintf(&tmp, "%s%s", TRANSCODE_PREFIX, entry->didl.dc.title) > 0) {
 					objectid = database_insert(database,
 							entry->didl.upnp.object.class,
 							parentid,

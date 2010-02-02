@@ -508,14 +508,14 @@ extern int platform_debug;
 #define debugf(fmt...) debug_debugf(__FILE__, __LINE__, __FUNCTION__, fmt);
 void debug_debugf (char *file, int line, const char *func, char *fmt, ...);
 
+/* link list derived from linux kernel */
+
 typedef struct list_s list_t;
 
 struct list_s {
 	struct list_s *next;
 	struct list_s *prev;
 };
-
-/* link list derived from linux kernel */
 
 #define offsetof_(type, member) ((size_t) &((type *) 0)->member)
 

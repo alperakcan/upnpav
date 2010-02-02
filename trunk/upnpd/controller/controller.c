@@ -55,7 +55,7 @@ typedef enum {
 } mediaserver_options_t;
 
 static char *mediaserver_options[] = {
-	[OPT_GUI]    = "gui",
+	"gui",
 	NULL,
 };
 

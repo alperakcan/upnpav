@@ -46,8 +46,8 @@ typedef enum {
 } mediaserver_options_t;
 
 static char *mediaserver_options[] = {
-	[OPT_INTERFACE]    = "interface",
-	[OPT_NETMASK]      = "netmask",
+	"interface",
+	"netmask",
 	NULL,
 };
 
