@@ -626,7 +626,7 @@ static int contentdirectory_uninit (device_service_t *contentdir)
 	return 0;
 }
 
-device_service_t * contentdirectory_init (char *directory, int cached)
+device_service_t * contentdirectory_init (char *directory, int cached, int transcode)
 {
 	contentdir_t *contentdir;
 	service_variable_t *variable;
@@ -670,7 +670,7 @@ device_service_t * contentdirectory_init (char *directory, int cached)
 	contentdir->cached = cached;
 
 	if (contentdir->cached) {
-		contentdir->database = entry_scan(contentdir->rootpath, (cached == 1) ? 0 :  1);
+		contentdir->database = entry_scan(contentdir->rootpath, (cached == 1) ? 0 : 1, (transcode == 1) ? 1 : 0);
 	}
 
 	debugf("initialized content directory service");

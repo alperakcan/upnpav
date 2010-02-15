@@ -49,10 +49,11 @@ typedef enum {
 	OPT_NETMASK      = 1,
 	OPT_DIRECTORY    = 2,
 	OPT_CACHED       = 3,
-	OPT_FRIENDLYNAME = 4,
-	OPT_DAEMONIZE    = 5,
-	OPT_UUID         = 6,
-	OPT_HELP         = 7,
+	OPT_TRANSCODE    = 4,
+	OPT_FRIENDLYNAME = 5,
+	OPT_DAEMONIZE    = 6,
+	OPT_UUID         = 7,
+	OPT_HELP         = 8,
 } mediaserver_options_t;
 
 static char *mediaserver_options[] = {
@@ -60,6 +61,7 @@ static char *mediaserver_options[] = {
 	"netmask",
 	"directory",
 	"cached",
+	"transcode",
 	"friendlyname",
 	"daemonize",
 	"uuid",
@@ -72,7 +74,8 @@ static int mediaserver_help (void)
 	printf("mediaserver options;\n"
 	       "\tinterface=<interface ip>\n"
 	       "\tnetmask=<netmask>\n"
-	       "\tcached=<cached>\n"
+	       "\tcached=<0,1,2>\n"
+	       "\ttranscode=<0,1>\n"
 	       "\tdirectory=<content directory service directory>\n"
 	       "\tfriendlyname=<device friendlyname>\n"
 	       "\tdaemonize=<1, 0>\n"
@@ -108,9 +111,10 @@ device_t * mediaserver_init (char *options)
 	int rc;
 	int err;
 	int cached;
-	char *value;
-	int daemonize;
 	char *uuid;
+	char *value;
+	int transcode;
+	int daemonize;
 	char *netmask;
 	char *directory;
 	char *interface;
@@ -158,11 +162,19 @@ device_t * mediaserver_init (char *options)
 				break;
 			case OPT_CACHED:
 				if (value == NULL) {
-					debugf("value is missinf for cached option");
+					debugf("value is missing for cached option");
 					err = 1;
 					continue;
 				}
 				cached = atoi(value);
+				break;
+			case OPT_TRANSCODE:
+				if (value == NULL) {
+					debugf("value is missing for cached option");
+					err = 1;
+					continue;
+				}
+				transcode = atoi(value);
 				break;
 			case OPT_FRIENDLYNAME:
 				if (value == NULL) {
@@ -202,6 +214,7 @@ device_t * mediaserver_init (char *options)
 	       "\tnetmask     : %s\n"
 	       "\tdirectory   : %s\n"
 	       "\tcached      : %d\n"
+	       "\ttranscode   : %d\n"
 	       "\tfriendlyname: %s\n",
 	       (uuid) ? uuid : "(default)",
 	       (daemonize) ? "yes" : "no",
@@ -209,6 +222,7 @@ device_t * mediaserver_init (char *options)
 	       (netmask) ? netmask : "null",
 	       (directory) ? directory : "null",
 	       cached,
+	       transcode,
 	       (friendlyname) ? friendlyname : "mediaserver");
 
 	debugf("initializing mediaserver device struct");
@@ -236,7 +250,7 @@ device_t * mediaserver_init (char *options)
 	device->daemonize = daemonize;
 	device->uuid = uuid;
 
-	service = contentdirectory_init(directory, cached);
+	service = contentdirectory_init(directory, cached, transcode);
 	if (service == NULL) {
 		debugf("contendirectory_init() failed");
 		goto error;
