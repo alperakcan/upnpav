@@ -474,7 +474,7 @@ int entry_dump (entry_t *entry)
 	return 0;
 }
 
-static int entry_scan_path (database_t *database, const char *path, const char *parentid)
+static int entry_scan_path (database_t *database, const char *path, const char *parentid, int transcode)
 {
 	char *tmp;
 	char *ptr;
@@ -523,24 +523,26 @@ static int entry_scan_path (database_t *database, const char *path, const char *
 					"*");
 			if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER) {
 				if (asprintf(&tmp, "%s$%llu", parentid, objectid) > 0) {
-					entry_scan_path(database, entry->path, tmp);
+					entry_scan_path(database, entry->path, tmp, transcode);
 					free(tmp);
 				}
 			} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_MOVIE) {
-				debugf("adding transcode mirror");
-				size = ~0ULL >> 1;
-				if (asprintf(&tmp, "%s%s", TRANSCODE_PREFIX, entry->didl.dc.title) > 0) {
-					objectid = database_insert(database,
-							entry->didl.upnp.object.class,
-							parentid,
-							entry->path,
-							tmp,
-							size,
-							entry->didl.res.duration,
-							entry->didl.dc.date,
-							"video/mpeg",
-							"*");
-					free(tmp);
+				if (transcode == 1) {
+					debugf("adding transcode mirror");
+					size = ~0ULL >> 1;
+					if (asprintf(&tmp, "%s%s", TRANSCODE_PREFIX, entry->didl.dc.title) > 0) {
+						objectid = database_insert(database,
+								entry->didl.upnp.object.class,
+								parentid,
+								entry->path,
+								tmp,
+								size,
+								entry->didl.res.duration,
+								entry->didl.dc.date,
+								"video/mpeg",
+								"*");
+						free(tmp);
+					}
 				}
 			}
 		}
@@ -552,13 +554,13 @@ static int entry_scan_path (database_t *database, const char *path, const char *
 	return 0;
 }
 
-void * entry_scan (const char *path, int rescan)
+void * entry_scan (const char *path, int rescan, int transcode)
 {
 	int ret;
 	database_t *database;
 	database = database_init(rescan);
 	if (rescan) {
-		ret = entry_scan_path(database, path, "0");
+		ret = entry_scan_path(database, path, "0", transcode);
 		database_index(database);
 	}
 	return (void *) database;
