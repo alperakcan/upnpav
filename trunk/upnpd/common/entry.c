@@ -1136,7 +1136,7 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)
 				" <upnp:class>%s</upnp:class>"
 				" <upnp:genre>%s</upnp:genre>"
 				" <upnp:longDescription>%s</upnp:longDescription>"
-				" <upnp:producer>%u</upnp:producer>"
+				" <upnp:producer>%s</upnp:producer>"
 				" <upnp:rating>%s</upnp:rating>"
 				" <upnp:actor>%s</upnp:actor>"
 				" <upnp:director>%s</upnp:director>"
