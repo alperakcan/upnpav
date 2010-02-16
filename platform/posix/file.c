@@ -48,6 +48,7 @@ struct dir_s {
 struct file_s {
 	file_mode_t mode;
 	int fd;
+	char *path;
 };
 
 static inline int file_mode_access (file_mode_t mode)
@@ -134,6 +135,12 @@ file_t * file_open (const char *path, file_mode_t mode)
 		free(f);
 		return NULL;
 	}
+	f->path = strdup(path);
+	if (f->path == NULL) {
+		close(f->fd);
+		free(f);
+		return NULL;
+	}
 	return f;
 }
 
@@ -150,8 +157,18 @@ int file_write (file_t *file, const void *buffer, int length)
 unsigned long long file_seek (file_t *file, unsigned long long offset, file_seek_t whence)
 {
 	int s;
+	int rc;
+	file_stat_t stat;
 	unsigned long long r;
 	s = file_whence_seek(whence);
+	rc = file_stat(file->path, &stat);
+	if (rc != 0) {
+		return -1;
+	}
+	r = lseek(file->fd, (unsigned long long) 0, SEEK_CUR);
+	if (r + offset > stat.size) {
+		return r;
+	}
 	r = lseek(file->fd, (unsigned long long) offset, s);
 	return r;
 }
@@ -159,6 +176,7 @@ unsigned long long file_seek (file_t *file, unsigned long long offset, file_seek
 int file_close (file_t *file)
 {
 	close(file->fd);
+	free(file->path);
 	free(file);
 	return 0;
 }

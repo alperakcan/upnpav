@@ -460,12 +460,156 @@ static service_action_t *contentdirectory_actions[] = {
 	NULL,
 };
 
+#define TRANSCODE_PREFIX "[transcode] - "
+#define TRANSCODE_FILE   "/tmp/transcode-XXXXXX"
+
+typedef struct transcode_s {
+	char *input;
+	char *output;
+
+	int error;
+	int started;
+	int running;
+	int stopped;
+	int writing;
+	thread_t *thread;
+	thread_cond_t *cond;
+	thread_mutex_t *mutex;
+} transcode_t;
+
+static void * contentdirectory_transcoder (void *arg)
+{
+	int err;
+	FILE *fp;
+	char *buffer;
+	unsigned int bsize;
+	transcode_t *transcode;
+
+	char *command;
+	const char *fmt =
+		"mencoder -ss 0 %s"
+		" -oac lavc -of mpeg -lavfopts format=asf -mpegopts format=mpeg2:muxrate=500000:vbuf_size=1194:abuf_size=64"
+		" -ovc lavc -channels 6 -lavdopts debug=0:threads=4"
+		" -lavcopts autoaspect=1:vcodec=mpeg2video:acodec=ac3:abitrate=640:threads=4:keyint=1:vqscale=1:vqmin=2"
+		" -nofontconfig -subcp cp1252 -ass-color ffffff00 -ass-border-color 00000000 -ass-font-scale 1.0"
+		" -ass-force-style FontName=Arial,Outline=1,Shadow=1,MarginV=10 -subdelay 20000"
+		" -ofps 24000/1001 -mc 0.1 -af lavcresample=48000 -srate 48000 -o %s";
+
+	fp = NULL;
+	bsize = 256;
+	buffer = NULL;
+	command = NULL;
+	transcode = (transcode_t *) arg;
+
+	thread_mutex_lock(transcode->mutex);
+	transcode->error = 0;
+	transcode->started = 1;
+	transcode->running = 1;
+	transcode->stopped = 0;
+	thread_cond_signal(transcode->cond);
+	thread_mutex_unlock(transcode->mutex);
+
+	if (asprintf(&command, fmt, transcode->input, transcode->output) < 0) {
+		err = -1;
+		goto out;
+	}
+	fp = popen(command, "r");
+	if (fp == NULL) {
+		err = -2;
+		goto out;
+	}
+	buffer = (char *) malloc(bsize);
+	if (buffer == NULL) {
+		err = -3;
+		goto out;
+	}
+	memset(buffer, 0, bsize);
+
+	debugf("running command: '%s'", command);
+
+	while (1) {
+		thread_mutex_lock(transcode->mutex);
+		if (transcode->running == 0) {
+			thread_mutex_unlock(transcode->mutex);
+			goto out;
+		}
+		if (transcode->writing == 0 && strncmp(buffer, "Pos: ", 5) == 0) {
+			debugf("transcoding started");
+			transcode->writing = 1;
+			thread_cond_signal(transcode->cond);
+		}
+		thread_mutex_unlock(transcode->mutex);
+
+		if (fgets(buffer, bsize, fp) == NULL) {
+			goto out;
+		}
+	}
+
+out:
+	err = pclose(fp);
+	free(buffer);
+	free(command);
+
+	debugf("transcoding finished");
+
+	thread_mutex_lock(transcode->mutex);
+	transcode->error = err;
+	transcode->started = 1;
+	transcode->running = 0;
+	transcode->stopped = 1;
+	thread_cond_signal(transcode->cond);
+	thread_mutex_unlock(transcode->mutex);
+
+	return NULL;
+}
+
+static int contentdirectory_stoptranscode (transcode_t *transcode)
+{
+	int err;
+	debugf("closing file: %s", transcode->output);
+	thread_mutex_lock(transcode->mutex);
+	transcode->running = 0;
+	thread_cond_signal(transcode->cond);
+	while (transcode->stopped == 0) {
+		thread_cond_wait(transcode->cond, transcode->mutex);
+	}
+	thread_mutex_unlock(transcode->mutex);
+	thread_join(transcode->thread);
+	err = transcode->error;
+	thread_mutex_destroy(transcode->mutex);
+	thread_cond_destroy(transcode->cond);
+	unlink(transcode->output);
+	free(transcode->input);
+	free(transcode->output);
+	free(transcode);
+	return err;
+}
+
+static transcode_t * contentdirectory_starttranscode (const char *input, const char *output)
+{
+	transcode_t *transcode;
+	transcode = (transcode_t *) malloc(sizeof(transcode_t));
+	if (transcode == NULL) {
+		return NULL;
+	}
+	memset(transcode, 0, sizeof(transcode_t));
+	transcode->input = strdup(input);
+	transcode->output = strdup(output);
+	transcode->cond = thread_cond_init("transcoder-cond");
+	transcode->mutex = thread_mutex_init("transcoder-mutex", 0);
+	thread_mutex_lock(transcode->mutex);
+	transcode->thread = thread_create("transcoder", contentdirectory_transcoder, transcode);
+	while (transcode->started == 0) {
+		thread_cond_wait(transcode->cond, transcode->mutex);
+	}
+	thread_mutex_unlock(transcode->mutex);
+	debugf("created file: %s", transcode->output);
+	return transcode;
+}
+
 static int contentdirectory_istranscode (const char *title)
 {
-	/*
-	 * mencoder -ss 0 -quiet 00.avi -oac lavc -of mpeg -lavfopts format=asf -mpegopts format=mpeg2:muxrate=500000:vbuf_size=1194:abuf_size=64 -ovc lavc -channels 6 -lavdopts debug=0:threads=4 -lavcopts autoaspect=1:vcodec=mpeg2video:acodec=ac3:abitrate=640:threads=4:keyint=1:vqscale=1:vqmin=2 -nofontconfig -subcp cp1252 -ass-color ffffff00 -ass-border-color 00000000 -ass-font-scale 1.0 -ass-force-style FontName=Arial,Outline=1,Shadow=1,MarginV=10 -subdelay 20000 -ofps 24000/1001 -mc 0.1 -af lavcresample=48000 -srate 48000 -o output
-	 */
-	if (strncmp(title, "[transcode] - ", strlen("[transcode] - ")) == 0) {
+	if (strncmp(title, TRANSCODE_PREFIX, strlen(TRANSCODE_PREFIX)) == 0) {
 		return 0;
 	}
 	return -1;
@@ -497,10 +641,10 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 	}
 	debugf("entry path: '%s', title: '%s'", entry->path, entry->didl.dc.title);
 	if (contentdirectory_istranscode(entry->didl.dc.title) == 0) {
-		debugf("transcode not supportted yet");
-		entry_uninit(entry);
-		return -1;
+		debugf("transcode file requested, preparing fake file");
+		info->seekable = -1;
 	}
+	debugf("checking file: '%s'", entry->path);
 	if (file_access(entry->path, FILE_MODE_READ) == 0 &&
 	    file_stat(entry->path, &stat) == 0) {
 		info->size = entry->didl.res.size;
@@ -509,13 +653,15 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 		entry_uninit(entry);
 		return 0;
 	}
+	debugf("no file found '%s'", entry->path);
 	entry_uninit(entry);
-	debugf("no file found");
 	return -1;
 }
 
 static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_t mode)
 {
+	char *name;
+	transcode_t *t;
 	entry_t *entry;
 	upnp_file_t *file;
 	const char *ename;
@@ -542,8 +688,28 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 	}
 	memset(file, 0, sizeof(upnp_file_t));
 	file->virtual = 0;
-	file->transcode = 0;
-	file->file = file_open(entry->path, FILE_MODE_READ);
+	if (contentdirectory_istranscode(entry->didl.dc.title) == 0) {
+		if (asprintf(&name, "/tmp/upnpd.transcode.%u", (unsigned int) rand()) < 0) {
+			debugf("cannot create unique file name");
+			free(file);
+			entry_uninit(entry);
+			return NULL;
+		}
+		debugf("transcode file requested, preparing fake file");
+		file->transcode = 1;
+		t = contentdirectory_starttranscode(entry->path, name);
+		thread_mutex_lock(t->mutex);
+		while (t->running && t->writing == 0) {
+			thread_cond_wait(t->cond, t->mutex);
+		}
+		thread_mutex_unlock(t->mutex);
+		file->buf = t;
+		file->file = file_open(name, FILE_MODE_READ);
+		free(name);
+	} else {
+		file->transcode = 0;
+		file->file = file_open(entry->path, FILE_MODE_READ);
+	}
 	file->service = &contentdir->service;
 	if (file->file == NULL) {
 		debugf("open(%s, O_RDONLY); failed", ename);
@@ -557,12 +723,36 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 
 static int contentdirectory_vfsread (void *cookie, void *handle, char *buffer, unsigned int length)
 {
+	int j;
+	int i;
 	upnp_file_t *file;
+	transcode_t *transcode;
 	contentdir_t *contentdir;
 	debugf("contentdirectory_vfsread");
 	file = (upnp_file_t *) handle;
 	contentdir = (contentdir_t *) cookie;
-	return file_read(file->file, buffer, length);
+	if (file->transcode == 1) {
+		transcode = (transcode_t *) file->buf;
+		i = 0;
+		while (i < length) {
+			j = file_read(file->file, buffer + i, length);
+			if (j <= 0) {
+				thread_mutex_lock(transcode->mutex);
+				if (transcode->running == 0) {
+					thread_mutex_unlock(transcode->mutex);
+					return i;
+				}
+				thread_mutex_unlock(transcode->mutex);
+			} else {
+				i += j;
+				length -= j;
+			}
+		}
+	} else {
+		i = file_read(file->file, buffer, length);
+	}
+	file->offset += i;
+	return i;
 }
 
 static int contentdirectory_vfswrite (void *cookie, void *handle, char *buffer, unsigned int length)
@@ -575,11 +765,39 @@ static int contentdirectory_vfswrite (void *cookie, void *handle, char *buffer, 
 
 static unsigned long long contentdirectory_vfsseek (void *cookie, void *handle, unsigned long long offset, gena_seek_t whence)
 {
+	int rc;
+	file_stat_t stat;
 	upnp_file_t *file;
+	transcode_t *transcode;
 	contentdir_t *contentdir;
 	debugf("contentdirectory_vfsseek");
 	file = (upnp_file_t *) handle;
 	contentdir = (contentdir_t *) cookie;
+	if (file->transcode == 1) {
+		transcode = (transcode_t *) file->buf;
+		if (whence != GENA_SEEK_SET) {
+			debugf("seek is partially supported for transcode files (%s)", transcode->output);
+			return 0;
+		}
+		do {
+			rc = file_stat(transcode->output, &stat);
+			if (rc != 0) {
+				return 0;
+			}
+			debugf("stat.size: %llu, offset: %llu", stat.size, offset);
+			if (stat.size < offset) {
+				thread_mutex_lock(transcode->mutex);
+				if (transcode->running == 0) {
+					thread_mutex_unlock(transcode->mutex);
+					return 0;
+				}
+				thread_mutex_unlock(transcode->mutex);
+				usleep(200000);
+			} else {
+				break;
+			}
+		} while (1);
+	}
 	switch (whence) {
 		case GENA_SEEK_SET: return file_seek(file->file, offset, FILE_SEEK_SET);
 		case GENA_SEEK_CUR: return file_seek(file->file, offset, FILE_SEEK_CUR);
@@ -596,6 +814,9 @@ static int contentdirectory_vfsclose (void *cookie, void *handle)
 	file = (upnp_file_t *) handle;
 	contentdir = (contentdir_t *) cookie;
 	file_close(file->file);
+	if (file->transcode == 1) {
+		contentdirectory_stoptranscode((transcode_t *) file->buf);
+	}
 	free(file);
 	return 0;
 }

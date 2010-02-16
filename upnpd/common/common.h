@@ -63,7 +63,7 @@ struct upnp_file_s {
 	/** buffer offset, only for virtual files */
 	off_t offset;
 	/** virtual buffer, only for virtual files */
-	char *buf;
+	void *buf;
 };
 
 /**
