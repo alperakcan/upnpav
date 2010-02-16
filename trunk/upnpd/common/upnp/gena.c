@@ -410,8 +410,10 @@ static void gena_sendfileheader (socket_t *socket, gena_fileinfo_internal_t *fil
 				fileinfo->fileinfo.size);
 	} else {
 		len += sprintf(header + len,
-			"Accept-Ranges: bytes\r\n"
-			"Last-Modified: %s\r\n%s %llu\r\n",
+			"%s"
+			"Last-Modified: %s\r\n"
+			"%s %llu\r\n",
+			(fileinfo->fileinfo.seekable != -1) ? "Accept-Ranges: bytes\r\n" : "",
 			tmpstr,
 			"Content-length:",
 			fileinfo->fileinfo.size);

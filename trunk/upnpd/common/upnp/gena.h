@@ -61,6 +61,7 @@ typedef struct gena_fileinfo_s {
 	unsigned long long size;
 	char *mimetype;
 	unsigned long mtime;
+	int seekable;
 } gena_fileinfo_t;
 
 typedef struct gena_callback_vfs_s {
