@@ -463,13 +463,14 @@ static service_action_t *contentdirectory_actions[] = {
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MIN3(a, b, c) MIN(MIN(a, b), c)
 #define TRANSCODE_PREFIX "[transcode] - "
-#define TRANSCODE_BUFFER_SIZE (100 * 1024 * 1024)
-#define TRANSCODE_READ_SIZE   (10 * 1024 * 1024)
+#define TRANSCODE_BUFFER_SIZE (200 * 1024 * 1024)
+#define TRANSCODE_READ_SIZE   (1 * 1024 * 1024)
 
 typedef struct transcode_s {
 	char *input;
 	char *output;
 
+	int pid;
 	file_t *file;
 	unsigned char *buffer;
 	unsigned int length;
@@ -572,6 +573,10 @@ static void * contentdirectory_reader (void *arg)
 		}
 		i = 0;
 		while (i < r) {
+			if (transcode->reader.running == 0) {
+				thread_mutex_unlock(transcode->reader.mutex);
+				goto out;
+			}
 			s = (transcode->offset + transcode->length) % TRANSCODE_BUFFER_SIZE;
 			l = MIN(TRANSCODE_BUFFER_SIZE - s, r - i);
 			memcpy(transcode->buffer + s, buffer + i, l);
@@ -595,17 +600,71 @@ out:	free(buffer);
 	return NULL;
 }
 
+static FILE * contentdirectory_popen (const char *command, const char *type, long *pid)
+{
+	int p[2];
+	FILE *fp;
+
+	if (*type != 'r' && *type != 'w') {
+		return NULL;
+	}
+
+	if (pipe(p) < 0) {
+		return NULL;
+	}
+
+	if ((*pid = fork()) > 0) {
+		if (*type == 'r') {
+			close(p[1]);
+			fp = fdopen(p[0], type);
+		} else {
+			close(p[0]);
+			fp = fdopen(p[1], type);
+		}
+		return fp;
+	} else if (*pid == 0) {
+		setpgid(0, 0);
+		if (*type == 'r') {
+			fflush(stdout);
+			fflush(stderr);
+			close(1);
+			if (dup(p[1]) < 0)
+				perror("dup of write side of pipe failed");
+			close(2);
+			if (dup(p[1]) < 0)
+				perror("dup of write side of pipe failed");
+		} else {
+			close(0);
+			if (dup(p[0]) < 0)
+				perror("dup of read side of pipe failed");
+		}
+
+		close(p[0]);
+		close(p[1]);
+
+		execl("/bin/sh", "sh", "-c", command, NULL);
+		debugf("execl() failed");
+	} else {
+		close(p[0]);
+		close(p[1]);
+		debugf("fork() failure");
+	}
+
+	return NULL;
+}
+
 static void * contentdirectory_writer (void *arg)
 {
 	int err;
 	FILE *fp;
 	char *buffer;
+	long pid;
 	unsigned int bsize;
 	transcode_t *transcode;
 
 	char *command;
 	const char *fmt =
-		"mencoder -ss 0 %s"
+		"mencoder -ss 0 -quiet %s"
 		" -oac lavc -of mpeg -lavfopts format=asf -mpegopts format=mpeg2:muxrate=500000:vbuf_size=1194:abuf_size=64"
 		" -ovc lavc -channels 6 -lavdopts debug=0:threads=4"
 		" -lavcopts autoaspect=1:vcodec=mpeg2video:acodec=ac3:abitrate=640:threads=4:keyint=1:vqscale=1:vqmin=2"
@@ -624,6 +683,7 @@ static void * contentdirectory_writer (void *arg)
 	transcode->writer.started = 1;
 	transcode->writer.running = 1;
 	transcode->writer.stopped = 0;
+	transcode->writer.writing = 1;
 	thread_cond_signal(transcode->writer.cond);
 	thread_mutex_unlock(transcode->writer.mutex);
 
@@ -631,7 +691,7 @@ static void * contentdirectory_writer (void *arg)
 		err = -1;
 		goto out;
 	}
-	fp = popen(command, "r");
+	fp = contentdirectory_popen(command, "r", &pid);
 	if (fp == NULL) {
 		err = -2;
 		goto out;
@@ -644,6 +704,9 @@ static void * contentdirectory_writer (void *arg)
 	memset(buffer, 0, bsize);
 
 	debugf("running command: '%s'", command);
+	thread_mutex_lock(transcode->writer.mutex);
+	transcode->pid = pid;
+	thread_mutex_unlock(transcode->writer.mutex);
 
 	while (1) {
 		thread_mutex_lock(transcode->writer.mutex);
@@ -664,11 +727,13 @@ static void * contentdirectory_writer (void *arg)
 	}
 
 out:
+	debugf("transcoding finished: %s", transcode->output);
+
 	err = pclose(fp);
 	free(buffer);
 	free(command);
 
-	debugf("transcoding finished");
+	debugf("updating status: %s", transcode->output);
 
 	thread_mutex_lock(transcode->writer.mutex);
 	transcode->writer.error = err;
@@ -685,23 +750,14 @@ static int contentdirectory_stoptranscode (transcode_t *transcode)
 {
 	int err;
 
-	debugf("closing file: %s", transcode->output);
-
-	thread_mutex_lock(transcode->writer.mutex);
-	transcode->writer.running = 0;
-	thread_cond_signal(transcode->writer.cond);
-	while (transcode->writer.stopped == 0) {
-		thread_cond_wait(transcode->writer.cond, transcode->writer.mutex);
+	if (transcode->pid != 0) {
+		kill(transcode->pid, 9);
 	}
-	thread_mutex_unlock(transcode->writer.mutex);
-	thread_join(transcode->writer.thread);
-	err = transcode->writer.error;
-	thread_mutex_destroy(transcode->writer.mutex);
-	thread_cond_destroy(transcode->writer.cond);
-
+	debugf("closing reader: %s", transcode->output);
 	thread_mutex_lock(transcode->reader.mutex);
 	transcode->reader.running = 0;
 	thread_cond_signal(transcode->reader.cond);
+	debugf("waiting reader: %s", transcode->output);
 	while (transcode->reader.stopped == 0) {
 		thread_cond_wait(transcode->reader.cond, transcode->reader.mutex);
 	}
@@ -711,6 +767,21 @@ static int contentdirectory_stoptranscode (transcode_t *transcode)
 	thread_mutex_destroy(transcode->reader.mutex);
 	thread_cond_destroy(transcode->reader.cond);
 
+	debugf("closing writer: %s", transcode->output);
+	thread_mutex_lock(transcode->writer.mutex);
+	transcode->writer.running = 0;
+	thread_cond_signal(transcode->writer.cond);
+	debugf("waiting writer: %s", transcode->output);
+	while (transcode->writer.stopped == 0) {
+		thread_cond_wait(transcode->writer.cond, transcode->writer.mutex);
+	}
+	thread_mutex_unlock(transcode->writer.mutex);
+	thread_join(transcode->writer.thread);
+	err = transcode->writer.error;
+	thread_mutex_destroy(transcode->writer.mutex);
+	thread_cond_destroy(transcode->writer.cond);
+
+	debugf("removing file: %s", transcode->output);
 	unlink(transcode->output);
 	free(transcode->input);
 	free(transcode->output);
