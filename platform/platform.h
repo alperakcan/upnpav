@@ -210,16 +210,16 @@ typedef enum {
 } socket_type_t;
 
 /**
- * @brief socket event types
+ * @brief poll event types
  */
 typedef enum {
 	/** in data event */
-	SOCKET_EVENT_IN   = 0x01,
+	POLL_EVENT_IN   = 0x01,
 	/** out data event */
-	SOCKET_EVENT_OUT  = 0x02,
+	POLL_EVENT_OUT  = 0x02,
 	/** error event */
-	SOCKET_EVENT_ERR  = 0x04,
-} socket_event_t;
+	POLL_EVENT_ERR  = 0x04,
+} poll_event_t;
 
 /**
  * @brief exported socket structure
@@ -335,7 +335,7 @@ int socket_sendto (socket_t *socket, const void *buf, int length, const char *ad
  *
  * @returns 0 on timeout, 1 on success, -1 on error
  */
-int socket_poll (socket_t *socket, socket_event_t request, socket_event_t *result, int timeout);
+int socket_poll (socket_t *socket, poll_event_t request, poll_event_t *result, int timeout);
 
 /**
  * @brief closes and destroys given socket object
@@ -486,6 +486,7 @@ file_t * file_open (const char *path, file_mode_t mode);
 int file_read (file_t *file, void *buffer, int length);
 int file_write (file_t *file, const void *buffer, int length);
 unsigned long long file_seek (file_t *file, unsigned long long offset, file_seek_t whence);
+int file_poll (file_t *socket, poll_event_t request, poll_event_t *result, int timeout);
 int file_close (file_t *file);
 
 dir_t * file_opendir (const char *path);

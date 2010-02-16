@@ -487,7 +487,7 @@ static void * ssdp_thread_loop (void *arg)
 	ssdp_request_t *request;
 	unsigned long long times[2];
 
-	socket_event_t presult;
+	poll_event_t presult;
 	char senderip[SOCKET_IP_LENGTH];
 	int senderport;
 
@@ -532,11 +532,11 @@ static void * ssdp_thread_loop (void *arg)
 			break;
 		}
 		thread_mutex_unlock(ssdp->mutex);
-		ret = socket_poll(ssdp->socket, SOCKET_EVENT_IN, &presult, ssdp_recv_timeout);
+		ret = socket_poll(ssdp->socket, POLL_EVENT_IN, &presult, ssdp_recv_timeout);
 		if (!ret) {
 			continue;
 		} else {
-			if (presult != SOCKET_EVENT_IN) {
+			if (presult != POLL_EVENT_IN) {
 				break;
 			}
 		}
@@ -702,7 +702,7 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 	int ret;
 	char *data;
 	char *buffer;
-	socket_event_t presult;
+	poll_event_t presult;
 	ssdp_request_t *request;
 	const char *format_search =
 		"M-SEARCH * HTTP/1.1\r\n"
@@ -735,8 +735,8 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 		time_usleep(ssdp_pause * 1000);
 	}
 	do {
-		ret = socket_poll(sock, SOCKET_EVENT_IN, &presult, ssdp_recv_timeout);
-		if (ret <= 0 || presult != SOCKET_EVENT_IN) {
+		ret = socket_poll(sock, POLL_EVENT_IN, &presult, ssdp_recv_timeout);
+		if (ret <= 0 || presult != POLL_EVENT_IN) {
 			break;
 		}
 		r = socket_recvfrom(sock, data, 4096, NULL, 0);

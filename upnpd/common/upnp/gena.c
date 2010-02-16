@@ -157,15 +157,15 @@ static int gena_send (socket_t *socket, int timeout, const void *buf, unsigned i
 	int t;
 	int s;
 	int rc;
-	socket_event_t presult;
+	poll_event_t presult;
 	t = 0;
 	while (1) {
-		rc = socket_poll(socket, SOCKET_EVENT_OUT, &presult, timeout);
+		rc = socket_poll(socket, POLL_EVENT_OUT, &presult, timeout);
 		if (rc == 0) {
 			debugf("poll timeout");
 			continue;
 		}
-		if (rc <= 0 || (presult & SOCKET_EVENT_OUT) == 0) {
+		if (rc <= 0 || (presult & POLL_EVENT_OUT) == 0) {
 			debugf("poll failed (%d, 0x%x)", rc, presult);
 			break;
 		}
@@ -183,11 +183,11 @@ static int gena_getcontent (socket_t *socket, int timeout, char *buf, int buflen
 	char c;
 	int rc;
 	int count;
-	socket_event_t presult;
+	poll_event_t presult;
 	count = 0;
 	while (1) {
-		rc = socket_poll(socket, SOCKET_EVENT_IN, &presult, timeout);
-		if (rc <= 0 || (presult & SOCKET_EVENT_IN) == 0) {
+		rc = socket_poll(socket, POLL_EVENT_IN, &presult, timeout);
+		if (rc <= 0 || (presult & POLL_EVENT_IN) == 0) {
 			debugf("poll failed rc:%d(0x%x)", rc, presult);
 			return 0;
 		}
@@ -207,11 +207,11 @@ static int gena_getline (socket_t *socket, int timeout, char *buf, int buflen)
 	char c;
 	int rc;
 	int count;
-	socket_event_t presult;
+	poll_event_t presult;
 	count = 0;
 	while (1) {
-		rc = socket_poll(socket, SOCKET_EVENT_IN, &presult, timeout);
-		if (rc <= 0 || (presult & SOCKET_EVENT_IN) == 0) {
+		rc = socket_poll(socket, POLL_EVENT_IN, &presult, timeout);
+		if (rc <= 0 || (presult & POLL_EVENT_IN) == 0) {
 			debugf("poll failed rc:%d(0x%x)", rc, presult);
 			return 0;
 		}
@@ -944,7 +944,7 @@ static void * gena_loop (void *arg)
 	int timeout;
 
 	socket_t *socket;
-	socket_event_t presult;
+	poll_event_t presult;
 
 	gena_t *gena;
 	gena_thread_t *gena_thread;
@@ -961,7 +961,7 @@ static void * gena_loop (void *arg)
 	thread_mutex_unlock(gena->mutex);
 
 	while (running == 1) {
-		rc = socket_poll(gena->socket, SOCKET_EVENT_IN, &presult, timeout);
+		rc = socket_poll(gena->socket, POLL_EVENT_IN, &presult, timeout);
 
 		thread_mutex_lock(gena->mutex);
 		running = gena->running;
@@ -1007,7 +1007,7 @@ static void * gena_loop (void *arg)
 		}
 		thread_mutex_unlock(gena->mutex);
 
-		if (running == 0 || rc <= 0 || presult != SOCKET_EVENT_IN) {
+		if (running == 0 || rc <= 0 || presult != POLL_EVENT_IN) {
 			continue;
 		}
 
@@ -1091,7 +1091,7 @@ char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port
 	unsigned int length;
 
 	socket_t *socket;
-	socket_event_t presult;
+	poll_event_t presult;
 
 	socket = socket_open(SOCKET_TYPE_STREAM);
 	if (socket == NULL) {
@@ -1141,8 +1141,8 @@ char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port
 		}
 		t = 0;
 		while (t < length) {
-			r = socket_poll(socket, SOCKET_EVENT_IN, &presult, GENA_SOCKET_TIMEOUT);
-			if (r <= 0 || (presult & SOCKET_EVENT_IN) == 0) {
+			r = socket_poll(socket, POLL_EVENT_IN, &presult, GENA_SOCKET_TIMEOUT);
+			if (r <= 0 || (presult & POLL_EVENT_IN) == 0) {
 				break;
 			}
 			r = socket_recv(socket, buffer + t, length - t);
@@ -1171,8 +1171,8 @@ again:
 		buffer = tmp;
 		t = length - 512;
 		while (t < length) {
-			r = socket_poll(socket, SOCKET_EVENT_IN, &presult, GENA_SOCKET_TIMEOUT);
-			if (r <= 0 || (presult & SOCKET_EVENT_IN) == 0) {
+			r = socket_poll(socket, POLL_EVENT_IN, &presult, GENA_SOCKET_TIMEOUT);
+			if (r <= 0 || (presult & POLL_EVENT_IN) == 0) {
 				goto done;
 				break;
 			}
