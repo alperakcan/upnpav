@@ -464,7 +464,7 @@ static service_action_t *contentdirectory_actions[] = {
 #define MIN3(a, b, c) MIN(MIN(a, b), c)
 #define TRANSCODE_PREFIX "[transcode] - "
 #define TRANSCODE_BUFFER_SIZE (200 * 1024 * 1024)
-#define TRANSCODE_READ_SIZE   (1 * 1024 * 1024)
+#define TRANSCODE_READ_SIZE   (10 * 1024 * 1024)
 
 typedef struct transcode_s {
 	char *input;
