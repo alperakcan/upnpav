@@ -193,15 +193,15 @@ static int client_parser_callback (void *context, const char *path, const char *
 			data->device->nservices += 1;
 		} else if (data->device->service != NULL) {
 			if (strcmp(path, "/root/device/serviceList/service/serviceId") == 0) {
-				data->device->service->serviceId = strdup(value);
+				data->device->service->serviceId = (value) ? strdup(value) : NULL;
 			} else if (strcmp(path, "/root/device/serviceList/service/serviceType") == 0) {
-				data->device->service->serviceType = strdup(value);
+				data->device->service->serviceType = (value) ? strdup(value) : NULL;
 			} else if (strcmp(path, "/root/device/serviceList/service/SCPDURL") == 0) {
-				data->device->service->SCPDURL = strdup(value);
+				data->device->service->SCPDURL = (value) ? strdup(value) : NULL;
 			} else if (strcmp(path, "/root/device/serviceList/service/controlURL") == 0) {
-				data->device->service->controlURL = strdup(value);
+				data->device->service->controlURL = (value) ? strdup(value) : NULL;
 			} else if (strcmp(path, "/root/device/serviceList/service/eventSubURL") == 0) {
-				data->device->service->eventSubURL = strdup(value);
+				data->device->service->eventSubURL = (value) ? strdup(value) : NULL;
 			}
 		}
 	}
@@ -245,8 +245,10 @@ static client_service_t * client_service_init (client_parser_device_t *device, c
 					service->controlurl = NULL;
 				}
 			}
-			service->eventurl = malloc(strlen(base) + strlen(releventURL) + 1);
-			if (service->eventurl) {
+			if (releventURL != NULL) {
+				service->eventurl = malloc(strlen(base) + strlen(releventURL) + 1);
+			}
+			if (service->eventurl != NULL) {
 				ret = upnp_resolveurl(base, releventURL, service->eventurl);
 				if (ret != 0) {
 					debugf("error generating event url from '%s' + '%s'", base, releventURL);

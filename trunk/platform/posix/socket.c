@@ -55,25 +55,25 @@ static inline int socket_type_bsd (socket_type_t type)
 	return -1;
 }
 
-static inline int socket_event_bsd (socket_event_t event)
+static inline int socket_event_bsd (poll_event_t event)
 {
 	int bsd;
 	bsd = 0;
-	if (event & SOCKET_EVENT_ERR)  bsd |= (POLLERR | POLLHUP | POLLNVAL);
-	if (event & SOCKET_EVENT_IN)   bsd |= POLLIN;
-	if (event & SOCKET_EVENT_OUT)  bsd |= POLLOUT;
+	if (event & POLL_EVENT_ERR)  bsd |= (POLLERR | POLLHUP | POLLNVAL);
+	if (event & POLL_EVENT_IN)   bsd |= POLLIN;
+	if (event & POLL_EVENT_OUT)  bsd |= POLLOUT;
 	return bsd;
 }
 
-static inline socket_event_t socket_bsd_event (int bsd)
+static inline poll_event_t socket_bsd_event (int bsd)
 {
-	socket_event_t event;
+	poll_event_t event;
 	event = 0;
-	if (bsd & POLLERR)  event |= SOCKET_EVENT_ERR;
-	if (bsd & POLLHUP)  event |= SOCKET_EVENT_ERR;
-	if (bsd & POLLIN)   event |= SOCKET_EVENT_IN;
-	if (bsd & POLLNVAL) event |= SOCKET_EVENT_ERR;
-	if (bsd & POLLOUT)  event |= SOCKET_EVENT_OUT;
+	if (bsd & POLLERR)  event |= POLL_EVENT_ERR;
+	if (bsd & POLLHUP)  event |= POLL_EVENT_ERR;
+	if (bsd & POLLIN)   event |= POLL_EVENT_IN;
+	if (bsd & POLLNVAL) event |= POLL_EVENT_ERR;
+	if (bsd & POLLOUT)  event |= POLL_EVENT_OUT;
 	return event;
 }
 
@@ -203,7 +203,7 @@ int socket_sendto (socket_t *socket, const void *buf, int length, const char *ad
 	return sendto(socket->fd, buf, length, 0, (struct sockaddr *) &dest, dest_length);
 }
 
-int socket_poll (socket_t *socket, socket_event_t request, socket_event_t *result, int timeout)
+int socket_poll (socket_t *socket, poll_event_t request, poll_event_t *result, int timeout)
 {
 	int rc;
 	struct pollfd pfd;

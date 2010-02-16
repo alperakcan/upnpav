@@ -460,24 +460,142 @@ static service_action_t *contentdirectory_actions[] = {
 	NULL,
 };
 
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MIN3(a, b, c) MIN(MIN(a, b), c)
 #define TRANSCODE_PREFIX "[transcode] - "
-#define TRANSCODE_FILE   "/tmp/transcode-XXXXXX"
+#define TRANSCODE_BUFFER_SIZE (100 * 1024 * 1024)
+#define TRANSCODE_READ_SIZE   (10 * 1024 * 1024)
 
 typedef struct transcode_s {
 	char *input;
 	char *output;
 
-	int error;
-	int started;
-	int running;
-	int stopped;
-	int writing;
-	thread_t *thread;
-	thread_cond_t *cond;
-	thread_mutex_t *mutex;
+	file_t *file;
+	unsigned char *buffer;
+	unsigned int length;
+	unsigned int offset;
+
+	struct {
+		int error;
+		int started;
+		int running;
+		int stopped;
+		int writing;
+		thread_t *thread;
+		thread_cond_t *cond;
+		thread_mutex_t *mutex;
+	} writer,
+	  reader;
 } transcode_t;
 
-static void * contentdirectory_transcoder (void *arg)
+static char * contentdirectory_uniquename (void)
+{
+	char *name;
+	file_stat_t stat;
+	name = (char *) malloc(sizeof(char) * 256);
+	while (1) {
+		sprintf(name, "/tmp/upnpd.transcode.%u", (unsigned int) rand());
+		if (file_stat(name, &stat) != 0) {
+			if (mkfifo(name, 0666) != 0) {
+				free(name);
+				return NULL;
+			}
+			return name;
+		}
+	}
+	free(name);
+	return NULL;
+}
+
+static void * contentdirectory_reader (void *arg)
+{
+	int i;
+	int r;
+	int s;
+	int l;
+	file_t *file;
+	poll_event_t revent;
+	unsigned char *buffer;
+	transcode_t *transcode;
+
+	transcode = (transcode_t *) arg;
+
+	thread_mutex_lock(transcode->reader.mutex);
+	transcode->reader.started = 1;
+	transcode->reader.running = 1;
+	transcode->reader.stopped = 0;
+	thread_cond_signal(transcode->reader.cond);
+	thread_mutex_unlock(transcode->reader.mutex);
+
+	file = NULL;
+	buffer = NULL;
+
+	buffer = (unsigned char *) malloc(TRANSCODE_READ_SIZE);
+	if (buffer == NULL) {
+		goto out;
+	}
+	file = file_open(transcode->output, FILE_MODE_READ);
+	if (file == NULL) {
+		goto out;
+	}
+
+	while (1) {
+		thread_mutex_lock(transcode->reader.mutex);
+		if (transcode->reader.running == 0) {
+			thread_mutex_unlock(transcode->reader.mutex);
+			goto out;
+		}
+		s = MIN(TRANSCODE_BUFFER_SIZE - transcode->length, TRANSCODE_READ_SIZE);
+		thread_mutex_unlock(transcode->reader.mutex);
+
+		r = file_poll(file, POLL_EVENT_IN, &revent, 1000);
+		if (r < 0) {
+			break;
+		}
+		if (r == 0) {
+			usleep(20000);
+			continue;
+		}
+		r = file_read(file, buffer, s);
+		if (r < 0) {
+			break;
+		}
+		if (r == 0) {
+			usleep(20000);
+			continue;
+		}
+		thread_mutex_lock(transcode->reader.mutex);
+		if (transcode->reader.writing == 0 && transcode->length < TRANSCODE_BUFFER_SIZE / 2) {
+			debugf("transcoding started");
+			transcode->reader.writing = 1;
+			thread_cond_signal(transcode->reader.cond);
+		}
+		i = 0;
+		while (i < r) {
+			s = (transcode->offset + transcode->length) % TRANSCODE_BUFFER_SIZE;
+			l = MIN(TRANSCODE_BUFFER_SIZE - s, r - i);
+			memcpy(transcode->buffer + s, buffer + i, l);
+			transcode->length += l;
+			i += l;
+		}
+		thread_cond_signal(transcode->reader.cond);
+		thread_mutex_unlock(transcode->reader.mutex);
+	}
+
+out:	free(buffer);
+	file_close(file);
+
+	thread_mutex_lock(transcode->reader.mutex);
+	transcode->reader.started = 1;
+	transcode->reader.running = 0;
+	transcode->reader.stopped = 1;
+	thread_cond_signal(transcode->reader.cond);
+	thread_mutex_unlock(transcode->reader.mutex);
+
+	return NULL;
+}
+
+static void * contentdirectory_writer (void *arg)
 {
 	int err;
 	FILE *fp;
@@ -501,13 +619,13 @@ static void * contentdirectory_transcoder (void *arg)
 	command = NULL;
 	transcode = (transcode_t *) arg;
 
-	thread_mutex_lock(transcode->mutex);
-	transcode->error = 0;
-	transcode->started = 1;
-	transcode->running = 1;
-	transcode->stopped = 0;
-	thread_cond_signal(transcode->cond);
-	thread_mutex_unlock(transcode->mutex);
+	thread_mutex_lock(transcode->writer.mutex);
+	transcode->writer.error = 0;
+	transcode->writer.started = 1;
+	transcode->writer.running = 1;
+	transcode->writer.stopped = 0;
+	thread_cond_signal(transcode->writer.cond);
+	thread_mutex_unlock(transcode->writer.mutex);
 
 	if (asprintf(&command, fmt, transcode->input, transcode->output) < 0) {
 		err = -1;
@@ -528,17 +646,17 @@ static void * contentdirectory_transcoder (void *arg)
 	debugf("running command: '%s'", command);
 
 	while (1) {
-		thread_mutex_lock(transcode->mutex);
-		if (transcode->running == 0) {
-			thread_mutex_unlock(transcode->mutex);
+		thread_mutex_lock(transcode->writer.mutex);
+		if (transcode->writer.running == 0) {
+			thread_mutex_unlock(transcode->writer.mutex);
 			goto out;
 		}
-		if (transcode->writing == 0 && strncmp(buffer, "Pos: ", 5) == 0) {
+		if (transcode->writer.writing == 0 && strncmp(buffer, "Pos: ", 5) == 0) {
 			debugf("transcoding started");
-			transcode->writing = 1;
-			thread_cond_signal(transcode->cond);
+			transcode->writer.writing = 1;
+			thread_cond_signal(transcode->writer.cond);
 		}
-		thread_mutex_unlock(transcode->mutex);
+		thread_mutex_unlock(transcode->writer.mutex);
 
 		if (fgets(buffer, bsize, fp) == NULL) {
 			goto out;
@@ -552,13 +670,13 @@ out:
 
 	debugf("transcoding finished");
 
-	thread_mutex_lock(transcode->mutex);
-	transcode->error = err;
-	transcode->started = 1;
-	transcode->running = 0;
-	transcode->stopped = 1;
-	thread_cond_signal(transcode->cond);
-	thread_mutex_unlock(transcode->mutex);
+	thread_mutex_lock(transcode->writer.mutex);
+	transcode->writer.error = err;
+	transcode->writer.started = 1;
+	transcode->writer.running = 0;
+	transcode->writer.stopped = 1;
+	thread_cond_signal(transcode->writer.cond);
+	thread_mutex_unlock(transcode->writer.mutex);
 
 	return NULL;
 }
@@ -566,22 +684,39 @@ out:
 static int contentdirectory_stoptranscode (transcode_t *transcode)
 {
 	int err;
+
 	debugf("closing file: %s", transcode->output);
-	thread_mutex_lock(transcode->mutex);
-	transcode->running = 0;
-	thread_cond_signal(transcode->cond);
-	while (transcode->stopped == 0) {
-		thread_cond_wait(transcode->cond, transcode->mutex);
+
+	thread_mutex_lock(transcode->writer.mutex);
+	transcode->writer.running = 0;
+	thread_cond_signal(transcode->writer.cond);
+	while (transcode->writer.stopped == 0) {
+		thread_cond_wait(transcode->writer.cond, transcode->writer.mutex);
 	}
-	thread_mutex_unlock(transcode->mutex);
-	thread_join(transcode->thread);
-	err = transcode->error;
-	thread_mutex_destroy(transcode->mutex);
-	thread_cond_destroy(transcode->cond);
+	thread_mutex_unlock(transcode->writer.mutex);
+	thread_join(transcode->writer.thread);
+	err = transcode->writer.error;
+	thread_mutex_destroy(transcode->writer.mutex);
+	thread_cond_destroy(transcode->writer.cond);
+
+	thread_mutex_lock(transcode->reader.mutex);
+	transcode->reader.running = 0;
+	thread_cond_signal(transcode->reader.cond);
+	while (transcode->reader.stopped == 0) {
+		thread_cond_wait(transcode->reader.cond, transcode->reader.mutex);
+	}
+	thread_mutex_unlock(transcode->reader.mutex);
+	thread_join(transcode->reader.thread);
+	err = transcode->reader.error;
+	thread_mutex_destroy(transcode->reader.mutex);
+	thread_cond_destroy(transcode->reader.cond);
+
 	unlink(transcode->output);
 	free(transcode->input);
 	free(transcode->output);
+	free(transcode->buffer);
 	free(transcode);
+
 	return err;
 }
 
@@ -593,16 +728,31 @@ static transcode_t * contentdirectory_starttranscode (const char *input, const c
 		return NULL;
 	}
 	memset(transcode, 0, sizeof(transcode_t));
+
 	transcode->input = strdup(input);
 	transcode->output = strdup(output);
-	transcode->cond = thread_cond_init("transcoder-cond");
-	transcode->mutex = thread_mutex_init("transcoder-mutex", 0);
-	thread_mutex_lock(transcode->mutex);
-	transcode->thread = thread_create("transcoder", contentdirectory_transcoder, transcode);
-	while (transcode->started == 0) {
-		thread_cond_wait(transcode->cond, transcode->mutex);
+	transcode->buffer = (unsigned char *) malloc(TRANSCODE_BUFFER_SIZE);
+	transcode->length = 0;
+	transcode->offset = 0;
+
+	transcode->writer.cond = thread_cond_init("transcoder-writer-cond");
+	transcode->writer.mutex = thread_mutex_init("transcoder-writer-mutex", 0);
+	thread_mutex_lock(transcode->writer.mutex);
+	transcode->writer.thread = thread_create("transcoder-writer", contentdirectory_writer, transcode);
+	while (transcode->writer.started == 0) {
+		thread_cond_wait(transcode->writer.cond, transcode->writer.mutex);
 	}
-	thread_mutex_unlock(transcode->mutex);
+	thread_mutex_unlock(transcode->writer.mutex);
+
+	transcode->reader.cond = thread_cond_init("transcoder-reader-cond");
+	transcode->reader.mutex = thread_mutex_init("transcoder-reader-mutex", 0);
+	thread_mutex_lock(transcode->reader.mutex);
+	transcode->reader.thread = thread_create("transcoder-reader", contentdirectory_reader, transcode);
+	while (transcode->reader.started == 0) {
+		thread_cond_wait(transcode->reader.cond, transcode->reader.mutex);
+	}
+	thread_mutex_unlock(transcode->reader.mutex);
+
 	debugf("created file: %s", transcode->output);
 	return transcode;
 }
@@ -689,65 +839,75 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 	memset(file, 0, sizeof(upnp_file_t));
 	file->virtual = 0;
 	if (contentdirectory_istranscode(entry->didl.dc.title) == 0) {
-		if (asprintf(&name, "/tmp/upnpd.transcode.%u", (unsigned int) rand()) < 0) {
-			debugf("cannot create unique file name");
+		debugf("transcode file requested, preparing fake file");
+		name = contentdirectory_uniquename();
+		if (name == NULL) {
+			debugf("cannot create unique file");
 			free(file);
 			entry_uninit(entry);
 			return NULL;
 		}
-		debugf("transcode file requested, preparing fake file");
 		file->transcode = 1;
 		t = contentdirectory_starttranscode(entry->path, name);
-		thread_mutex_lock(t->mutex);
-		while (t->running && t->writing == 0) {
-			thread_cond_wait(t->cond, t->mutex);
+		thread_mutex_lock(t->writer.mutex);
+		while (t->writer.running && t->writer.writing == 0) {
+			thread_cond_wait(t->writer.cond, t->writer.mutex);
 		}
-		thread_mutex_unlock(t->mutex);
+		thread_mutex_unlock(t->writer.mutex);
+		thread_mutex_lock(t->reader.mutex);
+		while (t->reader.running && t->reader.writing == 0) {
+			thread_cond_wait(t->reader.cond, t->reader.mutex);
+		}
+		thread_mutex_unlock(t->reader.mutex);
 		file->buf = t;
-		file->file = file_open(name, FILE_MODE_READ);
+		file->file = NULL;
 		free(name);
 	} else {
 		file->transcode = 0;
 		file->file = file_open(entry->path, FILE_MODE_READ);
+		if (file->file == NULL) {
+			debugf("open(%s, O_RDONLY); failed", ename);
+			free(file);
+			entry_uninit(entry);
+			return NULL;
+		}
 	}
 	file->service = &contentdir->service;
-	if (file->file == NULL) {
-		debugf("open(%s, O_RDONLY); failed", ename);
-		free(file);
-		entry_uninit(entry);
-		return NULL;
-	}
 	entry_uninit(entry);
 	return file;
 }
 
 static int contentdirectory_vfsread (void *cookie, void *handle, char *buffer, unsigned int length)
 {
-	int j;
 	int i;
+	int l;
 	upnp_file_t *file;
 	transcode_t *transcode;
 	contentdir_t *contentdir;
-	debugf("contentdirectory_vfsread");
+	debugf("contentdirectory_vfsread: %u", length)
 	file = (upnp_file_t *) handle;
 	contentdir = (contentdir_t *) cookie;
 	if (file->transcode == 1) {
 		transcode = (transcode_t *) file->buf;
+		thread_mutex_lock(transcode->reader.mutex);
 		i = 0;
 		while (i < length) {
-			j = file_read(file->file, buffer + i, length);
-			if (j <= 0) {
-				thread_mutex_lock(transcode->mutex);
-				if (transcode->running == 0) {
-					thread_mutex_unlock(transcode->mutex);
+			if (transcode->length == 0) {
+				while (transcode->reader.running != 0 && transcode->length == 0) {
+					thread_cond_wait(transcode->reader.cond, transcode->reader.mutex);
+				}
+				if (transcode->length == 0 && transcode->reader.running == 0) {
+					thread_mutex_unlock(transcode->reader.mutex);
 					return i;
 				}
-				thread_mutex_unlock(transcode->mutex);
-			} else {
-				i += j;
-				length -= j;
 			}
+			l = MIN3(TRANSCODE_BUFFER_SIZE - transcode->offset, transcode->length, length - i);
+			memcpy(buffer + i, transcode->buffer + transcode->offset, l);
+			transcode->offset = (transcode->offset + l) % TRANSCODE_BUFFER_SIZE;
+			transcode->length = transcode->length - l;
+			i += l;
 		}
+		thread_mutex_unlock(transcode->reader.mutex);
 	} else {
 		i = file_read(file->file, buffer, length);
 	}
@@ -765,8 +925,6 @@ static int contentdirectory_vfswrite (void *cookie, void *handle, char *buffer, 
 
 static unsigned long long contentdirectory_vfsseek (void *cookie, void *handle, unsigned long long offset, gena_seek_t whence)
 {
-	int rc;
-	file_stat_t stat;
 	upnp_file_t *file;
 	transcode_t *transcode;
 	contentdir_t *contentdir;
@@ -779,24 +937,7 @@ static unsigned long long contentdirectory_vfsseek (void *cookie, void *handle, 
 			debugf("seek is partially supported for transcode files (%s)", transcode->output);
 			return 0;
 		}
-		do {
-			rc = file_stat(transcode->output, &stat);
-			if (rc != 0) {
-				return 0;
-			}
-			debugf("stat.size: %llu, offset: %llu", stat.size, offset);
-			if (stat.size < offset) {
-				thread_mutex_lock(transcode->mutex);
-				if (transcode->running == 0) {
-					thread_mutex_unlock(transcode->mutex);
-					return 0;
-				}
-				thread_mutex_unlock(transcode->mutex);
-				usleep(200000);
-			} else {
-				break;
-			}
-		} while (1);
+		return file->offset;
 	}
 	switch (whence) {
 		case GENA_SEEK_SET: return file_seek(file->file, offset, FILE_SEEK_SET);
@@ -813,9 +954,10 @@ static int contentdirectory_vfsclose (void *cookie, void *handle)
 	debugf("contentdirectory_vfsclose");
 	file = (upnp_file_t *) handle;
 	contentdir = (contentdir_t *) cookie;
-	file_close(file->file);
 	if (file->transcode == 1) {
 		contentdirectory_stoptranscode((transcode_t *) file->buf);
+	} else {
+		file_close(file->file);
 	}
 	free(file);
 	return 0;

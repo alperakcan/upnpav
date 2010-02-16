@@ -50,11 +50,11 @@ static int http_read (upnpfs_http_t *http, char *buffer, unsigned int size)
 	int r;
 	int t;
 	int rc;
-	socket_event_t presult;
+	poll_event_t presult;
 	t = 0;
 	while (t != size) {
-		rc = socket_poll(http->socket, SOCKET_EVENT_IN, &presult, 1000);
-		if (rc <= 0 || (presult & SOCKET_EVENT_IN) == 0) {
+		rc = socket_poll(http->socket, POLL_EVENT_IN, &presult, 1000);
+		if (rc <= 0 || (presult & POLL_EVENT_IN) == 0) {
 			debugfs("poll() %d failed", rc);
 			return 0;
 		}
@@ -73,11 +73,11 @@ static int http_write (upnpfs_http_t *http, char *buffer, unsigned int size)
 	int s;
 	int t;
 	int rc;
-	socket_event_t presult;
+	poll_event_t presult;
 	t = 0;
 	while (t != size) {
-		rc = socket_poll(http->socket, SOCKET_EVENT_OUT, &presult, 1000);
-		if (rc <= 0 || presult != SOCKET_EVENT_OUT) {
+		rc = socket_poll(http->socket, POLL_EVENT_OUT, &presult, 1000);
+		if (rc <= 0 || presult != POLL_EVENT_OUT) {
 			debugfs("poll() failed");
 			return 0;
 		}
@@ -96,11 +96,11 @@ static int http_getline (socket_t *socket, int timeout, char *buf, int buflen)
 	char c;
 	int rc;
 	int count;
-	socket_event_t presult;
+	poll_event_t presult;
 
 	count = 0;
-	rc = socket_poll(socket, SOCKET_EVENT_IN, &presult, timeout);
-	if (rc <= 0 || presult != SOCKET_EVENT_IN) {
+	rc = socket_poll(socket, POLL_EVENT_IN, &presult, timeout);
+	if (rc <= 0 || presult != POLL_EVENT_IN) {
 		return 0;
 	}
 

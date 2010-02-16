@@ -38,6 +38,7 @@
 #include <fnmatch.h>
 #include <dirent.h>
 #include <inttypes.h>
+#include <poll.h>
 
 #include "platform.h"
 
@@ -175,9 +176,11 @@ unsigned long long file_seek (file_t *file, unsigned long long offset, file_seek
 
 int file_close (file_t *file)
 {
-	close(file->fd);
-	free(file->path);
-	free(file);
+	if (file) {
+		close(file->fd);
+		free(file->path);
+		free(file);
+	}
 	return 0;
 }
 
@@ -215,4 +218,40 @@ int file_closedir (dir_t *dir)
 	closedir(dir->dir);
 	free(dir);
 	return 0;
+}
+
+static inline int file_event_bsd (poll_event_t event)
+{
+	int bsd;
+	bsd = 0;
+	if (event & POLL_EVENT_ERR)  bsd |= (POLLERR | POLLHUP | POLLNVAL);
+	if (event & POLL_EVENT_IN)   bsd |= POLLIN;
+	if (event & POLL_EVENT_OUT)  bsd |= POLLOUT;
+	return bsd;
+}
+
+static inline poll_event_t file_bsd_event (int bsd)
+{
+	poll_event_t event;
+	event = 0;
+	if (bsd & POLLERR)  event |= POLL_EVENT_ERR;
+	if (bsd & POLLHUP)  event |= POLL_EVENT_ERR;
+	if (bsd & POLLIN)   event |= POLL_EVENT_IN;
+	if (bsd & POLLNVAL) event |= POLL_EVENT_ERR;
+	if (bsd & POLLOUT)  event |= POLL_EVENT_OUT;
+	return event;
+}
+
+int file_poll (file_t *file, poll_event_t request, poll_event_t *result, int timeout)
+{
+	int rc;
+	struct pollfd pfd;
+	memset(&pfd, 0, sizeof(struct pollfd));
+	pfd.fd = file->fd;
+	pfd.events = file_event_bsd(request);
+	rc = poll(&pfd, 1, timeout);
+	if (result) {
+		*result = file_bsd_event(pfd.revents);
+	}
+	return rc;
 }
