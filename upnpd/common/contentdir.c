@@ -550,20 +550,12 @@ static void * contentdirectory_reader (void *arg)
 		thread_mutex_unlock(transcode->reader.mutex);
 
 		r = file_poll(file, POLL_EVENT_IN, &revent, 1000);
-		if (r < 0) {
+		if (r <= 0) {
 			break;
-		}
-		if (r == 0) {
-			usleep(20000);
-			continue;
 		}
 		r = file_read(file, buffer, s);
-		if (r < 0) {
+		if (r <= 0) {
 			break;
-		}
-		if (r == 0) {
-			usleep(20000);
-			continue;
 		}
 		thread_mutex_lock(transcode->reader.mutex);
 		if (transcode->reader.writing == 0 && transcode->length < TRANSCODE_BUFFER_SIZE / 2) {
@@ -587,7 +579,9 @@ static void * contentdirectory_reader (void *arg)
 		thread_mutex_unlock(transcode->reader.mutex);
 	}
 
-out:	free(buffer);
+out:
+	debugf("reading finished");
+	free(buffer);
 	file_close(file);
 
 	thread_mutex_lock(transcode->reader.mutex);
