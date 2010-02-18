@@ -34,6 +34,13 @@
 #include <unistd.h>
 #include <inttypes.h>
 
+#include <sys/types.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
 #include "platform.h"
 #include "database.h"
 #include "parser.h"
@@ -594,7 +601,7 @@ out:
 	return NULL;
 }
 
-static FILE * contentdirectory_popen (const char *command, const char *type, long *pid)
+static FILE * contentdirectory_popen (char * const args[], const char *type, long *pid)
 {
 	int p[2];
 	FILE *fp;
@@ -636,7 +643,7 @@ static FILE * contentdirectory_popen (const char *command, const char *type, lon
 		close(p[0]);
 		close(p[1]);
 
-		execl("/bin/sh", "sh", "-c", command, NULL);
+		execvp("mencoder", args);
 		debugf("execl() failed");
 	} else {
 		close(p[0]);
@@ -656,20 +663,57 @@ static void * contentdirectory_writer (void *arg)
 	unsigned int bsize;
 	transcode_t *transcode;
 
-	char *command;
-	const char *fmt =
-		"mencoder -ss 0 -quiet %s"
-		" -oac lavc -of mpeg -lavfopts format=asf -mpegopts format=mpeg2:muxrate=500000:vbuf_size=1194:abuf_size=64"
-		" -ovc lavc -channels 6 -lavdopts debug=0:threads=4"
-		" -lavcopts autoaspect=1:vcodec=mpeg2video:acodec=ac3:abitrate=640:threads=4:keyint=1:vqscale=1:vqmin=2"
-		" -nofontconfig -subcp cp1252 -ass-color ffffff00 -ass-border-color 00000000 -ass-font-scale 1.0"
-		" -ass-force-style FontName=Arial,Outline=1,Shadow=1,MarginV=10 -subdelay 20000"
-		" -ofps 24000/1001 -mc 0.1 -af lavcresample=48000 -srate 48000 -o %s";
+	char *args[] = {
+		"mencoder",
+		"-ss",
+		"0",
+		"-quiet",
+		NULL,
+		"-oac",
+		"lavc",
+		"-of",
+		"mpeg",
+		"-lavfopts",
+		"format=asf",
+		"-mpegopts",
+		"format=mpeg2:muxrate=500000:vbuf_size=1194:abuf_size=64",
+		"-ovc",
+		"lavc",
+		"-channels",
+		"6",
+		"-lavdopts",
+		"debug=0:threads=4",
+		"-lavcopts",
+		"autoaspect=1:vcodec=mpeg2video:acodec=ac3:abitrate=640:threads=4:keyint=1:vqscale=1:vqmin=2",
+		"-nofontconfig",
+		"-subcp",
+		"cp1252",
+		"-ass-color",
+		"ffffff00",
+		"-ass-border-color",
+		"00000000",
+		"-ass-font-scale",
+		"1.0",
+		"-ass-force-style",
+		"FontName=Arial,Outline=1,Shadow=1,MarginV=10",
+		"-subdelay",
+		"20000",
+		"-ofps",
+		"24000/1001",
+		"-mc",
+		"0.1",
+		"-af",
+		"lavcresample=48000",
+		"-srate",
+		"48000",
+		"-o",
+		NULL,
+		NULL,
+	};
 
 	fp = NULL;
 	bsize = 256;
 	buffer = NULL;
-	command = NULL;
 	transcode = (transcode_t *) arg;
 
 	thread_mutex_lock(transcode->writer.mutex);
@@ -681,11 +725,10 @@ static void * contentdirectory_writer (void *arg)
 	thread_cond_signal(transcode->writer.cond);
 	thread_mutex_unlock(transcode->writer.mutex);
 
-	if (asprintf(&command, fmt, transcode->input, transcode->output) < 0) {
-		err = -1;
-		goto out;
-	}
-	fp = contentdirectory_popen(command, "r", &pid);
+	args[4] = strdup(transcode->input);
+	args[43] = strdup(transcode->output);
+
+	fp = contentdirectory_popen(args, "r", &pid);
 	if (fp == NULL) {
 		err = -2;
 		goto out;
@@ -697,7 +740,7 @@ static void * contentdirectory_writer (void *arg)
 	}
 	memset(buffer, 0, bsize);
 
-	debugf("running command: '%s'", command);
+	debugf("running command: '%s'", "transcode");
 	thread_mutex_lock(transcode->writer.mutex);
 	transcode->pid = pid;
 	thread_mutex_unlock(transcode->writer.mutex);
@@ -723,9 +766,11 @@ static void * contentdirectory_writer (void *arg)
 out:
 	debugf("transcoding finished: %s", transcode->output);
 
-	err = pclose(fp);
+	err = fclose(fp);
 	free(buffer);
-	free(command);
+
+	free(args[4]);
+	free(args[43]);
 
 	debugf("updating status: %s", transcode->output);
 
@@ -743,9 +788,11 @@ out:
 static int contentdirectory_stoptranscode (transcode_t *transcode)
 {
 	int err;
+	int sts;
 
 	if (transcode->pid != 0) {
 		kill(transcode->pid, 9);
+		waitpid(transcode->pid, &sts, 0);
 	}
 	debugf("closing reader: %s", transcode->output);
 	thread_mutex_lock(transcode->reader.mutex);
