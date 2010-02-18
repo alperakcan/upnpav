@@ -156,13 +156,17 @@ static int controller_parser_callback (void *context, const char *path, const ch
 	if (value == NULL) {
 		return 0;
 	}
-	if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/TotalMatches") == 0) {
+	if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/TotalMatches") == 0 ||
+	    strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:BrowseResponse/TotalMatches") == 0) {
 		data->totalmatches = strtouint32(value);
-	} else if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/NumberReturned") == 0) {
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/NumberReturned") == 0 ||
+	           strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:BrowseResponse/NumberReturned") == 0) {
 		data->numberreturned = strtouint32(value);
-	} else if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/UpdateID") == 0) {
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/UpdateID") == 0 ||
+		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:BrowseResponse/UpdateID") == 0) {
 		data->updateid = strtouint32(value);
-	} else if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/Result") == 0) {
+	} else if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/Result") == 0 ||
+		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:BrowseResponse/Result") == 0) {
 		tentry = entry_from_result(value);
 		if (tentry == NULL) {
 			debugf("entry_from_result() failed");

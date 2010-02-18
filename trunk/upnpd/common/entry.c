@@ -930,51 +930,56 @@ static int entry_parser_callback (void *context, const char *path, const char *n
 		data->curr->didl.upnp.type = entry_upnp_type_from_class(value);
 	}
 	if (value != NULL && data->curr != NULL) {
+		#define strdup_safe(s, d) ({ \
+			free(d); \
+			d = (s) ? strdup(s) : NULL; \
+			d; \
+		})
 		switch (data->curr->didl.upnp.type) {
 			case DIDL_UPNP_OBJECT_TYPE_MUSICTRACK:
 				if (strcmp(path, "/DIDL-Lite/item/upnp:album") == 0) {
-					data->curr->didl.upnp.musictrack.album = strdup(value);
+					strdup_safe(value, data->curr->didl.upnp.musictrack.album);
 				} else if (strcmp(path, "/DIDL-Lite/item/upnp:artist") == 0) {
-					data->curr->didl.upnp.musictrack.artist = strdup(value);
+					strdup_safe(value, data->curr->didl.upnp.musictrack.artist);
 				} else if (strcmp(path, "/DIDL-Lite/item/upnp:originalTrackNumber") == 0) {
 					data->curr->didl.upnp.musictrack.originaltracknumber = strtouint32(value);
 				} else if (strcmp(path, "/DIDL-Lite/item/upnp:playlist") == 0) {
-					data->curr->didl.upnp.musictrack.playlist = strdup(value);
+					strdup_safe(value, data->curr->didl.upnp.musictrack.playlist);
 				}
 			case DIDL_UPNP_OBJECT_TYPE_AUDIOITEM:
 				if (strcmp(path, "/DIDL-Lite/item/upnp:genre") == 0) {
-					data->curr->didl.upnp.audioitem.genre= strdup(value);
+					strdup_safe(value, data->curr->didl.upnp.audioitem.genre);
 				} else if (strcmp(path, "/DIDL-Lite/item/upnp:longDescription") == 0) {
-					data->curr->didl.upnp.audioitem.longdescription = strdup(value);
+					strdup_safe(value, data->curr->didl.upnp.audioitem.longdescription);
 				}
 				break;
 			case DIDL_UPNP_OBJECT_TYPE_MOVIE:
 			case DIDL_UPNP_OBJECT_TYPE_VIDEOITEM:
 				if (strcmp(path, "/DIDL-Lite/item/upnp:actor") == 0) {
-					data->curr->didl.upnp.videoitem.actor = strdup(value);
+					strdup_safe(value, data->curr->didl.upnp.videoitem.actor);
 				} else if (strcmp(path, "/DIDL-Lite/item/upnp:director") == 0) {
-					data->curr->didl.upnp.videoitem.director = strdup(value);
+					strdup_safe(value, data->curr->didl.upnp.videoitem.director);
 				} else if (strcmp(path, "/DIDL-Lite/item/upnp:genre") == 0) {
-					data->curr->didl.upnp.videoitem.genre = strdup(value);
+					strdup_safe(value, data->curr->didl.upnp.videoitem.genre);
 				} else if (strcmp(path, "/DIDL-Lite/item/upnp:longdescription") == 0) {
-					data->curr->didl.upnp.videoitem.longdescription = strdup(value);
+					strdup_safe(value, data->curr->didl.upnp.videoitem.longdescription);
 				} else if (strcmp(path, "/DIDL-Lite/item/upnp:producer") == 0) {
-					data->curr->didl.upnp.videoitem.producer = strdup(value);
+					strdup_safe(value, data->curr->didl.upnp.videoitem.producer);
 				} else if (strcmp(path, "/DIDL-Lite/item/upnp:rating") == 0) {
-					data->curr->didl.upnp.videoitem.rating = strdup(value);
+					strdup_safe(value, data->curr->didl.upnp.videoitem.rating);
 				}
 				break;
 			case DIDL_UPNP_OBJECT_TYPE_PHOTO:
 				if (strcmp(path, "/DIDL-Lite/item/upnp:album") == 0) {
-					data->curr->didl.upnp.photo.album = strdup(value);
+					strdup_safe(value, data->curr->didl.upnp.photo.album);
 				}
 			case DIDL_UPNP_OBJECT_TYPE_IMAGEITEM:
 				if (strcmp(path, "/DIDL-Lite/item/upnp:longdescription") == 0) {
-					data->curr->didl.upnp.imageitem.longdescription = strdup(value);
+					strdup_safe(value, data->curr->didl.upnp.imageitem.longdescription);
 				} else if (strcmp(path, "/DIDL-Lite/item/upnp:rating") == 0) {
-					data->curr->didl.upnp.imageitem.rating = strdup(value);
+					strdup_safe(value, data->curr->didl.upnp.imageitem.rating);
 				} else if (strcmp(path, "/DIDL-Lite/item/upnp:storagemedium") == 0) {
-					data->curr->didl.upnp.imageitem.storagemedium = strdup(value);
+					strdup_safe(value, data->curr->didl.upnp.imageitem.storagemedium);
 				}
 				break;
 			case DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER:
