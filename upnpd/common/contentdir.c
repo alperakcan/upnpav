@@ -34,13 +34,6 @@
 #include <unistd.h>
 #include <inttypes.h>
 
-#include <sys/types.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-
 #include "platform.h"
 #include "database.h"
 #include "parser.h"
@@ -473,6 +466,15 @@ static service_action_t *contentdirectory_actions[] = {
 #define TRANSCODE_BUFFER_SIZE (200 * 1024 * 1024)
 #define TRANSCODE_READ_SIZE   (40 * 1024 * 1024)
 
+#if defined(ENABLE_TRANSCODE)
+
+#include <sys/types.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
 typedef struct transcode_s {
 	char *input;
 	char *output;
@@ -868,6 +870,7 @@ static transcode_t * contentdirectory_starttranscode (const char *input, const c
 	debugf("created file: %s", transcode->output);
 	return transcode;
 }
+#endif
 
 static int contentdirectory_istranscode (const char *title)
 {
@@ -922,8 +925,6 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 
 static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_t mode)
 {
-	char *name;
-	transcode_t *t;
 	entry_t *entry;
 	upnp_file_t *file;
 	const char *ename;
@@ -951,6 +952,9 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 	memset(file, 0, sizeof(upnp_file_t));
 	file->virtual = 0;
 	if (contentdirectory_istranscode(entry->didl.dc.title) == 0) {
+#if defined(ENABLE_TRANSCODE)
+		char *name;
+		transcode_t *t;
 		debugf("transcode file requested, preparing fake file");
 		name = contentdirectory_uniquename();
 		if (name == NULL) {
@@ -974,7 +978,13 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 		file->buf = t;
 		file->file = NULL;
 		free(name);
-	} else {
+#else
+		debugf("transcode not supported for this build");
+		free(file);
+		entry_uninit(entry);
+		return NULL;
+#endif
+		} else {
 		file->transcode = 0;
 		file->file = file_open(entry->path, FILE_MODE_READ);
 		if (file->file == NULL) {
@@ -992,14 +1002,15 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 static int contentdirectory_vfsread (void *cookie, void *handle, char *buffer, unsigned int length)
 {
 	int i;
-	int l;
 	upnp_file_t *file;
-	transcode_t *transcode;
 	contentdir_t *contentdir;
 	debugf("contentdirectory_vfsread: %u", length)
 	file = (upnp_file_t *) handle;
 	contentdir = (contentdir_t *) cookie;
 	if (file->transcode == 1) {
+#if defined(ENABLE_TRANSCODE)
+		int l;
+		transcode_t *transcode;
 		transcode = (transcode_t *) file->buf;
 		thread_mutex_lock(transcode->reader.mutex);
 		i = 0;
@@ -1020,6 +1031,9 @@ static int contentdirectory_vfsread (void *cookie, void *handle, char *buffer, u
 			i += l;
 		}
 		thread_mutex_unlock(transcode->reader.mutex);
+#else
+		return 0;
+#endif
 	} else {
 		i = file_read(file->file, buffer, length);
 	}
@@ -1038,18 +1052,22 @@ static int contentdirectory_vfswrite (void *cookie, void *handle, char *buffer, 
 static unsigned long long contentdirectory_vfsseek (void *cookie, void *handle, unsigned long long offset, gena_seek_t whence)
 {
 	upnp_file_t *file;
-	transcode_t *transcode;
 	contentdir_t *contentdir;
 	debugf("contentdirectory_vfsseek");
 	file = (upnp_file_t *) handle;
 	contentdir = (contentdir_t *) cookie;
 	if (file->transcode == 1) {
+#if defined(ENABLE_TRANSCODE)
+		transcode_t *transcode;
 		transcode = (transcode_t *) file->buf;
 		if (whence != GENA_SEEK_SET) {
 			debugf("seek is partially supported for transcode files (%s)", transcode->output);
 			return 0;
 		}
 		return file->offset;
+#else
+		return 0;
+#endif
 	}
 	switch (whence) {
 		case GENA_SEEK_SET: return file_seek(file->file, offset, FILE_SEEK_SET);
@@ -1067,7 +1085,9 @@ static int contentdirectory_vfsclose (void *cookie, void *handle)
 	file = (upnp_file_t *) handle;
 	contentdir = (contentdir_t *) cookie;
 	if (file->transcode == 1) {
+#if defined(ENABLE_TRANSCODE)
 		contentdirectory_stoptranscode((transcode_t *) file->buf);
+#endif
 	} else {
 		file_close(file->file);
 	}
@@ -1143,6 +1163,10 @@ device_service_t * contentdirectory_init (char *directory, int cached, int trans
 	debugf("initializing entry database");
 	contentdir->rootpath = strdup(directory);
 	contentdir->cached = cached;
+
+#if !defined(ENABLE_TRANSCODE)
+	transcode = 0;
+#endif
 
 	if (contentdir->cached) {
 		contentdir->database = entry_scan(contentdir->rootpath, (cached == 1) ? 0 : 1, (transcode == 1) ? 1 : 0);

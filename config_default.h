@@ -19,10 +19,10 @@
 /* Define to 1 if you want 'optional' support. */
 /* #undef ENABLE_OPTIONAL */
 
-/* Define to 1 if you want 'corec' platform support. */
+/* Define to 1 if you want 'corec' parser support. */
 /* #undef ENABLE_PARSER_COREC */
 
-/* Define to 1 if you want 'expat' platform support. */
+/* Define to 1 if you want 'expat' parser support. */
 #define ENABLE_PARSER_EXPAT 1
 
 /* Define to 1 if you want 'corec' platform support. */
@@ -30,6 +30,9 @@
 
 /* Define to 1 if you want 'posix' platform support. */
 #define ENABLE_PLATFORM_POSIX 1
+
+/* Define to 1 if you want 'transcode' support. */
+/* #undef ENABLE_TRANSCODE */
 
 /* Define to 1 if you want 'upnpfs' support. */
 #define ENABLE_UPNPFS 1
@@ -60,7 +63,7 @@
 #define HAVE_INTTYPES_H 1
 
 /* Define to 1 if you want 'libffmpeg' support. */
-/* #undef HAVE_LIBFFMPEG */
+#define HAVE_LIBFFMPEG 1
 
 /* Define if you have a readline compatible library */
 #define HAVE_LIBREADLINE 1
