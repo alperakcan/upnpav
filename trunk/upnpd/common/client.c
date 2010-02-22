@@ -79,11 +79,12 @@ static int client_device_uninit (client_device_t *device)
 	free(device->name);
 	free(device->type);
 	free(device->uuid);
+	free(device->location);
 	free(device);
 	return 0;
 }
 
-static client_device_t * client_device_init (char *type, char *uuid, char *friendlyname, int expiretime)
+static client_device_t * client_device_init (char *location, char *type, char *uuid, char *friendlyname, int expiretime)
 {
 	client_device_t *device;
 	if (type == NULL ||
@@ -96,13 +97,15 @@ static client_device_t * client_device_init (char *type, char *uuid, char *frien
 		return NULL;
 	}
 	memset(device, 0, sizeof(client_device_t));
+	device->location = strdup(location);
 	device->type = strdup(type);
 	device->uuid = strdup(uuid);
 	device->name = strdup(friendlyname);
 	device->expiretime = expiretime;
 	if (device->type == NULL ||
 	    device->uuid == NULL ||
-	    device->name == NULL) {
+	    device->name == NULL ||
+	    device->location == NULL) {
 		client_device_uninit(device);
 		return NULL;
 	}
@@ -312,8 +315,8 @@ found:
 	}
 	for (d = 0; d < data.ndevices; d++) {
 		if (data.devices[d].UDN != NULL &&
-			data.devices[d].deviceType != NULL &&
-			data.devices[d].friendlyName != NULL) {
+		    data.devices[d].deviceType != NULL &&
+		    data.devices[d].friendlyName != NULL) {
 			debugf("new device:\n"
 				   "  UDN         : '%s'\n"
 				   "  devceType   : '%s'\n"
@@ -321,7 +324,7 @@ found:
 				   data.devices[d].UDN,
 				   data.devices[d].deviceType,
 				   data.devices[d].friendlyName);
-			device = client_device_init(data.devices[d].deviceType, data.devices[d].UDN, data.devices[d].friendlyName, advertisement->expires);
+			device = client_device_init(advertisement->location, data.devices[d].deviceType, data.devices[d].UDN, data.devices[d].friendlyName, advertisement->expires);
 			if (device != NULL) {
 				for (s = 0; description->services[s] != NULL; s++) {
 					service = client_service_init(&data.devices[d], data.URLBase, advertisement->location, description->services[s]);

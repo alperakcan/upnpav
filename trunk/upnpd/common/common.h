@@ -394,6 +394,8 @@ typedef struct client_device_s {
 	/** */
 	char *name;
 	/** */
+	char *location;
+	/** */
 	char *type;
 	/** */
 	char *uuid;
