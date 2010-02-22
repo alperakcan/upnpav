@@ -117,6 +117,7 @@ static int list_devices (client_t *client)
 		printf("-- %s\n", device->name);
 		printf("  type         : %s\n", device->type);
 		printf("  uuid         : %s\n", device->uuid);
+		printf("  location     : %s\n", device->location);
 		printf("  expiretime   : %d\n", device->expiretime);
 	}
 	thread_mutex_unlock(client->mutex);
@@ -134,6 +135,7 @@ static int print_device (client_t *client, char *name)
 			printf("-- %s\n", device->name);
 			printf("  type         : %s\n", device->type);
 			printf("  uuid         : %s\n", device->uuid);
+			printf("  location     : %s\n", device->location);
 			printf("  expiretime   : %d\n", device->expiretime);
 			list_for_each_entry(service, &device->services, head) {
 				printf("  -- type       : %s\n", service->type);
@@ -162,6 +164,7 @@ static int print_devices (client_t *client)
 		printf("-- %s\n", device->name);
 		printf("  type         : %s\n", device->type);
 		printf("  uuid         : %s\n", device->uuid);
+		printf("  location     : %s\n", device->location);
 		printf("  expiretime   : %d\n", device->expiretime);
 		list_for_each_entry(service, &device->services, head) {
 			printf("  -- type       : %s\n", service->type);
