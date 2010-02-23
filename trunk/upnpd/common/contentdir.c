@@ -54,6 +54,12 @@ typedef struct contentdir_s {
 	char *rootpath;
 	/** */
 	int cached;
+	/** */
+	int transcode;
+	/** */
+	char *fontfile;
+	/** */
+	char *codepage;
 } contentdir_t;
 
 static int contentdirectory_get_search_capabilities (device_service_t *service, upnp_event_action_t *request)
@@ -479,6 +485,9 @@ typedef struct transcode_s {
 	char *input;
 	char *output;
 
+	char *codepage;
+	char *fontfile;
+
 	int pid;
 	file_t *file;
 	unsigned char *buffer;
@@ -515,6 +524,34 @@ static char * contentdirectory_uniquename (void)
 	}
 	free(name);
 	return NULL;
+}
+
+static char * contentdirectory_subtitlefile (const char *fname)
+{
+	int l;
+	char *sf;
+	file_stat_t stat;
+
+	l = strlen(fname);
+	sf = (char *) malloc(l + strlen(".srt") + 1);
+	if (sf == NULL) {
+		return strdup("subtitle.srt");
+	}
+
+	while (l > 0) {
+		if (fname[l - 1] == '/') {
+			break;
+		}
+		memcpy(sf, fname, l);
+		memcpy(sf + l, ".srt", strlen(".srt"));
+		*(sf + l + strlen(".srt")) = '\0';
+		if (file_stat(sf, &stat) == 0) {
+			break;
+		}
+		l--;
+	}
+
+	return sf;
 }
 
 static void * contentdirectory_reader (void *arg)
@@ -687,9 +724,12 @@ static void * contentdirectory_writer (void *arg)
 		"debug=0:threads=4",
 		"-lavcopts",
 		"autoaspect=1:vcodec=mpeg2video:acodec=ac3:abitrate=640:threads=4:keyint=1:vqscale=1:vqmin=2",
+		"-ass",
 		"-nofontconfig",
 		"-subcp",
-		"cp1252",
+		NULL,
+		"-subfont",
+		NULL,
 		"-ass-color",
 		"ffffff00",
 		"-ass-border-color",
@@ -698,10 +738,12 @@ static void * contentdirectory_writer (void *arg)
 		"1.0",
 		"-ass-force-style",
 		"FontName=Arial,Outline=1,Shadow=1,MarginV=10",
-		"-subdelay",
-		"20000",
+		"-sid",
+		"100",
 		"-ofps",
 		"24000/1001",
+		"-sub",
+		NULL,
 		"-mc",
 		"0.1",
 		"-af",
@@ -728,7 +770,10 @@ static void * contentdirectory_writer (void *arg)
 	thread_mutex_unlock(transcode->writer.mutex);
 
 	args[4] = strdup(transcode->input);
-	args[43] = strdup(transcode->output);
+	args[24] = transcode->codepage;
+	args[26] = transcode->fontfile;
+	args[40] = contentdirectory_subtitlefile(transcode->input);
+	args[48] = strdup(transcode->output);
 
 	fp = contentdirectory_popen(args, "r", &pid);
 	if (fp == NULL) {
@@ -772,7 +817,8 @@ out:
 	free(buffer);
 
 	free(args[4]);
-	free(args[43]);
+	free(args[40]);
+	free(args[48]);
 
 	debugf("updating status: %s", transcode->output);
 
@@ -828,13 +874,15 @@ static int contentdirectory_stoptranscode (transcode_t *transcode)
 	unlink(transcode->output);
 	free(transcode->input);
 	free(transcode->output);
+	free(transcode->codepage);
+	free(transcode->fontfile);
 	free(transcode->buffer);
 	free(transcode);
 
 	return err;
 }
 
-static transcode_t * contentdirectory_starttranscode (const char *input, const char *output)
+static transcode_t * contentdirectory_starttranscode (const char *input, const char *output, const char *fontfile, const char *codepage)
 {
 	transcode_t *transcode;
 	transcode = (transcode_t *) malloc(sizeof(transcode_t));
@@ -845,6 +893,8 @@ static transcode_t * contentdirectory_starttranscode (const char *input, const c
 
 	transcode->input = strdup(input);
 	transcode->output = strdup(output);
+	transcode->fontfile = strdup(fontfile);
+	transcode->codepage = strdup(codepage);
 	transcode->buffer = (unsigned char *) malloc(TRANSCODE_BUFFER_SIZE);
 	transcode->length = 0;
 	transcode->offset = 0;
@@ -964,7 +1014,7 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 			return NULL;
 		}
 		file->transcode = 1;
-		t = contentdirectory_starttranscode(entry->path, name);
+		t = contentdirectory_starttranscode(entry->path, name, contentdir->fontfile, contentdir->codepage);
 		thread_mutex_lock(t->writer.mutex);
 		while (t->writer.running && t->writer.writing == 0) {
 			thread_cond_wait(t->writer.cond, t->writer.mutex);
@@ -984,7 +1034,7 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 		entry_uninit(entry);
 		return NULL;
 #endif
-		} else {
+	} else {
 		file->transcode = 0;
 		file->file = file_open(entry->path, FILE_MODE_READ);
 		if (file->file == NULL) {
@@ -1117,11 +1167,13 @@ static int contentdirectory_uninit (device_service_t *contentdir)
 	for (i = 0; (variable = contentdir->variables[i]) != NULL; i++) {
 		free(variable->value);
 	}
+	free(((contentdir_t *) contentdir)->fontfile);
+	free(((contentdir_t *) contentdir)->codepage);
 	free(contentdir);
 	return 0;
 }
 
-device_service_t * contentdirectory_init (char *directory, int cached, int transcode)
+device_service_t * contentdirectory_init (const char *directory, int cached, int transcode, const char *fontfile, const char *codepage)
 {
 	contentdir_t *contentdir;
 	service_variable_t *variable;
@@ -1166,6 +1218,11 @@ device_service_t * contentdirectory_init (char *directory, int cached, int trans
 
 #if !defined(ENABLE_TRANSCODE)
 	transcode = 0;
+	contentdir->fontfile = NULL;
+	contentdir->codepage = NULL;
+#else
+	contentdir->fontfile = (fontfile) ? strdup(fontfile) : strdup("arial.ttf");
+	contentdir->codepage = (codepage) ? strdup(codepage) : strdup("ISO-8859-1");
 #endif
 
 	if (contentdir->cached) {
