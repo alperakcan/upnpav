@@ -1,0 +1,7 @@
+
+CON metadata
+{
+  USE upnpd_metadata
+
+  SOURCE metadata.c
+}

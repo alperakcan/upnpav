@@ -52,9 +52,6 @@ struct metadata_s {
 	char *album;
 	char *genre;
 	char *duration;
-	int image_width;
-	int image_height;
-	unsigned char *image;
 	uint64_t size;
 };
 

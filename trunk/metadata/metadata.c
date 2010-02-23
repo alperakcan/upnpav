@@ -252,7 +252,6 @@ int metadata_uninit (metadata_t *metadata)
 	free(metadata->album);
 	free(metadata->genre);
 	free(metadata->duration);
-	free(metadata->image);
 	free(metadata);
 	return 0;
 }
