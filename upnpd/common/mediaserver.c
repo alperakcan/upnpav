@@ -50,10 +50,12 @@ typedef enum {
 	OPT_DIRECTORY    = 2,
 	OPT_CACHED       = 3,
 	OPT_TRANSCODE    = 4,
-	OPT_FRIENDLYNAME = 5,
-	OPT_DAEMONIZE    = 6,
-	OPT_UUID         = 7,
-	OPT_HELP         = 8,
+	OPT_FONTFILE     = 5,
+	OPT_CODEPAGE     = 6,
+	OPT_FRIENDLYNAME = 7,
+	OPT_DAEMONIZE    = 8,
+	OPT_UUID         = 9,
+	OPT_HELP         = 10,
 } mediaserver_options_t;
 
 static char *mediaserver_options[] = {
@@ -62,6 +64,8 @@ static char *mediaserver_options[] = {
 	"directory",
 	"cached",
 	"transcode",
+	"fontfile",
+	"codepage",
 	"friendlyname",
 	"daemonize",
 	"uuid",
@@ -76,6 +80,8 @@ static int mediaserver_help (void)
 	       "\tnetmask=<netmask>\n"
 	       "\tcached=<0,1,2>\n"
 	       "\ttranscode=<0,1>\n"
+	       "\tfontfile=<font file for embeding subtitle>\n"
+	       "\tcodepage=<codepage for subtitle decoding>\n"
 	       "\tdirectory=<content directory service directory>\n"
 	       "\tfriendlyname=<device friendlyname>\n"
 	       "\tdaemonize=<1, 0>\n"
@@ -116,6 +122,8 @@ device_t * mediaserver_init (char *options)
 	int transcode;
 	int daemonize;
 	char *netmask;
+	char *codepage;
+	char *fontfile;
 	char *directory;
 	char *interface;
 	char *friendlyname;
@@ -130,6 +138,8 @@ device_t * mediaserver_init (char *options)
 	daemonize = 0;
 	uuid = NULL;
 	netmask = NULL;
+	fontfile = NULL;
+	codepage = NULL;
 	interface = NULL;
 	directory = NULL;
 	friendlyname = NULL;
@@ -170,11 +180,27 @@ device_t * mediaserver_init (char *options)
 				break;
 			case OPT_TRANSCODE:
 				if (value == NULL) {
-					debugf("value is missing for cached option");
+					debugf("value is missing for transcode option");
 					err = 1;
 					continue;
 				}
 				transcode = atoi(value);
+				break;
+			case OPT_FONTFILE:
+				if (value == NULL) {
+					debugf("value is missing for fontfile option");
+					err = 1;
+					continue;
+				}
+				fontfile = value;
+				break;
+			case OPT_CODEPAGE:
+				if (value == NULL) {
+					debugf("value is missing for codepage option");
+					err = 1;
+					continue;
+				}
+				codepage = value;
 				break;
 			case OPT_FRIENDLYNAME:
 				if (value == NULL) {
@@ -215,6 +241,8 @@ device_t * mediaserver_init (char *options)
 	       "\tdirectory   : %s\n"
 	       "\tcached      : %d\n"
 	       "\ttranscode   : %d\n"
+	       "\tfontfile    : %s\n"
+	       "\tcodepage    : %s\n"
 	       "\tfriendlyname: %s\n",
 	       (uuid) ? uuid : "(default)",
 	       (daemonize) ? "yes" : "no",
@@ -223,6 +251,8 @@ device_t * mediaserver_init (char *options)
 	       (directory) ? directory : "null",
 	       cached,
 	       transcode,
+	       (fontfile) ? fontfile : "null",
+	       (codepage) ? codepage : "null",
 	       (friendlyname) ? friendlyname : "mediaserver");
 
 	debugf("initializing mediaserver device struct");
@@ -250,7 +280,7 @@ device_t * mediaserver_init (char *options)
 	device->daemonize = daemonize;
 	device->uuid = uuid;
 
-	service = contentdirectory_init(directory, cached, transcode);
+	service = contentdirectory_init(directory, cached, transcode, fontfile, codepage);
 	if (service == NULL) {
 		debugf("contendirectory_init() failed");
 		goto error;

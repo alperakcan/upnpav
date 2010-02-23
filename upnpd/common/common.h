@@ -570,7 +570,7 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)
 
 /* contentdir.c */
 
-device_service_t * contentdirectory_init (char *directory, int cached, int transcode);
+device_service_t * contentdirectory_init (const char *directory, int cached, int transcode, const char *fontfile, const char *codepage);
 
 /* connection.c */
 
