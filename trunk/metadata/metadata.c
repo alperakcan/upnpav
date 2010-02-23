@@ -110,6 +110,7 @@ static int metadata_video (metadata_t *metadata)
 		return -1;
 	}
 	metadata_video_ffmpeg(metadata);
+	metadata->dlnainfo = strdup("*");
 	return 0;
 }
 
@@ -120,6 +121,7 @@ static int metadata_audio (metadata_t *metadata)
 	if (metadata->title == NULL) {
 		return -1;
 	}
+	metadata->dlnainfo = strdup("*");
 	return 0;
 }
 
@@ -130,6 +132,7 @@ static int metadata_image (metadata_t *metadata)
 	if (metadata->title == NULL) {
 		return -1;
 	}
+	metadata->dlnainfo = strdup("*");
 	return 0;
 }
 
