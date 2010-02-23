@@ -298,7 +298,7 @@ entry_t * entry_didl_from_path (const char *path)
 		entry->didl.parentid = entryid_parentid_from_path(path);
 		entry->path = strdup(metadata->pathname);
 		entry->mime = strdup(metadata->mimetype);
-		entry->ext_info = strdup("*");
+		entry->ext_info = strdup(metadata->dlnainfo);
 		entry->didl.childcount = 0;
 		entry->didl.restricted = 1;
 		entry->didl.dc.title = strdup(metadata->basename);
@@ -327,7 +327,7 @@ entry_t * entry_didl_from_path (const char *path)
 		entry->didl.parentid = entryid_parentid_from_path(path);
 		entry->path = strdup(metadata->pathname);
 		entry->mime = strdup(metadata->mimetype);
-		entry->ext_info = strdup("*");
+		entry->ext_info = strdup(metadata->dlnainfo);
 		entry->didl.childcount = 0;
 		entry->didl.restricted = 1;
 		entry->didl.dc.title = strdup(metadata->basename);
@@ -357,7 +357,7 @@ entry_t * entry_didl_from_path (const char *path)
 		entry->didl.parentid = entryid_parentid_from_path(path);
 		entry->path = strdup(metadata->pathname);
 		entry->mime = strdup(metadata->mimetype);
-		entry->ext_info = strdup("*");
+		entry->ext_info = strdup(metadata->dlnainfo);
 		entry->didl.childcount = 0;
 		entry->didl.restricted = 1;
 		entry->didl.dc.title = strdup(metadata->basename);
@@ -520,7 +520,7 @@ static int entry_scan_path (database_t *database, const char *path, const char *
 					entry->didl.res.duration,
 					entry->didl.dc.date,
 					entry->mime,
-					"*");
+					entry->ext_info);
 			if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER) {
 				if (asprintf(&tmp, "%s$%llu", parentid, objectid) > 0) {
 					entry_scan_path(database, entry->path, tmp, transcode);
