@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2006-2009, CoreCodec, Inc.
+  Copyright (c) 2006-2010, CoreCodec, Inc.
   All rights reserved.
 
   Redistribution and use in source and binary forms, with or without 
@@ -129,18 +129,24 @@ void closedir(DIR* p)
 
 #endif
 
-typedef struct reader
+typedef struct reader_static
 {
 	FILE* f;
 	int comment;
-	char* pos;
 	int no;
 	int flags;
-	char line[MAX_LINE];
-	char token[MAX_LINE];
-	char filename[MAX_PATH];
     int filename_kind;
 	int filepos;
+
+} reader_static;
+
+typedef struct reader
+{
+	reader_static r;
+	char *pos;
+	char *line;
+	char *token;
+	char *filename;
 
 } reader;
 
@@ -158,14 +164,15 @@ struct build_pos
 #define FLAG_PATH_SOURCE              1
 #define FLAG_PATH_GENERATED           2
 #define FLAG_PATH_COREMAKE            3
-#define FLAG_PATH_MASK             0x07
-#define FLAG_PATH_SET_ABSOLUTE     0x08
-#define FLAG_DEFINED               0x10
-#define FLAG_REMOVED               0x20
-#define FLAG_PROCESSED             0x40
-#define FLAG_ATTRIB                0x80
-#define FLAG_READY                 0x100
-#define FLAG_CONFIG_FILE_SET       0x200
+#define FLAG_PATH_SYSTEM              4
+#define FLAG_PATH_MASK             0x0F
+#define FLAG_PATH_SET_ABSOLUTE     0x10
+#define FLAG_DEFINED               0x20
+#define FLAG_REMOVED               0x40
+#define FLAG_PROCESSED             0x80
+#define FLAG_ATTRIB                0x100
+#define FLAG_READY                 0x200
+#define FLAG_CONFIG_FILE_SET       0x400
 
 char src_root[MAX_PATH] = "";
 char proj_root[MAX_PATH] = "";
@@ -223,7 +230,7 @@ void lwr(char* s)
 
 void syntax(reader* p)
 {
-	printf("syntax error %s:%d\n%s\r\n",p->filename,p->no,p->line);
+	printf("syntax error %s:%d\n%s\r\n",p->filename,p->r.no,p->line);
 	exit(1);
 }
 
@@ -373,6 +380,8 @@ item* findref(const item* p)
 			v = item_find(getroot(p,"exe_csharp"),p->value);
 		if (!v)
 			v = item_find(getroot(p,"lib_csharp"),p->value);
+		if (!v)
+			v = item_find(getroot(p,"exe_java"),p->value);
 		return v;
 	}
 	return NULL;
@@ -670,30 +679,56 @@ void item_merge(item* p,item* group,item* plus)
 	}
 }
 
+void reader_init(reader *p)
+{
+	memset(p,0,sizeof(reader));
+    p->filename = malloc(MAX_PATH);
+    p->line = malloc(MAX_LINE);
+    p->token = malloc(MAX_LINE);
+    memset(p->filename,0,MAX_PATH);
+    memset(p->line,0,MAX_LINE);
+    memset(p->token,0,MAX_LINE);
+}
+
+void reader_free(reader *p)
+{
+    free(p->filename);
+    free(p->line);
+    free(p->token);
+}
+
 void reader_save(reader *p,reader* save)
 {
-	p->filepos = ftell(p->f);
-	memcpy(save,p,sizeof(reader));
+	p->r.filepos = ftell(p->r.f);
+	memcpy(save,p,sizeof(reader_static));
+    save->filename = strdup(p->filename);
+    save->line = strdup(p->line);
+    save->token = strdup(p->token);
+    save->pos = save->line + (p->pos - p->line);
 }
 
 void reader_restore(reader *p,reader* save)
 {
-	memcpy(p,save,sizeof(reader));
-	fseek(p->f,p->filepos,SEEK_SET);
+	memcpy(p,save,sizeof(reader_static));
+    strcpy(p->filename,save->filename);
+    strcpy(p->line,save->line);
+    strcpy(p->token,save->token);
+    p->pos = p->line + (save->pos - save->line);
+	fseek(p->r.f,p->r.filepos,SEEK_SET);
 }
 
 int reader_line(reader* p)
 {
 	size_t i;
     p->line[0] = 0;
-	fgets(p->line,sizeof(p->line),p->f);
-	if (feof(p->f) && p->line[0]==0)
+	fgets(p->line,MAX_LINE,p->r.f);
+	if (feof(p->r.f) && p->line[0]==0)
 		return 0;
 	i=strlen(p->line);
-	while (isspace(p->line[--i]))
+	while (i && isspace(p->line[--i]))
 		p->line[i]=0;
 	p->pos = p->line;
-	++p->no;
+	++p->r.no;
 	return 1;
 }
 
@@ -716,18 +751,18 @@ void reader_comment(reader* p)
 	char* s = p->line;
 	while (*s)
 	{
-		if (p->comment)
+		if (p->r.comment)
 		{
 			char* s0 = s;
 			for (;*s;++s)
 				if (s[0]=='*' && s[1]=='/')
 				{
 					s = strdel(s0,s);
-					p->comment = 0;
+					p->r.comment = 0;
 					break;
 				}
 
-			if (p->comment)
+			if (p->r.comment)
 			{
 				s = s0;
 				*s = 0;
@@ -740,7 +775,7 @@ void reader_comment(reader* p)
 				if (s[0]=='/' && s[1]=='*')
 				{
 					s = strdel(s,s+2);
-					p->comment = 1;
+					p->r.comment = 1;
 					break;
 				}
 				if (s[0]=='/' && s[1]=='/')
@@ -778,14 +813,14 @@ int reader_read(reader* p)
 			s = p->pos;
 		}
 
-		if (p->comment)
+		if (p->r.comment)
 		{
 			char* s0 = s;
 			for (;*s;++s)
 				if (s[0]=='*' && s[1]=='/')
 				{
 					s = strdel(s0,s+2);
-					p->comment = 0;
+					p->r.comment = 0;
 					break;
 				}
 		}
@@ -797,7 +832,7 @@ int reader_read(reader* p)
 			if (s[0]=='/' && s[1]=='*')
 			{
 				s = strdel(s,s+2);
-				p->comment = 1;
+				p->r.comment = 1;
 			}
 			else
 			if (s[0]=='/' && s[1]=='/')
@@ -844,32 +879,32 @@ int reader_read(reader* p)
 	}
 
 	p->pos = s;
-	p->flags |= FLAG_READY;
+	p->r.flags |= FLAG_READY;
 	return 1;
 }
 
 int reader_eof(reader* p)
 {
-	if (p->flags & FLAG_READY)
+	if (p->r.flags & FLAG_READY)
 		return 0;
 	return !reader_read(p);
 }
 
 int reader_istoken(reader* p,const char* token)
 {
-	if (!(p->flags & FLAG_READY) && !reader_read(p))
+	if (!(p->r.flags & FLAG_READY) && !reader_read(p))
 		return 0;
 
 	if (stricmp(p->token,token)!=0)
 		return 0;
 
-	p->flags &= ~FLAG_READY;
+	p->r.flags &= ~FLAG_READY;
 	return 1;
 }
 
 int reader_istoken_n(reader* p,const char* token, int n)
 {
-	if (!(p->flags & FLAG_READY) && !reader_read(p))
+	if (!(p->r.flags & FLAG_READY) && !reader_read(p))
 		return 0;
 
 	if (strnicmp(p->token,token,n)!=0)
@@ -882,14 +917,14 @@ void reader_token_skip(reader* p, int n)
 {
     strdel(p->token,p->token+n);
     if (!p->token[0])
-    	p->flags &= ~FLAG_READY;
+    	p->r.flags &= ~FLAG_READY;
 }
 
 int reader_tokenline(reader* p,int onespace)
 {
 	char* s = p->pos;
 
-	assert(!(p->flags & FLAG_READY));
+	assert(!(p->r.flags & FLAG_READY));
 
     if (onespace >= 0)
     {
@@ -908,9 +943,9 @@ int reader_tokenline(reader* p,int onespace)
 
 void reader_token(reader* p)
 {
-	if (!(p->flags & FLAG_READY) && !reader_read(p))
+	if (!(p->r.flags & FLAG_READY) && !reader_read(p))
 		syntax(p);
-	p->flags &= ~FLAG_READY;
+	p->r.flags &= ~FLAG_READY;
 }
 
 void reader_name(reader* p)
@@ -1062,6 +1097,20 @@ void escapestr(char *value)
     }
 }
 
+void escapepath(char *value, int mode)
+{
+    char *s;
+    s = strchr(value,'/');
+    while (s)
+    {
+        if (mode==2)
+            *s = '_';
+        else if (mode==3)
+            *s = '.';
+        s = strchr(s+1,'/');
+    }
+}
+
 int ispathabs(const char *path)
 {
     return (path && (path[0] == '$' || path[0] == '/' || path[0] == '\\' || (isalpha(path[0]) && path[1] == ':' && (path[2] == '/' || path[2] == '\\'))));
@@ -1154,13 +1203,15 @@ void strip_path_abs(char *path, int flags)
         if (src_root_len && strstr(path,src_root)==path)
             memmove(path,path+src_root_len,strlen(path+src_root_len)+1);
         break;
+    case FLAG_PATH_SYSTEM: // do nothing
+        break;
     default: assert(0);
     }
 }
 
 void reader_strip_abs(reader* p)
 {
-    strip_path_abs(p->token,p->flags);
+    strip_path_abs(p->token,p->r.flags);
 }
 
 void reader_filename(reader* p, int dst_flags)
@@ -1186,10 +1237,10 @@ void reader_filename(reader* p, int dst_flags)
             end = i;
         }
         strins(p->token,p->filename,end);
-        p->flags &= ~FLAG_PATH_MASK;
-        p->flags |= p->filename_kind & FLAG_PATH_MASK;
+        p->r.flags &= ~FLAG_PATH_MASK;
+        p->r.flags |= p->r.filename_kind & FLAG_PATH_MASK;
         // adjust the pathes according to their modifier
-        if ((dst_flags & FLAG_PATH_MASK) != (p->filename_kind & FLAG_PATH_MASK))
+        if ((dst_flags & FLAG_PATH_MASK) != (p->r.filename_kind & FLAG_PATH_MASK))
         {
             if (coremake_root_len || (dst_flags & FLAG_PATH_MASK) != FLAG_PATH_COREMAKE) // keep the full path to get the coremake_root
                 reader_strip_abs(p);
@@ -1206,8 +1257,8 @@ void reader_filename(reader* p, int dst_flags)
                 strins(p->token,src_root,NULL);
                 break;
             }
-            p->flags &= ~FLAG_PATH_MASK;
-            p->flags |= (dst_flags & FLAG_PATH_MASK);
+            p->r.flags &= ~FLAG_PATH_MASK;
+            p->r.flags |= (dst_flags & FLAG_PATH_MASK);
         }
     }
     pathunix(p->token);
@@ -1406,6 +1457,7 @@ int load_item(item* p,reader* file,int sub,itemcond* cond0)
             int attrib;
             int generated_dir;
             int coremake_dir;
+            int system_dir;
 			itemcond* cond;
 			reader_name(file);
 
@@ -1421,6 +1473,7 @@ int load_item(item* p,reader* file,int sub,itemcond* cond0)
 				   stricmp(file->token,"dll_csharp")==0 || 
 				   stricmp(file->token,"exe_csharp")==0 || 
 				   stricmp(file->token,"con_csharp")==0 || 
+				   stricmp(file->token,"exe_java")==0 || 
 			       stricmp(file->token,"workspace")==0);
 
             uselib = stricmp(file->token,"uselib")==0 || stricmp(file->token,"builtlib")==0;
@@ -1434,6 +1487,7 @@ int load_item(item* p,reader* file,int sub,itemcond* cond0)
 					   stricmp(file->token,"include")==0 ||
 					   stricmp(file->token,"include_debug")==0 ||
 					   stricmp(file->token,"include_release")==0 ||
+					   stricmp(file->token,"os_include")==0 ||
 					   stricmp(file->token,"libinclude")==0 ||
 					   stricmp(file->token,"libinclude_debug")==0 ||
 					   stricmp(file->token,"libinclude_release")==0 ||
@@ -1446,6 +1500,7 @@ int load_item(item* p,reader* file,int sub,itemcond* cond0)
 					   stricmp(file->token,"install_zip")==0 ||
 					   stricmp(file->token,"install_cab")==0 ||
 					   stricmp(file->token,"install")==0 ||
+					   stricmp(file->token,"android_value")==0 ||
 					   stricmp(file->token,"nsi")==0 ||
 					   stricmp(file->token,"pmdoc")==0 ||
 					   stricmp(file->token,"osx_icon")==0 ||
@@ -1459,12 +1514,16 @@ int load_item(item* p,reader* file,int sub,itemcond* cond0)
 					   stricmp(file->token,"symbian_key")==0 ||
 					   stricmp(file->token,"doxygen")==0 ||
                        stricmp(file->token,"project_svn_revision")==0 ||
-                       stricmp(file->token,"project_help")==0;
+                       stricmp(file->token,"project_help")==0 ||
+                       stricmp(file->token,"config_android_ndk")==0;
 
             generated_dir = stricmp(file->token,"config_file")==0 ||
                             stricmp(file->token,"config_include")==0;
 
             coremake_dir = stricmp(file->token,"platform_files")==0;
+
+            system_dir = stricmp(file->token,"config_android_ndk")==0 ||
+                         stricmp(file->token,"os_include")==0;
 
             attrib = filename ||
 					   stricmp(file->token,"register_cab")==0 ||
@@ -1518,7 +1577,7 @@ int load_item(item* p,reader* file,int sub,itemcond* cond0)
 					reader_token(file);
                     if (filename)
                     {
-                        int file_flags = generated_dir?FLAG_PATH_GENERATED:(coremake_dir?FLAG_PATH_COREMAKE:FLAG_PATH_SOURCE);
+                        int file_flags = generated_dir?FLAG_PATH_GENERATED:(coremake_dir?FLAG_PATH_COREMAKE:(system_dir?FLAG_PATH_SYSTEM:FLAG_PATH_SOURCE));
                         if (ispathabs(file->token))
                         {
                             is_abs = 1;
@@ -1552,13 +1611,13 @@ int load_item(item* p,reader* file,int sub,itemcond* cond0)
                         if (exists)
                         {
                             item* existing = getvalue(v);
-                            printf("project already defined at %s!\n%s:%d\n%s\r\n",existing?existing->value:"?",file->filename,file->no,file->line);
+                            printf("project already defined at %s!\n%s:%d\n%s\r\n",existing?existing->value:"?",file->filename,file->r.no,file->line);
 	                        exit(1);
                         }
 
                         path[0]=0;
                         strins(path,file->filename,getfilename(file->filename));
-                        strip_path_abs(path,file->filename_kind);
+                        strip_path_abs(path,file->r.filename_kind);
                         if (generated_dir)
                             strins(path,proj_root,NULL);
                         else if (coremake_dir)
@@ -1589,6 +1648,7 @@ int load_item(item* p,reader* file,int sub,itemcond* cond0)
 						item_get(i,"LIBS",0);
 						item_get(i,"LIBS_DEBUG",0);
 						item_get(i,"LIBS_RELEASE",0);
+						item_get(i,"SYSLIBS",0);
 					}
 
                     if (!deepercond)
@@ -1610,7 +1670,7 @@ int load_item(item* p,reader* file,int sub,itemcond* cond0)
                         incs = item_get(p,"libinclude",0);
                         exists = item_find(incs,path)!=NULL;
                         i = item_get(incs,path,0);
-                        i->flags = file->filename_kind;
+                        i->flags = file->r.filename_kind;
                         if (exists)
                             i->cond = itemcond_or(i->cond,cond);
                         else
@@ -1646,18 +1706,20 @@ int load_item(item* p,reader* file,int sub,itemcond* cond0)
 int load_file(item* p,const char* filename, int file_kind, itemcond* cond)
 {
 	reader r;
-	memset(&r,0,sizeof(r));
+    reader_init(&r);
 	strcpy(r.filename,filename);
 	pathunix(r.filename);
-	r.f = fopen(filename,"r");
+	r.r.f = fopen(filename,"r");
 	r.pos = r.line;
-	if (r.f)
+	if (r.r.f)
 	{
-        r.filename_kind = file_kind;
+        r.r.filename_kind = file_kind;
 		load_item(p,&r,0,cond);
-		fclose(r.f);
+		fclose(r.r.f);
+        reader_free(&r);
 		return 1;
 	}
+    reader_free(&r);
 	return 0;
 }
 
@@ -1966,6 +2028,7 @@ void preprocess_stdafx_includes(item* p,int lib)
         char gen_path[MAX_PATH];
 		item* plugin = getvalue(item_find(*child,"plugin"));
 		item* no_stdafx = getvalue(item_find(*child,"no_stdafx"));
+		item* no_project = getvalue(item_find(*child,"no_project"));
 		item* cls = item_get(*child,"class",0);
 		item* reg = item_get(*child,"reg",0);
 		item* path = getvalue(item_get(*child,"path",0));
@@ -1993,7 +2056,7 @@ void preprocess_stdafx_includes(item* p,int lib)
 				break;
 			}
 
-		if (prj)
+		if (prj && !no_project)
 		{
             /* add _project.h */
             item *src;
@@ -2068,6 +2131,7 @@ void preprocess_stdafx(item* p,int lib)
 		item* path = getvalue(item_get(*child,"path",0));
 		item* src = item_get(*child,"source",0);
 		item* libs = item_get(*child,"libs",0);
+		item* syslibs = item_get(*child,"syslibs",0);
 		item* install = item_get(*child,"install",0);
 		item* uselib = item_find(*child,"uselib");
 
@@ -2090,15 +2154,15 @@ void preprocess_stdafx(item* p,int lib)
                         {
                             // open the <project_svn_revision>/.svn/entries file
                             reader r;
-	                        memset(&r,0,sizeof(r));
+                            reader_init(&r);
 	                        r.pos = r.line;
                             strcpy(r.filename,(*k)->value);
 	                        pathunix(r.filename);
                             addendpath(r.filename);
                             strcat(r.filename,".svn/entries");
-	                        r.f = fopen(r.filename,"r");
+	                        r.r.f = fopen(r.filename,"r");
 
-                            if (r.f)
+                            if (r.r.f)
                             {
                                 if (reader_line(&r))
                                 {
@@ -2127,8 +2191,9 @@ void preprocess_stdafx(item* p,int lib)
                                         }
                                     }
                                 }
-                                fclose(r.f);
+                                fclose(r.r.f);
                             }
+                            reader_free(&r);
                         }
                     }
 			    }
@@ -2179,6 +2244,7 @@ void preprocess_stdafx(item* p,int lib)
 				item_merge(reg,item_find(ref,"reg"),use->child[i]);
 				item_merge(cls,item_find(ref,"class"),use->child[i]);
 				item_merge(libs,item_find(ref,"libs"),use->child[i]);
+				item_merge(syslibs,item_find(ref,"syslibs"),use->child[i]);
 				item_merge(install,item_find(ref,"install"),use->child[i]);
 			}
 		}
@@ -2208,6 +2274,7 @@ void preprocess_stdafx(item* p,int lib)
 				item_merge(reg,item_find(ref,"reg"),usebuilt->child[i]);
 				item_merge(cls,item_find(ref,"class"),usebuilt->child[i]);
 				item_merge(libs,item_find(ref,"libs"),usebuilt->child[i]);
+				item_merge(syslibs,item_find(ref,"syslibs"),usebuilt->child[i]);
 				item_merge(install,item_find(ref,"install"),usebuilt->child[i]);
 			}
 		}
@@ -2296,10 +2363,10 @@ void preprocess_stdafx(item* p,int lib)
 							    item* value = (*child)->child[i]->child[j];
 							    cond = itemcond_print(f,cond,value->cond);
 
-                                memset(&r,0,sizeof(r));
+                                reader_init(&r);
                                 strcpy(r.filename,file);
-                                r.filename_kind = FLAG_PATH_GENERATED;
-                                r.no = 0;
+                                r.r.filename_kind = FLAG_PATH_GENERATED;
+                                r.r.no = 0;
                                 strcpy(r.line,value->value);
                                 strcpy(r.token,value->value);
                                 pos.p = value;
@@ -2324,6 +2391,7 @@ void preprocess_stdafx(item* p,int lib)
                                     fprintf(f,"#define PROJECT_VERSION_MINOR %d\n",minor);
                                     fprintf(f,"#define PROJECT_VERSION_REVISION %d\n",revision);
                                 }
+                                reader_free(&r);
                             }
 					    }
 
@@ -2484,16 +2552,16 @@ void preprocess_stdafx(item* p,int lib)
 					    fprintf(f,"    Node_Set(p,NODECONTEXT_PROJECT_FOURCC,&FourCC,sizeof(FourCC));\n");
 					    fprintf(f,"#endif\n");
 					    fprintf(f,"#ifdef PROJECT_NAME\n");
-					    fprintf(f,"    Node_Set(p,NODECONTEXT_PROJECT_NAME,PROJECT_NAME,0);\n");
+					    fprintf(f,"    Node_SetData((node*)p,NODECONTEXT_PROJECT_NAME,TYPE_STRING,PROJECT_NAME);\n");
 					    fprintf(f,"#endif\n");
 					    fprintf(f,"#ifdef PROJECT_VENDOR\n");
-					    fprintf(f,"    Node_Set(p,NODECONTEXT_PROJECT_VENDOR,PROJECT_VENDOR,0);\n");
+					    fprintf(f,"    Node_SetData((node*)p,NODECONTEXT_PROJECT_VENDOR,TYPE_STRING,PROJECT_VENDOR);\n");
 					    fprintf(f,"#endif\n");
 					    fprintf(f,"#ifdef PROJECT_HELP\n");
-					    fprintf(f,"    Node_Set(p,NODECONTEXT_PROJECT_HELP,PROJECT_HELP,0);\n");
+					    fprintf(f,"    Node_SetData((node*)p,NODECONTEXT_PROJECT_HELP,TYPE_STRING,PROJECT_HELP);\n");
 					    fprintf(f,"#endif\n");
 					    fprintf(f,"#ifdef PROJECT_VERSION\n");
-					    fprintf(f,"    Node_Set(p,NODECONTEXT_PROJECT_VERSION,PROJECT_VERSION,0);\n");
+					    fprintf(f,"    Node_SetData((node*)p,NODECONTEXT_PROJECT_VERSION,TYPE_STRING,PROJECT_VERSION);\n");
 					    fprintf(f,"#endif\n");
 					    fprintf(f,"#ifdef PROJECT_BUILD\n");
 					    fprintf(f,"    {\n");
@@ -2502,7 +2570,7 @@ void preprocess_stdafx(item* p,int lib)
 					    fprintf(f,"    }\n");
 					    fprintf(f,"#endif\n");
 					    fprintf(f,"#ifdef PROJECT_MIME\n");
-					    fprintf(f,"    Node_Set(p,NODECONTEXT_PROJECT_MIME,PROJECT_MIME,0);\n");
+					    fprintf(f,"    Node_SetData((node*)p,NODECONTEXT_PROJECT_MIME,TYPE_STRING,PROJECT_MIME);\n");
 					    fprintf(f,"#endif\n");
 					    fprintf(f,"#ifdef PROJECT_APPID\n");
 					    fprintf(f,"    {\n");
@@ -2511,7 +2579,7 @@ void preprocess_stdafx(item* p,int lib)
 					    fprintf(f,"    }\n");
 					    fprintf(f,"#endif\n");
 					    fprintf(f,"#ifdef PROJECT_PATH\n");
-					    fprintf(f,"    Node_Set(p,NODECONTEXT_PROJECT_PATH,PROJECT_PATH,0);\n");
+					    fprintf(f,"    Node_SetData((node*)p,NODECONTEXT_PROJECT_PATH,TYPE_STRING,PROJECT_PATH);\n");
 					    fprintf(f,"#endif\n");
 					    fprintf(f,"}\n");
 				    }
@@ -2758,7 +2826,7 @@ void replace_use(item* p,const char* remove,item* set)
 	}
 }
 
-void preprocess_merge(item* p)
+void preprocess_usemerge(item* p)
 {
 	item** child;
 	if (!p) return;
@@ -2910,6 +2978,7 @@ void preprocess_uselib(item* p,item* ref,item* uselib)
 	                item_merge(item_get(*child,"reg",0),item_find(ref,"reg"),use->child[i]);
 	                item_merge(item_get(*child,"class",0),item_find(ref,"class"),use->child[i]);
 	                item_merge(item_get(*child,"libs",0),item_find(ref,"libs"),use->child[i]);
+	                item_merge(item_get(*child,"syslibs",0),item_find(ref,"syslibs"),use->child[i]);
 	                item_merge(item_get(*child,"install",0),item_find(ref,"install"),use->child[i]);
 
 	                // add to "include"
@@ -2956,6 +3025,7 @@ void preprocess_builtlib(item* p)
             preprocess_uselib(getroot(p,"exe_csharp"),p->child[i],value);
             preprocess_uselib(getroot(p,"con_csharp"),p->child[i],value);
             preprocess_uselib(getroot(p,"lib_csharp"),p->child[i],value);
+            preprocess_uselib(getroot(p,"exe_java"),p->child[i],value);
 			item_delete(p->child[i]);
 			--i;
         }
@@ -3382,6 +3452,7 @@ void preprocess(item* p)
 	preprocess_config(getconfig(p));
 	preprocess_condeval(p);
 
+    // add the path with config.h to CONFIG_INCLUDE
     i = item_get(p,"config_include",0);
     config_file = getvalue(getroot(p,"config_file"));
     if (config_file)
@@ -3438,6 +3509,7 @@ void preprocess(item* p)
 	preprocess_group(item_find(p,"exe_csharp"));
 	preprocess_group(item_find(p,"con_csharp"));
 	preprocess_group(item_find(p,"dll_csharp"));
+	preprocess_group(item_find(p,"exe_java"));
 	preprocess_group(item_find(p,"workspace"));
 
 	// COREMAKE_STATIC and TARGET_ALWAYS_STATIC: replaces all "dll" by "lib"
@@ -3477,16 +3549,19 @@ void preprocess(item* p)
 	preprocess_presort(item_find(p,"con_csharp"));
 	preprocess_presort(item_find(p,"exe_csharp"));
 	preprocess_presort(item_find(p,"dll_csharp"));
+	preprocess_presort(item_find(p,"exe_java"));
 
     preprocess_builtlib(item_find(p,"project"));
     preprocess_builtlib(item_find(p,"lib"));
     preprocess_builtlib(item_find(p,"lib_csharp"));
 
-	preprocess_merge(item_find(p,"dll"));
-	preprocess_merge(item_find(p,"exe"));
-	preprocess_merge(item_find(p,"dll_csharp"));
-	preprocess_merge(item_find(p,"exe_csharp"));
+	preprocess_usemerge(item_find(p,"dll"));
+	preprocess_usemerge(item_find(p,"exe"));
+	preprocess_usemerge(item_find(p,"dll_csharp"));
+	preprocess_usemerge(item_find(p,"exe_csharp"));
+	preprocess_usemerge(item_find(p,"exe_java"));
 
+    // the .build (or .inc) file needs to define these
 	preprocess_outputname(item_find(p,"lib"),"output_lib");
 	preprocess_outputname(item_find(p,"exe"),"output_exe");
 	preprocess_outputname(item_find(p,"con"),"output_con");
@@ -3495,6 +3570,7 @@ void preprocess(item* p)
 	preprocess_outputname(item_find(p,"exe_csharp"),"output_exe");
 	preprocess_outputname(item_find(p,"con_csharp"),"output_con");
 	preprocess_outputname(item_find(p,"dll_csharp"),"output_dll");
+	preprocess_outputname(item_find(p,"exe_java"),"output_java");
 
 	preprocess_stdafx_includes(item_find(p,"con"),0);
 	preprocess_stdafx_includes(item_find(p,"exe"),0);
@@ -3504,6 +3580,7 @@ void preprocess(item* p)
 	preprocess_stdafx_includes(item_find(p,"exe_csharp"),0);
 	preprocess_stdafx_includes(item_find(p,"dll_csharp"),0);
 	preprocess_stdafx_includes(item_find(p,"lib_csharp"),1);
+	preprocess_stdafx_includes(item_find(p,"exe_java"),0);
 
 	preprocess_dependency_init(item_find(p,"lib"),1);
 	preprocess_dependency_init(item_find(p,"exe"),0);
@@ -3513,6 +3590,7 @@ void preprocess(item* p)
 	preprocess_dependency_init(item_find(p,"exe_csharp"),0);
 	preprocess_dependency_init(item_find(p,"con_csharp"),0);
 	preprocess_dependency_init(item_find(p,"dll_csharp"),0);
+	preprocess_dependency_init(item_find(p,"exe_java"),0);
 
 	preprocess_dependency(item_find(p,"lib"));
 	preprocess_dependency(item_find(p,"con"));
@@ -3522,6 +3600,7 @@ void preprocess(item* p)
 	preprocess_dependency(item_find(p,"con_csharp"));
 	preprocess_dependency(item_find(p,"exe_csharp"));
 	preprocess_dependency(item_find(p,"dll_csharp"));
+	preprocess_dependency(item_find(p,"exe_java"));
 
 	preprocess_stdafx(item_find(p,"con"),0);
 	preprocess_stdafx(item_find(p,"exe"),0);
@@ -3531,6 +3610,7 @@ void preprocess(item* p)
 	preprocess_stdafx(item_find(p,"exe_csharp"),0);
 	preprocess_stdafx(item_find(p,"dll_csharp"),0);
 	preprocess_stdafx(item_find(p,"lib_csharp"),1);
+	preprocess_stdafx(item_find(p,"exe_java"),0);
 
 	preprocess_workspace_init(item_find(p,"lib"));
 	preprocess_workspace_init(item_find(p,"exe"));
@@ -3540,6 +3620,7 @@ void preprocess(item* p)
 	preprocess_workspace_init(item_find(p,"exe_csharp"));
 	preprocess_workspace_init(item_find(p,"con_csharp"));
 	preprocess_workspace_init(item_find(p,"dll_csharp"));
+	preprocess_workspace_init(item_find(p,"exe_java"));
 	preprocess_workspace(item_get(p,"workspace",0));
 
 	preprocess_condend(p);
@@ -3552,10 +3633,11 @@ void preprocess(item* p)
 	preprocess_sort(item_find(p,"con_csharp"));
 	preprocess_sort(item_find(p,"exe_csharp"));
 	preprocess_sort(item_find(p,"dll_csharp"));
+	preprocess_sort(item_find(p,"exe_java"));
 	preprocess_sort_workspace(item_find(p,"workspace"));
 }
 
-#define MAX_PUSHED_PATH  5
+#define MAX_PUSHED_PATH  8
 FILE* build;
 char buildpath[MAX_PUSHED_PATH][MAX_PATH];
 int buildflags[MAX_PUSHED_PATH];
@@ -3570,7 +3652,7 @@ void simplifypath(char* path, int head)
         {
             char* end = s+4;
             while (--s!=path)
-                if (*s == '/')
+                if (*s == '/' || *s == '\\')
                 {
                     ++s;
                     break;
@@ -3744,6 +3826,7 @@ int tokeneval(char* s,int skip,build_pos* pos,reader* error, int extra_cmd)
 			s += 2;
             in_generated = *s=='¯';
             if (in_generated) ++s;
+            if (*s=='¯' && ++in_generated) ++s;
             nodrive = *s==':';
             if (nodrive) ++s;
             count = *s=='=';
@@ -3768,10 +3851,11 @@ int tokeneval(char* s,int skip,build_pos* pos,reader* error, int extra_cmd)
 			if (relpath) ++s;
 			escape = *s=='`';
 			if (escape) ++s;
+			while (*s=='`' && ++escape) ++s;
 			upper = *s=='^';
 			if (upper) ++s;
 			filepath = *s=='/';
-			if (filepath) { ++s; relpath=1; }
+			if (filepath) { ++s; if (*s=='!') ++s; else relpath=1; }
 			abspath = *s=='|';
             if (abspath) { ++s; relpath=1; }
             levelup = 0;
@@ -3795,10 +3879,18 @@ int tokeneval(char* s,int skip,build_pos* pos,reader* error, int extra_cmd)
             no_backslash = *s=='&';
             if (no_backslash) ++s;
 
-            if (!filename && in_generated)
+            if (!filename)
             {
-                has_forced_generated = 1;
-                result |= FLAG_PATH_GENERATED;
+                if (in_generated==1)
+                {
+                    has_forced_generated = 1;
+                    result |= FLAG_PATH_GENERATED;
+                }
+                else if (in_generated)
+                {
+                    has_forced_generated = 2;
+                    result |= FLAG_PATH_SYSTEM;
+                }
             }
 
             if (relpath && (buildflags[curr_build] & FLAG_PATH_SET_ABSOLUTE))
@@ -3869,7 +3961,7 @@ int tokeneval(char* s,int skip,build_pos* pos,reader* error, int extra_cmd)
 
                 if (count)
                 {
-                    sprintf(name,"%d",j?item_childcount(j):0);
+                    sprintf(name,"%d",j?(int)item_childcount(j):0);
                 }
                 else
 				if (s[0]==':')
@@ -3946,10 +4038,15 @@ int tokeneval(char* s,int skip,build_pos* pos,reader* error, int extra_cmd)
                             if ((value_flags & FLAG_PATH_MASK) != FLAG_PATH_NOT_PATH)
                                 strip_path_abs(value, value_flags);
 
-                            if (in_generated)
+                            if (in_generated==1)
                             {
                                 value_flags &= ~FLAG_PATH_MASK;
                                 value_flags |= FLAG_PATH_GENERATED;
+                            }
+                            else if (in_generated)
+                            {
+                                value_flags &= ~FLAG_PATH_MASK;
+                                value_flags |= FLAG_PATH_SYSTEM;
                             }
 
                             if (relpath)
@@ -3970,8 +4067,12 @@ int tokeneval(char* s,int skip,build_pos* pos,reader* error, int extra_cmd)
 							if (upper)
 								upr(value);
 							if (reverse) reversestr(value);
-                            if (escape) escapestr(value);
-                            if (nodrive) removedrive(value);
+                            if (nodrive)
+                                removedrive(value);
+                            if (escape==1)
+                                escapestr(value);
+                            else if (escape)
+                                escapepath(value,escape);
                             if (quote) urlquote(value,no_backslash);
 							n = strlen(value);
 							if (n>strlen(mask) && memcmp(value,mask,maskpos)==0 &&
@@ -4022,6 +4123,7 @@ int tokeneval(char* s,int skip,build_pos* pos,reader* error, int extra_cmd)
 				else
 				{
                     int name_flags = 0;
+                    int is_relpath = 1;
 					name[0]=0;
 					if (usename)
                     {
@@ -4055,23 +4157,31 @@ int tokeneval(char* s,int skip,build_pos* pos,reader* error, int extra_cmd)
                     // force a relative path by default
                     if (!filename && (name_flags & FLAG_PATH_MASK) != FLAG_PATH_NOT_PATH)
                     {
-                        strip_path_abs(name, name_flags);
-                        if (!has_forced_generated)
+                        if (!escape && (!has_forced_generated || (name_flags & FLAG_PATH_MASK)==FLAG_PATH_SYSTEM))
                         {
                             result &= ~FLAG_PATH_MASK;
                             result |= name_flags & FLAG_PATH_MASK;
                         }
+                        if (skip || !abspath)
+                            strip_path_abs(name, name_flags);
+                        else
+                            is_relpath = 0;
                     }
 
-                    if (in_generated)
+                    if (in_generated==1)
                     {
                         name_flags &= ~FLAG_PATH_MASK;
                         name_flags |= FLAG_PATH_GENERATED;
                     }
+                    else if (in_generated)
+                    {
+                        name_flags &= ~FLAG_PATH_MASK;
+                        name_flags |= FLAG_PATH_SYSTEM;
+                    }
 
-                    if (relpath)
+                    if (is_relpath && relpath)
 						getrelpath(name,name_flags,buildpath[curr_build],buildflags[curr_build],delend,levelup);
-                    if (!skip && abspath)
+                    if (!skip && abspath && is_relpath)
                         getabspath(name,name_flags,buildpath[curr_build],buildflags[curr_build]);
 					if (filepath) truncfilepath(name,delend);
 					if (fileupper) truncfileupper(name);
@@ -4087,8 +4197,12 @@ int tokeneval(char* s,int skip,build_pos* pos,reader* error, int extra_cmd)
 					if (upper)
 						upr(name);
 					if (reverse) reversestr(name);
-                    if (escape) escapestr(name);
-                    if (nodrive) removedrive(name);
+                    if (nodrive)
+                        removedrive(name);
+                    if (escape==1)
+                        escapestr(name);
+                    else if (escape)
+                        escapepath(name,escape);
                     if (quote) urlquote(name,no_backslash);
                 }
 			}
@@ -4460,6 +4574,7 @@ int build_parse(item* p,reader* file,int sub,int skip,build_pos* pos0)
 	item* i;
     build_pos pos;
     int is_sharped;
+    char tmpstr[MAX_LINE];
 
     if (pos0 && pos0->p == p)
         pos.prev = pos0->prev;
@@ -4522,7 +4637,12 @@ int build_parse(item* p,reader* file,int sub,int skip,build_pos* pos0)
 					strdel(s+len-2,s+len);
 					strdel(s,s+3);
 				}
-				item_get(i,file->token,1);
+				i = item_get(i,file->token,1);
+                if (stricmp(i->parent->value,"CONFIG_ANDROID_NDK")==0)
+                {
+                    pathunix(i->value);
+                    set_path_type(i,FLAG_PATH_SYSTEM);
+                }
 			}
 		}
 		else
@@ -4554,6 +4674,7 @@ int build_parse(item* p,reader* file,int sub,int skip,build_pos* pos0)
                 if (p->flags & FLAG_REMOVED) skip = 1;
 			}
 			while (v && !skip);
+            reader_free(&whilepos);
         }
 		else
 		if (reader_istoken(file,"if"))
@@ -4728,27 +4849,26 @@ int build_parse(item* p,reader* file,int sub,int skip,build_pos* pos0)
 			{
 	            reader r;
                 const char* s = file->token;
-	            memset(&r,0,sizeof(r));
+                reader_init(&r);
 	            getarg(r.filename,&s);
 	            pathunix(r.filename);
                 getabspath(r.filename,flags,"",FLAG_PATH_SOURCE);
-	            r.f = fopen(r.filename,"r");
-                r.flags = flags;
+	            r.r.f = fopen(r.filename,"r");
+                r.r.flags = flags;
 	            r.pos = r.line;
-                r.filename_kind = FLAG_PATH_SOURCE;
+                r.r.filename_kind = FLAG_PATH_SOURCE;
 
                 // TODO: in verbose mode we should issue a warning if the file is not found
 
-                if (r.f)
+                if (r.r.f)
                 {
                     item *src;
-                    char base[MAX_PATH];
                     char backup[MAX_PATH];
                     FILE* backupfile = build;
                     int backupflags = buildflags[curr_build];
                     strcpy(backup,buildpath[curr_build]);
                     getarg(buildpath[curr_build],&s);
-                    getabspath(buildpath[curr_build],FLAG_PATH_GENERATED|(ispathabs(s)?FLAG_PATH_SET_ABSOLUTE:0),"",FLAG_PATH_GENERATED);
+                    getabspath(buildpath[curr_build],FLAG_PATH_GENERATED|(ispathabs(buildpath[curr_build])?FLAG_PATH_SET_ABSOLUTE:0),"",FLAG_PATH_GENERATED);
                     simplifypath(buildpath[curr_build],0);
                     buildflags[curr_build] = FLAG_PATH_GENERATED;
 
@@ -4766,10 +4886,10 @@ int build_parse(item* p,reader* file,int sub,int skip,build_pos* pos0)
                     create_missing_dirs(buildpath[curr_build]);
                     build = fopen(buildpath[curr_build],"w+");
 
-					base[0]=0;
-					strins(base,r.filename,getfilename(r.filename));
+					tmpstr[0]=0;
+					strins(tmpstr,r.filename,getfilename(r.filename));
                     item_delete(item_find(pos.p,"base"));
-                    src = item_get(item_get(pos.p,"base",0),base,1);
+                    src = item_get(item_get(pos.p,"base",0),tmpstr,1);
                     set_path_type(src,FLAG_PATH_SOURCE);
 
                     if (build)
@@ -4794,11 +4914,12 @@ int build_parse(item* p,reader* file,int sub,int skip,build_pos* pos0)
                         fclose(build);
                     }
 
-                    fclose(r.f);
+                    fclose(r.r.f);
                     build = backupfile;
                     strcpy(buildpath[curr_build],backup);
                     buildflags[curr_build] = backupflags;
                 }
+                reader_free(&r);
             }
         }
 		else
@@ -4821,7 +4942,6 @@ int build_parse(item* p,reader* file,int sub,int skip,build_pos* pos0)
 			if (reader_istoken(file,"each"))
 			{
 				char* s;
-				char name[MAX_LINE];
 				reader forpos;
 				int first=1;
 
@@ -4833,9 +4953,9 @@ int build_parse(item* p,reader* file,int sub,int skip,build_pos* pos0)
 				for (;;)
 				{
                     build_pos* ipos = &pos;
-                    const char* iname = name;
+                    const char* iname = tmpstr;
 
-					s = getname(s,name);
+					s = getname(s,tmpstr);
 
                     while (iname[0]=='.' && iname[1]=='.' && iname[2]=='/')
                     {
@@ -4897,6 +5017,7 @@ int build_parse(item* p,reader* file,int sub,int skip,build_pos* pos0)
 						syntax(&forpos);
 					++s;
 				}
+                reader_free(&forpos);
 
 				if (first)
 					build_parse(p,file,1,1,&pos);
@@ -5029,7 +5150,51 @@ int build_parse(item* p,reader* file,int sub,int skip,build_pos* pos0)
 				create_missing_dirs(file->token);
             }
 		}
-        else if (!is_sharped)
+        else
+		if (!is_sharped && reader_istoken(file,"copy"))
+		{
+			int flags = reader_tokeneval(file,skip,0,&pos,0);
+			if (!skip)
+            {
+                FILE *src,*dst;
+                const char* s = file->token;
+                getarg(tmpstr,&s);
+	            pathunix(tmpstr);
+                getabspath(tmpstr,flags,"",buildflags[curr_build]);
+                src = fopen(tmpstr,"rb");
+                if (!src)
+                    printf("can't open file %s for copy reading\r\n",tmpstr);
+                else
+                {
+                    getarg(tmpstr,&s);
+	                pathunix(tmpstr);
+                    getabspath(tmpstr,flags,"",buildflags[curr_build]);
+                    dst = fopen(tmpstr,"wb");
+                    if (!dst)
+                        printf("can't open file %s for copy writing\r\n",tmpstr);
+                    else
+                    {
+                        size_t read_size;
+                        read_size = fread(tmpstr,1,sizeof(tmpstr),src);
+                        while (read_size)
+                        {
+                            if (fwrite(tmpstr,1,read_size,dst)!=read_size)
+                            {
+                                printf("error copying !");
+                                exit(1);
+                            }
+                            if (feof(src))
+                                break;
+                            read_size = fread(tmpstr,1,sizeof(tmpstr),src);
+                        }
+                        fclose(dst);
+                    }
+                    fclose(src);
+                }
+            }
+		}
+        else
+        if (!is_sharped)
 		{
             i = reader_item(file,skip,&pos);
 			if (reader_istoken(file,"="))
@@ -5066,20 +5231,21 @@ int build_parse(item* p,reader* file,int sub,int skip,build_pos* pos0)
 void build_file(item* p,const char* filename, int reader_flags)
 {
 	reader r;
-	memset(&r,0,sizeof(r));
+    reader_init(&r);
 	strcpy(r.filename,filename);
 	pathunix(r.filename);
-	r.f = fopen(filename,"r");
+	r.r.f = fopen(filename,"r");
 	r.pos = r.line;
-	if (!r.f)
+	if (!r.r.f)
 	{
 		printf("'%s' build file not found!\r\n",filename);
 		exit(1);
 	}
-    r.flags = reader_flags;
-    r.filename_kind = reader_flags;
+    r.r.flags = reader_flags;
+    r.r.filename_kind = reader_flags;
 	build_parse(p,&r,0,0,NULL);
-	fclose(r.f);
+	fclose(r.r.f);
+    reader_free(&r);
 }
 
 item* default_workspace(item* workspace,item* i,item* p)
@@ -5210,6 +5376,7 @@ int main(int argc, char** argv)
         i=default_workspace(w,i,item_find(root,"exe"));
         i=default_workspace(w,i,item_find(root,"dll"));
         i=default_workspace(w,i,item_find(root,"con"));
+        i=default_workspace(w,i,item_find(root,"exe_java"));
     }
 
 	preprocess_project(item_find(root,"project"));

@@ -7,8 +7,8 @@
 #define STRIPFLAGS -s -x
 
 #define QTOPIA_CORE
-#define CCFLAGS -DNDEBUG -DARM -DTARGET_DESKTOP -DTARGET_QTOPIA -DQTOPIA_CORE -DQT_SHARED -Wno-multichar -O3 -mno-apcs-frame -fomit-frame-pointer -fsigned-char -march=armv4t -mtune=xscale -fvisibility=hidden
-#define SFLAGS -DNDEBUG -DARM -DTARGET_DESKTOP -DTARGET_QTOPIA -DQTOPIA_CORE -DQT_SHARED -Wno-multichar -O3 -mno-apcs-frame -fomit-frame-pointer -fsigned-char -mcpu=iwmmxt -mtune=xscale -D_HIDDEN
+#define CCFLAGS -DARM -DTARGET_DESKTOP -DTARGET_QTOPIA -DQTOPIA_CORE -DQT_SHARED -Wno-multichar -O3 -mno-apcs-frame -fomit-frame-pointer -fsigned-char -march=armv4t -mtune=xscale -fvisibility=hidden
+#define SFLAGS -DARM -DTARGET_DESKTOP -DTARGET_QTOPIA -DQTOPIA_CORE -DQT_SHARED -Wno-multichar -O3 -mno-apcs-frame -fomit-frame-pointer -fsigned-char -mcpu=iwmmxt -mtune=xscale -D_HIDDEN
 #define LFLAGS
 #define SHFLAGS -shared -Wl,--strip-all
 #define CXXFLAGS -fno-rtti

@@ -1,4 +1,6 @@
 #define TARGET_SCRIPT
+#define NO_STDAFX
+#define NO_PROJECT
 
 #define OUTPUT_EXE %(NAME).dll
 #define OUTPUT_EXE %(NAME).exe

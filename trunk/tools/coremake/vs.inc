@@ -36,7 +36,7 @@ IFDEF TARGET_SYMBIAN
   TARG_RELEASE = Rel_%(SDKNAME)_GCCE
 ENDIF
 
-IFDEF COMPILER_ICL9
+IF DEFINED(COMPILER_ICL9) || DEFINED(COMPILER_ICL11)
   PROJECT_EXT=icproj
   PROJECT_GUID={EAF909A5-FA59-4C3D-9431-0FCC20D5BCF9}
 ELSE
@@ -294,7 +294,7 @@ FOR EACH LIB,DLL,EXE,CON
     TARGSIGN = SHA-1 Hash=%(^WIN_CERTIFICATE)|%(^WIN_CERTIFICATE)
   ELSE
     IF DEFINED(TARGET_WINCE)
-      TARGSIGN = SHA-1 Hash=00655AD0C5BD2895782249A5765CF1F7758914A8|00655AD0C5BD2895782249A5765CF1F7758914A8
+      TARGSIGN = SHA-1 Hash=8aeb6e720079eb0494ae9be32cb13a9e3687d913|8aeb6e720079eb0494ae9be32cb13a9e3687d913
     ELSE
       TARGSIGN =
     ENDIF
@@ -325,7 +325,7 @@ FOR EACH LIB,DLL,EXE,CON
       PRINTNL         }
       HAS_CONTENT=
       FOR EACH SOURCE
-        IF (%(copy))
+        IF (%(_copy_item))
           ../HAS_CONTENT=1
         ENDIF
       ENDFOR
@@ -347,7 +347,7 @@ FOR EACH LIB,DLL,EXE,CON
           PRINTNL         }
           HAS_CONTENT=
           FOR EACH SOURCE
-            IF (%(copy))
+            IF (%(_copy_item))
               ../HAS_CONTENT=1
             ENDIF
           ENDFOR
@@ -809,7 +809,25 @@ FOR EACH LIB,DLL,EXE,CON
   ENDIF
 
   VSPROJ_GUID=%(GUID)
-  IFDEF COMPILER_ICL9
+  IF DEFINED(COMPILER_ICL11)
+    VS_PROJECT_TYPE=Intel C++ Project
+    VSNESTED=%(NAME).vcproj
+    FILE %(¯PATH)%(NAME).icproj
+    PRINTNL <?xml version="1.0" encoding="Windows-1252"?>
+    PRINTNL <VisualStudioProject
+    PRINTNL 	ProjectType="%(VS_PROJECT_TYPE)"
+    PRINTNL 	Version="%(ICC_COMPILERVERSION)"
+    PRINTNL 	Name="%(NAME)"
+    PRINTNL 	ProjectGUID="%(VSPROJ_GUID)"
+    IF "%(VSNESTED)"
+      PRINTNL 	VCNestedProjectGUID="%(GUIDBIS)"
+      PRINTNL 	VCNestedProjectFileName="%(VSNESTED)">
+    ENDIF
+    PRINTNL 	<Configurations/>
+    PRINTNL 	<Files/>
+    PRINTNL </VisualStudioProject>
+
+  ELIF DEFINED(COMPILER_ICL9)
    VS_PROJECT_TYPE=Intel C++ Project
     PREBUILTOOL=PreBuildEventTool
     POSTBUILTOOL=PostBuildEventTool

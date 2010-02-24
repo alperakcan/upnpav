@@ -4,7 +4,7 @@
 #define STIP strip
 #define STRIPFLAGS -s -x
 
-#define CCFLAGS -DNDEBUG -O3 -DTARGET_QTOPIA -DTARGET_DESKTOP -DQT_SHARED -pipe -m32 -march=i486 -msse -mmmx -Wno-multichar -fno-exceptions -fvisibility=hidden
+#define CCFLAGS -O3 -DTARGET_QTOPIA -DTARGET_DESKTOP -DQT_SHARED -pipe -m32 -march=i486 -msse -mmmx -Wno-multichar -fno-exceptions -fvisibility=hidden
 #define ASMFLAGS -f elf -D_HIDDEN
 #define LFLAGS
 #define SHFLAGS -shared -Wl,--strip-all

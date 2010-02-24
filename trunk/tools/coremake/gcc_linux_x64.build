@@ -20,7 +20,7 @@ SVNDIR = linux_x64
 
 #define GLIBC
 
-#define CCFLAGS -DNDEBUG -O3 -m64 -Wno-multichar -fPIC -fvisibility=hidden
+#define CCFLAGS -O3 -m64 -Wno-multichar -fPIC -fvisibility=hidden
 #define ASMFLAGS -f elf64 -D_HIDDEN
 #define LFLAGS
 #define SHFLAGS -shared -Wl,--strip-all
