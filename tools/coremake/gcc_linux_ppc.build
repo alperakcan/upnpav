@@ -20,7 +20,7 @@ SVNDIR = linux_ppc
 
 #define GLIBC
 
-#define CCFLAGS -DNDEBUG -O3 -Wno-multichar -fPIC -fno-strict-aliasing -maltivec -mabi=altivec -fvisibility=hidden
+#define CCFLAGS -O3 -Wno-multichar -fPIC -fno-strict-aliasing -maltivec -mabi=altivec -fvisibility=hidden
 #define ASMFLAGS -f elf -D_HIDDEN
 #define LFLAGS
 #define SHFLAGS -shared -Wl,--strip-all

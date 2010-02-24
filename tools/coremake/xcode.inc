@@ -180,13 +180,16 @@ FOR EACH WORKSPACE
       ELIF (%(>NAME)==mm)
         PRINTNL 		%(XCODEUID) /* %(!;NAME) */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objcpp; name = %(!;NAME); path = %(!;NAME); sourceTree = "<group>"; };
       ELIF (%(>NAME)==asm)
-        PRINTNL 		%(XCODEUID) /* %(!;NAME) */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.nasm; name = %(!;NAME); path = %(!;NAME); sourceTree = "<group>"; };
+        PRINTNL 		%(XCODEUID) /* %(!;NAME) */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.yasm; name = %(!;NAME); path = %(!;NAME); sourceTree = "<group>"; };
       ELIF (%(>NAME)==S)
+        SOURCEASM = sourcecode.asm.asm
         IFDEF TARGET_IPHONE
-          PRINTNL 		%(XCODEUID) /* %(!;NAME) */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm.arm; name = %(!;NAME); path = %(!;NAME); sourceTree = "<group>"; };
-        ELSE
-          PRINTNL		%(XCODEUID) /* %(!;NAME) */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm.asm; name = %(!;NAME); path = %(!;NAME); sourceTree = "<group>"; };
+          SOURCEASM = sourcecode.asm.arm
+          IF DEFINED(CONFIG_NEON) && %(cpu)==neon
+            SOURCEASM = sourcecode.asm.gaspp
+          ENDIF
         ENDIF
+        PRINTNL		%(XCODEUID) /* %(!;NAME) */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = %(SOURCEASM); name = %(!;NAME); path = %(!;NAME); sourceTree = "<group>"; };
       ELIF (%(>NAME)==s)
         PRINTNL 		%(XCODEUID) /* %(!;NAME) */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; name = %(!;NAME); path = %(!;NAME); sourceTree = "<group>"; };
       ELIF (%(>NAME)==nib)

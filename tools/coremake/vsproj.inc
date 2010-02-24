@@ -529,8 +529,12 @@ IF "%(FAVOR_MAX_SPEED)"
   PRINTNL 				FavorSizeOrSpeed="1"
   PRINTNL 				OmitFramePointers="true"
 ENDIF
-IF "%(FASTER_FLOAT)"
-  PRINTNL 				EnableEnhancedInstructionSet="1"
+IF !DEFINED(IX86_64)
+  IF DEFINED(COMPILER_ICL11)
+    PRINTNL 				EnableEnhancedInstructionSet="1001"
+  ELIF "%(FASTER_FLOAT)"
+    PRINTNL 				EnableEnhancedInstructionSet="1"
+  ENDIF
 ENDIF
 IF "%(OPTIMIZE_GLOBALLY)"
   PRINTNL 				WholeProgramOptimization="true"
@@ -790,7 +794,7 @@ PRINTNL 			>
 FOR EACH SOURCE
 PRINTNL 			<File
 PRINTNL 				RelativePath="%(~!NAME)"
-IF (%(copy))
+IF (%(_copy_item))
   PRINTNL 				DeploymentContent="true"
 ENDIF
 PRINTNL 				>
@@ -943,7 +947,7 @@ ELIF (%(>NAME)==s) && defined(MIPS)
   PRINTNL 						Outputs="$(IntDir)/$(InputName).obj"
   PRINTNL 					/>
   PRINTNL 				</FileConfiguration>
-ELIF (%(copy))
+ELIF (%(_copy_item))
   PRINTNL 				<FileConfiguration
   PRINTNL 					Name="%(TARG_RELEASE)|%(TARGNAME)"
   PRINTNL 					>

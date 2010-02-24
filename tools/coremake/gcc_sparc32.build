@@ -15,7 +15,7 @@ SVNDIR = linux_sparc32
 #define STRIP strip
 #define STRIPFLAGS -s
 
-#define CCFLAGS -DNDEBUG -O3 -mcpu=v9 -m32 -Wno-multichar 
+#define CCFLAGS -O3 -mcpu=v9 -m32 -Wno-multichar 
 #define LFLAGS -mcpu=v9 -m32
 #define SHFLAGS -shared -Wl,--strip-all
 

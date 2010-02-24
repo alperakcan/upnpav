@@ -13,7 +13,7 @@ ENDIF
 #define STRIPFLAGS -x
 // TODO should come from config.h
 #ifndef TARGET_IPHONE
-#define CCENV MACOSX_DEPLOYMENT_TARGET_ppc=10.3 MACOSX_DEPLOYMENT_TARGET_i386=10.4
+#define CCENV MACOSX_DEPLOYMENT_TARGET_ppc=10.3 MACOSX_DEPLOYMENT_TARGET_i386=10.5
 #endif
 
 #define GLIBC
@@ -27,7 +27,7 @@ ELIF %(SDK)
   LFLAGS= -isysroot %(SDK) -Wl,-syslibroot,%(SDK)
 ENDIF
 
-CCFLAGS = %(CCFLAGS) -pipe -DNDEBUG -O3
+CCFLAGS = %(CCFLAGS) -pipe -O3
 IF %(SDK_PATH)
   CCFLAGS = -I%(SDK_PATH)/include %(CCFLAGS)
 ENDIF

@@ -443,7 +443,7 @@ FOR EACH LIB,DLL,EXE,CON
           PRINTNLDOS SOURCE="%(¯~!BUILDPATH)%(~§PATH)\%(<NAME)_i.c"
         ENDIF
       ELSE 
-        IF (%(copy))
+        IF (%(_copy_item))
           PRINTNLDOS !IF  "$(CFG)" == "%(PRJNAME) - Win32 %(TARG_RELEASE)"
           PRINTNLDOS 
           PRINTNLDOS # PROP Ignore_Default_Tool 1

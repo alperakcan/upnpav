@@ -3,7 +3,7 @@ FOR EACH DLL,EXE,CON
     FOR EACH INSTALL
       ../INSTALL_CAB += %(|NAME)
       ADD ../SOURCE %(|NAME)
-        COPY = 1
+        _COPY_ITEM = 1
       ENDADD
       DELETE
     ENDFOR

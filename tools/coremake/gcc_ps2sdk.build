@@ -19,7 +19,7 @@ SVNDIR = ps2sdk
 
 #define GLIBC
 
-#define CCFLAGS -DNDEBUG -O2 -G0 -ffast-math -Wno-multichar 
+#define CCFLAGS -O2 -G0 -ffast-math -Wno-multichar 
 #define LFLAGS -mno-crt0
 #define SHFLAGS -shared -Wl,--strip-all
 #define CORERCFLAGS -w -a 16
@@ -28,7 +28,7 @@ SVNDIR = ps2sdk
 #define IOP_CXX iop-gcc
 #define IOP_AR iop-ar
 #define IOP_STRIP
-#define IOP_CCFLAGS -DNDEBUG -O2 -G0 -fno-builtin -Wno-multichar
+#define IOP_CCFLAGS -O2 -G0 -fno-builtin -Wno-multichar
 #define IOP_SHFLAGS -s
 #define IOP_LFLAGS -nostdlib
 

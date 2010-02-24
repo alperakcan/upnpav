@@ -19,8 +19,8 @@ SVNDIR = linux_arm
 
 #define GLIBC
 
-#define CCFLAGS -DNDEBUG -DARM -Wno-multichar -O3 -mno-apcs-frame -fomit-frame-pointer -fsigned-char -march=armv4t -mtune=xscale -fvisibility=hidden -DRESOURCE_COREC
-#define SFLAGS -DNDEBUG -DARM -Wno-multichar -O3 -mno-apcs-frame -fomit-frame-pointer -fsigned-char -mcpu=iwmmxt -mtune=xscale -D_HIDDEN
+#define CCFLAGS -DARM -Wno-multichar -O3 -mno-apcs-frame -fomit-frame-pointer -fsigned-char -march=armv4t -mtune=xscale -fvisibility=hidden -DRESOURCE_COREC
+#define SFLAGS -DARM -Wno-multichar -O3 -mno-apcs-frame -fomit-frame-pointer -fsigned-char -mcpu=iwmmxt -mtune=xscale -D_HIDDEN
 #define SHFLAGS -shared -Wl,--strip-all
 
 #include "gcc.inc"
