@@ -554,6 +554,15 @@ static char * contentdirectory_subtitlefile (const char *fname)
 	return sf;
 }
 
+static int contentdirectory_writer_running (transcode_t *transcode)
+{
+	int ret;
+	thread_mutex_lock(transcode->writer.mutex);
+	ret = transcode->writer.running;
+	thread_mutex_unlock(transcode->writer.mutex);
+	return ret;
+}
+
 static void * contentdirectory_reader (void *arg)
 {
 	int i;
@@ -597,10 +606,18 @@ static void * contentdirectory_reader (void *arg)
 
 		r = file_poll(file, POLL_EVENT_IN, &revent, 1000);
 		if (r <= 0) {
+			if (contentdirectory_writer_running(transcode) == 1) {
+				sleep(1);
+				continue;
+			}
 			break;
 		}
 		r = file_read(file, buffer, s);
 		if (r <= 0) {
+			if (contentdirectory_writer_running(transcode) == 1) {
+				sleep(1);
+				continue;
+			}
 			break;
 		}
 		thread_mutex_lock(transcode->reader.mutex);
@@ -615,6 +632,7 @@ static void * contentdirectory_reader (void *arg)
 				thread_mutex_unlock(transcode->reader.mutex);
 				goto out;
 			}
+			debugf("transcode->offset: %u, transcode->length: %u", transcode->offset, transcode->length);
 			s = (transcode->offset + transcode->length) % TRANSCODE_BUFFER_SIZE;
 			l = MIN(TRANSCODE_BUFFER_SIZE - s, r - i);
 			memcpy(transcode->buffer + s, buffer + i, l);
