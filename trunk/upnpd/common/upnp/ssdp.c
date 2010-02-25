@@ -708,7 +708,6 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 {
 	int t;
 	int ret;
-	char *data;
 	char *buffer;
 	const char *format_search =
 		"M-SEARCH * HTTP/1.1\r\n"
@@ -727,13 +726,11 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 	if (ret < 0) {
 		return -1;
 	}
-	data = malloc(sizeof(char) * 4096);
 	for (t = 0; t < timeout; t++) {
 		socket_sendto(ssdp->announce, buffer, strlen(buffer), ssdp_ip, ssdp_port);
 		time_usleep(ssdp_pause * 1000);
 	}
 	free(buffer);
-	free(data);
 	return 0;
 }
 
