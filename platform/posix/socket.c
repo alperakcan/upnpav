@@ -203,17 +203,28 @@ int socket_sendto (socket_t *socket, const void *buf, int length, const char *ad
 	return sendto(socket->fd, buf, length, 0, (struct sockaddr *) &dest, dest_length);
 }
 
-int socket_poll (socket_t *socket, poll_event_t request, poll_event_t *result, int timeout)
+int socket_poll (poll_item_t *items, unsigned int nitems, int timeout)
 {
 	int rc;
-	struct pollfd pfd;
-	memset(&pfd, 0, sizeof(struct pollfd));
-	pfd.fd = socket->fd;
-	pfd.events = socket_event_bsd(request);
-	rc = poll(&pfd, 1, timeout);
-	if (result) {
-		*result = socket_bsd_event(pfd.revents);
+	socket_t *s;
+	unsigned int i;
+	struct pollfd *pfd;
+	pfd = (struct pollfd *) malloc(sizeof(struct pollfd) * nitems);
+	if (pfd == NULL) {
+		return -1;
 	}
+	memset(pfd, 0, sizeof(struct pollfd) * nitems);
+	for (i = 0; i < nitems; i++) {
+		s = (socket_t *) items[i].item;
+		pfd[i].fd = s->fd;
+		pfd[i].events = socket_event_bsd(items[i].events);
+		items[i].revents = 0;
+	}
+	rc = poll(pfd, nitems, timeout);
+	for (i = 0; i < nitems; i++) {
+		items[i].revents = socket_bsd_event(pfd[i].revents);
+	}
+	free(pfd);
 	return rc;
 }
 
