@@ -729,7 +729,6 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 	}
 	data = malloc(sizeof(char) * 4096);
 	for (t = 0; t < timeout; t++) {
-		ssdp_advertise_send(ssdp->announce, buffer, ssdp_ip, ssdp_port);
 		socket_sendto(ssdp->announce, buffer, strlen(buffer), ssdp_ip, ssdp_port);
 		time_usleep(ssdp_pause * 1000);
 	}
