@@ -44,11 +44,11 @@ struct ssdp_s {
 	int stopped;
 	int running;
 	socket_t *socket;
+	socket_t *announce;
 	thread_t *thread;
 	thread_cond_t *cond;
 	thread_mutex_t *mutex;
 	list_t devices;
-	list_t requests;
 	int (*callback) (void *cookie, ssdp_event_t *event);
 	void *cookie;
 	char *address;
@@ -116,7 +116,7 @@ static const unsigned int ssdp_recv_timeout = 2000;
 static const unsigned int ssdp_ttl = 4;
 static const unsigned int ssdp_pause = 100;
 
-static int ssdp_advertise_send (const char *buffer, const char *address, int port);
+static int ssdp_advertise_send (socket_t *sock, const char *buffer, const char *address, int port);
 static char * ssdp_advertise_buffer (ssdp_device_t *device, int answer);
 
 static char * ssdp_trim (char *buffer)
@@ -416,7 +416,7 @@ static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, const ch
 				list_for_each_entry(d, &ssdp->devices, head) {
 					buffer = ssdp_advertise_buffer(d, 1);
 					if (buffer != NULL) {
-						ssdp_advertise_send(buffer, address, port);
+						ssdp_advertise_send(ssdp->announce, buffer, address, port);
 						free(buffer);
 					}
 				}
@@ -425,7 +425,7 @@ static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, const ch
 					if (strncasecmp(d->nt, request->request.search.st, strlen(request->request.search.st)) == 0) {
 						buffer = ssdp_advertise_buffer(d, 1);
 						if (buffer != NULL) {
-							ssdp_advertise_send(buffer, address, port);
+							ssdp_advertise_send(ssdp->announce, buffer, address, port);
 							free(buffer);
 						}
 					}
@@ -483,11 +483,12 @@ static void * ssdp_thread_loop (void *arg)
 	char *buffer;
 	ssdp_t *ssdp;
 	ssdp_device_t *d;
-	ssdp_request_t *r;
 	ssdp_request_t *request;
 	unsigned long long times[2];
 
-	poll_event_t presult;
+	int i;
+	socket_t *psocket;
+	poll_item_t pitem[2];
 	char senderip[SOCKET_IP_LENGTH];
 	int senderport;
 
@@ -513,42 +514,44 @@ static void * ssdp_thread_loop (void *arg)
 			d->interval -= (times[1] - times[0]);
 			if (d->interval < (d->age / 2) || d->interval > d->age) {
 				buf = ssdp_advertise_buffer(d, 0);
-				ssdp_advertise_send(buf, ssdp_ip, ssdp_port);
+				ssdp_advertise_send(ssdp->announce, buf, ssdp_ip, ssdp_port);
 				free(buf);
 				d->interval = d->age;
 			}
 		}
 		times[0] = time_gettimeofday();
-		while (list_count(&ssdp->requests) != 0) {
-			r = list_first_entry(&ssdp->requests, ssdp_request_t, head);
-			list_del(&r->head);
-			thread_mutex_unlock(ssdp->mutex);
-			ssdp_request_handler(ssdp, r, NULL, 0);
-			thread_mutex_lock(ssdp->mutex);
-			ssdp_request_uninit(r);
-		}
 		if (ssdp->running == 0 || ssdp->socket == NULL) {
 			thread_mutex_unlock(ssdp->mutex);
 			break;
 		}
 		thread_mutex_unlock(ssdp->mutex);
-		ret = socket_poll(ssdp->socket, POLL_EVENT_IN, &presult, ssdp_recv_timeout);
+		pitem[0].item = ssdp->socket;
+		pitem[0].events = POLL_EVENT_IN;
+		pitem[1].item = ssdp->announce;
+		pitem[1].events = POLL_EVENT_IN;
+		ret = socket_poll(pitem, 2, ssdp_recv_timeout);
 		if (!ret) {
 			continue;
 		} else {
-			if (presult != POLL_EVENT_IN) {
+			if (pitem[0].revents != POLL_EVENT_IN && pitem[1].revents != POLL_EVENT_IN) {
 				break;
 			}
 		}
-		received = socket_recvfrom(ssdp->socket, buffer, ssdp_buffer_length, senderip, &senderport);
-		if (received <= 0) {
-			continue;
-		}
-		buffer[received] = '\0';
-		request = ssdp_parse(ssdp->address, ssdp->netmask, buffer, received);
-		if (request != NULL) {
-			ssdp_request_handler(ssdp, request, senderip, senderport);
-			ssdp_request_uninit(request);
+		for (i = 0; i < 2; i++) {
+			if (pitem[i].revents != POLL_EVENT_IN) {
+				continue;
+			}
+			psocket = (socket_t *) pitem[i].item;
+			received = socket_recvfrom(psocket, buffer, ssdp_buffer_length, senderip, &senderport);
+			if (received <= 0) {
+				continue;
+			}
+			buffer[received] = '\0';
+			request = ssdp_parse(ssdp->address, ssdp->netmask, buffer, received);
+			if (request != NULL) {
+				ssdp_request_handler(ssdp, request, (i == 0) ? senderip : NULL, (i == 0) ? senderport : 0);
+				ssdp_request_uninit(request);
+			}
 		}
 	}
 out:
@@ -567,23 +570,36 @@ out:
 static int ssdp_init_server (ssdp_t *ssdp)
 {
 	ssdp->socket = socket_open(SOCKET_TYPE_DGRAM);
-	if (ssdp->socket == NULL) {
+	ssdp->announce = socket_open(SOCKET_TYPE_DGRAM);
+	if (ssdp->socket == NULL || ssdp->announce == NULL) {
 		debugf("socket_open() failed");
+		socket_close(ssdp->socket);
+		socket_close(ssdp->announce);
 		return -1;
 	}
+	if (socket_option_multicastttl(ssdp->announce, ssdp_ttl) < 0) {
+		debugf("socket_option_multicastttl() failed");
+		socket_close(ssdp->socket);
+		socket_close(ssdp->announce);
+		return -2;
+	}
+
 	if (socket_option_reuseaddr(ssdp->socket, 1) < 0) {
 		debugf("socket_option_reuseaddr() failed");
 		socket_close(ssdp->socket);
+		socket_close(ssdp->announce);
 		return -2;
 	}
 	if (socket_bind(ssdp->socket, ssdp_ip, ssdp_port) < 0) {
 		debugf("socket_bind() failed");
 		socket_close(ssdp->socket);
+		socket_close(ssdp->announce);
 		return -3;
 	}
 	if (socket_option_membership(ssdp->socket, ssdp_ip, 1) < 0) {
 		debugf("socket_option_membership() failed");
 		socket_close(ssdp->socket);
+		socket_close(ssdp->announce);
 		return -4;
 	}
 	ssdp->mutex = thread_mutex_init("ssdp->mutex", 0);
@@ -597,24 +613,17 @@ static int ssdp_init_server (ssdp_t *ssdp)
 	return 0;
 }
 
-static int ssdp_advertise_send (const char *buffer, const char *address, int port)
+static int ssdp_advertise_send (socket_t *sock, const char *buffer, const char *address, int port)
 {
 	int c;
 	int rc;
-	socket_t *sock;
 	if (buffer == NULL) {
 		return -1;
 	}
-	sock = socket_open(SOCKET_TYPE_DGRAM);
-	if (sock == NULL) {
-		return -1;
-	}
-	socket_option_multicastttl(sock, ssdp_ttl);
 	for (c = 0; c < 2; c++) {
 		rc = socket_sendto(sock, buffer, strlen(buffer), address, port);
 		time_usleep(ssdp_pause * 1000);
 	}
-	socket_close(sock);
 	return 0;
 }
 
@@ -697,13 +706,10 @@ static char * ssdp_byebye_buffer (ssdp_device_t *device)
 
 int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 {
-	int r;
 	int t;
 	int ret;
 	char *data;
 	char *buffer;
-	poll_event_t presult;
-	ssdp_request_t *request;
 	const char *format_search =
 		"M-SEARCH * HTTP/1.1\r\n"
 		"ST: %s\r\n"
@@ -711,7 +717,6 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 		"MAN: \"ssdp:discover\"\r\n"
 		"HOST: %s:%d\r\n"
 		"\r\n";
-	socket_t *sock;
 	ret = asprintf(
 		&buffer,
 		format_search,
@@ -722,36 +727,12 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 	if (ret < 0) {
 		return -1;
 	}
-	sock = socket_open(SOCKET_TYPE_DGRAM);
-	if (sock == NULL) {
-		free(buffer);
-		return -1;
-	}
-	socket_option_multicastttl(sock, ssdp_ttl);
 	data = malloc(sizeof(char) * 4096);
 	for (t = 0; t < timeout; t++) {
-		ssdp_advertise_send(buffer, ssdp_ip, ssdp_port);
-		socket_sendto(sock, buffer, strlen(buffer), ssdp_ip, ssdp_port);
+		ssdp_advertise_send(ssdp->announce, buffer, ssdp_ip, ssdp_port);
+		socket_sendto(ssdp->announce, buffer, strlen(buffer), ssdp_ip, ssdp_port);
 		time_usleep(ssdp_pause * 1000);
 	}
-	do {
-		ret = socket_poll(sock, POLL_EVENT_IN, &presult, ssdp_recv_timeout);
-		if (ret <= 0 || presult != POLL_EVENT_IN) {
-			break;
-		}
-		r = socket_recvfrom(sock, data, 4096, NULL, 0);
-		if (r > 0) {
-			data[r] = '\0';
-			request = ssdp_parse(ssdp->address, ssdp->netmask, data, r);
-			if (request != NULL) {
-				thread_mutex_lock(ssdp->mutex);
-				list_add_tail(&request->head, &ssdp->requests);
-				thread_mutex_unlock(ssdp->mutex);
-			}
-		}
-	} while (1);
-
-	socket_close(sock);
 	free(buffer);
 	free(data);
 	return 0;
@@ -764,7 +745,7 @@ int ssdp_advertise (ssdp_t *ssdp)
 	thread_mutex_lock(ssdp->mutex);
 	list_for_each_entry(d, &ssdp->devices, head) {
 		buffer = ssdp_advertise_buffer(d, 0);
-		ssdp_advertise_send(buffer, ssdp_ip, ssdp_port);
+		ssdp_advertise_send(ssdp->announce, buffer, ssdp_ip, ssdp_port);
 		free(buffer);
 	}
 	thread_mutex_unlock(ssdp->mutex);
@@ -779,7 +760,7 @@ int ssdp_byebye (ssdp_t *ssdp)
 	list_for_each_entry(d, &ssdp->devices, head) {
 		debugf("sending byebye notify for '%s'", d->nt);
 		buffer = ssdp_byebye_buffer(d);
-		ssdp_advertise_send(buffer, ssdp_ip, ssdp_port);
+		ssdp_advertise_send(ssdp->announce, buffer, ssdp_ip, ssdp_port);
 		free(buffer);
 	}
 	thread_mutex_unlock(ssdp->mutex);
@@ -825,7 +806,6 @@ ssdp_t * ssdp_init (const char *address, const char *netmask, int (*callback) (v
 	ssdp->cookie = cookie;
 	ssdp->callback = callback;
 	list_init(&ssdp->devices);
-	list_init(&ssdp->requests);
 	if (ssdp_init_server(ssdp) != 0) {
 		debugf("ssdp_init_server() failed");
 		free(ssdp->address);
@@ -839,7 +819,6 @@ ssdp_t * ssdp_init (const char *address, const char *netmask, int (*callback) (v
 int ssdp_uninit (ssdp_t *ssdp)
 {
 	ssdp_device_t *d, *dn;
-	ssdp_request_t *r, *rn;
 	debugf("sending ssdp:byebye");
 	ssdp_byebye(ssdp);
 	debugf("setting ssdp->running to 0");
@@ -857,14 +836,11 @@ int ssdp_uninit (ssdp_t *ssdp)
 		list_del(&d->head);
 		ssdp_device_uninit(d);
 	}
-	list_for_each_entry_safe(r, rn, &ssdp->requests, head) {
-		list_del(&r->head);
-		ssdp_request_uninit(r);
-	}
 	thread_mutex_unlock(ssdp->mutex);
 	thread_mutex_destroy(ssdp->mutex);
 	thread_cond_destroy(ssdp->cond);
 	socket_close(ssdp->socket);
+	socket_close(ssdp->announce);
 	free(ssdp->address);
 	free(ssdp->netmask);
 	free(ssdp);

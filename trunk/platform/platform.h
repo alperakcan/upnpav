@@ -222,6 +222,15 @@ typedef enum {
 } poll_event_t;
 
 /**
+ * @brief poll data type
+ */
+typedef struct poll_item_s {
+	void *item;
+	poll_event_t events;
+	poll_event_t revents;
+} poll_item_t;
+
+/**
  * @brief exported socket structure
  */
 typedef struct socket_s socket_t;
@@ -335,7 +344,7 @@ int socket_sendto (socket_t *socket, const void *buf, int length, const char *ad
  *
  * @returns 0 on timeout, 1 on success, -1 on error
  */
-int socket_poll (socket_t *socket, poll_event_t request, poll_event_t *result, int timeout);
+int socket_poll (poll_item_t *items, unsigned int nitems, int timeout);
 
 /**
  * @brief closes and destroys given socket object
