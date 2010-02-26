@@ -135,38 +135,39 @@ static int metadata_image (metadata_t *metadata)
 	return 0;
 }
 
-static metadata_info_t *metadata_info[] = {
+static metadata_info_t metadata_info[] = {
 	/* video */
-	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.ts", "video/mpeg", metadata_video},
-	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mpg", "video/mpeg", metadata_video},
-	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mpeg", "video/mpeg", metadata_video},
-	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.avi", "video/x-msvideo", metadata_video},
-	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mp4", "video/mp4", metadata_video},
-	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.wmv", "video/x-ms-wmv", metadata_video},
-	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mkv", "video/x-matroska", metadata_video},
-	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.mts", "video/vnd.dlna.mpeg-tts", metadata_video},
-	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.flv", "video/x-flv", metadata_video},
+	{ METADATA_TYPE_VIDEO, "*.ts", "video/mpeg", metadata_video },
+	{ METADATA_TYPE_VIDEO, "*.mpg", "video/mpeg", metadata_video },
+	{ METADATA_TYPE_VIDEO, "*.mpeg", "video/mpeg", metadata_video },
+	{ METADATA_TYPE_VIDEO, "*.avi", "video/x-msvideo", metadata_video },
+	{ METADATA_TYPE_VIDEO, "*.mp4", "video/mp4", metadata_video },
+	{ METADATA_TYPE_VIDEO, "*.wmv", "video/x-ms-wmv", metadata_video },
+	{ METADATA_TYPE_VIDEO, "*.mkv", "video/x-matroska", metadata_video },
+	{ METADATA_TYPE_VIDEO, "*.mts", "video/vnd.dlna.mpeg-tts", metadata_video },
+	{ METADATA_TYPE_VIDEO, "*.flv", "video/x-flv", metadata_video },
 	/* audio */
-	& (metadata_info_t) {METADATA_TYPE_AUDIO, "*.mp3", "audio/mpeg", metadata_audio},
-	& (metadata_info_t) {METADATA_TYPE_AUDIO, "*.ogg", "audio/ogg", metadata_audio},
-	& (metadata_info_t) {METADATA_TYPE_VIDEO, "*.wma", "audio/x-ms-wma", metadata_audio},
+	{ METADATA_TYPE_AUDIO, "*.mp3", "audio/mpeg", metadata_audio },
+	{ METADATA_TYPE_AUDIO, "*.ogg", "audio/ogg", metadata_audio },
+	{ METADATA_TYPE_VIDEO, "*.wma", "audio/x-ms-wma", metadata_audio },
 	/* image */
-	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.bmp", "image/bmp", metadata_image},
-	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.jpg", "image/jpeg", metadata_image},
-	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.jpeg", "image/jpeg", metadata_image},
-	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.png", "image/png", metadata_image},
-	& (metadata_info_t) {METADATA_TYPE_IMAGE, "*.tiff", "image/tiff", metadata_image},
-	NULL,
+	{ METADATA_TYPE_IMAGE, "*.bmp", "image/bmp", metadata_image },
+	{ METADATA_TYPE_IMAGE, "*.jpg", "image/jpeg", metadata_image },
+	{ METADATA_TYPE_IMAGE, "*.jpeg", "image/jpeg", metadata_image },
+	{ METADATA_TYPE_IMAGE, "*.png", "image/png", metadata_image },
+	{ METADATA_TYPE_IMAGE, "*.tiff", "image/tiff", metadata_image },
+	{ METADATA_TYPE_UNKNOWN },
 };
 
 metadata_t * metadata_init (const char *path)
 {
+	int i;
 	char *p;
 	time_t mtime;
 	metadata_t *m;
 	file_stat_t stat;
 	struct tm modtime;
-	metadata_info_t **info;
+	metadata_info_t *info;
 
 	if (file_access(path, FILE_MODE_READ) != 0) {
 		return NULL;
@@ -195,10 +196,10 @@ metadata_t * metadata_init (const char *path)
 			stat.mtime = mtime;
 			strftime(m->date, 30, "%F %T", &modtime);
 		}
-		for (info = metadata_info; *info != NULL; info++) {
-			if (file_match((*info)->extension, m->basename, FILE_MATCH_CASEFOLD) == 0) {
-				m->type = (*info)->type;
-				m->mimetype = strdup((*info)->mimetype);
+		for (i = 0; (info = &metadata_info[i])->type != METADATA_TYPE_UNKNOWN; i++) {
+			if (file_match(info->extension, m->basename, FILE_MATCH_CASEFOLD) == 0) {
+				m->type = info->type;
+				m->mimetype = strdup(info->mimetype);
 				break;
 			}
 		}
@@ -209,7 +210,7 @@ metadata_t * metadata_init (const char *path)
 		    m->date == NULL) {
 			goto error;
 		}
-		if ((*info)->metadata(m) != 0) {
+		if (info->metadata(m) != 0) {
 			goto error;
 		}
 		return m;

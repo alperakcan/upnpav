@@ -289,13 +289,13 @@ struct entry_s {
   */
 struct icon_s {
         /** */
+        char *url;
+        /** */
         int width;
         /** */
         int height;
         /** */
         int depth;
-        /** */
-        char *url;
         /** */
         char *mimetype;
         /** */
@@ -321,7 +321,7 @@ struct service_action_s {
         /** */
 	char *name;
 	/** */
-	action_argument_t **arguments;
+	action_argument_t *arguments;
         /** */
 	int (*function) (device_service_t *service, upnp_event_action_t *request);
 };
@@ -417,7 +417,7 @@ struct client_s {
 	/** */
 	char *name;
 	/** */
-	device_description_t **descriptions;
+	device_description_t *descriptions;
 	/** */
 	char *interface;
 	/** */
@@ -457,9 +457,9 @@ struct device_service_s {
         /** */
 	char *controlurl;
         /** */
-	service_action_t **actions;
+	service_action_t *actions;
         /** */
-	service_variable_t **variables;
+	service_variable_t *variables;
 	/** */
 	gena_callback_vfs_t *vfscallbacks;
 	/** */
@@ -506,7 +506,7 @@ struct device_s {
 	char *presentationurl;
 
 	/** */
-	icon_t **icons;
+	icon_t *icons;
 	/** */
 	device_service_t **services;
 
