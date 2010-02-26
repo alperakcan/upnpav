@@ -1,9 +1,8 @@
 /*
  * upnpavd - UPNP AV Daemon
  *
- * Copyright (C) 2009 Alper Akcan, alper.akcan@gmail.com
- * Copyright (C) 2010 Alper Akcan, alper.akcan@gmail.com
- * Copyright (C) 2009 CoreCodec, Inc., http://www.CoreCodec.com
+ * Copyright (C) 2009 - 2010 Alper Akcan, alper.akcan@gmail.com
+ * Copyright (C) 2009 - 2010 CoreCodec, Inc., http://www.CoreCodec.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -115,10 +114,10 @@ static int list_devices (client_t *client)
 	thread_mutex_lock(client->mutex);
 	list_for_each_entry(device, &client->devices, head) {
 		printf("-- %s\n", device->name);
-		printf("  type         : %s\n", device->type);
-		printf("  uuid         : %s\n", device->uuid);
-		printf("  location     : %s\n", device->location);
-		printf("  expiretime   : %d\n", device->expiretime);
+		printf("  type       : %s\n", device->type);
+		printf("  uuid       : %s\n", device->uuid);
+		printf("  location   : %s\n", device->location);
+		printf("  expiretime : %d\n", device->expiretime);
 	}
 	thread_mutex_unlock(client->mutex);
 	return 0;
@@ -133,10 +132,10 @@ static int print_device (client_t *client, char *name)
 	list_for_each_entry(device, &client->devices, head) {
 		if (strcmp(name, device->name) == 0) {
 			printf("-- %s\n", device->name);
-			printf("  type         : %s\n", device->type);
-			printf("  uuid         : %s\n", device->uuid);
-			printf("  location     : %s\n", device->location);
-			printf("  expiretime   : %d\n", device->expiretime);
+			printf("  type       : %s\n", device->type);
+			printf("  uuid       : %s\n", device->uuid);
+			printf("  location   : %s\n", device->location);
+			printf("  expiretime : %d\n", device->expiretime);
 			list_for_each_entry(service, &device->services, head) {
 				printf("  -- type       : %s\n", service->type);
 				printf("     id         : %s\n", service->id);
@@ -162,10 +161,10 @@ static int print_devices (client_t *client)
 	thread_mutex_lock(client->mutex);
 	list_for_each_entry(device, &client->devices, head) {
 		printf("-- %s\n", device->name);
-		printf("  type         : %s\n", device->type);
-		printf("  uuid         : %s\n", device->uuid);
-		printf("  location     : %s\n", device->location);
-		printf("  expiretime   : %d\n", device->expiretime);
+		printf("  type       : %s\n", device->type);
+		printf("  uuid       : %s\n", device->uuid);
+		printf("  location   : %s\n", device->location);
+		printf("  expiretime : %d\n", device->expiretime);
 		list_for_each_entry(service, &device->services, head) {
 			printf("  -- type       : %s\n", service->type);
 			printf("     id         : %s\n", service->id);
