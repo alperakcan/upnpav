@@ -288,7 +288,7 @@ static int client_event_advertisement_alive (client_t *client, upnp_event_advert
 
 	client_parser_data_t data;
 
-	for (d = 0; (description = client->descriptions[d]) != NULL; d++) {
+	for (d = 0; (description = &client->descriptions[d])->device != NULL; d++) {
 		if (strcmp(advertisement->device, description->device) == 0) {
 			goto found;
 		}
@@ -366,7 +366,7 @@ static int client_event_advertisement_byebye (client_t *client, upnp_event_adver
 	client_device_t *device;
 	client_device_t *devicen;
 	device_description_t *description;
-	for (d = 0; (description = client->descriptions[d]) != NULL; d++) {
+	for (d = 0; (description = &client->descriptions[d])->device != NULL; d++) {
 		if (strcmp(advertisement->device, description->device) == 0) {
 			goto found;
 		}

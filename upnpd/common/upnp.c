@@ -106,7 +106,7 @@ static int generate_description (char **result, device_t *device)
 	APPEND("\n<dlna:X_DLNADOC xmlns:dlna=\"urn:schemas-dlna-org:device-1-0\">DMS-1.50</dlna:X_DLNADOC>");
 	if (device->icons != NULL) {
 		APPEND("\n<iconList>");
-		for (i = 0; (icon = device->icons[i]) != NULL; i++) {
+		for (i = 0; (icon = &device->icons[i])->url != NULL; i++) {
 			APPEND("\n<icon>");
 			APPEND("\n<mimetype>"); APPEND(icon->mimetype); APPEND("</mimetype>");
 			APPEND("\n<width>"); APPENDI(icon->width); APPEND("</width>");
@@ -150,12 +150,12 @@ static int generate_scpd (char **result, device_service_t *service)
 	APPEND("\n<specVersion>\n<major>1</major>\n<minor>0</minor>\n</specVersion>");
 	if (service->actions != NULL) {
 		APPEND("\n<actionList>");
-		for (i = 0; (action = service->actions[i]) != NULL; i++) {
+		for (i = 0; (action = &service->actions[i])->name != NULL; i++) {
 			APPEND("\n<action>");
 			APPEND("\n<name>"); APPEND(action->name); APPEND("</name>");
 			if (action->arguments != NULL) {
 				APPEND("\n<argumentList>");
-				for (j = 0; (argument = action->arguments[j]) != NULL; j++) {
+				for (j = 0; (argument = &action->arguments[j])->name != NULL; j++) {
 					APPEND("\n<argument>");
 					APPEND("\n<name>"); APPEND(argument->name); APPEND("</name>");
 					if (argument->direction == ARGUMENT_DIRECTION_IN) {
@@ -174,7 +174,7 @@ static int generate_scpd (char **result, device_service_t *service)
 	}
 	if (service->variables != NULL) {
 		APPEND("\n<serviceStateTable>");
-		for (i = 0; (variable = service->variables[i]) != NULL; i++) {
+		for (i = 0; (variable = &service->variables[i])->name != NULL; i++) {
 			datatype = NULL;
 			switch (variable->datatype) {
 				case VARIABLE_DATATYPE_STRING:	datatype = "string"; break;

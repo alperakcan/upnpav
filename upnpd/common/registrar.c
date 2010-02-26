@@ -47,17 +47,17 @@ typedef struct registrar_s {
 	device_service_t service;
 } registrar_t;
 
-static service_variable_t *registrar_variables[] = {
+static service_variable_t registrar_variables[] = {
 	/* required */
-	& (service_variable_t) {"A_ARG_TYPE_DeviceID", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_RegistrationReqMsg", VARIABLE_DATATYPE_BIN_BASE64, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_RegistrationRespMsg", VARIABLE_DATATYPE_BIN_BASE64, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_Result", VARIABLE_DATATYPE_I4, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"AuthorizationDeniedUpdateID", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"AuthorizationGrantedUpdateID", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"ValidationRevokedUpdateID", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"ValidationSucceededUpdateID", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	NULL,
+	{"A_ARG_TYPE_DeviceID", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"A_ARG_TYPE_RegistrationReqMsg", VARIABLE_DATATYPE_BIN_BASE64, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"A_ARG_TYPE_RegistrationRespMsg", VARIABLE_DATATYPE_BIN_BASE64, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"A_ARG_TYPE_Result", VARIABLE_DATATYPE_I4, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"AuthorizationDeniedUpdateID", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"AuthorizationGrantedUpdateID", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"ValidationRevokedUpdateID", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"ValidationSucceededUpdateID", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{ NULL },
 };
 
 static int registrar_is_authorized (device_service_t *service, upnp_event_action_t *request)
@@ -68,15 +68,15 @@ static int registrar_is_authorized (device_service_t *service, upnp_event_action
 	return rc;
 }
 
-static action_argument_t *arguments_is_authorized[] = {
-	& (action_argument_t) {"DeviceID", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_DeviceID"},
-	& (action_argument_t) {"Result", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Result"},
-	NULL,
+static action_argument_t arguments_is_authorized[] = {
+	{"DeviceID", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_DeviceID"},
+	{"Result", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Result"},
+	{ NULL },
 };
 
-static service_action_t *registrar_actions[] = {
-	& (service_action_t) {"IsAuthorized", arguments_is_authorized, registrar_is_authorized},
-	NULL,
+static service_action_t registrar_actions[] = {
+	{"IsAuthorized", arguments_is_authorized, registrar_is_authorized},
+	{ NULL },
 };
 
 static int registrar_uninit (device_service_t *registrar)
@@ -84,7 +84,7 @@ static int registrar_uninit (device_service_t *registrar)
 	int i;
 	service_variable_t *variable;
 	debugf("registrar uninit");
-	for (i = 0; (variable = registrar->variables[i]) != NULL; i++) {
+	for (i = 0; (variable = &registrar->variables[i])->name != NULL; i++) {
 		free(variable->value);
 	}
 	free(registrar);

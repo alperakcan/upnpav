@@ -89,26 +89,28 @@ static int mediaserver_help (void)
 	return 0;
 }
 
-static icon_t *mediaserver_icons[] = {
-	& (icon_t) {
+static icon_t mediaserver_icons[] = {
+	{
+		icon_mediaserver_48x48x32_path,
 		icon_mediaserver_48x48x32_width,
 		icon_mediaserver_48x48x32_height,
 		icon_mediaserver_48x48x32_depth,
-		icon_mediaserver_48x48x32_path,
 		icon_mediaserver_48x48x32_mime,
 		icon_mediaserver_48x48x32_size,
 		(unsigned char *) icon_mediaserver_48x48x32_data
 	},
-	& (icon_t) {
+	{
+		icon_mediaserver_48x48x24_path,
 		icon_mediaserver_48x48x24_width,
 		icon_mediaserver_48x48x24_height,
 		icon_mediaserver_48x48x24_depth,
-		icon_mediaserver_48x48x24_path,
 		icon_mediaserver_48x48x24_mime,
 		icon_mediaserver_48x48x24_size,
 		(unsigned char *) icon_mediaserver_48x48x24_data
 	},
-	NULL,
+	{
+		NULL,
+	},
 };
 
 device_t * mediaserver_init (char *options)

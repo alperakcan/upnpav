@@ -76,7 +76,7 @@ service_variable_t * service_variable_find (device_service_t *service, char *nam
 {
 	int i;
 	service_variable_t *variable;
-	for (i = 0; (variable = service->variables[i]) != NULL; i++) {
+	for (i = 0; (variable = &service->variables[i])->name != NULL; i++) {
 		if (strcmp(variable->name, name) == 0) {
 			return variable;
 		}
@@ -88,7 +88,7 @@ service_action_t * service_action_find (device_service_t *service, char *name)
 {
 	int i;
 	service_action_t *action;
-	for (i = 0; (action = service->actions[i]) != NULL; i++) {
+	for (i = 0; (action = &service->actions[i])->name != NULL; i++) {
 		if (strcmp(action->name, name) == 0) {
 			return action;
 		}

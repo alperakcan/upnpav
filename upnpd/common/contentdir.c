@@ -395,74 +395,74 @@ static char *allowed_values_browseflag[] = {
 	NULL,
 };
 
-static service_variable_t *contentdirectory_variables[] = {
+static service_variable_t contentdirectory_variables[] = {
 	/* required */
-	& (service_variable_t) {"A_ARG_TYPE_ObjectID", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_Result", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_BrowseFlag", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, allowed_values_browseflag, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_Filter", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_SortCriteria", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_SearchCriteria", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_Index", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_Count", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_UpdateID", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"SearchCapabilities", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"SortCapabilities", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"SystemUpdateID", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_YES, NULL, NULL},
-	NULL,
+	{"A_ARG_TYPE_ObjectID", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"A_ARG_TYPE_Result", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"A_ARG_TYPE_BrowseFlag", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, allowed_values_browseflag, NULL},
+	{"A_ARG_TYPE_Filter", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"A_ARG_TYPE_SortCriteria", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"A_ARG_TYPE_SearchCriteria", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"A_ARG_TYPE_Index", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"A_ARG_TYPE_Count", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"A_ARG_TYPE_UpdateID", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"SearchCapabilities", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"SortCapabilities", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"SystemUpdateID", VARIABLE_DATATYPE_UI4, VARIABLE_SENDEVENT_YES, NULL, NULL},
+	{ NULL },
 };
 
-static action_argument_t *arguments_get_search_capabilities[] = {
-	& (action_argument_t) {"SearchCaps", ARGUMENT_DIRECTION_OUT, "SearchCapabilities"},
-	NULL,
+static action_argument_t arguments_get_search_capabilities[] = {
+	{"SearchCaps", ARGUMENT_DIRECTION_OUT, "SearchCapabilities"},
+	{ NULL },
 };
 
-static action_argument_t *arguments_get_sort_capabilities[] = {
-	& (action_argument_t) {"SortCaps", ARGUMENT_DIRECTION_OUT, "SortCapabilities"},
-	NULL,
+static action_argument_t arguments_get_sort_capabilities[] = {
+	{"SortCaps", ARGUMENT_DIRECTION_OUT, "SortCapabilities"},
+	{ NULL },
 };
 
-static action_argument_t *arguments_get_system_update_id[] = {
-	& (action_argument_t) {"Id", ARGUMENT_DIRECTION_OUT, "SystemUpdateID"},
-	NULL,
+static action_argument_t arguments_get_system_update_id[] = {
+	{"Id", ARGUMENT_DIRECTION_OUT, "SystemUpdateID"},
+	{ NULL },
 };
 
-static action_argument_t *arguments_browse[] = {
-	& (action_argument_t) {"ObjectID", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_ObjectID"},
-	& (action_argument_t) {"BrowseFlag", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_BrowseFlag"},
-	& (action_argument_t) {"Filter", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_Filter"},
-	& (action_argument_t) {"StartingIndex", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_Index"},
-	& (action_argument_t) {"RequestedCount", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_Count"},
-	& (action_argument_t) {"SortCriteria", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_SortCriteria"},
-	& (action_argument_t) {"Result", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Result"},
-	& (action_argument_t) {"NumberReturned", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Count"},
-	& (action_argument_t) {"TotalMatches", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Count"},
-	& (action_argument_t) {"UpdateID", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_UpdateID"},
-	NULL,
+static action_argument_t arguments_browse[] = {
+	{"ObjectID", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_ObjectID"},
+	{"BrowseFlag", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_BrowseFlag"},
+	{"Filter", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_Filter"},
+	{"StartingIndex", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_Index"},
+	{"RequestedCount", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_Count"},
+	{"SortCriteria", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_SortCriteria"},
+	{"Result", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Result"},
+	{"NumberReturned", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Count"},
+	{"TotalMatches", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Count"},
+	{"UpdateID", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_UpdateID"},
+	{ NULL },
 };
 
-static action_argument_t *arguments_search[] = {
-	& (action_argument_t) {"ContainerID", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_ObjectID"},
-	& (action_argument_t) {"SearchCriteria", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_SearchCriteria"},
-	& (action_argument_t) {"Filter", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_Filter"},
-	& (action_argument_t) {"StartingIndex", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_Index"},
-	& (action_argument_t) {"RequestedCount", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_Count"},
-	& (action_argument_t) {"SortCriteria", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_SortCriteria"},
-	& (action_argument_t) {"Result", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Result"},
-	& (action_argument_t) {"NumberReturned", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Count"},
-	& (action_argument_t) {"TotalMatches", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Count"},
-	& (action_argument_t) {"UpdateID", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_UpdateID"},
-	NULL,
+static action_argument_t arguments_search[] = {
+	{"ContainerID", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_ObjectID"},
+	{"SearchCriteria", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_SearchCriteria"},
+	{"Filter", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_Filter"},
+	{"StartingIndex", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_Index"},
+	{"RequestedCount", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_Count"},
+	{"SortCriteria", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_SortCriteria"},
+	{"Result", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Result"},
+	{"NumberReturned", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Count"},
+	{"TotalMatches", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Count"},
+	{"UpdateID", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_UpdateID"},
+	{ NULL },
 };
 
-static service_action_t *contentdirectory_actions[] = {
+static service_action_t contentdirectory_actions[] = {
 	/* required */
-	& (service_action_t) {"GetSearchCapabilities", arguments_get_search_capabilities, contentdirectory_get_search_capabilities},
-	& (service_action_t) {"GetSortCapabilities", arguments_get_sort_capabilities, contentdirectory_get_sort_capabilities},
-	& (service_action_t) {"GetSystemUpdateID", arguments_get_system_update_id, contentdirectory_get_system_update_id},
-	& (service_action_t) {"Browse", arguments_browse, contentdirectory_browse},
-	& (service_action_t) {"Search", arguments_search, contentdirectory_search},
-	NULL,
+	{"GetSearchCapabilities", arguments_get_search_capabilities, contentdirectory_get_search_capabilities},
+	{"GetSortCapabilities", arguments_get_sort_capabilities, contentdirectory_get_sort_capabilities},
+	{"GetSystemUpdateID", arguments_get_system_update_id, contentdirectory_get_system_update_id},
+	{"Browse", arguments_browse, contentdirectory_browse},
+	{"Search", arguments_search, contentdirectory_search},
+	{ NULL },
 };
 
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -1181,7 +1181,7 @@ static int contentdirectory_uninit (device_service_t *contentdir)
 		database_uninit((database_t *) ((contentdir_t *) contentdir)->database, 0);
 	}
 	free(((contentdir_t *) contentdir)->rootpath);
-	for (i = 0; (variable = contentdir->variables[i]) != NULL; i++) {
+	for (i = 0; (variable = &contentdir->variables[i])->name != NULL; i++) {
 		free(variable->value);
 	}
 	free(((contentdir_t *) contentdir)->fontfile);

@@ -388,73 +388,73 @@ static char *allowed_values_direction[] = {
 	NULL,
 };
 
-static service_variable_t *connectionmanager_variables[] = {
+static service_variable_t connectionmanager_variables[] = {
 	/* required */
-	& (service_variable_t) {"SourceProtocolInfo", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_YES, NULL, NULL},
-	& (service_variable_t) {"SinkProtocolInfo", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_YES, NULL, NULL},
-	& (service_variable_t) {"CurrentConnectionIDs", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_YES, NULL, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_ConnectionStatus", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, allowed_values_connectionstatus, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_ConnectionManager", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_Direction", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, allowed_values_direction, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_ProtocolInfo", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_ConnectionID", VARIABLE_DATATYPE_I4, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_AVTransportID", VARIABLE_DATATYPE_I4, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	& (service_variable_t) {"A_ARG_TYPE_RcsID", VARIABLE_DATATYPE_I4, VARIABLE_SENDEVENT_NO, NULL, NULL},
-	NULL,
+	{"SourceProtocolInfo", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_YES, NULL, NULL},
+	{"SinkProtocolInfo", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_YES, NULL, NULL},
+	{"CurrentConnectionIDs", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_YES, NULL, NULL},
+	{"A_ARG_TYPE_ConnectionStatus", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, allowed_values_connectionstatus, NULL},
+	{"A_ARG_TYPE_ConnectionManager", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"A_ARG_TYPE_Direction", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, allowed_values_direction, NULL},
+	{"A_ARG_TYPE_ProtocolInfo", VARIABLE_DATATYPE_STRING, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"A_ARG_TYPE_ConnectionID", VARIABLE_DATATYPE_I4, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"A_ARG_TYPE_AVTransportID", VARIABLE_DATATYPE_I4, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{"A_ARG_TYPE_RcsID", VARIABLE_DATATYPE_I4, VARIABLE_SENDEVENT_NO, NULL, NULL},
+	{ NULL },
 };
 
-static action_argument_t *arguments_get_protocol_info[] = {
-	& (action_argument_t) {"Source", ARGUMENT_DIRECTION_OUT, "SourceProtocolInfo"},
-	& (action_argument_t) {"Sink", ARGUMENT_DIRECTION_OUT, "SinkProtocolInfo"},
-	NULL,
+static action_argument_t arguments_get_protocol_info[] = {
+	{"Source", ARGUMENT_DIRECTION_OUT, "SourceProtocolInfo"},
+	{"Sink", ARGUMENT_DIRECTION_OUT, "SinkProtocolInfo"},
+	{ NULL },
 };
 
 #if defined(ENABLE_OPTIONAL)
-static action_argument_t *arguments_prepare_for_connection[] = {
-	& (action_argument_t) {"RemoteProtocolInfo", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_ProtocolInfo"},
-	& (action_argument_t) {"PeerConnectionManager", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_ConnectionManager"},
-	& (action_argument_t) {"PeerConnectionID", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_ConnectionID"},
-	& (action_argument_t) {"Direction", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_Direction"},
-	& (action_argument_t) {"ConnectionID", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_ConnectionID"},
-	& (action_argument_t) {"AVTransportID", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_AVTransportID"},
-	& (action_argument_t) {"RcsID", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_RcsID"},
-	NULL,
+static action_argument_t arguments_prepare_for_connection[] = {
+	{"RemoteProtocolInfo", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_ProtocolInfo"},
+	{"PeerConnectionManager", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_ConnectionManager"},
+	{"PeerConnectionID", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_ConnectionID"},
+	{"Direction", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_Direction"},
+	{"ConnectionID", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_ConnectionID"},
+	{"AVTransportID", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_AVTransportID"},
+	{"RcsID", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_RcsID"},
+	{ NULL },
 };
 
 static action_argument_t *arguments_connection_complete[] = {
-	& (action_argument_t) {"ConnectionID", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_ConnectionID"},
-	NULL,
+	{"ConnectionID", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_ConnectionID"},
+	{ NULL },
 };
 #endif
 
-static action_argument_t *arguments_get_current_connection_ids[] = {
-	& (action_argument_t) {"ConnectionIDs", ARGUMENT_DIRECTION_OUT, "CurrentConnectionIDs"},
-	NULL,
+static action_argument_t arguments_get_current_connection_ids[] = {
+	{"ConnectionIDs", ARGUMENT_DIRECTION_OUT, "CurrentConnectionIDs"},
+	{ NULL },
 };
 
-static action_argument_t *arguments_get_current_connection_info[] = {
-	& (action_argument_t) {"ConnectionID", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_ConnectionID"},
-	& (action_argument_t) {"RcsID", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_RcsID"},
-	& (action_argument_t) {"AVTransportID", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_AVTransportID"},
-	& (action_argument_t) {"ProtocolInfo", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_ProtocolInfo"},
-	& (action_argument_t) {"PeerConnectionManager", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_ConnectionManager"},
-	& (action_argument_t) {"PeerConnectionID", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_ConnectionID"},
-	& (action_argument_t) {"Direction", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Direction"},
-	& (action_argument_t) {"Status", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_ConnectionStatus"},
-	NULL,
+static action_argument_t arguments_get_current_connection_info[] = {
+	{"ConnectionID", ARGUMENT_DIRECTION_IN, "A_ARG_TYPE_ConnectionID"},
+	{"RcsID", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_RcsID"},
+	{"AVTransportID", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_AVTransportID"},
+	{"ProtocolInfo", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_ProtocolInfo"},
+	{"PeerConnectionManager", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_ConnectionManager"},
+	{"PeerConnectionID", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_ConnectionID"},
+	{"Direction", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_Direction"},
+	{"Status", ARGUMENT_DIRECTION_OUT, "A_ARG_TYPE_ConnectionStatus"},
+	{ NULL },
 };
 
-static service_action_t *connectionmanager_actions[] = {
+static service_action_t connectionmanager_actions[] = {
 	/* required */
-	& (service_action_t) {"GetProtocolInfo", arguments_get_protocol_info, connectionmanager_get_protocol_info},
-	& (service_action_t) {"GetCurrentConnectionIDs", arguments_get_current_connection_ids, connectionmanager_get_current_connection_ids},
-	& (service_action_t) {"GetCurrentConnectionInfo", arguments_get_current_connection_info, connectionmanager_get_current_connection_info},
+	{"GetProtocolInfo", arguments_get_protocol_info, connectionmanager_get_protocol_info},
+	{"GetCurrentConnectionIDs", arguments_get_current_connection_ids, connectionmanager_get_current_connection_ids},
+	{"GetCurrentConnectionInfo", arguments_get_current_connection_info, connectionmanager_get_current_connection_info},
 	/* optional */
 #if defined(ENABLE_OPTIONAL)
-	& (service_action_t) {"PrepareForConnection", arguments_prepare_for_connection, connectionmanager_prepare_for_connection},
-	& (service_action_t) {"ConnectionComplete", arguments_connection_complete, connectionmanager_connection_complete},
+	{"PrepareForConnection", arguments_prepare_for_connection, connectionmanager_prepare_for_connection},
+	{"ConnectionComplete", arguments_connection_complete, connectionmanager_connection_complete},
 #endif
-	NULL,
+	{ NULL },
 };
 
 static int connectionmanager_register_mimetype_actual (device_service_t *service, const char *mime)
@@ -650,7 +650,7 @@ int connectionmanager_uninit (device_service_t *service)
 		free(mime);
 	}
 	debugf("uninitializing service variables");
-	for (i = 0; (variable = service->variables[i]) != NULL; i++) {
+	for (i = 0; (variable = &service->variables[i])->name != NULL; i++) {
 		free(variable->value);
 	}
 	free(service);

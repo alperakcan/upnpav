@@ -64,12 +64,12 @@ static char *mediarenderer_services[] = {
 	NULL,
 };
 
-static device_description_t *controller_devices[] = {
-	& (device_description_t) { "urn:schemas-upnp-org:device:MediaServer:1", mediaserver_services },
-	& (device_description_t) { "urn:schemas-upnp-org:device:MediaRenderer:1", mediarenderer_services },
-	& (device_description_t) { "upnp:rootdevice", mediaserver_services },
-	& (device_description_t) { "upnp:rootdevice", mediarenderer_services },
-	NULL,
+static device_description_t controller_devices[] = {
+	{ "urn:schemas-upnp-org:device:MediaServer:1", mediaserver_services },
+	{ "urn:schemas-upnp-org:device:MediaRenderer:1", mediarenderer_services },
+	{ "upnp:rootdevice", mediaserver_services },
+	{ "upnp:rootdevice", mediarenderer_services },
+	{ NULL },
 };
 
 static client_t controller = {

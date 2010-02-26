@@ -67,7 +67,7 @@ static int device_vfsgetinfo (void *cookie, char *path, gena_fileinfo_t *info)
 		}
 	}
 	/* is icon file */
-	for (c = 0; (icon = device->icons[c]) != NULL; c++) {
+	for (c = 0; (icon = &device->icons[c])->url != NULL; c++) {
 		if (strcmp(path, icon->url) == 0) {
 			info->size = icon->size;
 			info->mtime = (time_gettimeofday() / 1000);
@@ -119,7 +119,7 @@ static void * device_vfsopen (void *cookie, char *path, gena_filemode_t mode)
 		}
 	}
 	/* is icon file */
-	for (c = 0; (icon = device->icons[c]) != NULL; c++) {
+	for (c = 0; (icon = &device->icons[c])->url != NULL; c++) {
 		if (strcmp(path, icon->url) == 0) {
 			file = (upnp_file_t *) malloc(sizeof(upnp_file_t));
 			if (file == NULL) {
@@ -335,7 +335,7 @@ static void device_event_subscription_request (device_t *device, upnp_event_subs
 	}
 	thread_mutex_lock(service->mutex);
 	variable_count = 0;
-	for (i = 0; (variable = service->variables[i]) != NULL; i++) {
+	for (i = 0; (variable = &service->variables[i])->name != NULL; i++) {
 		if (variable->sendevent == VARIABLE_SENDEVENT_YES) {
 			variable_count++;
 		}
@@ -356,7 +356,7 @@ static void device_event_subscription_request (device_t *device, upnp_event_subs
 	memset(variable_names, 0, sizeof(char *) * (variable_count + 1));
 	memset(variable_values, 0, sizeof(char *) * (variable_count + 1));
 	variable_count = 0;
-	for (i = 0; (variable = service->variables[i]) != NULL; i++) {
+	for (i = 0; (variable = &service->variables[i])->name != NULL; i++) {
 		if (variable->sendevent == VARIABLE_SENDEVENT_YES) {
 			variable_names[variable_count] = variable->name;
 			variable_values[variable_count] = xml_escape(variable->value, 0);
