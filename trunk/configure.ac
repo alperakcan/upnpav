@@ -447,6 +447,19 @@ fi
 enable_transcode=no
 )
 
+AC_ARG_ENABLE([ffmpeg],
+[  --enable-ffmpeg   enable ffmpeg support [[default=yes]]],
+if test "$enableval" = "no"
+then
+	enable_ffmpeg=no
+else
+	enable_ffmpeg=yes
+	AC_DEFINE(ENABLE_FFMPEG, 1, [Define to 1 if you want 'ffmpeg' support.])
+fi
+,
+enable_ffmpeg=yes
+)
+
 AC_ARG_ENABLE([optional],
 [  --enable-optional       enable optional upnp av functions [[default=no]]],
 if test "$enableval" = "no"
@@ -474,7 +487,7 @@ AM_CONDITIONAL(ENABLE_UPNPFS, test "$enable_upnpfs" = "yes")
 
 AM_CONDITIONAL(ENABLE_LIBSDL, test "$enable_libsdl" = "yes")
 AM_CONDITIONAL(ENABLE_LIBCAIRO, test "$enable_libcairo" = "yes")
-AM_CONDITIONAL(ENABLE_LIBFFMPEG, test "$enable_libffmpeg" = "yes")
+AM_CONDITIONAL(ENABLE_LIBFFMPEG, test "$enable_libffmpeg" = "yes" -a "$enable_ffmpeg" = "yes")
 
 AM_CONDITIONAL(ENABLE_OPTIONAL, test "$enable_optional" = "yes")
 

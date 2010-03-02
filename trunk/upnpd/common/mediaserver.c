@@ -137,6 +137,7 @@ device_t * mediaserver_init (char *options)
 	err = 0;
 	cached = 0;
 	daemonize = 0;
+	transcode = 0;
 	uuid = NULL;
 	netmask = NULL;
 	fontfile = NULL;

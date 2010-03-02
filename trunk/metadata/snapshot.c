@@ -33,7 +33,7 @@
 
 #include "metadata.h"
 
-#if defined(HAVE_LIBFFMPEG)
+#if defined(ENABLE_LIBFFMPEG)
 
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>

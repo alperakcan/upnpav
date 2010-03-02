@@ -34,7 +34,7 @@
 #include <inttypes.h>
 #include <time.h>
 
-#if defined(HAVE_LIBFFMPEG)
+#if defined(ENABLE_LIBFFMPEG)
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #endif
@@ -51,7 +51,7 @@ typedef struct metadata_info_s {
 
 static int metadata_video_ffmpeg (metadata_t *metadata)
 {
-#if defined(HAVE_LIBFFMPEG)
+#if defined(ENABLE_LIBFFMPEG)
 	int i;
 	int astream;
 	int vstream;
