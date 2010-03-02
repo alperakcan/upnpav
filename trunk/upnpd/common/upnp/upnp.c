@@ -436,7 +436,7 @@ found:
 	debugf("header: %s\n", header);
 	debugf("propset: %s\n", propset);
 
-	data = gena_send_recv(upnp->gena, c->url.host, c->url.port, header, propset);
+	data = upnp_gena_send_recv(upnp->gena, c->url.host, c->url.port, header, propset);
 	if (data == NULL) {
 		//debugf("gena_send_recv() failed");
 	}
@@ -847,7 +847,7 @@ int upnp_advertise (upnp_t *upnp)
 {
 	int rc;
 	thread_mutex_lock(upnp->mutex);
-	rc = ssdp_advertise(upnp->ssdp);
+	rc = upnp_ssdp_advertise(upnp->ssdp);
 	thread_mutex_unlock(upnp->mutex);
 	return rc;
 }
@@ -993,13 +993,13 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 
 		/* ssdp entries for device */
 		if (asprintf(&deviceusn, "%s::%s", data.devices[d].UDN, "upnp:rootdevice") > 0) {
-			ssdp_register(upnp->ssdp, "upnp:rootdevice", deviceusn, upnp->type.device.location, SERVER_NAME, 100000);
+			upnp_ssdp_register(upnp->ssdp, "upnp:rootdevice", deviceusn, upnp->type.device.location, SERVER_NAME, 100000);
 			free(deviceusn);
 		}
-		ssdp_register(upnp->ssdp, data.devices[d].UDN, data.devices[d].UDN, upnp->type.device.location, SERVER_NAME, 100000);
+		upnp_ssdp_register(upnp->ssdp, data.devices[d].UDN, data.devices[d].UDN, upnp->type.device.location, SERVER_NAME, 100000);
 		if (asprintf(&deviceusn, "%s::%s", data.devices[d].UDN, data.devices[d].deviceType) > 0) {
-			ssdp_register(upnp->ssdp, data.devices[d].deviceType, deviceusn, upnp->type.device.location, SERVER_NAME, 100000);
-			ssdp_register(upnp->ssdp, data.devices[d].UDN, deviceusn, upnp->type.device.location, SERVER_NAME, 100000);
+			upnp_ssdp_register(upnp->ssdp, data.devices[d].deviceType, deviceusn, upnp->type.device.location, SERVER_NAME, 100000);
+			upnp_ssdp_register(upnp->ssdp, data.devices[d].UDN, deviceusn, upnp->type.device.location, SERVER_NAME, 100000);
 			free(deviceusn);
 		}
 
@@ -1016,7 +1016,7 @@ int upnp_register_device (upnp_t *upnp, const char *description, int (*callback)
 			debugf("  eventSubURL:'%s'", data.devices[d].services[s].eventSubURL);
 			debugf("  controlURL :'%s'", data.devices[d].services[s].controlURL);
 			if (asprintf(&deviceusn, "%s::%s", data.devices[d].UDN, data.devices[d].services[s].serviceType) > 0) {
-				if (ssdp_register(upnp->ssdp, data.devices[d].services[s].serviceType, deviceusn, upnp->type.device.location, SERVER_NAME, 100000) == 0) {
+				if (upnp_ssdp_register(upnp->ssdp, data.devices[d].services[s].serviceType, deviceusn, upnp->type.device.location, SERVER_NAME, 100000) == 0) {
 					service = (upnp_service_t *) malloc(sizeof(upnp_service_t));
 					if (service != NULL) {
 						memset(service, 0, sizeof(upnp_service_t));
@@ -1110,7 +1110,7 @@ upnp_t * upnp_init (const char *host, const char *mask, const unsigned short por
 		upnp->vfscallbacks->cookie = vfscookie;
 	}
 
-	upnp->gena = gena_init(upnp->host, upnp->port, &upnp->gena_callbacks);
+	upnp->gena = upnp_gena_init(upnp->host, upnp->port, &upnp->gena_callbacks);
 	if (upnp->gena == NULL) {
 		free(upnp->host);
 		free(upnp->mask);
@@ -1118,11 +1118,11 @@ upnp_t * upnp_init (const char *host, const char *mask, const unsigned short por
 		free(upnp);
 		return NULL;
 	}
-	upnp->port = gena_getport(upnp->gena);
+	upnp->port = upnp_gena_getport(upnp->gena);
 
-	upnp->ssdp = ssdp_init(upnp->host, upnp->mask, ssdp_callback_event, upnp);
+	upnp->ssdp = upnp_ssdp_init(upnp->host, upnp->mask, ssdp_callback_event, upnp);
 	if (upnp->ssdp == NULL) {
-		gena_uninit(upnp->gena);
+		upnp_gena_uninit(upnp->gena);
 		free(upnp->host);
 		free(upnp->mask);
 		thread_mutex_destroy(upnp->mutex);
@@ -1143,9 +1143,9 @@ int upnp_uninit (upnp_t *upnp)
 		return 0;
 	}
 	debugf("calling ssdp_uninit");
-	ssdp_uninit(upnp->ssdp);
+	upnp_ssdp_uninit(upnp->ssdp);
 	debugf("calling gena_uninit");
-	gena_uninit(upnp->gena);
+	upnp_gena_uninit(upnp->gena);
 	debugf("free device memory");
 	if (upnp->type.type == UPNP_TYPE_DEVICE) {
 		list_for_each_entry_safe(s, sn, &upnp->type.device.services, head) {
@@ -1248,7 +1248,7 @@ char * upnp_makeaction (upnp_t *upnp, const char *actionname, const char *contro
 	}
 	free(buffer);
 	debugf("sending action data:\n'%s'\n", data);
-	result = gena_send_recv(upnp->gena, url.host, url.port, data, NULL);
+	result = upnp_gena_send_recv(upnp->gena, url.host, url.port, data, NULL);
 	free(data);
 	debugf("result: '%s'", result);
 	upnp_url_uninit(&url);
@@ -1259,7 +1259,7 @@ int upnp_search (upnp_t *upnp, int timeout, const char *uuid)
 {
 	int ret;
 	thread_mutex_lock(upnp->mutex);
-	ret = ssdp_search(upnp->ssdp, uuid, timeout);
+	ret = upnp_ssdp_search(upnp->ssdp, uuid, timeout);
 	thread_mutex_unlock(upnp->mutex);
 	return 0;
 }
@@ -1291,7 +1291,7 @@ char * upnp_download (upnp_t *upnp, const char *location)
 	if (upnp_url_parse(location, &url) != 0) {
 		return NULL;
 	}
-	buffer = gena_download(upnp->gena, url.host, url.port, url.path);
+	buffer = upnp_gena_download(upnp->gena, url.host, url.port, url.path);
 	upnp_url_uninit(&url);
 	return buffer;
 }

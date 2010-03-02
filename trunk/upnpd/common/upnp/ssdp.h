@@ -42,8 +42,8 @@ typedef struct ssdp_event_s {
 	int expires;
 } ssdp_event_t;
 
-int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout);
-int ssdp_advertise (ssdp_t *ssdp);
-int ssdp_register (ssdp_t *ssdp, char *nt, char *usn, char *location, char *server, int age);
-ssdp_t * ssdp_init (const char *address, const char *netmask, int (*callback) (void *cookie, ssdp_event_t *event), void *cookie);
-int ssdp_uninit (ssdp_t *ssdp);
+int upnp_ssdp_search (ssdp_t *ssdp, const char *device, const int timeout);
+int upnp_ssdp_advertise (ssdp_t *ssdp);
+int upnp_ssdp_register (ssdp_t *ssdp, char *nt, char *usn, char *location, char *server, int age);
+ssdp_t * upnp_ssdp_init (const char *address, const char *netmask, int (*callback) (void *cookie, ssdp_event_t *event), void *cookie);
+int upnp_ssdp_uninit (ssdp_t *ssdp);
