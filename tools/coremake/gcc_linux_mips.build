@@ -19,9 +19,9 @@ SVNDIR = linux_mips
 
 #define GLIBC
 
-#define CCFLAGS -DMIPS -Wno-multichar -mno-explicit-relocs -fomit-frame-pointer -fsigned-char -march=mips32 -O2 -fvisibility=hidden -DRESOURCE_COREC -fpic
-#define SFLAGS -DMIPS -Wno-multichar -mno-explicit-relocs -fomit-frame-pointer -fsigned-char -march=mips32 -O2 -D_HIDDEN -fpic
-#define SHFLAGS -shared -Wl,--strip-all
-#define CXXFLAGS -fno-rtti
+#define CCFLAGS -Wall -fno-strict-aliasing -fsigned-char -O2 -fPIC
+#define SFLAGS -Wall -fno-strict-aliasing -fsigned-char -O2 -fPIC
+#define SHFLAGS -shared
+#define CXXFLAGS
 
 #include "gcc.inc"
