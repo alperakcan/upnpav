@@ -1,13 +1,8 @@
 IF ENABLE_MEDIASERVER
 LIB upnpd_mediaserver
 {
-  INCLUDE ../
-
   USE upnpd_common
   
   SOURCE mediaserver.c
-
-  LIBS(HAVE_LIBREADLINE) readline
-  LIBS(HAVE_LIBREADLINE) termcap
 }
 ENDIF
