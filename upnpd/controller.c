@@ -38,12 +38,9 @@
 #include <readline/history.h>
 #endif
 
-#include "platform.h"
-#include "parser.h"
-#include "gena.h"
-#include "upnp.h"
 #include "upnpd.h"
-#include "common.h"
+
+#include "controller.h"
 
 #if !HAVE_LIBREADLINE
 static int rinit = 0;
@@ -79,107 +76,51 @@ static int add_history (const char *line)
 }
 #endif
 
-static int browse_device (client_t *client, char *device, char *object)
+static int browse_device (upnpd_controller_t *controller, char *device, char *object)
 {
-	entry_t *entry;
-	entry = controller_browse_children(client, device, object);
-	if (entry != NULL) {
-		entry_print(entry);
-		entry_uninit(entry);
+	upnpd_item_t *item;
+	upnpd_item_t *items;
+	items = upnpd_controller_browse_device(controller, device, object);
+	for (item = items; item; item = item->next) {
+		printf("%s - %s (class: %s, location: %s)\n", item->id, item->title, item->class, item->location);
 	}
+	upnpd_controller_free_items(items);
 	return 0;
 }
 
-static int metadata_device (client_t *client, char *device, char *object)
+static int metadata_device (upnpd_controller_t *controller, char *device, char *object)
 {
-	entry_t *entry;
-	entry = controller_browse_metadata(client, device, object);
-	if (entry != NULL) {
-		entry_dump(entry);
-		entry_uninit(entry);
+	upnpd_item_t *item;
+	item = upnpd_controller_metadata_device(controller, device, object);
+	if (item != NULL) {
+		printf("%s - %s (class: %s, location: %s)\n", item->id, item->title, item->class, item->location);
 	}
+	upnpd_controller_free_items(item);
 	return 0;
 }
 
-static int refresh_devices (client_t *client)
+static int refresh_devices (upnpd_controller_t *controller)
 {
-	return client_refresh(client, 1);
+	return upnpd_controller_scan_devices(controller, 1);
 }
 
-static int list_devices (client_t *client)
+static int list_devices (upnpd_controller_t *controller)
 {
-	client_device_t *device;
-	thread_mutex_lock(client->mutex);
-	list_for_each_entry(device, &client->devices, head) {
+	upnpd_device_t *device;
+	upnpd_device_t *devices;
+	devices = upnpd_controller_get_devices(controller);
+	for (device = devices; device; device = device->next) {
 		printf("-- %s\n", device->name);
 		printf("  type       : %s\n", device->type);
 		printf("  uuid       : %s\n", device->uuid);
 		printf("  location   : %s\n", device->location);
 		printf("  expiretime : %d\n", device->expiretime);
 	}
-	thread_mutex_unlock(client->mutex);
+	upnpd_controller_free_devices(devices);
 	return 0;
 }
 
-static int print_device (client_t *client, char *name)
-{
-	client_device_t *device;
-	client_service_t *service;
-	client_variable_t *variable;
-	thread_mutex_lock(client->mutex);
-	list_for_each_entry(device, &client->devices, head) {
-		if (strcmp(name, device->name) == 0) {
-			printf("-- %s\n", device->name);
-			printf("  type       : %s\n", device->type);
-			printf("  uuid       : %s\n", device->uuid);
-			printf("  location   : %s\n", device->location);
-			printf("  expiretime : %d\n", device->expiretime);
-			list_for_each_entry(service, &device->services, head) {
-				printf("  -- type       : %s\n", service->type);
-				printf("     id         : %s\n", service->id);
-				printf("     sid        : %s\n", service->sid);
-				printf("     controlurl : %s\n", service->controlurl);
-				printf("     eventurl   : %s\n", service->eventurl);
-				list_for_each_entry(variable, &service->variables, head) {
-					printf("    -- name  : %s\n", variable->name);
-					printf("       value : %s\n", variable->value);
-				}
-			}
-		}
-	}
-	thread_mutex_unlock(client->mutex);
-	return 0;
-}
-
-static int print_devices (client_t *client)
-{
-	client_device_t *device;
-	client_service_t *service;
-	client_variable_t *variable;
-	thread_mutex_lock(client->mutex);
-	list_for_each_entry(device, &client->devices, head) {
-		printf("-- %s\n", device->name);
-		printf("  type       : %s\n", device->type);
-		printf("  uuid       : %s\n", device->uuid);
-		printf("  location   : %s\n", device->location);
-		printf("  expiretime : %d\n", device->expiretime);
-		list_for_each_entry(service, &device->services, head) {
-			printf("  -- type       : %s\n", service->type);
-			printf("     id         : %s\n", service->id);
-			printf("     sid        : %s\n", service->sid);
-			printf("     controlurl : %s\n", service->controlurl);
-			printf("     eventurl   : %s\n", service->eventurl);
-			list_for_each_entry(variable, &service->variables, head) {
-				printf("    -- name  : %s\n", variable->name);
-				printf("       value : %s\n", variable->value);
-			}
-		}
-	}
-	thread_mutex_unlock(client->mutex);
-	return 0;
-}
-
-static int controller_rline_process (client_t *device, char *command)
+static int controller_rline_process (upnpd_controller_t *controller, char *command)
 {
 	int ret;
 	char *b;
@@ -237,26 +178,18 @@ static int controller_rline_process (client_t *device, char *command)
 		       "quit                                - quit controller\n"
 		       "refresh                             - refresh device list\n"
 		       "list                                - list all devices\n"
-		       "print [device]                      - print all devices, or device\n"
 		       "browse <objectid>                   - browse a device\n"
-		       "metadata <objectid>                 - print metadata information of an object\n"
-		       "play <objectid> <server> <renderer> - play an mediaserver object on a mediarender\n");
+		       "metadata <objectid>                 - print metadata information of an object\n");
 	} else if (strcmp(argv[0], "quit") == 0) {
 		ret = -1;
 	} else if (strcmp(argv[0], "refresh") == 0) {
-		refresh_devices(device);
+		refresh_devices(controller);
 	} else if (strcmp(argv[0], "list") == 0) {
-		list_devices(device);
-	} else if (strcmp(argv[0], "print") == 0) {
-		if (argc == 1) {
-			print_devices(device);
-		} else if (argc == 2) {
-			print_device(device, argv[1]);
-		}
+		list_devices(controller);
 	} else if (argc == 3 && strcmp(argv[0], "browse") == 0) {
-		browse_device(device, argv[1], argv[2]);
+		browse_device(controller, argv[1], argv[2]);
 	} else if (argc == 3 && strcmp(argv[0], "metadata") == 0) {
-		metadata_device(device, argv[1], argv[2]);
+		metadata_device(controller, argv[1], argv[2]);
 	}
 
 out:	free(argv);
@@ -289,13 +222,13 @@ static int controller_main (char *options)
 	int running;
 	char *rline;
 	char *rcommand;
-	client_t *controller;
+	upnpd_controller_t *controller;
 
 	ret = -1;
 
-	controller = controller_init(options);
+	controller = upnpd_controller_init("eth1");
 	if (controller == NULL) {
-		debugf("controller_init() failed");
+		printf("controller_init() failed\n");
 		goto out;
 	}
 
@@ -312,9 +245,9 @@ static int controller_main (char *options)
 		free(rline);
 	};
 
-	rc = controller_uninit(controller);
+	rc = upnpd_controller_uninit(controller);
 	if (rc != 0) {
-		debugf("controller_uninit(controller) failed");
+		printf("controller_uninit(controller) failed\n");
 		goto out;
 	}
 	ret = 0;

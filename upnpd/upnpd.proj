@@ -4,16 +4,16 @@ CON upnpd
 {
   USE upnpd_platform
   USE upnpd_common
-  USE upnpd_controller
-  USE upnpd_mediaserver
+  USE(ENABLE_CONTROLLER) upnpd_controller
+  USE(ENABLE_MEDIASERVER) upnpd_mediaserver
   
   EXPINCLUDE .
   
   SOURCE upnpd.c
   HEADER upnpd.h
   
-  SOURCE controller.c
-  SOURCE mediaserver.c
+  SOURCE(ENABLE_CONTROLLER) controller.c
+  SOURCE(ENABLE_MEDIASERVER) mediaserver.c
   
   LIBS(HAVE_LIBREADLINE) readline
   LIBS(HAVE_LIBREADLINE) termcap

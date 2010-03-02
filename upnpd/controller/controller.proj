@@ -3,6 +3,9 @@ LIB upnpd_controller
 {
   USE upnpd_common
   
+  EXPINCLUDE .
+  
   SOURCE controller.c
+  HEADER controller.h
 }
 ENDIF

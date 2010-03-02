@@ -419,7 +419,7 @@ struct client_s {
 	/** */
 	device_description_t *descriptions;
 	/** */
-	char *interface;
+	char *ipaddr;
 	/** */
 	char *ifmask;
 
@@ -479,7 +479,7 @@ struct device_s {
 	/** */
 	char *name;
 	/** */
-	char *interface;
+	char *ipaddr;
 	/** */
 	char *ifmask;
 	/** */

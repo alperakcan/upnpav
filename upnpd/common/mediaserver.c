@@ -44,7 +44,7 @@
 #include "icon/mediaserver/48x48x32.h"
 
 typedef enum {
-	OPT_INTERFACE    = 0,
+	OPT_IPADDR       = 0,
 	OPT_NETMASK      = 1,
 	OPT_DIRECTORY    = 2,
 	OPT_CACHED       = 3,
@@ -58,7 +58,7 @@ typedef enum {
 } mediaserver_options_t;
 
 static char *mediaserver_options[] = {
-	"interface",
+	"ipaddr",
 	"netmask",
 	"directory",
 	"cached",
@@ -75,7 +75,7 @@ static char *mediaserver_options[] = {
 static int mediaserver_help (void)
 {
 	printf("mediaserver options;\n"
-	       "\tinterface=<interface ip>\n"
+	       "\tipaddr=<ipaddr>\n"
 	       "\tnetmask=<netmask>\n"
 	       "\tcached=<0,1,2>\n"
 	       "\ttranscode=<0,1>\n"
@@ -126,7 +126,7 @@ device_t * mediaserver_init (char *options)
 	char *codepage;
 	char *fontfile;
 	char *directory;
-	char *interface;
+	char *ipaddr;
 	char *friendlyname;
 	char *suboptions;
 	device_t *device;
@@ -141,19 +141,19 @@ device_t * mediaserver_init (char *options)
 	netmask = NULL;
 	fontfile = NULL;
 	codepage = NULL;
-	interface = NULL;
+	ipaddr = NULL;
 	directory = NULL;
 	friendlyname = NULL;
 	suboptions = options;
 	while (suboptions && *suboptions != '\0' && !err) {
 		switch (getsubopt(&suboptions, mediaserver_options, &value)) {
-			case OPT_INTERFACE:
+			case OPT_IPADDR:
 				if (value == NULL) {
-					debugf("value is missing for interface option");
+					debugf("value is missing for ipaddr option");
 					err = 1;
 					continue;
 				}
-				interface = value;
+				ipaddr = value;
 				break;
 			case OPT_NETMASK:
 				if (value == NULL) {
@@ -228,6 +228,7 @@ device_t * mediaserver_init (char *options)
 				uuid = value;
 				break;
 			default:
+				break;
 			case OPT_HELP:
 				mediaserver_help();
 				return NULL;
@@ -237,7 +238,7 @@ device_t * mediaserver_init (char *options)
 	debugf("starting mediaserver;\n"
 	       "\tuuid        : %s\n"
 	       "\tdaemonize   : %s\n"
-	       "\tinterface   : %s\n"
+	       "\tipaddr   : %s\n"
 	       "\tnetmask     : %s\n"
 	       "\tdirectory   : %s\n"
 	       "\tcached      : %d\n"
@@ -247,7 +248,7 @@ device_t * mediaserver_init (char *options)
 	       "\tfriendlyname: %s\n",
 	       (uuid) ? uuid : "(default)",
 	       (daemonize) ? "yes" : "no",
-	       (interface) ? interface : "null",
+	       (ipaddr) ? ipaddr : "null",
 	       (netmask) ? netmask : "null",
 	       (directory) ? directory : "null",
 	       cached,
@@ -264,7 +265,7 @@ device_t * mediaserver_init (char *options)
 	}
 	memset(device, 0, sizeof(device_t));
 	device->name = "mediaserver";
-	device->interface = interface;
+	device->ipaddr = ipaddr;
 	device->ifmask = netmask;
 	device->devicetype = "urn:schemas-upnp-org:device:MediaServer:1";
 	device->friendlyname = (friendlyname) ? friendlyname : "mediaserver";
