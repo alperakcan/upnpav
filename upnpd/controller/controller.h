@@ -30,21 +30,36 @@ typedef struct upnpd_device_s upnpd_device_t;
 typedef struct upnpd_item_s upnpd_item_t;
 
 struct upnpd_device_s {
+	/** device name */
 	char *name;
+	/** device type */
 	char *type;
+	/** device uuid */
 	char *uuid;
+	/** device description url */
 	char *location;
+	/** device expire time */
 	int expiretime;
+	/** next device */
 	upnpd_device_t *next;
 };
 
 struct upnpd_item_s {
+	/** item id */
 	char *id;
+	/** item parent id */
+	char *pid;
+	/** item title */
 	char *title;
+	/** item class */
 	char *class;
+	/** item fetch url */
 	char *location;
-	int64_t size;
+	/** item size in bytes */
+	unsigned long long size;
+	/** item duration */
 	char *duration;
+	/** next item */
 	upnpd_item_t *next;
 };
 
@@ -61,5 +76,7 @@ int upnpd_controller_free_devices (upnpd_device_t *device);
 upnpd_item_t * upnpd_controller_browse_device (upnpd_controller_t *controller, const char *device, const char *item);
 
 upnpd_item_t * upnpd_controller_metadata_device (upnpd_controller_t *controller, const char *device, const char *item);
+
+upnpd_item_t * upnpd_controller_browse_local (const char *path);
 
 int upnpd_controller_free_items (upnpd_item_t *item);

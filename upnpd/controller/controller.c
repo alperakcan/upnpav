@@ -36,6 +36,7 @@
 #include "gena.h"
 #include "upnp.h"
 #include "common.h"
+#include "metadata.h"
 
 #include "controller.h"
 
@@ -103,6 +104,16 @@ int upnpd_controller_scan_devices (upnpd_controller_t *controller, int remove)
 	return client_refresh(controller->client, remove);
 }
 
+static int upnpd_controller_free_device (upnpd_device_t *device)
+{
+	free(device->name);
+	free(device->type);
+	free(device->uuid);
+	free(device->location);
+	free(device);
+	return 0;
+}
+
 upnpd_device_t * upnpd_controller_get_devices (upnpd_controller_t *controller)
 {
 	client_t *client;
@@ -131,11 +142,7 @@ upnpd_device_t * upnpd_controller_get_devices (upnpd_controller_t *controller)
 		    d->type == NULL ||
 		    d->uuid == NULL ||
 		    d->location == NULL) {
-			free(d->name);
-			free(d->type);
-			free(d->uuid);
-			free(d->location);
-			free(d);
+			upnpd_controller_free_device(d);
 			continue;
 		}
 		if (r == NULL) {
@@ -156,11 +163,7 @@ int upnpd_controller_free_devices (upnpd_device_t *device)
 	while (device) {
 		t = device;
 		device = device->next;
-		free(t->name);
-		free(t->type);
-		free(t->uuid);
-		free(t->location);
-		free(t);
+		upnpd_controller_free_device(t);
 	}
 	return 0;
 }
@@ -187,6 +190,7 @@ upnpd_item_t * upnpd_controller_browse_device (upnpd_controller_t *controller, c
 		}
 		memset(i, 0, sizeof(upnpd_item_t));
 		i->id = e->didl.entryid;
+		i->pid = e->didl.parentid;
 		i->title = e->didl.dc.title;
 		i->class = e->didl.upnp.object.class;
 		i->location = e->didl.res.path;
@@ -199,6 +203,7 @@ upnpd_item_t * upnpd_controller_browse_device (upnpd_controller_t *controller, c
 			continue;
 		}
 		e->didl.entryid = NULL;
+		e->didl.parentid = NULL;
 		e->didl.dc.title = NULL;
 		e->didl.upnp.object.class = NULL;
 		e->didl.res.path = NULL;
@@ -234,6 +239,7 @@ upnpd_item_t * upnpd_controller_metadata_device (upnpd_controller_t *controller,
 		}
 		memset(i, 0, sizeof(upnpd_item_t));
 		i->id = entry->didl.entryid;
+		i->pid = entry->didl.parentid;
 		i->title = entry->didl.dc.title;
 		i->class = entry->didl.upnp.object.class;
 		i->location = entry->didl.res.path;
@@ -247,6 +253,7 @@ upnpd_item_t * upnpd_controller_metadata_device (upnpd_controller_t *controller,
 			goto out;
 		}
 		entry->didl.entryid = NULL;
+		entry->didl.parentid = NULL;
 		entry->didl.dc.title = NULL;
 		entry->didl.upnp.object.class = NULL;
 		entry->didl.res.path = NULL;
@@ -257,17 +264,108 @@ out:	entry_uninit(entry);
 	return i;
 }
 
+static int upnpd_controller_free_item (upnpd_item_t *item)
+{
+	free(item->id);
+	free(item->pid);
+	free(item->title);
+	free(item->class);
+	free(item->location);
+	free(item);
+	return 0;
+}
+
+upnpd_item_t * upnpd_controller_browse_local (const char *path)
+{
+	char *p;
+	dir_t *dir;
+	dir_entry_t *current;
+	metadata_t *metadata;
+
+	upnpd_item_t *i;
+	upnpd_item_t *r;
+	upnpd_item_t *t;
+
+	r = NULL;
+
+	current = (dir_entry_t *) malloc(sizeof(dir_entry_t));
+	if (current == NULL) {
+		return NULL;
+	}
+	dir = file_opendir(path);
+	if (dir == NULL) {
+		free(current);
+		return NULL;
+	}
+	while (file_readdir(dir, current) == 0) {
+		if (strncmp(current->name, ".", 1) == 0) {
+			/* will cover parent, self, hidden */
+			continue;
+		}
+		if (asprintf(&p, "%s%s%s", path, (path[strlen(path) - 1] == '/') ? "" : "/", current->name) < 0) {
+			continue;
+		}
+
+		metadata = metadata_init(p);
+		if (metadata == NULL) {
+			free(p);
+			continue;
+		}
+
+		i = (upnpd_item_t *) malloc(sizeof(upnpd_item_t));
+		if (i == NULL) {
+			free(p);
+			metadata_uninit(metadata);
+			continue;
+		}
+		memset(i, 0, sizeof(upnpd_item_t));
+
+		i->id = p;
+		i->pid = strdup(path);
+		i->title = strdup(current->name);
+		i->size = metadata->size;
+		i->duration = (metadata->duration) ? strdup(metadata->duration) : NULL;
+		if (asprintf(&p, "file://%s", p) < 0) {
+			upnpd_controller_free_item(i);
+			metadata_uninit(metadata);
+			continue;
+		}
+		i->location = p;
+
+		if (metadata->type == METADATA_TYPE_CONTAINER) {
+			i->class = strdup("object.container.storageFolder");
+		} else if (metadata->type == METADATA_TYPE_AUDIO) {
+			i->class = strdup("object.item.audioItem.musicTrack");
+		} else if (metadata->type == METADATA_TYPE_VIDEO) {
+			i->class = strdup("object.item.videoItem.movie");
+		} else {
+			upnpd_controller_free_item(i);
+			metadata_uninit(metadata);
+			continue;
+		}
+
+		metadata_uninit(metadata);
+
+		if (r == NULL) {
+			r = i;
+		} else {
+			t->next = i;
+		}
+		t = i;
+	}
+	file_closedir(dir);
+	free(current);
+
+	return r;
+}
+
 int upnpd_controller_free_items (upnpd_item_t *item)
 {
 	upnpd_item_t *t;
 	while (item) {
 		t = item;
 		item = item->next;
-		free(t->id);
-		free(t->title);
-		free(t->class);
-		free(t->location);
-		free(t);
+		upnpd_controller_free_item(t);
 	}
 	return 0;
 }
