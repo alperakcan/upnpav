@@ -86,13 +86,25 @@ static int add_history (const char *line)
 }
 #endif
 
+static int browse_local (const char *path)
+{
+	upnpd_item_t *item;
+	upnpd_item_t *items;
+	items = upnpd_controller_browse_local(path);
+	for (item = items; item; item = item->next) {
+		printf("%s - %s (pid: %s, class: %s, size: %llu)\n", item->id, item->title, item->pid, item->class, item->size);
+	}
+	upnpd_controller_free_items(items);
+	return 0;
+}
+
 static int browse_device (upnpd_controller_t *controller, char *device, char *object)
 {
 	upnpd_item_t *item;
 	upnpd_item_t *items;
 	items = upnpd_controller_browse_device(controller, device, object);
 	for (item = items; item; item = item->next) {
-		printf("%s - %s (class: %s, location: %s)\n", item->id, item->title, item->class, item->location);
+		printf("%s - %s (pid: %s, class: %s, size: %llu)\n", item->id, item->title, item->pid, item->class, item->size);
 	}
 	upnpd_controller_free_items(items);
 	return 0;
@@ -103,7 +115,7 @@ static int metadata_device (upnpd_controller_t *controller, char *device, char *
 	upnpd_item_t *item;
 	item = upnpd_controller_metadata_device(controller, device, object);
 	if (item != NULL) {
-		printf("%s - %s (class: %s, location: %s)\n", item->id, item->title, item->class, item->location);
+		printf("%s - %s (pid: %s, class: %s, size: %llu)\n", item->id, item->title, item->pid, item->class, item->size);
 	}
 	upnpd_controller_free_items(item);
 	return 0;
@@ -198,6 +210,8 @@ static int controller_rline_process (upnpd_controller_t *controller, char *comma
 		list_devices(controller);
 	} else if (argc == 3 && strcmp(argv[0], "browse") == 0) {
 		browse_device(controller, argv[1], argv[2]);
+	} else if (argc == 2 && strcmp(argv[0], "local") == 0) {
+		browse_local(argv[1]);
 	} else if (argc == 3 && strcmp(argv[0], "metadata") == 0) {
 		metadata_device(controller, argv[1], argv[2]);
 	}

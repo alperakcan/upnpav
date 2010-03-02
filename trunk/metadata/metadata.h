@@ -51,7 +51,7 @@ struct metadata_s {
 	char *album;
 	char *genre;
 	char *duration;
-	uint64_t size;
+	unsigned long long size;
 };
 
 metadata_t * metadata_init (const char *path);
