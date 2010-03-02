@@ -41,6 +41,7 @@
 #include "upnpd.h"
 
 #include "controller.h"
+#include "platform.h"
 
 typedef enum {
 	OPT_INTERFACE = 0,
