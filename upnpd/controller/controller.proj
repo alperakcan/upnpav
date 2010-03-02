@@ -6,9 +6,6 @@ LIB upnpd_controller
   USE upnpd_common
   
   SOURCE controller.c
-  SOURCE console.c
-
-  HEADER controller.h
 
   LIBS(HAVE_LIBREADLINE) readline
   LIBS(HAVE_LIBREADLINE) termcap

@@ -90,7 +90,7 @@ client_t * controller_init (char *options)
 	netmask = NULL;
 	interface = NULL;
 	suboptions = options;
-	debugf("%s\n", options);
+	debugf("options: %s\n", options);
 	while (suboptions && *suboptions != '\0' && !err) {
 		switch (getsubopt(&suboptions, mediaserver_options, &value)) {
 			case OPT_INTERFACE:
