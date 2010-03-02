@@ -2,8 +2,6 @@
 
 CON upnpd
 {
-  USE upnpd_platform
-  USE upnpd_common
   USE(ENABLE_CONTROLLER) upnpd_controller
   USE(ENABLE_MEDIASERVER) upnpd_mediaserver
   

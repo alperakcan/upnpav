@@ -43,6 +43,8 @@ struct upnpd_item_s {
 	char *title;
 	char *class;
 	char *location;
+	int64_t size;
+	char *duration;
 	upnpd_item_t *next;
 };
 

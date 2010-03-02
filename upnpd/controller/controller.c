@@ -190,6 +190,8 @@ upnpd_item_t * upnpd_controller_browse_device (upnpd_controller_t *controller, c
 		i->title = e->didl.dc.title;
 		i->class = e->didl.upnp.object.class;
 		i->location = e->didl.res.path;
+		i->duration = e->didl.res.duration;
+		i->size = e->didl.res.size;
 		if (i->id == NULL ||
 		    i->title == NULL ||
 		    i->class == NULL) {
@@ -200,6 +202,7 @@ upnpd_item_t * upnpd_controller_browse_device (upnpd_controller_t *controller, c
 		e->didl.dc.title = NULL;
 		e->didl.upnp.object.class = NULL;
 		e->didl.res.path = NULL;
+		e->didl.res.duration = NULL;
 		if (r == NULL) {
 			r = i;
 		} else {

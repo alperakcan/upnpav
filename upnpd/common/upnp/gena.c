@@ -1088,7 +1088,7 @@ static int gena_init_server (gena_t *gena)
 	return 0;
 }
 
-char * gena_send_recv (gena_t *gena, const char *host, const unsigned short port, const char *header, const char *data)
+char * upnp_gena_send_recv (gena_t *gena, const char *host, const unsigned short port, const char *header, const char *data)
 {
 	int r;
 	int t;
@@ -1202,7 +1202,7 @@ done:
 	return buffer;
 }
 
-char * gena_download (gena_t *gena, const char *host, const unsigned short port, const char *path)
+char * upnp_gena_download (gena_t *gena, const char *host, const unsigned short port, const char *path)
 {
 	char *data;
 	char *buffer;
@@ -1217,22 +1217,22 @@ char * gena_download (gena_t *gena, const char *host, const unsigned short port,
 	if (asprintf(&buffer, format_get, path, host, port) < 0) {
 		return NULL;
 	}
-	data = gena_send_recv(gena, host, port, buffer, NULL);
+	data = upnp_gena_send_recv(gena, host, port, buffer, NULL);
 	free(buffer);
 	return data;
 }
 
-unsigned short gena_getport (gena_t *gena)
+unsigned short upnp_gena_getport (gena_t *gena)
 {
 	return gena->port;
 }
 
-const char * gena_getaddress (gena_t *gena)
+const char * upnp_gena_getaddress (gena_t *gena)
 {
 	return gena->address;
 }
 
-gena_t * gena_init (char *address, unsigned short port, gena_callbacks_t *callbacks)
+gena_t * upnp_gena_init (char *address, unsigned short port, gena_callbacks_t *callbacks)
 {
 	gena_t *gena;
 	gena = (gena_t *) malloc(sizeof(gena_t));
@@ -1261,7 +1261,7 @@ gena_t * gena_init (char *address, unsigned short port, gena_callbacks_t *callba
 	return gena;
 }
 
-int gena_uninit (gena_t *gena)
+int upnp_gena_uninit (gena_t *gena)
 {
 	debugf("stopping gena thread");
 	if (gena == NULL) {

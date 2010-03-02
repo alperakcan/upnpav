@@ -703,7 +703,7 @@ static char * ssdp_byebye_buffer (ssdp_device_t *device)
 	return buffer;
 }
 
-int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
+int upnp_ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 {
 	int t;
 	int ret;
@@ -733,7 +733,7 @@ int ssdp_search (ssdp_t *ssdp, const char *device, const int timeout)
 	return 0;
 }
 
-int ssdp_advertise (ssdp_t *ssdp)
+int upnp_ssdp_advertise (ssdp_t *ssdp)
 {
 	char *buffer;
 	ssdp_device_t *d;
@@ -747,7 +747,7 @@ int ssdp_advertise (ssdp_t *ssdp)
 	return 0;
 }
 
-int ssdp_byebye (ssdp_t *ssdp)
+int upnp_ssdp_byebye (ssdp_t *ssdp)
 {
 	char *buffer;
 	ssdp_device_t *d;
@@ -762,7 +762,7 @@ int ssdp_byebye (ssdp_t *ssdp)
 	return 0;
 }
 
-int ssdp_register (ssdp_t *ssdp, char *nt, char *usn, char *location, char *server, int age)
+int upnp_ssdp_register (ssdp_t *ssdp, char *nt, char *usn, char *location, char *server, int age)
 {
 	int ret;
 	ssdp_device_t *d;
@@ -788,7 +788,7 @@ int ssdp_register (ssdp_t *ssdp, char *nt, char *usn, char *location, char *serv
 	return ret;
 }
 
-ssdp_t * ssdp_init (const char *address, const char *netmask, int (*callback) (void *cookie, ssdp_event_t *event), void *cookie)
+ssdp_t * upnp_ssdp_init (const char *address, const char *netmask, int (*callback) (void *cookie, ssdp_event_t *event), void *cookie)
 {
 	ssdp_t *ssdp;
 	ssdp = (ssdp_t *) malloc(sizeof(ssdp_t));
@@ -811,11 +811,11 @@ ssdp_t * ssdp_init (const char *address, const char *netmask, int (*callback) (v
 	return ssdp;
 }
 
-int ssdp_uninit (ssdp_t *ssdp)
+int upnp_ssdp_uninit (ssdp_t *ssdp)
 {
 	ssdp_device_t *d, *dn;
 	debugf("sending ssdp:byebye");
-	ssdp_byebye(ssdp);
+	upnp_ssdp_byebye(ssdp);
 	debugf("setting ssdp->running to 0");
 	thread_mutex_lock(ssdp->mutex);
 	ssdp->running = 0;
