@@ -56,7 +56,7 @@ static char * __inet_ntoa__ (struct in_addr in)
 	return buf;
 }
 
-char * interface_getaddr (char *ifname)
+char * interface_getaddr (const char *ifname)
 {
 	int sock;
 	struct ifreq *ifr;
@@ -79,7 +79,7 @@ char * interface_getaddr (char *ifname)
 	return __inet_ntoa__(INADDR(ifr_addr.sa_data));
 }
 
-char * interface_getmask (char *ifname)
+char * interface_getmask (const char *ifname)
 {
 	int sock;
 	struct ifreq *ifr;

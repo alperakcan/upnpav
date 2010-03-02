@@ -282,6 +282,7 @@ static int client_event_advertisement_alive (client_t *client, upnp_event_advert
 	int s;
 	int d;
 	char *buffer;
+	client_device_t *dev;
 	client_device_t *device;
 	client_service_t *service;
 	device_description_t *description;
@@ -339,8 +340,14 @@ found:
 			}
 		}
 	}
+	list_for_each_entry(dev, &client->devices, head) {
+		if (strcmp(dev->name, device->name) > 0) {
+			list_add(&device->head, dev->head.prev);
+			goto added;
+		}
+	}
 	list_add_tail(&device->head, &client->devices);
-	debugf("added '%s' to device list", device->uuid);
+added:	debugf("added '%s' to device list", device->uuid);
 out:	free(buffer);
 	for (d = 0; d < data.ndevices; d++) {
 		for (s = 0; s < data.devices[d].nservices; s++) {
@@ -476,7 +483,7 @@ int client_init (client_t *client)
 	debugf("initializing devices list");
 	list_init(&client->devices);
 	debugf("initializing upnp stack");
-	upnp = upnp_init(client->interface, client->ifmask, 0, NULL, NULL);
+	upnp = upnp_init(client->ipaddr, client->ifmask, 0, NULL, NULL);
 	if (upnp == NULL) {
 		debugf("upnp_init() failed");
 		thread_cond_destroy(client->cond);

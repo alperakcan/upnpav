@@ -175,7 +175,7 @@ int main (int argc, char *argv[])
 		return -3;
 	}
 
-	if (asprintf(&device_options, "daemonize=%d,interface=%s,netmask=%s%s%s", daemonize, ipaddress, ifnetmask, (options) ? "," : "", (options) ? options : "") < 0) {
+	if (asprintf(&device_options, "daemonize=%d,interface=%s,ipaddr=%s,netmask=%s%s%s", daemonize, interface, ipaddress, ifnetmask, (options) ? "," : "", (options) ? options : "") < 0) {
 		debugf("asprintf failed for device_options");
 		free(device);
 		free(ipaddress);

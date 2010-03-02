@@ -40,12 +40,12 @@
 #include "common.h"
 
 typedef enum {
-	OPT_INTERFACE    = 0,
+	OPT_IPADDR    = 0,
 	OPT_NETMASK      = 1,
-} mediaserver_options_t;
+} controller_options_t;
 
-static char *mediaserver_options[] = {
-	"interface",
+static char *controller_options[] = {
+	"ipaddr",
 	"netmask",
 	NULL,
 };
@@ -83,27 +83,27 @@ client_t * controller_init (char *options)
 	int err;
 	char *value;
 	char *netmask;
-	char *interface;
+	char *ipaddr;
 	char *suboptions;
 
 	err = 0;
 	netmask = NULL;
-	interface = NULL;
+	ipaddr = NULL;
 	suboptions = options;
 	debugf("options: %s\n", options);
 	while (suboptions && *suboptions != '\0' && !err) {
-		switch (getsubopt(&suboptions, mediaserver_options, &value)) {
-			case OPT_INTERFACE:
+		switch (getsubopt(&suboptions, controller_options, &value)) {
+			case OPT_IPADDR:
 				if (value == NULL) {
-					debugf("value is missing for interface option");
+					debugf("value is missing for ipaddr option");
 					err = 1;
 					continue;
 				}
-				interface = value;
+				ipaddr = value;
 				break;
 			case OPT_NETMASK:
 				if (value == NULL) {
-					debugf("value is missing for interface option");
+					debugf("value is missing for ipaddr option");
 					err = 1;
 					continue;
 				}
@@ -113,12 +113,12 @@ client_t * controller_init (char *options)
 	}
 
 	debugf("starting controller;\n"
-	       "\tinterface   : %s\n"
-	       "\tnetmask     : %s\n",
-	       (interface) ? interface : "null",
+	       "\tipaddr  : %s\n"
+	       "\tnetmask : %s\n",
+	       (ipaddr) ? ipaddr : "null",
 	       (netmask) ? netmask : "null");
 
-	controller.interface = interface;
+	controller.ipaddr = ipaddr;
 	controller.ifmask = netmask;
 
 	debugf("initializing controller client");
