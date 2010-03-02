@@ -42,6 +42,15 @@
 
 #include "controller.h"
 
+typedef enum {
+	OPT_INTERFACE = 0,
+} controller_options_t;
+
+static char *controller_options[] = {
+	"interface",
+	NULL,
+};
+
 #if !HAVE_LIBREADLINE
 static int rinit = 0;
 static list_t rlist;
@@ -218,15 +227,35 @@ static char * controller_rline_strip (char *buf)
 static int controller_main (char *options)
 {
 	int rc;
+	int err;
 	int ret;
 	int running;
 	char *rline;
+	char *value;
 	char *rcommand;
+	char *interface;
+	char *suboptions;
 	upnpd_controller_t *controller;
 
 	ret = -1;
+	err = 0;
+	interface = NULL;
 
-	controller = upnpd_controller_init("eth1");
+	suboptions = options;
+	while (suboptions && *suboptions != '\0' && !err) {
+		switch (getsubopt(&suboptions, controller_options, &value)) {
+			case OPT_INTERFACE:
+				if (value == NULL) {
+					printf("value is missing for interface option\n");
+					err = 1;
+					continue;
+				}
+				interface = value;
+				break;
+		}
+	}
+
+	controller = upnpd_controller_init(interface);
 	if (controller == NULL) {
 		printf("controller_init() failed\n");
 		goto out;
