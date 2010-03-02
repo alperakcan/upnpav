@@ -237,6 +237,8 @@ upnpd_item_t * upnpd_controller_metadata_device (upnpd_controller_t *controller,
 		i->title = entry->didl.dc.title;
 		i->class = entry->didl.upnp.object.class;
 		i->location = entry->didl.res.path;
+		i->duration = entry->didl.res.duration;
+		i->size = entry->didl.res.size;
 		if (i->id == NULL ||
 		    i->title == NULL ||
 		    i->class == NULL) {
@@ -248,6 +250,7 @@ upnpd_item_t * upnpd_controller_metadata_device (upnpd_controller_t *controller,
 		entry->didl.dc.title = NULL;
 		entry->didl.upnp.object.class = NULL;
 		entry->didl.res.path = NULL;
+		entry->didl.res.duration = NULL;
 	}
 
 out:	entry_uninit(entry);
