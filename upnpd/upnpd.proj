@@ -11,4 +11,10 @@ CON upnpd
   
   SOURCE upnpd.c
   HEADER upnpd.h
+  
+  SOURCE controller.c
+  SOURCE mediaserver.c
+  
+  LIBS(HAVE_LIBREADLINE) readline
+  LIBS(HAVE_LIBREADLINE) termcap
 }
