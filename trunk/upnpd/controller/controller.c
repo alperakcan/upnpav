@@ -338,6 +338,8 @@ upnpd_item_t * upnpd_controller_browse_local (const char *path)
 			i->class = strdup("object.item.audioItem.musicTrack");
 		} else if (metadata->type == METADATA_TYPE_VIDEO) {
 			i->class = strdup("object.item.videoItem.movie");
+		} else if (metadata->type == METADATA_TYPE_IMAGE) {
+			i->class = strdup("object.item.imageItem.photo");
 		} else {
 			upnpd_controller_free_item(i);
 			metadata_uninit(metadata);
