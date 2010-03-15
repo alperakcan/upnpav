@@ -115,7 +115,12 @@ static int metadata_device (upnpd_controller_t *controller, char *device, char *
 	upnpd_item_t *item;
 	item = upnpd_controller_metadata_device(controller, device, object);
 	if (item != NULL) {
-		printf("%s - %s (pid: %s, class: %s, size: %llu)\n", item->id, item->title, item->pid, item->class, item->size);
+		printf("id      : %s\n", item->id);
+		printf("pid     : %s\n", item->pid);
+		printf("title   : %s\n", item->title);
+		printf("class   : %s\n", item->class);
+		printf("size    : %llu\n", item->size);
+		printf("location: %s\n", item->location);
 	}
 	upnpd_controller_free_items(item);
 	return 0;
