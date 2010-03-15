@@ -46,21 +46,15 @@
 typedef enum {
 	OPT_IPADDR       = 0,
 	OPT_NETMASK      = 1,
-	OPT_DIRECTORY    = 2,
-	OPT_CACHED       = 3,
-	OPT_TRANSCODE    = 4,
-	OPT_FONTFILE     = 5,
-	OPT_CODEPAGE     = 6,
-	OPT_FRIENDLYNAME = 7,
-	OPT_DAEMONIZE    = 8,
-	OPT_UUID         = 9,
-	OPT_HELP         = 10,
+	OPT_FRIENDLYNAME = 2,
+	OPT_DAEMONIZE    = 3,
+	OPT_UUID         = 4,
+	OPT_HELP         = 5,
 } mediarenderer_options_t;
 
 static char *mediarenderer_options[] = {
 	"ipaddr",
 	"netmask",
-	"codepage",
 	"friendlyname",
 	"daemonize",
 	"uuid",
