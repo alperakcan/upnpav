@@ -1,36 +1,8 @@
-/*
- * upnpavd - UPNP AV Daemon
- *
- * Copyright (C) 2009 - 2010 Alper Akcan, alper.akcan@gmail.com
- * Copyright (C) 2009 - 2010 CoreCodec, Inc., http://www.CoreCodec.com
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
- *
- * Any non-LGPL usage of this software or parts of this software is strictly
- * forbidden.
- *
- * Commercial non-LGPL licensing of this software is possible.
- * For more info contact CoreCodec through info@corecodec.com
- */
-
 #include <config.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <ctype.h>
 #include <inttypes.h>
 
@@ -39,15 +11,57 @@
 #include <readline/history.h>
 #endif
 
-#include "platform.h"
-#include "parser.h"
-#include "gena.h"
-#include "upnp.h"
 #include "upnpd.h"
-#include "common.h"
 
-#if HAVE_LIBREADLINE
-static int mediarenderer_rline_process (device_t *device, char *command)
+#include "mediarenderer.h"
+#include "platform.h"
+
+typedef enum {
+	OPT_INTERFACE    = 0,
+	OPT_FRIENDLYNAME = 1,
+} mediarenderer_options_t;
+
+static char *mediarenderer_options[] = {
+	"interface",
+	"friendlyname",
+	NULL,
+};
+
+#if !HAVE_LIBREADLINE
+static int rinit = 0;
+static list_t rlist;
+
+static char * readline (const char *shell)
+{
+	char *buf;
+	size_t size;
+	size_t read;
+	if (rinit == 0) {
+		list_init(&rlist);
+		rinit = 1;
+	}
+	printf("%s ", shell);
+	buf = NULL;
+	size = 0;
+	read = getdelim(&buf, &size, '\n', stdin);
+	if (read == -1) {
+		return NULL;
+	}
+	buf[read - 1] = '\0';
+	return buf;
+}
+
+static int add_history (const char *line)
+{
+	if (rinit == 0) {
+		list_init(&rlist);
+		rinit = 1;
+	}
+	return 0;
+}
+#endif
+
+static int mediarenderer_rline_process (upnpavd_mediarenderer_t *mediarenderer, char *command)
 {
 	int ret;
 	char *b;
@@ -101,15 +115,17 @@ static int mediarenderer_rline_process (device_t *device, char *command)
 	}
 
 	if (strcmp(argv[0], "help") == 0) {
-		printf("help    - this text\n"
-		       "refresh - refresh entries\n"
-		       "quit    - quit mediarenderer\n");
+		printf("help                                - this text\n"
+		       "quit                                - quit mediarenderer\n"
+		       "refresh                             - refresh device list\n"
+		       "list                                - list all devices\n"
+		       "browse <objectid>                   - browse a device\n"
+		       "metadata <objectid>                 - print metadata information of an object\n");
 	} else if (strcmp(argv[0], "quit") == 0) {
 		ret = -1;
 	}
 
-out:
-	free(argv);
+out:	free(argv);
 	free(b);
 	return ret;
 }
@@ -131,51 +147,70 @@ static char * mediarenderer_rline_strip (char *buf)
 
 	return start;
 }
-#endif
 
-int mediarenderer_main (char *options)
+static int mediarenderer_main (char *options)
 {
 	int rc;
+	int err;
 	int ret;
 	int running;
 	char *rline;
+	char *value;
 	char *rcommand;
-	device_t *mediarenderer;
+	char *interface;
+	char *friendlyname;
+	char *suboptions;
+	upnpavd_mediarenderer_t *mediarenderer;
 
 	ret = -1;
+	err = 0;
+	interface = NULL;
+	friendlyname = NULL;
 
-	mediarenderer = upnpd_mediarenderer_init(options);
+	suboptions = options;
+	while (suboptions && *suboptions != '\0' && !err) {
+		switch (getsubopt(&suboptions, mediarenderer_options, &value)) {
+			case OPT_INTERFACE:
+				if (value == NULL) {
+					printf("value is missing for interface option\n");
+					err = 1;
+					continue;
+				}
+				interface = value;
+				break;
+			case OPT_FRIENDLYNAME:
+				if (value == NULL) {
+					printf("value is missing for friendlyname option\n");
+					err = 1;
+					continue;
+				}
+				friendlyname = value;
+				break;
+		}
+	}
+
+	mediarenderer = upnpavd_mediarenderer_init(interface, friendlyname);
 	if (mediarenderer == NULL) {
-		debugf("upnpd_mediarenderer_init() failed");
+		printf("upnpd_mediarenderer_init() failed\n");
 		goto out;
 	}
 
-	rline = NULL;
-	rcommand = NULL;
 	running = 1;
 	while (running) {
-#if HAVE_LIBREADLINE
-		if (mediarenderer->daemonize == 0) {
-			rline = readline("console> ");
-			rcommand = mediarenderer_rline_strip(rline);
-			if (rcommand && *rcommand) {
-				add_history(rcommand);
-				if (mediarenderer_rline_process(mediarenderer, rcommand) != 0) {
-					running = 0;
-				}
+		rline = readline("console> ");
+		rcommand = mediarenderer_rline_strip(rline);
+		if (rcommand && *rcommand) {
+			add_history(rcommand);
+			if (mediarenderer_rline_process(mediarenderer, rcommand) != 0) {
+				running = 0;
 			}
-			free(rline);
-		} else {
-			upnpd_time_sleep(2);
 		}
-#else
-		upnpd_time_sleep(2);
-#endif
+		free(rline);
 	};
 
-	rc = upnpd_mediarenderer_uninit(mediarenderer);
+	rc = upnpavd_mediarenderer_uninit(mediarenderer);
 	if (rc != 0) {
-		debugf("upnpd_mediarenderer_uninit(mediarenderer) failed");
+		printf("upnpd_mediarenderer_uninit(mediarenderer) failed\n");
 		goto out;
 	}
 	ret = 0;

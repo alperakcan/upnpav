@@ -27,6 +27,6 @@
 
 typedef struct upnpavd_mediarenderer_s upnpavd_mediarenderer_t;
 
-upnpavd_mediarenderer_t * upnpavd_mediarenderer_init (const char *interface);
+upnpavd_mediarenderer_t * upnpavd_mediarenderer_init (const char *interface, const char *friendlyname);
 
 int upnpavd_mediarenderer_uninit (upnpavd_mediarenderer_t *mediarenderer);

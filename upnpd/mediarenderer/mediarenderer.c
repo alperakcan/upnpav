@@ -44,11 +44,12 @@ struct upnpavd_mediarenderer_s {
 	char *interface;
 	char *ipaddr;
 	char *netmask;
+	char *friendlyname;
 
 	device_t *device;
 };
 
-upnpavd_mediarenderer_t * upnpavd_mediarenderer_init (const char *interface)
+upnpavd_mediarenderer_t * upnpavd_mediarenderer_init (const char *interface, const char *friendlyname)
 {
 	char *opt;
 	upnpavd_mediarenderer_t *c;
@@ -62,14 +63,16 @@ upnpavd_mediarenderer_t * upnpavd_mediarenderer_init (const char *interface)
 	c->interface = strdup(interface);
 	c->ipaddr = upnpd_interface_getaddr(interface);
 	c->netmask = upnpd_interface_getmask(interface);
+	c->friendlyname = (friendlyname == NULL) ? strdup("mediarenderer") : strdup(friendlyname);
 
 	if (c->interface == NULL ||
 	    c->ipaddr == NULL ||
-	    c->netmask == NULL) {
+	    c->netmask == NULL ||
+	    c->friendlyname == NULL) {
 		goto err1;
 	}
 
-	if (asprintf(&opt, "ipaddr=%s,netmask=%s", c->ipaddr, c->netmask) < 0) {
+	if (asprintf(&opt, "ipaddr=%s,netmask=%s,friendlyname=%s", c->ipaddr, c->netmask, c->friendlyname) < 0) {
 		goto err1;
 	}
 
@@ -85,6 +88,7 @@ err2:	free(opt);
 err1:	free(c->netmask);
 	free(c->ipaddr);
 	free(c->interface);
+	free(c->friendlyname);
 	free(c);
 err0:	return NULL;
 }
@@ -94,6 +98,7 @@ int upnpavd_mediarenderer_uninit (upnpavd_mediarenderer_t *mediarenderer)
 	free(mediarenderer->interface);
 	free(mediarenderer->ipaddr);
 	free(mediarenderer->netmask);
+	free(mediarenderer->friendlyname);
 	upnpd_mediarenderer_uninit(mediarenderer->device);
 	free(mediarenderer);
 	return 0;
