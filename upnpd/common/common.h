@@ -590,6 +590,11 @@ device_t * upnpd_mediaserver_init (char *options);
 int upnpd_mediaserver_uninit (device_t *mediaserver);
 int upnpd_mediaserver_refresh (device_t *mediaserver);
 
+/* mediarenderer.c */
+
+device_t * upnpd_mediarenderer_init (char *options);
+int upnpd_mediarenderer_uninit (device_t *mediaserver);
+
 /* mediarender.c */
 
 device_t * mediarender_init (char *options);

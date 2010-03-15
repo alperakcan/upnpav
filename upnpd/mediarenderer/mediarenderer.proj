@@ -1,0 +1,11 @@
+IF ENABLE_MEDIARENDERER
+LIB upnpd_mediarenderer
+{
+  USE upnpd_common
+  
+  EXPINCLUDE .
+  
+  SOURCE mediarenderer.c
+  HEADER mediarenderer.h
+}
+ENDIF
