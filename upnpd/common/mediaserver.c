@@ -113,7 +113,7 @@ static icon_t mediaserver_icons[] = {
 	},
 };
 
-device_t * mediaserver_init (char *options)
+device_t * upnpd_mediaserver_init (char *options)
 {
 	int rc;
 	int err;
@@ -283,59 +283,59 @@ device_t * mediaserver_init (char *options)
 	device->daemonize = daemonize;
 	device->uuid = uuid;
 
-	service = contentdirectory_init(directory, cached, transcode, fontfile, codepage);
+	service = upnpd_contentdirectory_init(directory, cached, transcode, fontfile, codepage);
 	if (service == NULL) {
 		debugf("contendirectory_init() failed");
 		goto error;
 	}
-	if ((rc = device_service_add(device, service)) != 0) {
-		debugf("device_service_add(device, service) failed");
+	if ((rc = upnpd_device_service_add(device, service)) != 0) {
+		debugf("upnpd_device_service_add(device, service) failed");
 		goto error;
 	}
-	service = connectionmanager_init();
+	service = upnpd_connectionmanager_init();
 	if (service == NULL) {
-		debugf("connectionmanager_init() failed");
+		debugf("upnpd_connectionmanager_init() failed");
 		goto error;
 	}
-	connectionmanager_register_mimetype(service, "*");
+	upnpd_connectionmanager_register_mimetype(service, "*");
 
-	if ((rc = device_service_add(device, service)) != 0) {
-		debugf("device_service_add(device, service) failed");
+	if ((rc = upnpd_device_service_add(device, service)) != 0) {
+		debugf("upnpd_device_service_add(device, service) failed");
 		goto error;
 	}
 
-	service = registrar_init();
+	service = upnpd_registrar_init();
 	if (service == NULL) {
-		debugf("registrar_init() failed");
+		debugf("upnpd_registrar_init() failed");
 		goto error;
 	}
-	if ((rc = device_service_add(device, service)) != 0) {
-		debugf("device_service_add(device, service) failed");
+	if ((rc = upnpd_device_service_add(device, service)) != 0) {
+		debugf("upnpd_device_service_add(device, service) failed");
 		goto error;
 	}
 
 	debugf("initializing mediaserver device");
-	if ((rc = device_init(device)) != 0) {
-		debugf("device_init(device) failed");
+	if ((rc = upnpd_device_init(device)) != 0) {
+		debugf("upnpd_device_init(device) failed");
 		goto error;
 	}
 
 	debugf("initialized mediaserver device");
 	return device;
-error:	mediaserver_uninit(device);
+error:	upnpd_mediaserver_uninit(device);
 	return NULL;
 }
 
-int mediaserver_refresh (device_t *mediaserver)
+int upnpd_mediaserver_refresh (device_t *mediaserver)
 {
 	debugf("refreshing content directory service");
 	return 0;
 }
 
-int mediaserver_uninit (device_t *mediaserver)
+int upnpd_mediaserver_uninit (device_t *mediaserver)
 {
 	debugf("uninitializing mediaserver");
-	device_uninit(mediaserver);
+	upnpd_device_uninit(mediaserver);
 	free(mediaserver);
 	debugf("uninitialized mediaserver");
 	return 0;

@@ -63,20 +63,20 @@ struct upnpd_item_s {
 	upnpd_item_t *next;
 };
 
-upnpd_controller_t * upnpd_controller_init (const char *interface);
+upnpd_controller_t * upnpavd_controller_init (const char *interface);
 
-int upnpd_controller_uninit (upnpd_controller_t *controller);
+int upnpavd_controller_uninit (upnpd_controller_t *controller);
 
-int upnpd_controller_scan_devices (upnpd_controller_t *controller, int remove);
+int upnpavd_controller_scan_devices (upnpd_controller_t *controller, int remove);
 
-upnpd_device_t * upnpd_controller_get_devices (upnpd_controller_t *controller);
+upnpd_device_t * upnpavd_controller_get_devices (upnpd_controller_t *controller);
 
-int upnpd_controller_free_devices (upnpd_device_t *device);
+int upnpavd_controller_free_devices (upnpd_device_t *device);
 
-upnpd_item_t * upnpd_controller_browse_device (upnpd_controller_t *controller, const char *device, const char *item);
+upnpd_item_t * upnpavd_controller_browse_device (upnpd_controller_t *controller, const char *device, const char *item);
 
-upnpd_item_t * upnpd_controller_metadata_device (upnpd_controller_t *controller, const char *device, const char *item);
+upnpd_item_t * upnpavd_controller_metadata_device (upnpd_controller_t *controller, const char *device, const char *item);
 
-upnpd_item_t * upnpd_controller_browse_local (const char *path);
+upnpd_item_t * upnpavd_controller_browse_local (const char *path);
 
-int upnpd_controller_free_items (upnpd_item_t *item);
+int upnpavd_controller_free_items (upnpd_item_t *item);

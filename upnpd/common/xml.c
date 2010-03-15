@@ -86,7 +86,7 @@ static void xmlescape_real (const char *str, char *target, int * length, int att
 	}
 }
 
-char * xml_escape (const char *str, int attribute)
+char * upnpd_xml_escape (const char *str, int attribute)
 {
 	int len;
 	char *out;

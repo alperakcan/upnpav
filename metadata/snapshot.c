@@ -53,7 +53,7 @@ struct metadata_snapshot_s {
 	unsigned char *buffer;
 };
 
-metadata_snapshot_t * metadata_snapshot_init (const char *path, int width, int height)
+metadata_snapshot_t * upnpd_metadata_snapshot_init (const char *path, int width, int height)
 {
 	int s;
 	metadata_snapshot_t *snapshot;
@@ -156,7 +156,7 @@ metadata_snapshot_t * metadata_snapshot_init (const char *path, int width, int h
 	return snapshot;
 }
 
-int metadata_snapshot_uninit (metadata_snapshot_t *snapshot)
+int upnpd_metadata_snapshot_uninit (metadata_snapshot_t *snapshot)
 {
 	av_free(snapshot->frame);
 	av_free(snapshot->framergb);
@@ -169,7 +169,7 @@ int metadata_snapshot_uninit (metadata_snapshot_t *snapshot)
 	return 0;
 }
 
-unsigned char * metadata_snapshot_obtain (metadata_snapshot_t *snapshot, unsigned int seconds)
+unsigned char * upnpd_metadata_snapshot_obtain (metadata_snapshot_t *snapshot, unsigned int seconds)
 {
 	double pts;
 	int finished;
@@ -227,17 +227,17 @@ unsigned char * metadata_snapshot_obtain (metadata_snapshot_t *snapshot, unsigne
 
 #else
 
-metadata_snapshot_t * metadata_snapshot_init (const char *path, int width, int height)
+metadata_snapshot_t * upnpd_metadata_snapshot_init (const char *path, int width, int height)
 {
 	return NULL;
 }
 
-int metadata_snapshot_uninit (metadata_snapshot_t *snapshot)
+int upnpd_metadata_snapshot_uninit (metadata_snapshot_t *snapshot)
 {
 	return 0;
 }
 
-unsigned char * metadata_snapshot_obtain (metadata_snapshot_t *snapshot, unsigned int seconds)
+unsigned char * upnpd_metadata_snapshot_obtain (metadata_snapshot_t *snapshot, unsigned int seconds)
 {
 	return NULL;
 }

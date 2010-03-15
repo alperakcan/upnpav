@@ -43,19 +43,19 @@ struct database_entry_s {
 	database_entry_t *next;
 };
 
-database_t * database_init (int delete);
+database_t * upnpd_database_init (int delete);
 
-int database_index (database_t *database);
+int upnpd_database_index (database_t *database);
 
-int database_entry_free (database_entry_t *entry);
+int upnpd_database_entry_free (database_entry_t *entry);
 
-database_entry_t * database_query_entry (database_t *database, const char *entryid);
+database_entry_t * upnpd_database_query_entry (database_t *database, const char *entryid);
 
-database_entry_t * database_query_parent (database_t *database, const char *parentid, unsigned long long start, unsigned long long count, unsigned long long *total);
+database_entry_t * upnpd_database_query_parent (database_t *database, const char *parentid, unsigned long long start, unsigned long long count, unsigned long long *total);
 
-database_entry_t * database_query_search (database_t *database, const char *parentid, unsigned long long start, unsigned long long count, unsigned long long *total, const char *searchflag);
+database_entry_t * upnpd_database_query_search (database_t *database, const char *parentid, unsigned long long start, unsigned long long count, unsigned long long *total, const char *searchflag);
 
-unsigned long long database_insert (database_t *database,
+unsigned long long upnpd_database_insert (database_t *database,
 		const char *class,
 		const char *parentid,
 		const char *path,
@@ -66,4 +66,4 @@ unsigned long long database_insert (database_t *database,
 		const char *mime,
 		const char *dlna);
 
-int database_uninit (database_t *database, int delete);
+int upnpd_database_uninit (database_t *database, int delete);

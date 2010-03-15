@@ -46,9 +46,9 @@ struct database_s {
 	sqlite3 *database;
 };
 
-int database_uninit (database_t *database, int delete)
+int upnpd_database_uninit (database_t *database, int delete)
 {
-	sqlite3_close(database->database);
+	upnpd_sqlite3_close(database->database);
 	if (delete == 1) {
 		unlink(database->name);
 	}
@@ -56,7 +56,7 @@ int database_uninit (database_t *database, int delete)
 	return 0;
 }
 
-database_t * database_init (int remove)
+database_t * upnpd_database_init (int remove)
 {
 	database_t *db;
 
@@ -72,11 +72,11 @@ database_t * database_init (int remove)
 		unlink(db->name);
 	}
 
-	sqlite3_open(db->name, &db->database);
-	sqlite3_busy_timeout(db->database, 5000);
+	upnpd_sqlite3_open(db->name, &db->database);
+	upnpd_sqlite3_busy_timeout(db->database, 5000);
 
 	if (remove) {
-		sqlite3_exec(db->database,
+		upnpd_sqlite3_exec(db->database,
 			"CREATE TABLE OBJECT ("
 			"  KEY INTEGER PRIMARY KEY AUTOINCREMENT,"
 			"  ID TEXT NOT NULL,"
@@ -85,7 +85,7 @@ database_t * database_init (int remove)
 			"  DETAIL INTEGER NOT NULL);",
 			0, 0, 0);
 
-		sqlite3_exec(db->database,
+		upnpd_sqlite3_exec(db->database,
 			"CREATE TABLE DETAIL ("
 			"  ID INTEGER PRIMARY KEY AUTOINCREMENT,"
 			"  PATH TEXT NOT NULL,"
@@ -101,14 +101,14 @@ database_t * database_init (int remove)
 	return db;
 }
 
-int database_index (database_t *database)
+int upnpd_database_index (database_t *database)
 {
-	sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on DETAIL(ID);", 0, 0, 0);
-	sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on OBJECT(ID);", 0, 0, 0);
-	sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on OBJECT(CLASS);", 0, 0, 0);
-	sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on OBJECT(PARENT);", 0, 0, 0);
-	sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on OBJECT(ID, PARENT);", 0, 0, 0);
-	sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on OBJECT(ID, DETAIL);", 0, 0, 0);
+	upnpd_sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on DETAIL(ID);", 0, 0, 0);
+	upnpd_sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on OBJECT(ID);", 0, 0, 0);
+	upnpd_sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on OBJECT(CLASS);", 0, 0, 0);
+	upnpd_sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on OBJECT(PARENT);", 0, 0, 0);
+	upnpd_sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on OBJECT(ID, PARENT);", 0, 0, 0);
+	upnpd_sqlite3_exec(database->database, "CREATE INDEX INDEX_OBJECT on OBJECT(ID, DETAIL);", 0, 0, 0);
 	return 0;
 }
 
@@ -154,13 +154,13 @@ static int database_query_callback (void *args, int argc, char **argv, char **az
 	entry->dlna = strdup(argv[9]);
 
 	if (strcmp(entry->class, "object.container.storageFolder") == 0) {
-		sql = sqlite3_mprintf(
+		sql = upnpd_sqlite3_mprintf(
 				"SELECT count(*)"
 				"  from OBJECT o"
 				"  where o.PARENT = %s;",
 				entry->id);
-		sqlite3_exec(darg->database, sql, database_count_callback, (void *) &entry->childs, 0);
-		sqlite3_free(sql);
+		upnpd_sqlite3_exec(darg->database, sql, database_count_callback, (void *) &entry->childs, 0);
+		upnpd_sqlite3_free(sql);
 	}
 
 	if (*root == NULL) {
@@ -178,13 +178,13 @@ static int database_query_callback (void *args, int argc, char **argv, char **az
 	return 0;
 }
 
-database_entry_t * database_query_entry (database_t *database, const char *entryid)
+database_entry_t * upnpd_database_query_entry (database_t *database, const char *entryid)
 {
 	char *sql;
 	database_arg_t darg;
 	database_entry_t *e;
 	e = NULL;
-	sql = sqlite3_mprintf(
+	sql = upnpd_sqlite3_mprintf(
 			"SELECT o.ID,"
 			"       o.CLASS,"
 			"       o.PARENT,"
@@ -200,29 +200,29 @@ database_entry_t * database_query_entry (database_t *database, const char *entry
 			entryid);
 	darg.database = database->database;
 	darg.args = (void *) &e;
-	sqlite3_exec(database->database, sql, database_query_callback, (void *) &darg, 0);
-	sqlite3_free(sql);
+	upnpd_sqlite3_exec(database->database, sql, database_query_callback, (void *) &darg, 0);
+	upnpd_sqlite3_free(sql);
 	return e;
 }
 
-database_entry_t * database_query_parent (database_t *database, const char *parentid, unsigned long long start, unsigned long long count, unsigned long long *total)
+database_entry_t * upnpd_database_query_parent (database_t *database, const char *parentid, unsigned long long start, unsigned long long count, unsigned long long *total)
 {
 	char *sql;
 	database_arg_t darg;
 	database_entry_t *e;
 	e = NULL;
 	*total = 0;
-	sql = sqlite3_mprintf(
+	sql = upnpd_sqlite3_mprintf(
 			"SELECT count(*)"
 			"  from OBJECT o"
 			"  where o.PARENT = '%s';",
 			parentid);
-	sqlite3_exec(database->database, sql, database_count_callback, (void *) total, 0);
-	sqlite3_free(sql);
+	upnpd_sqlite3_exec(database->database, sql, database_count_callback, (void *) total, 0);
+	upnpd_sqlite3_free(sql);
 	if (*total == 0) {
 		return NULL;
 	}
-	sql = sqlite3_mprintf(
+	sql = upnpd_sqlite3_mprintf(
 			"SELECT o.ID,"
 			"       o.CLASS,"
 			"       o.PARENT,"
@@ -240,15 +240,15 @@ database_entry_t * database_query_parent (database_t *database, const char *pare
 			count);
 	darg.database = database->database;
 	darg.args = (void *) &e;
-	sqlite3_exec(database->database, sql, database_query_callback, (void *) &darg, 0);
-	sqlite3_free(sql);
+	upnpd_sqlite3_exec(database->database, sql, database_query_callback, (void *) &darg, 0);
+	upnpd_sqlite3_free(sql);
 	if (e == NULL) {
 		*total = 0;
 	}
 	return e;
 }
 
-database_entry_t * database_query_search (database_t *database, const char *parentid, unsigned long long start, unsigned long long count, unsigned long long *total, const char *searchflag)
+database_entry_t * upnpd_database_query_search (database_t *database, const char *parentid, unsigned long long start, unsigned long long count, unsigned long long *total, const char *searchflag)
 {
 	char *sql;
 	char *nsearch;
@@ -268,18 +268,18 @@ database_entry_t * database_query_search (database_t *database, const char *pare
 			nsearch = strdup("1 = 1");
 		}
 	}
-	sql = sqlite3_mprintf(
+	sql = upnpd_sqlite3_mprintf(
 			"SELECT count(*)"
 			"  from OBJECT o"
 			"  where o.PARENT glob '%s*' and %s;",
 			parentid, nsearch);
-	sqlite3_exec(database->database, sql, database_count_callback, (void *) total, 0);
-	sqlite3_free(sql);
+	upnpd_sqlite3_exec(database->database, sql, database_count_callback, (void *) total, 0);
+	upnpd_sqlite3_free(sql);
 	if (*total == 0) {
 		free(nsearch);
 		return NULL;
 	}
-	sql = sqlite3_mprintf(
+	sql = upnpd_sqlite3_mprintf(
 			"SELECT o.ID,"
 			"       o.CLASS,"
 			"       o.PARENT,"
@@ -298,8 +298,8 @@ database_entry_t * database_query_search (database_t *database, const char *pare
 			count);
 	darg.database = database->database;
 	darg.args = (void *) &e;
-	sqlite3_exec(database->database, sql, database_query_callback, (void *) &darg, 0);
-	sqlite3_free(sql);
+	upnpd_sqlite3_exec(database->database, sql, database_query_callback, (void *) &darg, 0);
+	upnpd_sqlite3_free(sql);
 	if (e == NULL) {
 		*total = 0;
 	}
@@ -307,7 +307,7 @@ database_entry_t * database_query_search (database_t *database, const char *pare
 	return e;
 }
 
-unsigned long long database_insert (database_t *database,
+unsigned long long upnpd_database_insert (database_t *database,
 		const char *class,
 		const char *parentid,
 		const char *path,
@@ -322,7 +322,7 @@ unsigned long long database_insert (database_t *database,
 	unsigned long long detailid;
 
 	detailid = 0;
-	sql = sqlite3_mprintf(
+	sql = upnpd_sqlite3_mprintf(
 			"INSERT into DETAIL"
 			"  (PATH, TITLE, SIZE, DURATION, DATE, MIME, DLNA)"
 			"  values"
@@ -334,12 +334,12 @@ unsigned long long database_insert (database_t *database,
 			date,
 			mime,
 			dlna);
-	sqlite3_exec(database->database, sql, 0, 0, 0);
-	sqlite3_free(sql);
+	upnpd_sqlite3_exec(database->database, sql, 0, 0, 0);
+	upnpd_sqlite3_free(sql);
 
-	detailid = sqlite3_last_insert_rowid(database->database);
+	detailid = upnpd_sqlite3_last_insert_rowid(database->database);
 
-	sql = sqlite3_mprintf(
+	sql = upnpd_sqlite3_mprintf(
 			"INSERT into OBJECT"
 			"  (ID, CLASS, PARENT, DETAIL)"
 			"  values"
@@ -349,15 +349,15 @@ unsigned long long database_insert (database_t *database,
 			class,
 			parentid,
 			detailid);
-	sqlite3_exec(database->database, sql, 0, 0, 0);
-	sqlite3_free(sql);
+	upnpd_sqlite3_exec(database->database, sql, 0, 0, 0);
+	upnpd_sqlite3_free(sql);
 
 	debugf("inserted '%s' (%llu) under %s", path, detailid, parentid);
 
 	return detailid;
 }
 
-int database_entry_free (database_entry_t *entry)
+int upnpd_database_entry_free (database_entry_t *entry)
 {
 	database_entry_t *n;
 	database_entry_t *p;

@@ -76,7 +76,7 @@ static inline poll_event_t socket_bsd_event (int bsd)
 	return event;
 }
 
-socket_t * socket_open (socket_type_t type)
+socket_t * upnpd_socket_open (socket_type_t type)
 {
 	socket_t *s;
 	s = (socket_t *) malloc(sizeof(socket_t));
@@ -93,7 +93,7 @@ socket_t * socket_open (socket_type_t type)
 	return s;
 }
 
-int socket_bind (socket_t *socket, const char *address, int port)
+int upnpd_socket_bind (socket_t *socket, const char *address, int port)
 {
 	socklen_t len;
 	struct sockaddr_in soc;
@@ -105,12 +105,12 @@ int socket_bind (socket_t *socket, const char *address, int port)
 	return bind(socket->fd, (struct sockaddr *) &soc, len);
 }
 
-int socket_listen (socket_t *socket, int backlog)
+int upnpd_socket_listen (socket_t *socket, int backlog)
 {
 	return listen(socket->fd, backlog);
 }
 
-socket_t * socket_accept (socket_t *socket)
+socket_t * upnpd_socket_accept (socket_t *socket)
 {
 	socket_t *s;
 	socklen_t client_len;
@@ -131,7 +131,7 @@ socket_t * socket_accept (socket_t *socket)
 	return s;
 }
 
-int socket_connect (socket_t *socket, const char *address, int port, int timeout)
+int upnpd_socket_connect (socket_t *socket, const char *address, int port, int timeout)
 {
 	long flags;
 	struct pollfd pfd;
@@ -165,17 +165,17 @@ int socket_connect (socket_t *socket, const char *address, int port, int timeout
 	return 0;
 }
 
-int socket_recv (socket_t *socket, void *buffer, int length)
+int upnpd_socket_recv (socket_t *socket, void *buffer, int length)
 {
 	return recv(socket->fd, buffer, length, 0);
 }
 
-int socket_send (socket_t *socket, const void *buffer, int length)
+int upnpd_socket_send (socket_t *socket, const void *buffer, int length)
 {
 	return send(socket->fd, buffer, length, 0);
 }
 
-int socket_recvfrom (socket_t *socket, void *buf, int length, char *address, int *port)
+int upnpd_socket_recvfrom (socket_t *socket, void *buf, int length, char *address, int *port)
 {
 	int rc;
 	socklen_t sender_length;
@@ -191,7 +191,7 @@ int socket_recvfrom (socket_t *socket, void *buf, int length, char *address, int
 	return rc;
 }
 
-int socket_sendto (socket_t *socket, const void *buf, int length, const char *address, int port)
+int upnpd_socket_sendto (socket_t *socket, const void *buf, int length, const char *address, int port)
 {
 	socklen_t dest_length;
 	struct sockaddr_in dest;
@@ -202,7 +202,7 @@ int socket_sendto (socket_t *socket, const void *buf, int length, const char *ad
 	return sendto(socket->fd, buf, length, 0, (struct sockaddr *) &dest, dest_length);
 }
 
-int socket_poll (poll_item_t *items, unsigned int nitems, int timeout)
+int upnpd_socket_poll (poll_item_t *items, unsigned int nitems, int timeout)
 {
 	int rc;
 	socket_t *s;
@@ -227,7 +227,7 @@ int socket_poll (poll_item_t *items, unsigned int nitems, int timeout)
 	return rc;
 }
 
-int socket_close (socket_t *socket)
+int upnpd_socket_close (socket_t *socket)
 {
 	if (socket) {
 		close(socket->fd);
@@ -236,12 +236,12 @@ int socket_close (socket_t *socket)
 	return 0;
 }
 
-int socket_option_reuseaddr (socket_t *socket, int on)
+int upnpd_socket_option_reuseaddr (socket_t *socket, int on)
 {
 	return setsockopt(socket->fd, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on));
 }
 
-int socket_option_membership (socket_t *socket, const char *address, int on)
+int upnpd_socket_option_membership (socket_t *socket, const char *address, int on)
 {
 	struct hostent *h;
 	struct ip_mreq mreq;
@@ -260,12 +260,12 @@ int socket_option_membership (socket_t *socket, const char *address, int on)
 	}
 }
 
-int socket_option_multicastttl (socket_t *socket, int ttl)
+int upnpd_socket_option_multicastttl (socket_t *socket, int ttl)
 {
 	return setsockopt(socket->fd, IPPROTO_IP, IP_MULTICAST_TTL, (char *) &ttl, sizeof(ttl));
 }
 
-int socket_inet_aton (const char *address, unsigned int *baddress)
+int upnpd_socket_inet_aton (const char *address, unsigned int *baddress)
 {
 	int r;
 	struct in_addr b;

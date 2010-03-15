@@ -118,9 +118,9 @@ typedef struct gena_callbacks_s {
 	gena_callback_gena_t gena;
 } gena_callbacks_t;
 
-char * upnp_gena_download (gena_t *gena, const char *host, const unsigned short port, const char *path);
-char * upnp_gena_send_recv (gena_t *gena, const char *host, const unsigned short port, const char *header, const char *data);
-unsigned short upnp_gena_getport (gena_t *gena);
-const char * upnp_gena_getaddress (gena_t *gena);
-gena_t * upnp_gena_init (char *address, unsigned short port, gena_callbacks_t *callbacks);
-int upnp_gena_uninit (gena_t *gena);
+char * upnpd_upnp_gena_download (gena_t *gena, const char *host, const unsigned short port, const char *path);
+char * upnpd_upnp_gena_send_recv (gena_t *gena, const char *host, const unsigned short port, const char *header, const char *data);
+unsigned short upnpd_upnp_gena_getport (gena_t *gena);
+const char * upnpd_upnp_gena_getaddress (gena_t *gena);
+gena_t * upnpd_upnp_gena_init (char *address, unsigned short port, gena_callbacks_t *callbacks);
+int upnpd_upnp_gena_uninit (gena_t *gena);

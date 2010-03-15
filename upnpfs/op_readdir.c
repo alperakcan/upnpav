@@ -45,13 +45,13 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 	filler(buffer, ".", NULL, 0);
 	filler(buffer, "..", NULL, 0);
 	if (strcmp(path, "/") == 0) {
-		thread_mutex_lock(priv.controller->mutex);
+		upnpd_thread_mutex_lock(priv.controller->mutex);
 		if (list_count(&priv.controller->devices) <= 0) {
 			goto out;
 		}
 		d = (char **) malloc(sizeof(char *) * list_count(&priv.controller->devices));
 		if (d == NULL) {
-			thread_mutex_unlock(priv.controller->mutex);
+			upnpd_thread_mutex_unlock(priv.controller->mutex);
 			goto out;
 		}
 		nd = 0;
@@ -61,18 +61,18 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 				nd++;
 			}
 		}
-		thread_mutex_unlock(priv.controller->mutex);
+		upnpd_thread_mutex_unlock(priv.controller->mutex);
 
 		if (nd <= 0) {
 			goto out;
 		}
 		for (i = 0, j = 0; i < nd; i++) {
-			e = controller_browse_metadata(priv.controller, d[i], "0");
+			e = upnpd_controller_browse_metadata(priv.controller, d[i], "0");
 			if (e != NULL) {
 				j++;
 				filler(buffer, d[i], NULL, 0);
 			}
-			entry_uninit(e);
+			upnpd_entry_uninit(e);
 			free(d[i]);
 		}
 		free(d);
@@ -80,13 +80,13 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 			filler(buffer, ".devices", NULL, 0);
 		}
 	} else if (strcmp(path, "/.devices") == 0) {
-		thread_mutex_lock(priv.controller->mutex);
+		upnpd_thread_mutex_lock(priv.controller->mutex);
 		if (list_count(&priv.controller->devices) <= 0) {
 			goto out;
 		}
 		d = (char **) malloc(sizeof(char *) * list_count(&priv.controller->devices));
 		if (d == NULL) {
-			thread_mutex_unlock(priv.controller->mutex);
+			upnpd_thread_mutex_unlock(priv.controller->mutex);
 			goto out;
 		}
 		nd = 0;
@@ -96,13 +96,13 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 				nd++;
 			}
 		}
-		thread_mutex_unlock(priv.controller->mutex);
+		upnpd_thread_mutex_unlock(priv.controller->mutex);
 
 		if (nd <= 0) {
 			goto out;
 		}
 		for (i = 0, j = 0; i < nd; i++) {
-			e = controller_browse_metadata(priv.controller, d[i], "0");
+			e = upnpd_controller_browse_metadata(priv.controller, d[i], "0");
 			if (e != NULL) {
 				j++;
 				if (asprintf(&p, "%s.txt", d[i]) > 0) {
@@ -110,7 +110,7 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 					free(p);
 				}
 			}
-			entry_uninit(e);
+			upnpd_entry_uninit(e);
 			free(d[i]);
 		}
 		free(d);
@@ -130,9 +130,9 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 			return 0;
 		}
 		free(p);
-		e = controller_browse_children(priv.controller, c->device, c->object);
+		e = upnpd_controller_browse_children(priv.controller, c->device, c->object);
 		if (e == NULL) {
-			debugfs("controller_browse_children('%s', '%s') failed", c->device, c->object);
+			debugfs("upnpd_controller_browse_children('%s', '%s') failed", c->device, c->object);
 			do_releasecache(c);
 			return 0;
 		}
@@ -146,7 +146,7 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 			e = e->next;
 		}
 		do_releasecache(c);
-		entry_uninit(r);
+		upnpd_entry_uninit(r);
 	} else {
 		c = do_findpath(path);
 		if (c == NULL) {
@@ -154,9 +154,9 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 			return 0;
 		}
 		debugfs("cache entry for '%s' is '%s : %s'", path, c->device, c->object);
-		e = controller_browse_children(priv.controller, c->device, c->object);
+		e = upnpd_controller_browse_children(priv.controller, c->device, c->object);
 		if (e == NULL) {
-			debugfs("controller_browse_children('%s', '%s') failed", c->device, c->object);
+			debugfs("upnpd_controller_browse_children('%s', '%s') failed", c->device, c->object);
 			do_releasecache(c);
 			return 0;
 		}
@@ -172,7 +172,7 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 			e = e->next;
 		}
 		do_releasecache(c);
-		entry_uninit(r);
+		upnpd_entry_uninit(r);
 	}
 out:
 	debugfs("leave");

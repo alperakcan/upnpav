@@ -64,7 +64,7 @@ static int registrar_is_authorized (device_service_t *service, upnp_event_action
 {
 	int rc;
 	debugf("registrar is authorized");
-	rc = upnp_add_response(request, service->type, "Result", "1");
+	rc = upnpd_upnp_add_response(request, service->type, "Result", "1");
 	return rc;
 }
 
@@ -91,7 +91,7 @@ static int registrar_uninit (device_service_t *registrar)
 	return 0;
 }
 
-device_service_t * registrar_init (void)
+device_service_t * upnpd_registrar_init (void)
 {
 	registrar_t *registrar;
 	service_variable_t *variable;
@@ -115,13 +115,13 @@ device_service_t * registrar_init (void)
 	registrar->service.uninit = registrar_uninit;
 
 	debugf("initializing content directory service");
-	if (service_init(&registrar->service) != 0) {
-		debugf("service_init(&registrar->service) failed");
+	if (upnpd_service_init(&registrar->service) != 0) {
+		debugf("upnpd_service_init(&registrar->service) failed");
 		free(registrar);
 		registrar = NULL;
 		goto out;
 	}
-	variable = service_variable_find(&registrar->service, "SystemUpdateID");
+	variable = upnpd_service_variable_find(&registrar->service, "SystemUpdateID");
 	if (variable != NULL) {
 		variable->value = strdup("0");
 	}

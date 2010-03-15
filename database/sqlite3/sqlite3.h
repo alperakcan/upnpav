@@ -100,7 +100,7 @@ extern "C" {
 ** The Z value is the release number and is incremented with
 ** each release but resets back to 0 whenever Y is incremented.
 **
-** See also: [sqlite3_libversion()] and [sqlite3_libversion_number()].
+** See also: [upnpd_sqlite3_libversion()] and [upnpd_sqlite3_libversion_number()].
 **
 ** Requirements: [H10011] [H10014]
 */
@@ -115,10 +115,10 @@ extern "C" {
 ** and [SQLITE_VERSION_NUMBER] #defines in the header, but are associated
 ** with the library instead of the header file.  Cautious programmers might
 ** include a check in their application to verify that
-** sqlite3_libversion_number() always returns the value
+** upnpd_sqlite3_libversion_number() always returns the value
 ** [SQLITE_VERSION_NUMBER].
 **
-** The sqlite3_libversion() function returns the same information as is
+** The upnpd_sqlite3_libversion() function returns the same information as is
 ** in the sqlite3_version[] string constant.  The function is provided
 ** for use in DLLs since DLL users usually do not have direct access to string
 ** constants within the DLL.
@@ -126,8 +126,8 @@ extern "C" {
 ** Requirements: [H10021] [H10022] [H10023]
 */
 SQLITE_API SQLITE_EXTERN const char sqlite3_version[];
-SQLITE_API const char *sqlite3_libversion(void);
-SQLITE_API int sqlite3_libversion_number(void);
+SQLITE_API const char *upnpd_sqlite3_libversion(void);
+SQLITE_API int upnpd_sqlite3_libversion_number(void);
 
 /*
 ** CAPI3REF: Test To See If The Library Is Threadsafe {H10100} <S60100>
@@ -151,7 +151,7 @@ SQLITE_API int sqlite3_libversion_number(void);
 ** This interface only reports on the compile-time mutex setting
 ** of the [SQLITE_THREADSAFE] flag.  If SQLite is compiled with
 ** SQLITE_THREADSAFE=1 then mutexes are enabled by default but
-** can be fully or partially disabled using a call to [sqlite3_config()]
+** can be fully or partially disabled using a call to [upnpd_sqlite3_config()]
 ** with the verbs [SQLITE_CONFIG_SINGLETHREAD], [SQLITE_CONFIG_MULTITHREAD],
 ** or [SQLITE_CONFIG_MUTEX].  The return value of this function shows
 ** only the default compile-time setting, not any run-time changes
@@ -161,7 +161,7 @@ SQLITE_API int sqlite3_libversion_number(void);
 **
 ** Requirements: [H10101] [H10102]
 */
-SQLITE_API int sqlite3_threadsafe(void);
+SQLITE_API int upnpd_sqlite3_threadsafe(void);
 
 /*
 ** CAPI3REF: Database Connection Handle {H12000} <S40200>
@@ -169,11 +169,11 @@ SQLITE_API int sqlite3_threadsafe(void);
 **
 ** Each open SQLite database is represented by a pointer to an instance of
 ** the opaque structure named "sqlite3".  It is useful to think of an sqlite3
-** pointer as an object.  The [sqlite3_open()], [sqlite3_open16()], and
-** [sqlite3_open_v2()] interfaces are its constructors, and [sqlite3_close()]
+** pointer as an object.  The [upnpd_sqlite3_open()], [upnpd_sqlite3_open16()], and
+** [upnpd_sqlite3_open_v2()] interfaces are its constructors, and [upnpd_sqlite3_close()]
 ** is its destructor.  There are many other interfaces (such as
-** [sqlite3_prepare_v2()], [sqlite3_create_function()], and
-** [sqlite3_busy_timeout()] to name but three) that are methods on an
+** [upnpd_sqlite3_prepare_v2()], [upnpd_sqlite3_create_function()], and
+** [upnpd_sqlite3_busy_timeout()] to name but three) that are methods on an
 ** sqlite3 object.
 */
 typedef struct sqlite3 sqlite3;
@@ -217,32 +217,32 @@ typedef sqlite_uint64 sqlite3_uint64;
 **
 ** This routine is the destructor for the [sqlite3] object.
 **
-** Applications should [sqlite3_finalize | finalize] all [prepared statements]
-** and [sqlite3_blob_close | close] all [BLOB handles] associated with
+** Applications should [upnpd_sqlite3_finalize | finalize] all [prepared statements]
+** and [upnpd_sqlite3_blob_close | close] all [BLOB handles] associated with
 ** the [sqlite3] object prior to attempting to close the object.
-** The [sqlite3_next_stmt()] interface can be used to locate all
+** The [upnpd_sqlite3_next_stmt()] interface can be used to locate all
 ** [prepared statements] associated with a [database connection] if desired.
 ** Typical code might look like this:
 **
 ** <blockquote><pre>
 ** sqlite3_stmt *pStmt;
-** while( (pStmt = sqlite3_next_stmt(db, 0))!=0 ){
-** &nbsp;   sqlite3_finalize(pStmt);
+** while( (pStmt = upnpd_sqlite3_next_stmt(db, 0))!=0 ){
+** &nbsp;   upnpd_sqlite3_finalize(pStmt);
 ** }
 ** </pre></blockquote>
 **
-** If [sqlite3_close()] is invoked while a transaction is open,
+** If [upnpd_sqlite3_close()] is invoked while a transaction is open,
 ** the transaction is automatically rolled back.
 **
-** The C parameter to [sqlite3_close(C)] must be either a NULL
+** The C parameter to [upnpd_sqlite3_close(C)] must be either a NULL
 ** pointer or an [sqlite3] object pointer obtained
-** from [sqlite3_open()], [sqlite3_open16()], or
-** [sqlite3_open_v2()], and not previously closed.
+** from [upnpd_sqlite3_open()], [upnpd_sqlite3_open16()], or
+** [upnpd_sqlite3_open_v2()], and not previously closed.
 **
 ** Requirements:
 ** [H12011] [H12012] [H12013] [H12014] [H12015] [H12019]
 */
-SQLITE_API int sqlite3_close(sqlite3 *);
+SQLITE_API int upnpd_sqlite3_close(sqlite3 *);
 
 /*
 ** The type for a callback function.
@@ -254,9 +254,9 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 /*
 ** CAPI3REF: One-Step Query Execution Interface {H12100} <S10000>
 **
-** The sqlite3_exec() interface is a convenient way of running one or more
+** The upnpd_sqlite3_exec() interface is a convenient way of running one or more
 ** SQL statements without having to write a lot of C code.  The UTF-8 encoded
-** SQL statements are passed in as the second parameter to sqlite3_exec().
+** SQL statements are passed in as the second parameter to upnpd_sqlite3_exec().
 ** The statements are evaluated one by one until either an error or
 ** an interrupt is encountered, or until they are all done.  The 3rd parameter
 ** is an optional callback that is invoked once for each row of any query
@@ -264,8 +264,8 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 ** to write any error messages.
 **
 ** The error message passed back through the 5th parameter is held
-** in memory obtained from [sqlite3_malloc()].  To avoid a memory leak,
-** the calling application should call [sqlite3_free()] on any error
+** in memory obtained from [upnpd_sqlite3_malloc()].  To avoid a memory leak,
+** the calling application should call [upnpd_sqlite3_free()] on any error
 ** message returned through the 5th parameter when it has finished using
 ** the error message.
 **
@@ -273,29 +273,29 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 ** or a string containing only whitespace and comments, then no SQL
 ** statements are evaluated and the database is not changed.
 **
-** The sqlite3_exec() interface is implemented in terms of
-** [sqlite3_prepare_v2()], [sqlite3_step()], and [sqlite3_finalize()].
-** The sqlite3_exec() routine does nothing to the database that cannot be done
-** by [sqlite3_prepare_v2()], [sqlite3_step()], and [sqlite3_finalize()].
+** The upnpd_sqlite3_exec() interface is implemented in terms of
+** [upnpd_sqlite3_prepare_v2()], [upnpd_sqlite3_step()], and [upnpd_sqlite3_finalize()].
+** The upnpd_sqlite3_exec() routine does nothing to the database that cannot be done
+** by [upnpd_sqlite3_prepare_v2()], [upnpd_sqlite3_step()], and [upnpd_sqlite3_finalize()].
 **
-** The first parameter to [sqlite3_exec()] must be an valid and open
+** The first parameter to [upnpd_sqlite3_exec()] must be an valid and open
 ** [database connection].
 **
 ** The database connection must not be closed while
-** [sqlite3_exec()] is running.
+** [upnpd_sqlite3_exec()] is running.
 **
-** The calling function should use [sqlite3_free()] to free
+** The calling function should use [upnpd_sqlite3_free()] to free
 ** the memory that *errmsg is left pointing at once the error
 ** message is no longer needed.
 **
-** The SQL statement text in the 2nd parameter to [sqlite3_exec()]
-** must remain unchanged while [sqlite3_exec()] is running.
+** The SQL statement text in the 2nd parameter to [upnpd_sqlite3_exec()]
+** must remain unchanged while [upnpd_sqlite3_exec()] is running.
 **
 ** Requirements:
 ** [H12101] [H12102] [H12104] [H12105] [H12107] [H12110] [H12113] [H12116]
 ** [H12119] [H12122] [H12125] [H12131] [H12134] [H12137] [H12138]
 */
-SQLITE_API int sqlite3_exec(
+SQLITE_API int upnpd_sqlite3_exec(
   sqlite3*,                                  /* An open database */
   const char *sql,                           /* SQL to be evaluated */
   int (*callback)(void*,int,char**,char**),  /* Callback function */
@@ -325,7 +325,7 @@ SQLITE_API int sqlite3_exec(
 #define SQLITE_LOCKED       6   /* A table in the database is locked */
 #define SQLITE_NOMEM        7   /* A malloc() failed */
 #define SQLITE_READONLY     8   /* Attempt to write a readonly database */
-#define SQLITE_INTERRUPT    9   /* Operation terminated by sqlite3_interrupt()*/
+#define SQLITE_INTERRUPT    9   /* Operation terminated by upnpd_sqlite3_interrupt()*/
 #define SQLITE_IOERR       10   /* Some kind of disk I/O error occurred */
 #define SQLITE_CORRUPT     11   /* The database disk image is malformed */
 #define SQLITE_NOTFOUND    12   /* NOT USED. Table or record not found */
@@ -343,8 +343,8 @@ SQLITE_API int sqlite3_exec(
 #define SQLITE_FORMAT      24   /* Auxiliary database format error */
 #define SQLITE_RANGE       25   /* 2nd parameter to sqlite3_bind out of range */
 #define SQLITE_NOTADB      26   /* File opened that is not a database file */
-#define SQLITE_ROW         100  /* sqlite3_step() has another row ready */
-#define SQLITE_DONE        101  /* sqlite3_step() has finished executing */
+#define SQLITE_ROW         100  /* upnpd_sqlite3_step() has another row ready */
+#define SQLITE_DONE        101  /* upnpd_sqlite3_step() has finished executing */
 /* end-of-error-codes */
 
 /*
@@ -360,7 +360,7 @@ SQLITE_API int sqlite3_exec(
 ** support for additional result codes that provide more detailed information
 ** about errors. The extended result codes are enabled or disabled
 ** on a per database connection basis using the
-** [sqlite3_extended_result_codes()] API.
+** [upnpd_sqlite3_extended_result_codes()] API.
 **
 ** Some of the available extended result codes are listed here.
 ** One may expect the number of extended result codes will be expand
@@ -393,13 +393,13 @@ SQLITE_API int sqlite3_exec(
 ** CAPI3REF: Flags For File Open Operations {H10230} <H11120> <H12700>
 **
 ** These bit values are intended for use in the
-** 3rd parameter to the [sqlite3_open_v2()] interface and
+** 3rd parameter to the [upnpd_sqlite3_open_v2()] interface and
 ** in the 4th parameter to the xOpen method of the
 ** [sqlite3_vfs] object.
 */
-#define SQLITE_OPEN_READONLY         0x00000001  /* Ok for sqlite3_open_v2() */
-#define SQLITE_OPEN_READWRITE        0x00000002  /* Ok for sqlite3_open_v2() */
-#define SQLITE_OPEN_CREATE           0x00000004  /* Ok for sqlite3_open_v2() */
+#define SQLITE_OPEN_READONLY         0x00000001  /* Ok for upnpd_sqlite3_open_v2() */
+#define SQLITE_OPEN_READWRITE        0x00000002  /* Ok for upnpd_sqlite3_open_v2() */
+#define SQLITE_OPEN_CREATE           0x00000004  /* Ok for upnpd_sqlite3_open_v2() */
 #define SQLITE_OPEN_DELETEONCLOSE    0x00000008  /* VFS only */
 #define SQLITE_OPEN_EXCLUSIVE        0x00000010  /* VFS only */
 #define SQLITE_OPEN_MAIN_DB          0x00000100  /* VFS only */
@@ -409,8 +409,8 @@ SQLITE_API int sqlite3_exec(
 #define SQLITE_OPEN_TEMP_JOURNAL     0x00001000  /* VFS only */
 #define SQLITE_OPEN_SUBJOURNAL       0x00002000  /* VFS only */
 #define SQLITE_OPEN_MASTER_JOURNAL   0x00004000  /* VFS only */
-#define SQLITE_OPEN_NOMUTEX          0x00008000  /* Ok for sqlite3_open_v2() */
-#define SQLITE_OPEN_FULLMUTEX        0x00010000  /* Ok for sqlite3_open_v2() */
+#define SQLITE_OPEN_NOMUTEX          0x00008000  /* Ok for upnpd_sqlite3_open_v2() */
+#define SQLITE_OPEN_FULLMUTEX        0x00010000  /* Ok for upnpd_sqlite3_open_v2() */
 
 /*
 ** CAPI3REF: Device Characteristics {H10240} <H11120>
@@ -527,7 +527,7 @@ struct sqlite3_file {
 **
 ** The xFileControl() method is a generic interface that allows custom
 ** VFS implementations to directly control an open file using the
-** [sqlite3_file_control()] interface.  The second "op" argument is an
+** [upnpd_sqlite3_file_control()] interface.  The second "op" argument is an
 ** integer opcode.  The third argument is a generic pointer intended to
 ** point to a structure that may contain arguments or space in which to
 ** write return values.  Potential uses for xFileControl() might be
@@ -599,7 +599,7 @@ struct sqlite3_io_methods {
 ** CAPI3REF: Standard File Control Opcodes {H11310} <S30800>
 **
 ** These integer constants are opcodes for the xFileControl method
-** of the [sqlite3_io_methods] object and for the [sqlite3_file_control()]
+** of the [sqlite3_io_methods] object and for the [upnpd_sqlite3_file_control()]
 ** interface.
 **
 ** The [SQLITE_FCNTL_LOCKSTATE] opcode is used for debugging.  This
@@ -623,7 +623,7 @@ struct sqlite3_io_methods {
 ** at the internal representation of an [sqlite3_mutex].  It only
 ** deals with pointers to the [sqlite3_mutex] object.
 **
-** Mutexes are created using [sqlite3_mutex_alloc()].
+** Mutexes are created using [upnpd_sqlite3_mutex_alloc()].
 */
 typedef struct sqlite3_mutex sqlite3_mutex;
 
@@ -646,9 +646,9 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** a pathname in this VFS.
 **
 ** Registered sqlite3_vfs objects are kept on a linked list formed by
-** the pNext pointer.  The [sqlite3_vfs_register()]
-** and [sqlite3_vfs_unregister()] interfaces manage this list
-** in a thread-safe way.  The [sqlite3_vfs_find()] interface
+** the pNext pointer.  The [upnpd_sqlite3_vfs_register()]
+** and [upnpd_sqlite3_vfs_unregister()] interfaces manage this list
+** in a thread-safe way.  The [upnpd_sqlite3_vfs_find()] interface
 ** searches the list.  Neither the application code nor the VFS
 ** implementation should use the pNext pointer.
 **
@@ -674,8 +674,8 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** flags parameter will include [SQLITE_OPEN_DELETEONCLOSE].
 **
 ** The flags argument to xOpen() includes all bits set in
-** the flags argument to [sqlite3_open_v2()].  Or if [sqlite3_open()]
-** or [sqlite3_open16()] is used, then flags includes at least
+** the flags argument to [upnpd_sqlite3_open_v2()].  Or if [upnpd_sqlite3_open()]
+** or [upnpd_sqlite3_open16()] is used, then flags includes at least
 ** [SQLITE_OPEN_READWRITE] | [SQLITE_OPEN_CREATE]. 
 ** If xOpen() opens a file read-only then it sets *pOutFlags to
 ** include [SQLITE_OPEN_READONLY].  Other bits in *pOutFlags may be set.
@@ -801,98 +801,98 @@ struct sqlite3_vfs {
 /*
 ** CAPI3REF: Initialize The SQLite Library {H10130} <S20000><S30100>
 **
-** The sqlite3_initialize() routine initializes the
-** SQLite library.  The sqlite3_shutdown() routine
-** deallocates any resources that were allocated by sqlite3_initialize().
+** The upnpd_sqlite3_initialize() routine initializes the
+** SQLite library.  The upnpd_sqlite3_shutdown() routine
+** deallocates any resources that were allocated by upnpd_sqlite3_initialize().
 **
-** A call to sqlite3_initialize() is an "effective" call if it is
-** the first time sqlite3_initialize() is invoked during the lifetime of
-** the process, or if it is the first time sqlite3_initialize() is invoked
-** following a call to sqlite3_shutdown().  Only an effective call
-** of sqlite3_initialize() does any initialization.  All other calls
+** A call to upnpd_sqlite3_initialize() is an "effective" call if it is
+** the first time upnpd_sqlite3_initialize() is invoked during the lifetime of
+** the process, or if it is the first time upnpd_sqlite3_initialize() is invoked
+** following a call to upnpd_sqlite3_shutdown().  Only an effective call
+** of upnpd_sqlite3_initialize() does any initialization.  All other calls
 ** are harmless no-ops.
 **
-** A call to sqlite3_shutdown() is an "effective" call if it is the first
-** call to sqlite3_shutdown() since the last sqlite3_initialize().  Only
-** an effective call to sqlite3_shutdown() does any deinitialization.
-** All other calls to sqlite3_shutdown() are harmless no-ops.
+** A call to upnpd_sqlite3_shutdown() is an "effective" call if it is the first
+** call to upnpd_sqlite3_shutdown() since the last upnpd_sqlite3_initialize().  Only
+** an effective call to upnpd_sqlite3_shutdown() does any deinitialization.
+** All other calls to upnpd_sqlite3_shutdown() are harmless no-ops.
 **
-** Among other things, sqlite3_initialize() shall invoke
-** sqlite3_os_init().  Similarly, sqlite3_shutdown()
-** shall invoke sqlite3_os_end().
+** Among other things, upnpd_sqlite3_initialize() shall invoke
+** upnpd_sqlite3_os_init().  Similarly, upnpd_sqlite3_shutdown()
+** shall invoke upnpd_sqlite3_os_end().
 **
-** The sqlite3_initialize() routine returns [SQLITE_OK] on success.
-** If for some reason, sqlite3_initialize() is unable to initialize
+** The upnpd_sqlite3_initialize() routine returns [SQLITE_OK] on success.
+** If for some reason, upnpd_sqlite3_initialize() is unable to initialize
 ** the library (perhaps it is unable to allocate a needed resource such
 ** as a mutex) it returns an [error code] other than [SQLITE_OK].
 **
-** The sqlite3_initialize() routine is called internally by many other
+** The upnpd_sqlite3_initialize() routine is called internally by many other
 ** SQLite interfaces so that an application usually does not need to
-** invoke sqlite3_initialize() directly.  For example, [sqlite3_open()]
-** calls sqlite3_initialize() so the SQLite library will be automatically
-** initialized when [sqlite3_open()] is called if it has not be initialized
+** invoke upnpd_sqlite3_initialize() directly.  For example, [upnpd_sqlite3_open()]
+** calls upnpd_sqlite3_initialize() so the SQLite library will be automatically
+** initialized when [upnpd_sqlite3_open()] is called if it has not be initialized
 ** already.  However, if SQLite is compiled with the [SQLITE_OMIT_AUTOINIT]
-** compile-time option, then the automatic calls to sqlite3_initialize()
-** are omitted and the application must call sqlite3_initialize() directly
+** compile-time option, then the automatic calls to upnpd_sqlite3_initialize()
+** are omitted and the application must call upnpd_sqlite3_initialize() directly
 ** prior to using any other SQLite interface.  For maximum portability,
-** it is recommended that applications always invoke sqlite3_initialize()
+** it is recommended that applications always invoke upnpd_sqlite3_initialize()
 ** directly prior to using any other SQLite interface.  Future releases
 ** of SQLite may require this.  In other words, the behavior exhibited
 ** when SQLite is compiled with [SQLITE_OMIT_AUTOINIT] might become the
 ** default behavior in some future release of SQLite.
 **
-** The sqlite3_os_init() routine does operating-system specific
-** initialization of the SQLite library.  The sqlite3_os_end()
-** routine undoes the effect of sqlite3_os_init().  Typical tasks
+** The upnpd_sqlite3_os_init() routine does operating-system specific
+** initialization of the SQLite library.  The upnpd_sqlite3_os_end()
+** routine undoes the effect of upnpd_sqlite3_os_init().  Typical tasks
 ** performed by these routines include allocation or deallocation
 ** of static resources, initialization of global variables,
 ** setting up a default [sqlite3_vfs] module, or setting up
-** a default configuration using [sqlite3_config()].
+** a default configuration using [upnpd_sqlite3_config()].
 **
-** The application should never invoke either sqlite3_os_init()
-** or sqlite3_os_end() directly.  The application should only invoke
-** sqlite3_initialize() and sqlite3_shutdown().  The sqlite3_os_init()
-** interface is called automatically by sqlite3_initialize() and
-** sqlite3_os_end() is called by sqlite3_shutdown().  Appropriate
-** implementations for sqlite3_os_init() and sqlite3_os_end()
+** The application should never invoke either upnpd_sqlite3_os_init()
+** or upnpd_sqlite3_os_end() directly.  The application should only invoke
+** upnpd_sqlite3_initialize() and upnpd_sqlite3_shutdown().  The upnpd_sqlite3_os_init()
+** interface is called automatically by upnpd_sqlite3_initialize() and
+** upnpd_sqlite3_os_end() is called by upnpd_sqlite3_shutdown().  Appropriate
+** implementations for upnpd_sqlite3_os_init() and upnpd_sqlite3_os_end()
 ** are built into SQLite when it is compiled for unix, windows, or os/2.
 ** When built for other platforms (using the [SQLITE_OS_OTHER=1] compile-time
 ** option) the application must supply a suitable implementation for
-** sqlite3_os_init() and sqlite3_os_end().  An application-supplied
-** implementation of sqlite3_os_init() or sqlite3_os_end()
+** upnpd_sqlite3_os_init() and upnpd_sqlite3_os_end().  An application-supplied
+** implementation of upnpd_sqlite3_os_init() or upnpd_sqlite3_os_end()
 ** must return [SQLITE_OK] on success and some other [error code] upon
 ** failure.
 */
-SQLITE_API int sqlite3_initialize(void);
-SQLITE_API int sqlite3_shutdown(void);
-SQLITE_API int sqlite3_os_init(void);
-SQLITE_API int sqlite3_os_end(void);
+SQLITE_API int upnpd_sqlite3_initialize(void);
+SQLITE_API int upnpd_sqlite3_shutdown(void);
+SQLITE_API int upnpd_sqlite3_os_init(void);
+SQLITE_API int upnpd_sqlite3_os_end(void);
 
 /*
 ** CAPI3REF: Configuring The SQLite Library {H14100} <S20000><S30200>
 ** EXPERIMENTAL
 **
-** The sqlite3_config() interface is used to make global configuration
+** The upnpd_sqlite3_config() interface is used to make global configuration
 ** changes to SQLite in order to tune SQLite to the specific needs of
 ** the application.  The default configuration is recommended for most
 ** applications and so this routine is usually not necessary.  It is
 ** provided to support rare applications with unusual needs.
 **
-** The sqlite3_config() interface is not threadsafe.  The application
+** The upnpd_sqlite3_config() interface is not threadsafe.  The application
 ** must insure that no other SQLite interfaces are invoked by other
-** threads while sqlite3_config() is running.  Furthermore, sqlite3_config()
+** threads while upnpd_sqlite3_config() is running.  Furthermore, upnpd_sqlite3_config()
 ** may only be invoked prior to library initialization using
-** [sqlite3_initialize()] or after shutdown by [sqlite3_shutdown()].
-** Note, however, that sqlite3_config() can be called as part of the
-** implementation of an application-defined [sqlite3_os_init()].
+** [upnpd_sqlite3_initialize()] or after shutdown by [upnpd_sqlite3_shutdown()].
+** Note, however, that upnpd_sqlite3_config() can be called as part of the
+** implementation of an application-defined [upnpd_sqlite3_os_init()].
 **
-** The first argument to sqlite3_config() is an integer
+** The first argument to upnpd_sqlite3_config() is an integer
 ** [SQLITE_CONFIG_SINGLETHREAD | configuration option] that determines
 ** what property of SQLite is to be configured.  Subsequent arguments
 ** vary depending on the [SQLITE_CONFIG_SINGLETHREAD | configuration option]
 ** in the first argument.
 **
-** When a configuration option is set, sqlite3_config() returns [SQLITE_OK].
+** When a configuration option is set, upnpd_sqlite3_config() returns [SQLITE_OK].
 ** If the option is unknown or SQLite is unable to set the option
 ** then this routine returns a non-zero [error code].
 **
@@ -901,21 +901,21 @@ SQLITE_API int sqlite3_os_end(void);
 ** [H14138] [H14141] [H14144] [H14147] [H14150] [H14153] [H14156] [H14159]
 ** [H14162] [H14165] [H14168]
 */
-SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_config(int, ...);
+SQLITE_API SQLITE_EXPERIMENTAL int upnpd_sqlite3_config(int, ...);
 
 /*
 ** CAPI3REF: Configure database connections  {H14200} <S20000>
 ** EXPERIMENTAL
 **
-** The sqlite3_db_config() interface is used to make configuration
+** The upnpd_sqlite3_db_config() interface is used to make configuration
 ** changes to a [database connection].  The interface is similar to
-** [sqlite3_config()] except that the changes apply to a single
+** [upnpd_sqlite3_config()] except that the changes apply to a single
 ** [database connection] (specified in the first argument).  The
-** sqlite3_db_config() interface can only be used immediately after
-** the database connection is created using [sqlite3_open()],
-** [sqlite3_open16()], or [sqlite3_open_v2()].  
+** upnpd_sqlite3_db_config() interface can only be used immediately after
+** the database connection is created using [upnpd_sqlite3_open()],
+** [upnpd_sqlite3_open16()], or [upnpd_sqlite3_open_v2()].  
 **
-** The second argument to sqlite3_db_config(D,V,...)  is the
+** The second argument to upnpd_sqlite3_db_config(D,V,...)  is the
 ** configuration verb - an integer code that indicates what
 ** aspect of the [database connection] is being configured.
 ** The only choice for this value is [SQLITE_DBCONFIG_LOOKASIDE].
@@ -925,7 +925,7 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_config(int, ...);
 ** Requirements:
 ** [H14203] [H14206] [H14209] [H14212] [H14215]
 */
-SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_db_config(sqlite3*, int op, ...);
+SQLITE_API SQLITE_EXPERIMENTAL int upnpd_sqlite3_db_config(sqlite3*, int op, ...);
 
 /*
 ** CAPI3REF: Memory Allocation Routines {H10155} <S20120>
@@ -936,9 +936,9 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_db_config(sqlite3*, int op, ...);
 **
 ** This object is used in only one place in the SQLite interface.
 ** A pointer to an instance of this object is the argument to
-** [sqlite3_config()] when the configuration option is
+** [upnpd_sqlite3_config()] when the configuration option is
 ** [SQLITE_CONFIG_MALLOC].  By creating an instance of this object
-** and passing it to [sqlite3_config()] during configuration, an
+** and passing it to [upnpd_sqlite3_config()] during configuration, an
 ** application can specify an alternative memory allocation subsystem
 ** for SQLite to use for all of its dynamic memory needs.
 **
@@ -966,7 +966,7 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_db_config(sqlite3*, int op, ...);
 ** The xInit method initializes the memory allocator.  (For example,
 ** it might allocate any require mutexes or initialize internal data
 ** structures.  The xShutdown method is invoked (indirectly) by
-** [sqlite3_shutdown()] and should deallocate any resources acquired
+** [upnpd_sqlite3_shutdown()] and should deallocate any resources acquired
 ** by xInit.  The pAppData pointer is used as the only parameter to
 ** xInit and xShutdown.
 */
@@ -987,12 +987,12 @@ struct sqlite3_mem_methods {
 ** EXPERIMENTAL
 **
 ** These constants are the available integer configuration options that
-** can be passed as the first argument to the [sqlite3_config()] interface.
+** can be passed as the first argument to the [upnpd_sqlite3_config()] interface.
 **
 ** New configuration options may be added in future releases of SQLite.
 ** Existing configuration options might be discontinued.  Applications
-** should check the return code from [sqlite3_config()] to make sure that
-** the call worked.  The [sqlite3_config()] interface will return a
+** should check the return code from [upnpd_sqlite3_config()] to make sure that
+** the call worked.  The [upnpd_sqlite3_config()] interface will return a
 ** non-zero [error code] if a discontinued or unsupported configuration option
 ** is invoked.
 **
@@ -1043,10 +1043,10 @@ struct sqlite3_mem_methods {
 ** statistics. When disabled, the following SQLite interfaces become 
 ** non-operational:
 **   <ul>
-**   <li> [sqlite3_memory_used()]
-**   <li> [sqlite3_memory_highwater()]
-**   <li> [sqlite3_soft_heap_limit()]
-**   <li> [sqlite3_status()]
+**   <li> [upnpd_sqlite3_memory_used()]
+**   <li> [upnpd_sqlite3_memory_highwater()]
+**   <li> [upnpd_sqlite3_soft_heap_limit()]
+**   <li> [upnpd_sqlite3_status()]
 **   </ul>
 ** </dd>
 **
@@ -1066,7 +1066,7 @@ struct sqlite3_mem_methods {
 ** Scratch buffers are used as part of the btree balance operation.  If
 ** The btree balancer needs additional memory beyond what is provided by
 ** scratch buffers or if no scratch buffer space is specified, then SQLite
-** goes to [sqlite3_malloc()] to obtain the memory it needs.</dd>
+** goes to [upnpd_sqlite3_malloc()] to obtain the memory it needs.</dd>
 **
 ** <dt>SQLITE_CONFIG_PAGECACHE</dt>
 ** <dd>This option specifies a static memory buffer that SQLite can use for
@@ -1084,7 +1084,7 @@ struct sqlite3_mem_methods {
 ** SQLite will use the memory provided by the first argument to satisfy its
 ** memory needs for the first N pages that it adds to cache.  If additional
 ** page cache memory is needed beyond what is provided by this option, then
-** SQLite goes to [sqlite3_malloc()] for the additional storage space.
+** SQLite goes to [upnpd_sqlite3_malloc()] for the additional storage space.
 ** The implementation might use one or more of the N buffers to hold 
 ** memory accounting information. The pointer in the first argument must
 ** be aligned to an 8-byte boundary or subsequent behavior of SQLite
@@ -1160,12 +1160,12 @@ struct sqlite3_mem_methods {
 ** EXPERIMENTAL
 **
 ** These constants are the available integer configuration options that
-** can be passed as the second argument to the [sqlite3_db_config()] interface.
+** can be passed as the second argument to the [upnpd_sqlite3_db_config()] interface.
 **
 ** New configuration options may be added in future releases of SQLite.
 ** Existing configuration options might be discontinued.  Applications
-** should check the return code from [sqlite3_db_config()] to make sure that
-** the call worked.  The [sqlite3_db_config()] interface will return a
+** should check the return code from [upnpd_sqlite3_db_config()] to make sure that
+** the call worked.  The [upnpd_sqlite3_db_config()] interface will return a
 ** non-zero [error code] if a discontinued or unsupported configuration option
 ** is invoked.
 **
@@ -1173,10 +1173,10 @@ struct sqlite3_mem_methods {
 ** <dt>SQLITE_DBCONFIG_LOOKASIDE</dt>
 ** <dd>This option takes three additional arguments that determine the 
 ** [lookaside memory allocator] configuration for the [database connection].
-** The first argument (the third parameter to [sqlite3_db_config()] is a
+** The first argument (the third parameter to [upnpd_sqlite3_db_config()] is a
 ** pointer to an 8-byte aligned memory buffer to use for lookaside memory.
 ** The first argument may be NULL in which case SQLite will allocate the
-** lookaside buffer itself using [sqlite3_malloc()].  The second argument is the
+** lookaside buffer itself using [upnpd_sqlite3_malloc()].  The second argument is the
 ** size of each lookaside buffer slot and the third argument is the number of
 ** slots.  The size of the buffer in the first argument must be greater than
 ** or equal to the product of the second and third arguments.</dd>
@@ -1189,14 +1189,14 @@ struct sqlite3_mem_methods {
 /*
 ** CAPI3REF: Enable Or Disable Extended Result Codes {H12200} <S10700>
 **
-** The sqlite3_extended_result_codes() routine enables or disables the
+** The upnpd_sqlite3_extended_result_codes() routine enables or disables the
 ** [extended result codes] feature of SQLite. The extended result
 ** codes are disabled by default for historical compatibility considerations.
 **
 ** Requirements:
 ** [H12201] [H12202]
 */
-SQLITE_API int sqlite3_extended_result_codes(sqlite3*, int onoff);
+SQLITE_API int upnpd_sqlite3_extended_result_codes(sqlite3*, int onoff);
 
 /*
 ** CAPI3REF: Last Insert Rowid {H12220} <S10700>
@@ -1235,13 +1235,13 @@ SQLITE_API int sqlite3_extended_result_codes(sqlite3*, int onoff);
 ** [H12221] [H12223]
 **
 ** If a separate thread performs a new [INSERT] on the same
-** database connection while the [sqlite3_last_insert_rowid()]
+** database connection while the [upnpd_sqlite3_last_insert_rowid()]
 ** function is running and thus changes the last insert [rowid],
-** then the value returned by [sqlite3_last_insert_rowid()] is
+** then the value returned by [upnpd_sqlite3_last_insert_rowid()] is
 ** unpredictable and might not equal either the old or the new
 ** last insert [rowid].
 */
-SQLITE_API sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
+SQLITE_API sqlite3_int64 upnpd_sqlite3_last_insert_rowid(sqlite3*);
 
 /*
 ** CAPI3REF: Count The Number Of Rows Modified {H12240} <S10600>
@@ -1251,7 +1251,7 @@ SQLITE_API sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
 ** on the [database connection] specified by the first parameter.
 ** Only changes that are directly specified by the [INSERT], [UPDATE],
 ** or [DELETE] statement are counted.  Auxiliary changes caused by
-** triggers are not counted. Use the [sqlite3_total_changes()] function
+** triggers are not counted. Use the [upnpd_sqlite3_total_changes()] function
 ** to find the total number of changes including changes caused by triggers.
 **
 ** Changes to a view that are simulated by an [INSTEAD OF trigger]
@@ -1271,7 +1271,7 @@ SQLITE_API sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
 ** new trigger context is entered for the duration of that one
 ** trigger.  Subtriggers create subcontexts for their duration.
 **
-** Calling [sqlite3_exec()] or [sqlite3_step()] recursively does
+** Calling [upnpd_sqlite3_exec()] or [upnpd_sqlite3_step()] recursively does
 ** not create a new trigger context.
 **
 ** This function returns the number of direct row changes in the
@@ -1281,23 +1281,23 @@ SQLITE_API sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
 ** Thus, when called from the top level, this function returns the
 ** number of changes in the most recent INSERT, UPDATE, or DELETE
 ** that also occurred at the top level.  Within the body of a trigger,
-** the sqlite3_changes() interface can be called to find the number of
+** the upnpd_sqlite3_changes() interface can be called to find the number of
 ** changes in the most recently completed INSERT, UPDATE, or DELETE
 ** statement within the body of the same trigger.
 ** However, the number returned does not include changes
 ** caused by subtriggers since those have their own context.
 **
-** See also the [sqlite3_total_changes()] interface and the
+** See also the [upnpd_sqlite3_total_changes()] interface and the
 ** [count_changes pragma].
 **
 ** Requirements:
 ** [H12241] [H12243]
 **
 ** If a separate thread makes changes on the same database connection
-** while [sqlite3_changes()] is running then the value returned
+** while [upnpd_sqlite3_changes()] is running then the value returned
 ** is unpredictable and not meaningful.
 */
-SQLITE_API int sqlite3_changes(sqlite3*);
+SQLITE_API int upnpd_sqlite3_changes(sqlite3*);
 
 /*
 ** CAPI3REF: Total Number Of Rows Modified {H12260} <S10600>
@@ -1312,20 +1312,20 @@ SQLITE_API int sqlite3_changes(sqlite3*);
 ** though if the INSTEAD OF trigger makes changes of its own, those changes 
 ** are counted.
 ** The changes are counted as soon as the statement that makes them is
-** completed (when the statement handle is passed to [sqlite3_reset()] or
-** [sqlite3_finalize()]).
+** completed (when the statement handle is passed to [upnpd_sqlite3_reset()] or
+** [upnpd_sqlite3_finalize()]).
 **
-** See also the [sqlite3_changes()] interface and the
+** See also the [upnpd_sqlite3_changes()] interface and the
 ** [count_changes pragma].
 **
 ** Requirements:
 ** [H12261] [H12263]
 **
 ** If a separate thread makes changes on the same database connection
-** while [sqlite3_total_changes()] is running then the value
+** while [upnpd_sqlite3_total_changes()] is running then the value
 ** returned is unpredictable and not meaningful.
 */
-SQLITE_API int sqlite3_total_changes(sqlite3*);
+SQLITE_API int upnpd_sqlite3_total_changes(sqlite3*);
 
 /*
 ** CAPI3REF: Interrupt A Long-Running Query {H12270} <S30500>
@@ -1339,10 +1339,10 @@ SQLITE_API int sqlite3_total_changes(sqlite3*);
 ** It is safe to call this routine from a thread different from the
 ** thread that is currently running the database operation.  But it
 ** is not safe to call this routine with a [database connection] that
-** is closed or might close before sqlite3_interrupt() returns.
+** is closed or might close before upnpd_sqlite3_interrupt() returns.
 **
 ** If an SQL operation is very nearly finished at the time when
-** sqlite3_interrupt() is called, then it might not have an opportunity
+** upnpd_sqlite3_interrupt() is called, then it might not have an opportunity
 ** to be interrupted and might continue to completion.
 **
 ** An SQL operation that is interrupted will return [SQLITE_INTERRUPT].
@@ -1350,24 +1350,24 @@ SQLITE_API int sqlite3_total_changes(sqlite3*);
 ** that is inside an explicit transaction, then the entire transaction
 ** will be rolled back automatically.
 **
-** The sqlite3_interrupt(D) call is in effect until all currently running
+** The upnpd_sqlite3_interrupt(D) call is in effect until all currently running
 ** SQL statements on [database connection] D complete.  Any new SQL statements
-** that are started after the sqlite3_interrupt() call and before the 
+** that are started after the upnpd_sqlite3_interrupt() call and before the 
 ** running statements reaches zero are interrupted as if they had been
-** running prior to the sqlite3_interrupt() call.  New SQL statements
+** running prior to the upnpd_sqlite3_interrupt() call.  New SQL statements
 ** that are started after the running statement count reaches zero are
-** not effected by the sqlite3_interrupt().
-** A call to sqlite3_interrupt(D) that occurs when there are no running
+** not effected by the upnpd_sqlite3_interrupt().
+** A call to upnpd_sqlite3_interrupt(D) that occurs when there are no running
 ** SQL statements is a no-op and has no effect on SQL statements
-** that are started after the sqlite3_interrupt() call returns.
+** that are started after the upnpd_sqlite3_interrupt() call returns.
 **
 ** Requirements:
 ** [H12271] [H12272]
 **
-** If the database connection closes while [sqlite3_interrupt()]
+** If the database connection closes while [upnpd_sqlite3_interrupt()]
 ** is running then bad things will likely happen.
 */
-SQLITE_API void sqlite3_interrupt(sqlite3*);
+SQLITE_API void upnpd_sqlite3_interrupt(sqlite3*);
 
 /*
 ** CAPI3REF: Determine If An SQL Statement Is Complete {H10510} <S70200>
@@ -1390,22 +1390,22 @@ SQLITE_API void sqlite3_interrupt(sqlite3*);
 ** These routines do not parse the SQL statements thus
 ** will not detect syntactically incorrect SQL.
 **
-** If SQLite has not been initialized using [sqlite3_initialize()] prior 
-** to invoking sqlite3_complete16() then sqlite3_initialize() is invoked
-** automatically by sqlite3_complete16().  If that initialization fails,
-** then the return value from sqlite3_complete16() will be non-zero
+** If SQLite has not been initialized using [upnpd_sqlite3_initialize()] prior 
+** to invoking upnpd_sqlite3_complete16() then upnpd_sqlite3_initialize() is invoked
+** automatically by upnpd_sqlite3_complete16().  If that initialization fails,
+** then the return value from upnpd_sqlite3_complete16() will be non-zero
 ** regardless of whether or not the input SQL is complete.
 **
 ** Requirements: [H10511] [H10512]
 **
-** The input to [sqlite3_complete()] must be a zero-terminated
+** The input to [upnpd_sqlite3_complete()] must be a zero-terminated
 ** UTF-8 string.
 **
-** The input to [sqlite3_complete16()] must be a zero-terminated
+** The input to [upnpd_sqlite3_complete16()] must be a zero-terminated
 ** UTF-16 string in native byte order.
 */
-SQLITE_API int sqlite3_complete(const char *sql);
-SQLITE_API int sqlite3_complete16(const void *sql);
+SQLITE_API int upnpd_sqlite3_complete(const char *sql);
+SQLITE_API int upnpd_sqlite3_complete16(const void *sql);
 
 /*
 ** CAPI3REF: Register A Callback To Handle SQLITE_BUSY Errors {H12310} <S40400>
@@ -1419,7 +1419,7 @@ SQLITE_API int sqlite3_complete16(const void *sql);
 ** is not NULL, then the callback will be invoked with two arguments.
 **
 ** The first argument to the handler is a copy of the void* pointer which
-** is the third argument to sqlite3_busy_handler().  The second argument to
+** is the third argument to upnpd_sqlite3_busy_handler().  The second argument to
 ** the handler callback is the number of times that the busy handler has
 ** been invoked for this locking event.  If the
 ** busy callback returns 0, then no additional attempts are made to
@@ -1461,7 +1461,7 @@ SQLITE_API int sqlite3_complete16(const void *sql);
 **
 ** There can only be a single busy handler defined for each
 ** [database connection].  Setting a new busy handler clears any
-** previously set handler.  Note that calling [sqlite3_busy_timeout()]
+** previously set handler.  Note that calling [upnpd_sqlite3_busy_timeout()]
 ** will also set or clear the busy handler.
 **
 ** The busy callback should not take any actions which modify the
@@ -1474,16 +1474,16 @@ SQLITE_API int sqlite3_complete16(const void *sql);
 ** A busy handler must not close the database connection
 ** or [prepared statement] that invoked the busy handler.
 */
-SQLITE_API int sqlite3_busy_handler(sqlite3*, int(*)(void*,int), void*);
+SQLITE_API int upnpd_sqlite3_busy_handler(sqlite3*, int(*)(void*,int), void*);
 
 /*
 ** CAPI3REF: Set A Busy Timeout {H12340} <S40410>
 **
-** This routine sets a [sqlite3_busy_handler | busy handler] that sleeps
+** This routine sets a [upnpd_sqlite3_busy_handler | busy handler] that sleeps
 ** for a specified amount of time when a table is locked.  The handler
 ** will sleep multiple times until at least "ms" milliseconds of sleeping
 ** have accumulated. {H12343} After "ms" milliseconds of sleeping,
-** the handler returns 0 which causes [sqlite3_step()] to return
+** the handler returns 0 which causes [upnpd_sqlite3_step()] to return
 ** [SQLITE_BUSY] or [SQLITE_IOERR_BLOCKED].
 **
 ** Calling this routine with an argument less than or equal to zero
@@ -1491,19 +1491,19 @@ SQLITE_API int sqlite3_busy_handler(sqlite3*, int(*)(void*,int), void*);
 **
 ** There can only be a single busy handler for a particular
 ** [database connection] any any given moment.  If another busy handler
-** was defined  (using [sqlite3_busy_handler()]) prior to calling
+** was defined  (using [upnpd_sqlite3_busy_handler()]) prior to calling
 ** this routine, that other busy handler is cleared.
 **
 ** Requirements:
 ** [H12341] [H12343] [H12344]
 */
-SQLITE_API int sqlite3_busy_timeout(sqlite3*, int ms);
+SQLITE_API int upnpd_sqlite3_busy_timeout(sqlite3*, int ms);
 
 /*
 ** CAPI3REF: Convenience Routines For Running Queries {H12370} <S10000>
 **
 ** Definition: A <b>result table</b> is memory data structure created by the
-** [sqlite3_get_table()] interface.  A result table records the
+** [upnpd_sqlite3_get_table()] interface.  A result table records the
 ** complete query results from one or more queries.
 **
 ** The table conceptually has a number of rows and columns.  But
@@ -1516,11 +1516,11 @@ SQLITE_API int sqlite3_busy_timeout(sqlite3*, int ms);
 ** to zero-terminated strings that  contain the names of the columns.
 ** The remaining entries all point to query results.  NULL values result
 ** in NULL pointers.  All other values are in their UTF-8 zero-terminated
-** string representation as returned by [sqlite3_column_text()].
+** string representation as returned by [upnpd_sqlite3_column_text()].
 **
 ** A result table might consist of one or more memory allocations.
-** It is not safe to pass a result table directly to [sqlite3_free()].
-** A result table should be deallocated using [sqlite3_free_table()].
+** It is not safe to pass a result table directly to [upnpd_sqlite3_free()].
+** A result table should be deallocated using [upnpd_sqlite3_free_table()].
 **
 ** As an example of the result table format, suppose a query result
 ** is as follows:
@@ -1548,29 +1548,29 @@ SQLITE_API int sqlite3_busy_timeout(sqlite3*, int ms);
 **        azResult&#91;7] = "21";
 ** </pre></blockquote>
 **
-** The sqlite3_get_table() function evaluates one or more
+** The upnpd_sqlite3_get_table() function evaluates one or more
 ** semicolon-separated SQL statements in the zero-terminated UTF-8
 ** string of its 2nd parameter.  It returns a result table to the
 ** pointer given in its 3rd parameter.
 **
 ** After the calling function has finished using the result, it should
-** pass the pointer to the result table to sqlite3_free_table() in order to
+** pass the pointer to the result table to upnpd_sqlite3_free_table() in order to
 ** release the memory that was malloced.  Because of the way the
-** [sqlite3_malloc()] happens within sqlite3_get_table(), the calling
-** function must not try to call [sqlite3_free()] directly.  Only
-** [sqlite3_free_table()] is able to release the memory properly and safely.
+** [upnpd_sqlite3_malloc()] happens within upnpd_sqlite3_get_table(), the calling
+** function must not try to call [upnpd_sqlite3_free()] directly.  Only
+** [upnpd_sqlite3_free_table()] is able to release the memory properly and safely.
 **
-** The sqlite3_get_table() interface is implemented as a wrapper around
-** [sqlite3_exec()].  The sqlite3_get_table() routine does not have access
+** The upnpd_sqlite3_get_table() interface is implemented as a wrapper around
+** [upnpd_sqlite3_exec()].  The upnpd_sqlite3_get_table() routine does not have access
 ** to any internal data structures of SQLite.  It uses only the public
 ** interface defined here.  As a consequence, errors that occur in the
-** wrapper layer outside of the internal [sqlite3_exec()] call are not
-** reflected in subsequent calls to [sqlite3_errcode()] or [sqlite3_errmsg()].
+** wrapper layer outside of the internal [upnpd_sqlite3_exec()] call are not
+** reflected in subsequent calls to [upnpd_sqlite3_errcode()] or [upnpd_sqlite3_errmsg()].
 **
 ** Requirements:
 ** [H12371] [H12373] [H12374] [H12376] [H12379] [H12382]
 */
-SQLITE_API int sqlite3_get_table(
+SQLITE_API int upnpd_sqlite3_get_table(
   sqlite3 *db,          /* An open database */
   const char *zSql,     /* SQL to be evaluated */
   char ***pazResult,    /* Results of the query */
@@ -1578,7 +1578,7 @@ SQLITE_API int sqlite3_get_table(
   int *pnColumn,        /* Number of result columns written here */
   char **pzErrmsg       /* Error msg written here */
 );
-SQLITE_API void sqlite3_free_table(char **result);
+SQLITE_API void upnpd_sqlite3_free_table(char **result);
 
 /*
 ** CAPI3REF: Formatted String Printing Functions {H17400} <S70000><S20000>
@@ -1586,27 +1586,27 @@ SQLITE_API void sqlite3_free_table(char **result);
 ** These routines are workalikes of the "printf()" family of functions
 ** from the standard C library.
 **
-** The sqlite3_mprintf() and sqlite3_vmprintf() routines write their
-** results into memory obtained from [sqlite3_malloc()].
+** The upnpd_sqlite3_mprintf() and upnpd_sqlite3_vmprintf() routines write their
+** results into memory obtained from [upnpd_sqlite3_malloc()].
 ** The strings returned by these two routines should be
-** released by [sqlite3_free()].  Both routines return a
-** NULL pointer if [sqlite3_malloc()] is unable to allocate enough
+** released by [upnpd_sqlite3_free()].  Both routines return a
+** NULL pointer if [upnpd_sqlite3_malloc()] is unable to allocate enough
 ** memory to hold the resulting string.
 **
-** In sqlite3_snprintf() routine is similar to "snprintf()" from
+** In upnpd_sqlite3_snprintf() routine is similar to "snprintf()" from
 ** the standard C library.  The result is written into the
 ** buffer supplied as the second parameter whose size is given by
 ** the first parameter. Note that the order of the
 ** first two parameters is reversed from snprintf().  This is an
 ** historical accident that cannot be fixed without breaking
-** backwards compatibility.  Note also that sqlite3_snprintf()
+** backwards compatibility.  Note also that upnpd_sqlite3_snprintf()
 ** returns a pointer to its buffer instead of the number of
 ** characters actually written into the buffer.  We admit that
 ** the number of characters written would be a more useful return
-** value but we cannot change the implementation of sqlite3_snprintf()
+** value but we cannot change the implementation of upnpd_sqlite3_snprintf()
 ** now without breaking compatibility.
 **
-** As long as the buffer size is greater than zero, sqlite3_snprintf()
+** As long as the buffer size is greater than zero, upnpd_sqlite3_snprintf()
 ** guarantees that the buffer is always zero-terminated.  The first
 ** parameter "n" is the total size of the buffer, including space for
 ** the zero terminator.  So the longest string that can be completely
@@ -1632,9 +1632,9 @@ SQLITE_API void sqlite3_free_table(char **result);
 ** One can use this text in an SQL statement as follows:
 **
 ** <blockquote><pre>
-**  char *zSQL = sqlite3_mprintf("INSERT INTO table VALUES('%q')", zText);
-**  sqlite3_exec(db, zSQL, 0, 0, 0);
-**  sqlite3_free(zSQL);
+**  char *zSQL = upnpd_sqlite3_mprintf("INSERT INTO table VALUES('%q')", zText);
+**  upnpd_sqlite3_exec(db, zSQL, 0, 0, 0);
+**  upnpd_sqlite3_free(zSQL);
 ** </pre></blockquote>
 **
 ** Because the %q format string is used, the '\'' character in zText
@@ -1660,9 +1660,9 @@ SQLITE_API void sqlite3_free_table(char **result);
 ** single quotes) in place of the %Q option.  So, for example, one could say:
 **
 ** <blockquote><pre>
-**  char *zSQL = sqlite3_mprintf("INSERT INTO table VALUES(%Q)", zText);
-**  sqlite3_exec(db, zSQL, 0, 0, 0);
-**  sqlite3_free(zSQL);
+**  char *zSQL = upnpd_sqlite3_mprintf("INSERT INTO table VALUES(%Q)", zText);
+**  upnpd_sqlite3_exec(db, zSQL, 0, 0, 0);
+**  upnpd_sqlite3_free(zSQL);
 ** </pre></blockquote>
 **
 ** The code above will render a correct SQL statement in the zSQL
@@ -1670,14 +1670,14 @@ SQLITE_API void sqlite3_free_table(char **result);
 **
 ** The "%z" formatting option works exactly like "%s" with the
 ** addition that after the string has been read and copied into
-** the result, [sqlite3_free()] is called on the input string. {END}
+** the result, [upnpd_sqlite3_free()] is called on the input string. {END}
 **
 ** Requirements:
 ** [H17403] [H17406] [H17407]
 */
-SQLITE_API char *sqlite3_mprintf(const char*,...);
-SQLITE_API char *sqlite3_vmprintf(const char*, va_list);
-SQLITE_API char *sqlite3_snprintf(int,char*,const char*, ...);
+SQLITE_API char *upnpd_sqlite3_mprintf(const char*,...);
+SQLITE_API char *upnpd_sqlite3_vmprintf(const char*, va_list);
+SQLITE_API char *upnpd_sqlite3_snprintf(int,char*,const char*, ...);
 
 /*
 ** CAPI3REF: Memory Allocation Subsystem {H17300} <S20000>
@@ -1687,42 +1687,42 @@ SQLITE_API char *sqlite3_snprintf(int,char*,const char*, ...);
 ** does not include operating-system specific VFS implementation.  The
 ** Windows VFS uses native malloc() and free() for some operations.
 **
-** The sqlite3_malloc() routine returns a pointer to a block
+** The upnpd_sqlite3_malloc() routine returns a pointer to a block
 ** of memory at least N bytes in length, where N is the parameter.
-** If sqlite3_malloc() is unable to obtain sufficient free
+** If upnpd_sqlite3_malloc() is unable to obtain sufficient free
 ** memory, it returns a NULL pointer.  If the parameter N to
-** sqlite3_malloc() is zero or negative then sqlite3_malloc() returns
+** upnpd_sqlite3_malloc() is zero or negative then upnpd_sqlite3_malloc() returns
 ** a NULL pointer.
 **
-** Calling sqlite3_free() with a pointer previously returned
-** by sqlite3_malloc() or sqlite3_realloc() releases that memory so
-** that it might be reused.  The sqlite3_free() routine is
+** Calling upnpd_sqlite3_free() with a pointer previously returned
+** by upnpd_sqlite3_malloc() or upnpd_sqlite3_realloc() releases that memory so
+** that it might be reused.  The upnpd_sqlite3_free() routine is
 ** a no-op if is called with a NULL pointer.  Passing a NULL pointer
-** to sqlite3_free() is harmless.  After being freed, memory
+** to upnpd_sqlite3_free() is harmless.  After being freed, memory
 ** should neither be read nor written.  Even reading previously freed
 ** memory might result in a segmentation fault or other severe error.
 ** Memory corruption, a segmentation fault, or other severe error
-** might result if sqlite3_free() is called with a non-NULL pointer that
-** was not obtained from sqlite3_malloc() or sqlite3_realloc().
+** might result if upnpd_sqlite3_free() is called with a non-NULL pointer that
+** was not obtained from upnpd_sqlite3_malloc() or upnpd_sqlite3_realloc().
 **
-** The sqlite3_realloc() interface attempts to resize a
+** The upnpd_sqlite3_realloc() interface attempts to resize a
 ** prior memory allocation to be at least N bytes, where N is the
 ** second parameter.  The memory allocation to be resized is the first
-** parameter.  If the first parameter to sqlite3_realloc()
+** parameter.  If the first parameter to upnpd_sqlite3_realloc()
 ** is a NULL pointer then its behavior is identical to calling
-** sqlite3_malloc(N) where N is the second parameter to sqlite3_realloc().
-** If the second parameter to sqlite3_realloc() is zero or
+** upnpd_sqlite3_malloc(N) where N is the second parameter to upnpd_sqlite3_realloc().
+** If the second parameter to upnpd_sqlite3_realloc() is zero or
 ** negative then the behavior is exactly the same as calling
-** sqlite3_free(P) where P is the first parameter to sqlite3_realloc().
-** sqlite3_realloc() returns a pointer to a memory allocation
+** upnpd_sqlite3_free(P) where P is the first parameter to upnpd_sqlite3_realloc().
+** upnpd_sqlite3_realloc() returns a pointer to a memory allocation
 ** of at least N bytes in size or NULL if sufficient memory is unavailable.
 ** If M is the size of the prior allocation, then min(N,M) bytes
 ** of the prior allocation are copied into the beginning of buffer returned
-** by sqlite3_realloc() and the prior allocation is freed.
-** If sqlite3_realloc() returns NULL, then the prior allocation
+** by upnpd_sqlite3_realloc() and the prior allocation is freed.
+** If upnpd_sqlite3_realloc() returns NULL, then the prior allocation
 ** is not freed.
 **
-** The memory returned by sqlite3_malloc() and sqlite3_realloc()
+** The memory returned by upnpd_sqlite3_malloc() and upnpd_sqlite3_realloc()
 ** is always aligned to at least an 8 byte boundary. {END}
 **
 ** The default implementation of the memory allocation subsystem uses
@@ -1751,31 +1751,31 @@ SQLITE_API char *sqlite3_snprintf(int,char*,const char*, ...);
 ** [H17303] [H17304] [H17305] [H17306] [H17310] [H17312] [H17315] [H17318]
 ** [H17321] [H17322] [H17323]
 **
-** The pointer arguments to [sqlite3_free()] and [sqlite3_realloc()]
+** The pointer arguments to [upnpd_sqlite3_free()] and [upnpd_sqlite3_realloc()]
 ** must be either NULL or else pointers obtained from a prior
-** invocation of [sqlite3_malloc()] or [sqlite3_realloc()] that have
+** invocation of [upnpd_sqlite3_malloc()] or [upnpd_sqlite3_realloc()] that have
 ** not yet been released.
 **
 ** The application must not read or write any part of
 ** a block of memory after it has been released using
-** [sqlite3_free()] or [sqlite3_realloc()].
+** [upnpd_sqlite3_free()] or [upnpd_sqlite3_realloc()].
 */
-SQLITE_API void *sqlite3_malloc(int);
-SQLITE_API void *sqlite3_realloc(void*, int);
-SQLITE_API void sqlite3_free(void*);
+SQLITE_API void *upnpd_sqlite3_malloc(int);
+SQLITE_API void *upnpd_sqlite3_realloc(void*, int);
+SQLITE_API void upnpd_sqlite3_free(void*);
 
 /*
 ** CAPI3REF: Memory Allocator Statistics {H17370} <S30210>
 **
 ** SQLite provides these two interfaces for reporting on the status
-** of the [sqlite3_malloc()], [sqlite3_free()], and [sqlite3_realloc()]
+** of the [upnpd_sqlite3_malloc()], [upnpd_sqlite3_free()], and [upnpd_sqlite3_realloc()]
 ** routines, which form the built-in memory allocation subsystem.
 **
 ** Requirements:
 ** [H17371] [H17373] [H17374] [H17375]
 */
-SQLITE_API sqlite3_int64 sqlite3_memory_used(void);
-SQLITE_API sqlite3_int64 sqlite3_memory_highwater(int resetFlag);
+SQLITE_API sqlite3_int64 upnpd_sqlite3_memory_used(void);
+SQLITE_API sqlite3_int64 upnpd_sqlite3_memory_highwater(int resetFlag);
 
 /*
 ** CAPI3REF: Pseudo-Random Number Generator {H17390} <S20000>
@@ -1798,7 +1798,7 @@ SQLITE_API sqlite3_int64 sqlite3_memory_highwater(int resetFlag);
 ** Requirements:
 ** [H17392]
 */
-SQLITE_API void sqlite3_randomness(int N, void *P);
+SQLITE_API void upnpd_sqlite3_randomness(int N, void *P);
 
 /*
 ** CAPI3REF: Compile-Time Authorization Callbacks {H12500} <S70100>
@@ -1806,8 +1806,8 @@ SQLITE_API void sqlite3_randomness(int N, void *P);
 ** This routine registers a authorizer callback with a particular
 ** [database connection], supplied in the first argument.
 ** The authorizer callback is invoked as SQL statements are being compiled
-** by [sqlite3_prepare()] or its variants [sqlite3_prepare_v2()],
-** [sqlite3_prepare16()] and [sqlite3_prepare16_v2()].  At various
+** by [upnpd_sqlite3_prepare()] or its variants [upnpd_sqlite3_prepare_v2()],
+** [upnpd_sqlite3_prepare16()] and [upnpd_sqlite3_prepare16_v2()].  At various
 ** points during the compilation process, as logic is being created
 ** to perform various actions, the authorizer callback is invoked to
 ** see if those actions are allowed.  The authorizer callback should
@@ -1816,17 +1816,17 @@ SQLITE_API void sqlite3_randomness(int N, void *P);
 ** compiled, or [SQLITE_DENY] to cause the entire SQL statement to be
 ** rejected with an error.  If the authorizer callback returns
 ** any value other than [SQLITE_IGNORE], [SQLITE_OK], or [SQLITE_DENY]
-** then the [sqlite3_prepare_v2()] or equivalent call that triggered
+** then the [upnpd_sqlite3_prepare_v2()] or equivalent call that triggered
 ** the authorizer will fail with an error message.
 **
 ** When the callback returns [SQLITE_OK], that means the operation
 ** requested is ok.  When the callback returns [SQLITE_DENY], the
-** [sqlite3_prepare_v2()] or equivalent call that triggered the
+** [upnpd_sqlite3_prepare_v2()] or equivalent call that triggered the
 ** authorizer will fail with an error message explaining that
 ** access is denied. 
 **
 ** The first parameter to the authorizer callback is a copy of the third
-** parameter to the sqlite3_set_authorizer() interface. The second parameter
+** parameter to the upnpd_sqlite3_set_authorizer() interface. The second parameter
 ** to the callback is an integer [SQLITE_COPY | action code] that specifies
 ** the particular action to be authorized. The third through sixth parameters
 ** to the callback are zero-terminated strings that contain additional
@@ -1843,7 +1843,7 @@ SQLITE_API void sqlite3_randomness(int N, void *P);
 ** [SQLITE_IGNORE] then the [DELETE] operation proceeds but the
 ** [truncate optimization] is disabled and all rows are deleted individually.
 **
-** An authorizer is used when [sqlite3_prepare | preparing]
+** An authorizer is used when [upnpd_sqlite3_prepare | preparing]
 ** SQL statements from an untrusted source, to ensure that the SQL statements
 ** do not try to access data they are not allowed to see, or that they do not
 ** try to execute malicious statements that damage the database.  For
@@ -1851,40 +1851,40 @@ SQLITE_API void sqlite3_randomness(int N, void *P);
 ** SQL queries for evaluation by a database.  But the application does
 ** not want the user to be able to make arbitrary changes to the
 ** database.  An authorizer could then be put in place while the
-** user-entered SQL is being [sqlite3_prepare | prepared] that
+** user-entered SQL is being [upnpd_sqlite3_prepare | prepared] that
 ** disallows everything except [SELECT] statements.
 **
 ** Applications that need to process SQL from untrusted sources
-** might also consider lowering resource limits using [sqlite3_limit()]
+** might also consider lowering resource limits using [upnpd_sqlite3_limit()]
 ** and limiting database size using the [max_page_count] [PRAGMA]
 ** in addition to using an authorizer.
 **
 ** Only a single authorizer can be in place on a database connection
-** at a time.  Each call to sqlite3_set_authorizer overrides the
+** at a time.  Each call to upnpd_sqlite3_set_authorizer overrides the
 ** previous call.  Disable the authorizer by installing a NULL callback.
 ** The authorizer is disabled by default.
 **
 ** The authorizer callback must not do anything that will modify
 ** the database connection that invoked the authorizer callback.
-** Note that [sqlite3_prepare_v2()] and [sqlite3_step()] both modify their
+** Note that [upnpd_sqlite3_prepare_v2()] and [upnpd_sqlite3_step()] both modify their
 ** database connections for the meaning of "modify" in this paragraph.
 **
-** When [sqlite3_prepare_v2()] is used to prepare a statement, the
-** statement might be reprepared during [sqlite3_step()] due to a 
+** When [upnpd_sqlite3_prepare_v2()] is used to prepare a statement, the
+** statement might be reprepared during [upnpd_sqlite3_step()] due to a 
 ** schema change.  Hence, the application should ensure that the
-** correct authorizer callback remains in place during the [sqlite3_step()].
+** correct authorizer callback remains in place during the [upnpd_sqlite3_step()].
 **
 ** Note that the authorizer callback is invoked only during
-** [sqlite3_prepare()] or its variants.  Authorization is not
-** performed during statement evaluation in [sqlite3_step()], unless
-** as stated in the previous paragraph, sqlite3_step() invokes
-** sqlite3_prepare_v2() to reprepare a statement after a schema change.
+** [upnpd_sqlite3_prepare()] or its variants.  Authorization is not
+** performed during statement evaluation in [upnpd_sqlite3_step()], unless
+** as stated in the previous paragraph, upnpd_sqlite3_step() invokes
+** upnpd_sqlite3_prepare_v2() to reprepare a statement after a schema change.
 **
 ** Requirements:
 ** [H12501] [H12502] [H12503] [H12504] [H12505] [H12506] [H12507] [H12510]
 ** [H12511] [H12512] [H12520] [H12521] [H12522]
 */
-SQLITE_API int sqlite3_set_authorizer(
+SQLITE_API int upnpd_sqlite3_set_authorizer(
   sqlite3*,
   int (*xAuth)(void*,int,const char*,const char*,const char*,const char*),
   void *pUserData
@@ -1893,10 +1893,10 @@ SQLITE_API int sqlite3_set_authorizer(
 /*
 ** CAPI3REF: Authorizer Return Codes {H12590} <H12500>
 **
-** The [sqlite3_set_authorizer | authorizer callback function] must
+** The [upnpd_sqlite3_set_authorizer | authorizer callback function] must
 ** return either [SQLITE_OK] or one of these two constants in order
 ** to signal SQLite whether or not the action is permitted.  See the
-** [sqlite3_set_authorizer | authorizer documentation] for additional
+** [upnpd_sqlite3_set_authorizer | authorizer documentation] for additional
 ** information.
 */
 #define SQLITE_DENY   1   /* Abort the SQL statement with an error */
@@ -1905,7 +1905,7 @@ SQLITE_API int sqlite3_set_authorizer(
 /*
 ** CAPI3REF: Authorizer Action Codes {H12550} <H12500>
 **
-** The [sqlite3_set_authorizer()] interface registers a callback function
+** The [upnpd_sqlite3_set_authorizer()] interface registers a callback function
 ** that is invoked to authorize certain SQL statement actions.  The
 ** second parameter to the callback is an integer code that specifies
 ** what action is being authorized.  These are the integer action codes that
@@ -1966,14 +1966,14 @@ SQLITE_API int sqlite3_set_authorizer(
 ** These routines register callback functions that can be used for
 ** tracing and profiling the execution of SQL statements.
 **
-** The callback function registered by sqlite3_trace() is invoked at
-** various times when an SQL statement is being run by [sqlite3_step()].
+** The callback function registered by upnpd_sqlite3_trace() is invoked at
+** various times when an SQL statement is being run by [upnpd_sqlite3_step()].
 ** The callback returns a UTF-8 rendering of the SQL statement text
 ** as the statement first begins executing.  Additional callbacks occur
 ** as each triggered subprogram is entered.  The callbacks for triggers
 ** contain a UTF-8 SQL comment that identifies the trigger.
 **
-** The callback function registered by sqlite3_profile() is invoked
+** The callback function registered by upnpd_sqlite3_profile() is invoked
 ** as each SQL statement finishes.  The profile callback contains
 ** the original statement text and an estimate of wall-clock time
 ** of how long that statement took to run.
@@ -1982,8 +1982,8 @@ SQLITE_API int sqlite3_set_authorizer(
 ** [H12281] [H12282] [H12283] [H12284] [H12285] [H12287] [H12288] [H12289]
 ** [H12290]
 */
-SQLITE_API SQLITE_EXPERIMENTAL void *sqlite3_trace(sqlite3*, void(*xTrace)(void*,const char*), void*);
-SQLITE_API SQLITE_EXPERIMENTAL void *sqlite3_profile(sqlite3*,
+SQLITE_API SQLITE_EXPERIMENTAL void *upnpd_sqlite3_trace(sqlite3*, void(*xTrace)(void*,const char*), void*);
+SQLITE_API SQLITE_EXPERIMENTAL void *upnpd_sqlite3_profile(sqlite3*,
    void(*xProfile)(void*,const char*,sqlite3_uint64), void*);
 
 /*
@@ -1991,8 +1991,8 @@ SQLITE_API SQLITE_EXPERIMENTAL void *sqlite3_profile(sqlite3*,
 **
 ** This routine configures a callback function - the
 ** progress callback - that is invoked periodically during long
-** running calls to [sqlite3_exec()], [sqlite3_step()] and
-** [sqlite3_get_table()].  An example use for this
+** running calls to [upnpd_sqlite3_exec()], [upnpd_sqlite3_step()] and
+** [upnpd_sqlite3_get_table()].  An example use for this
 ** interface is to keep a GUI updated during a large query.
 **
 ** If the progress callback returns non-zero, the operation is
@@ -2001,39 +2001,39 @@ SQLITE_API SQLITE_EXPERIMENTAL void *sqlite3_profile(sqlite3*,
 **
 ** The progress handler must not do anything that will modify
 ** the database connection that invoked the progress handler.
-** Note that [sqlite3_prepare_v2()] and [sqlite3_step()] both modify their
+** Note that [upnpd_sqlite3_prepare_v2()] and [upnpd_sqlite3_step()] both modify their
 ** database connections for the meaning of "modify" in this paragraph.
 **
 ** Requirements:
 ** [H12911] [H12912] [H12913] [H12914] [H12915] [H12916] [H12917] [H12918]
 **
 */
-SQLITE_API void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
+SQLITE_API void upnpd_sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 
 /*
 ** CAPI3REF: Opening A New Database Connection {H12700} <S40200>
 **
 ** These routines open an SQLite database file whose name is given by the
 ** filename argument. The filename argument is interpreted as UTF-8 for
-** sqlite3_open() and sqlite3_open_v2() and as UTF-16 in the native byte
-** order for sqlite3_open16(). A [database connection] handle is usually
+** upnpd_sqlite3_open() and upnpd_sqlite3_open_v2() and as UTF-16 in the native byte
+** order for upnpd_sqlite3_open16(). A [database connection] handle is usually
 ** returned in *ppDb, even if an error occurs.  The only exception is that
 ** if SQLite is unable to allocate memory to hold the [sqlite3] object,
 ** a NULL will be written into *ppDb instead of a pointer to the [sqlite3]
 ** object. If the database is opened (and/or created) successfully, then
 ** [SQLITE_OK] is returned.  Otherwise an [error code] is returned.  The
-** [sqlite3_errmsg()] or [sqlite3_errmsg16()] routines can be used to obtain
+** [upnpd_sqlite3_errmsg()] or [upnpd_sqlite3_errmsg16()] routines can be used to obtain
 ** an English language description of the error.
 **
 ** The default encoding for the database will be UTF-8 if
-** sqlite3_open() or sqlite3_open_v2() is called and
-** UTF-16 in the native byte order if sqlite3_open16() is used.
+** upnpd_sqlite3_open() or upnpd_sqlite3_open_v2() is called and
+** UTF-16 in the native byte order if upnpd_sqlite3_open16() is used.
 **
 ** Whether or not an error occurs when it is opened, resources
 ** associated with the [database connection] handle should be released by
-** passing it to [sqlite3_close()] when it is no longer required.
+** passing it to [upnpd_sqlite3_close()] when it is no longer required.
 **
-** The sqlite3_open_v2() interface works like sqlite3_open()
+** The upnpd_sqlite3_open_v2() interface works like upnpd_sqlite3_open()
 ** except that it accepts two additional parameters for additional control
 ** over the new database connection.  The flags parameter can take one of
 ** the following three values, optionally combined with the 
@@ -2052,10 +2052,10 @@ SQLITE_API void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** <dt>[SQLITE_OPEN_READWRITE] | [SQLITE_OPEN_CREATE]</dt>
 ** <dd>The database is opened for reading and writing, and is creates it if
 ** it does not already exist. This is the behavior that is always used for
-** sqlite3_open() and sqlite3_open16().</dd>
+** upnpd_sqlite3_open() and upnpd_sqlite3_open16().</dd>
 ** </dl>
 **
-** If the 3rd parameter to sqlite3_open_v2() is not one of the
+** If the 3rd parameter to upnpd_sqlite3_open_v2() is not one of the
 ** combinations shown above or one of the combinations shown above combined
 ** with the [SQLITE_OPEN_NOMUTEX] or [SQLITE_OPEN_FULLMUTEX] flags,
 ** then the behavior is undefined.
@@ -2079,30 +2079,30 @@ SQLITE_API void sqlite3_progress_handler(sqlite3*, int, int(*)(void*), void*);
 ** on-disk database will be created.  This private database will be
 ** automatically deleted as soon as the database connection is closed.
 **
-** The fourth parameter to sqlite3_open_v2() is the name of the
+** The fourth parameter to upnpd_sqlite3_open_v2() is the name of the
 ** [sqlite3_vfs] object that defines the operating system interface that
 ** the new database connection should use.  If the fourth parameter is
 ** a NULL pointer then the default [sqlite3_vfs] object is used.
 **
 ** <b>Note to Windows users:</b>  The encoding used for the filename argument
-** of sqlite3_open() and sqlite3_open_v2() must be UTF-8, not whatever
+** of upnpd_sqlite3_open() and upnpd_sqlite3_open_v2() must be UTF-8, not whatever
 ** codepage is currently defined.  Filenames containing international
 ** characters must be converted to UTF-8 prior to passing them into
-** sqlite3_open() or sqlite3_open_v2().
+** upnpd_sqlite3_open() or upnpd_sqlite3_open_v2().
 **
 ** Requirements:
 ** [H12701] [H12702] [H12703] [H12704] [H12706] [H12707] [H12709] [H12711]
 ** [H12712] [H12713] [H12714] [H12717] [H12719] [H12721] [H12723]
 */
-SQLITE_API int sqlite3_open(
+SQLITE_API int upnpd_sqlite3_open(
   const char *filename,   /* Database filename (UTF-8) */
   sqlite3 **ppDb          /* OUT: SQLite db handle */
 );
-SQLITE_API int sqlite3_open16(
+SQLITE_API int upnpd_sqlite3_open16(
   const void *filename,   /* Database filename (UTF-16) */
   sqlite3 **ppDb          /* OUT: SQLite db handle */
 );
-SQLITE_API int sqlite3_open_v2(
+SQLITE_API int upnpd_sqlite3_open_v2(
   const char *filename,   /* Database filename (UTF-8) */
   sqlite3 **ppDb,         /* OUT: SQLite db handle */
   int flags,              /* Flags */
@@ -2112,16 +2112,16 @@ SQLITE_API int sqlite3_open_v2(
 /*
 ** CAPI3REF: Error Codes And Messages {H12800} <S60200>
 **
-** The sqlite3_errcode() interface returns the numeric [result code] or
+** The upnpd_sqlite3_errcode() interface returns the numeric [result code] or
 ** [extended result code] for the most recent failed sqlite3_* API call
 ** associated with a [database connection]. If a prior API call failed
 ** but the most recent API call succeeded, the return value from
-** sqlite3_errcode() is undefined.  The sqlite3_extended_errcode()
+** upnpd_sqlite3_errcode() is undefined.  The upnpd_sqlite3_extended_errcode()
 ** interface is the same except that it always returns the 
 ** [extended result code] even when extended result codes are
 ** disabled.
 **
-** The sqlite3_errmsg() and sqlite3_errmsg16() return English-language
+** The upnpd_sqlite3_errmsg() and upnpd_sqlite3_errmsg16() return English-language
 ** text that describes the error, as either UTF-8 or UTF-16 respectively.
 ** Memory to hold the error message string is managed internally.
 ** The application does not need to worry about freeing the result.
@@ -2134,8 +2134,8 @@ SQLITE_API int sqlite3_open_v2(
 ** When that happens, the second error will be reported since these
 ** interfaces always report the most recent result.  To avoid
 ** this, each thread can obtain exclusive use of the [database connection] D
-** by invoking [sqlite3_mutex_enter]([sqlite3_db_mutex](D)) before beginning
-** to use D and invoking [sqlite3_mutex_leave]([sqlite3_db_mutex](D)) after
+** by invoking [upnpd_sqlite3_mutex_enter]([upnpd_sqlite3_db_mutex](D)) before beginning
+** to use D and invoking [upnpd_sqlite3_mutex_leave]([upnpd_sqlite3_db_mutex](D)) after
 ** all calls to the interfaces listed here are completed.
 **
 ** If an interface fails with SQLITE_MISUSE, that means the interface
@@ -2145,10 +2145,10 @@ SQLITE_API int sqlite3_open_v2(
 ** Requirements:
 ** [H12801] [H12802] [H12803] [H12807] [H12808] [H12809]
 */
-SQLITE_API int sqlite3_errcode(sqlite3 *db);
-SQLITE_API int sqlite3_extended_errcode(sqlite3 *db);
-SQLITE_API const char *sqlite3_errmsg(sqlite3*);
-SQLITE_API const void *sqlite3_errmsg16(sqlite3*);
+SQLITE_API int upnpd_sqlite3_errcode(sqlite3 *db);
+SQLITE_API int upnpd_sqlite3_extended_errcode(sqlite3 *db);
+SQLITE_API const char *upnpd_sqlite3_errmsg(sqlite3*);
+SQLITE_API const void *upnpd_sqlite3_errmsg16(sqlite3*);
 
 /*
 ** CAPI3REF: SQL Statement Object {H13000} <H13010>
@@ -2161,14 +2161,14 @@ SQLITE_API const void *sqlite3_errmsg16(sqlite3*);
 ** The life of a statement object goes something like this:
 **
 ** <ol>
-** <li> Create the object using [sqlite3_prepare_v2()] or a related
+** <li> Create the object using [upnpd_sqlite3_prepare_v2()] or a related
 **      function.
 ** <li> Bind values to [host parameters] using the sqlite3_bind_*()
 **      interfaces.
-** <li> Run the SQL by calling [sqlite3_step()] one or more times.
-** <li> Reset the statement using [sqlite3_reset()] then go back
+** <li> Run the SQL by calling [upnpd_sqlite3_step()] one or more times.
+** <li> Reset the statement using [upnpd_sqlite3_reset()] then go back
 **      to step 2.  Do this zero or more times.
-** <li> Destroy the object using [sqlite3_finalize()].
+** <li> Destroy the object using [upnpd_sqlite3_finalize()].
 ** </ol>
 **
 ** Refer to documentation on individual methods above for additional
@@ -2203,7 +2203,7 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 ** off the Internet.  The internal databases can be given the
 ** large, default limits.  Databases managed by external sources can
 ** be given much smaller limits designed to prevent a denial of service
-** attack.  Developers might also want to use the [sqlite3_set_authorizer()]
+** attack.  Developers might also want to use the [upnpd_sqlite3_set_authorizer()]
 ** interface to further control untrusted SQL.  The size of the database
 ** created by an untrusted script can be contained using the
 ** [max_page_count] [PRAGMA].
@@ -2213,14 +2213,14 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 ** Requirements:
 ** [H12762] [H12766] [H12769]
 */
-SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
+SQLITE_API int upnpd_sqlite3_limit(sqlite3*, int id, int newVal);
 
 /*
 ** CAPI3REF: Run-Time Limit Categories {H12790} <H12760>
 ** KEYWORDS: {limit category} {limit categories}
 **
 ** These constants define various performance limits
-** that can be lowered at run-time using [sqlite3_limit()].
+** that can be lowered at run-time using [upnpd_sqlite3_limit()].
 ** The synopsis of the meanings of the various limits is shown below.
 ** Additional information is available at [limits | Limits in SQLite].
 **
@@ -2280,12 +2280,12 @@ SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
 ** program using one of these routines.
 **
 ** The first argument, "db", is a [database connection] obtained from a
-** prior successful call to [sqlite3_open()], [sqlite3_open_v2()] or
-** [sqlite3_open16()].  The database connection must not have been closed.
+** prior successful call to [upnpd_sqlite3_open()], [upnpd_sqlite3_open_v2()] or
+** [upnpd_sqlite3_open16()].  The database connection must not have been closed.
 **
 ** The second argument, "zSql", is the statement to be compiled, encoded
-** as either UTF-8 or UTF-16.  The sqlite3_prepare() and sqlite3_prepare_v2()
-** interfaces use UTF-8, and sqlite3_prepare16() and sqlite3_prepare16_v2()
+** as either UTF-8 or UTF-16.  The upnpd_sqlite3_prepare() and upnpd_sqlite3_prepare_v2()
+** interfaces use UTF-8, and upnpd_sqlite3_prepare16() and upnpd_sqlite3_prepare16_v2()
 ** use UTF-16.
 **
 ** If the nByte argument is less than zero, then zSql is read up to the
@@ -2304,40 +2304,40 @@ SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
 ** what remains uncompiled.
 **
 ** *ppStmt is left pointing to a compiled [prepared statement] that can be
-** executed using [sqlite3_step()].  If there is an error, *ppStmt is set
+** executed using [upnpd_sqlite3_step()].  If there is an error, *ppStmt is set
 ** to NULL.  If the input text contains no SQL (if the input is an empty
 ** string or a comment) then *ppStmt is set to NULL.
 ** The calling procedure is responsible for deleting the compiled
-** SQL statement using [sqlite3_finalize()] after it has finished with it.
+** SQL statement using [upnpd_sqlite3_finalize()] after it has finished with it.
 ** ppStmt may not be NULL.
 **
 ** On success, [SQLITE_OK] is returned, otherwise an [error code] is returned.
 **
-** The sqlite3_prepare_v2() and sqlite3_prepare16_v2() interfaces are
+** The upnpd_sqlite3_prepare_v2() and upnpd_sqlite3_prepare16_v2() interfaces are
 ** recommended for all new programs. The two older interfaces are retained
 ** for backwards compatibility, but their use is discouraged.
 ** In the "v2" interfaces, the prepared statement
 ** that is returned (the [sqlite3_stmt] object) contains a copy of the
-** original SQL text. This causes the [sqlite3_step()] interface to
+** original SQL text. This causes the [upnpd_sqlite3_step()] interface to
 ** behave a differently in two ways:
 **
 ** <ol>
 ** <li>
 ** If the database schema changes, instead of returning [SQLITE_SCHEMA] as it
-** always used to do, [sqlite3_step()] will automatically recompile the SQL
+** always used to do, [upnpd_sqlite3_step()] will automatically recompile the SQL
 ** statement and try to run it again.  If the schema has changed in
-** a way that makes the statement no longer valid, [sqlite3_step()] will still
+** a way that makes the statement no longer valid, [upnpd_sqlite3_step()] will still
 ** return [SQLITE_SCHEMA].  But unlike the legacy behavior, [SQLITE_SCHEMA] is
-** now a fatal error.  Calling [sqlite3_prepare_v2()] again will not make the
-** error go away.  Note: use [sqlite3_errmsg()] to find the text
+** now a fatal error.  Calling [upnpd_sqlite3_prepare_v2()] again will not make the
+** error go away.  Note: use [upnpd_sqlite3_errmsg()] to find the text
 ** of the parsing error that results in an [SQLITE_SCHEMA] return.
 ** </li>
 **
 ** <li>
-** When an error occurs, [sqlite3_step()] will return one of the detailed
+** When an error occurs, [upnpd_sqlite3_step()] will return one of the detailed
 ** [error codes] or [extended error codes].  The legacy behavior was that
-** [sqlite3_step()] would only return a generic [SQLITE_ERROR] result code
-** and you would have to make a second call to [sqlite3_reset()] in order
+** [upnpd_sqlite3_step()] would only return a generic [SQLITE_ERROR] result code
+** and you would have to make a second call to [upnpd_sqlite3_reset()] in order
 ** to find the underlying cause of the problem. With the "v2" prepare
 ** interfaces, the underlying reason for the error is returned immediately.
 ** </li>
@@ -2347,28 +2347,28 @@ SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
 ** [H13011] [H13012] [H13013] [H13014] [H13015] [H13016] [H13019] [H13021]
 **
 */
-SQLITE_API int sqlite3_prepare(
+SQLITE_API int upnpd_sqlite3_prepare(
   sqlite3 *db,            /* Database handle */
   const char *zSql,       /* SQL statement, UTF-8 encoded */
   int nByte,              /* Maximum length of zSql in bytes. */
   sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
   const char **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
-SQLITE_API int sqlite3_prepare_v2(
+SQLITE_API int upnpd_sqlite3_prepare_v2(
   sqlite3 *db,            /* Database handle */
   const char *zSql,       /* SQL statement, UTF-8 encoded */
   int nByte,              /* Maximum length of zSql in bytes. */
   sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
   const char **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
-SQLITE_API int sqlite3_prepare16(
+SQLITE_API int upnpd_sqlite3_prepare16(
   sqlite3 *db,            /* Database handle */
   const void *zSql,       /* SQL statement, UTF-16 encoded */
   int nByte,              /* Maximum length of zSql in bytes. */
   sqlite3_stmt **ppStmt,  /* OUT: Statement handle */
   const void **pzTail     /* OUT: Pointer to unused portion of zSql */
 );
-SQLITE_API int sqlite3_prepare16_v2(
+SQLITE_API int upnpd_sqlite3_prepare16_v2(
   sqlite3 *db,            /* Database handle */
   const void *zSql,       /* SQL statement, UTF-16 encoded */
   int nByte,              /* Maximum length of zSql in bytes. */
@@ -2381,12 +2381,12 @@ SQLITE_API int sqlite3_prepare16_v2(
 **
 ** This interface can be used to retrieve a saved copy of the original
 ** SQL text used to create a [prepared statement] if that statement was
-** compiled using either [sqlite3_prepare_v2()] or [sqlite3_prepare16_v2()].
+** compiled using either [upnpd_sqlite3_prepare_v2()] or [upnpd_sqlite3_prepare16_v2()].
 **
 ** Requirements:
 ** [H13101] [H13102] [H13103]
 */
-SQLITE_API const char *sqlite3_sql(sqlite3_stmt *pStmt);
+SQLITE_API const char *upnpd_sqlite3_sql(sqlite3_stmt *pStmt);
 
 /*
 ** CAPI3REF: Dynamically Typed Value Object {H15000} <S20200>
@@ -2407,7 +2407,7 @@ SQLITE_API const char *sqlite3_sql(sqlite3_stmt *pStmt);
 ** a mutex is held.  A internal mutex is held for a protected
 ** sqlite3_value object but no mutex is held for an unprotected
 ** sqlite3_value object.  If SQLite is compiled to be single-threaded
-** (with [SQLITE_THREADSAFE=0] and with [sqlite3_threadsafe()] returning 0)
+** (with [SQLITE_THREADSAFE=0] and with [upnpd_sqlite3_threadsafe()] returning 0)
 ** or if SQLite is run in one of reduced mutex modes 
 ** [SQLITE_CONFIG_SINGLETHREAD] or [SQLITE_CONFIG_MULTITHREAD]
 ** then there is no distinction between protected and unprotected
@@ -2419,10 +2419,10 @@ SQLITE_API const char *sqlite3_sql(sqlite3_stmt *pStmt);
 ** The sqlite3_value objects that are passed as parameters into the
 ** implementation of [application-defined SQL functions] are protected.
 ** The sqlite3_value object returned by
-** [sqlite3_column_value()] is unprotected.
+** [upnpd_sqlite3_column_value()] is unprotected.
 ** Unprotected sqlite3_value objects may only be used with
-** [sqlite3_result_value()] and [sqlite3_bind_value()].
-** The [sqlite3_value_blob | sqlite3_value_type()] family of
+** [upnpd_sqlite3_result_value()] and [upnpd_sqlite3_bind_value()].
+** The [upnpd_sqlite3_value_blob | upnpd_sqlite3_value_type()] family of
 ** interfaces require protected sqlite3_value objects.
 */
 typedef struct Mem sqlite3_value;
@@ -2434,10 +2434,10 @@ typedef struct Mem sqlite3_value;
 ** sqlite3_context object.  A pointer to an sqlite3_context object
 ** is always first parameter to [application-defined SQL functions].
 ** The application-defined SQL function implementation will pass this
-** pointer through into calls to [sqlite3_result_int | sqlite3_result()],
-** [sqlite3_aggregate_context()], [sqlite3_user_data()],
-** [sqlite3_context_db_handle()], [sqlite3_get_auxdata()],
-** and/or [sqlite3_set_auxdata()].
+** pointer through into calls to [upnpd_sqlite3_result_int | sqlite3_result()],
+** [upnpd_sqlite3_aggregate_context()], [upnpd_sqlite3_user_data()],
+** [upnpd_sqlite3_context_db_handle()], [upnpd_sqlite3_get_auxdata()],
+** and/or [upnpd_sqlite3_set_auxdata()].
 */
 typedef struct sqlite3_context sqlite3_context;
 
@@ -2446,7 +2446,7 @@ typedef struct sqlite3_context sqlite3_context;
 ** KEYWORDS: {host parameter} {host parameters} {host parameter name}
 ** KEYWORDS: {SQL parameter} {SQL parameters} {parameter binding}
 **
-** In the SQL strings input to [sqlite3_prepare_v2()] and its variants,
+** In the SQL strings input to [upnpd_sqlite3_prepare_v2()] and its variants,
 ** literals may be replaced by a [parameter] in one of these forms:
 **
 ** <ul>
@@ -2464,16 +2464,16 @@ typedef struct sqlite3_context sqlite3_context;
 **
 ** The first argument to the sqlite3_bind_*() routines is always
 ** a pointer to the [sqlite3_stmt] object returned from
-** [sqlite3_prepare_v2()] or its variants.
+** [upnpd_sqlite3_prepare_v2()] or its variants.
 **
 ** The second argument is the index of the SQL parameter to be set.
 ** The leftmost SQL parameter has an index of 1.  When the same named
 ** SQL parameter is used more than once, second and subsequent
 ** occurrences have the same index as the first occurrence.
 ** The index for named parameters can be looked up using the
-** [sqlite3_bind_parameter_index()] API if desired.  The index
+** [upnpd_sqlite3_bind_parameter_index()] API if desired.  The index
 ** for "?NNN" parameters is the value of NNN.
-** The NNN value must be between 1 and the [sqlite3_limit()]
+** The NNN value must be between 1 and the [upnpd_sqlite3_limit()]
 ** parameter [SQLITE_LIMIT_VARIABLE_NUMBER] (default value: 999).
 **
 ** The third argument is the value to bind to the parameter.
@@ -2484,8 +2484,8 @@ typedef struct sqlite3_context sqlite3_context;
 ** If the fourth parameter is negative, the length of the string is
 ** the number of bytes up to the first zero terminator.
 **
-** The fifth argument to sqlite3_bind_blob(), sqlite3_bind_text(), and
-** sqlite3_bind_text16() is a destructor used to dispose of the BLOB or
+** The fifth argument to upnpd_sqlite3_bind_blob(), upnpd_sqlite3_bind_text(), and
+** upnpd_sqlite3_bind_text16() is a destructor used to dispose of the BLOB or
 ** string after SQLite has finished with it. If the fifth argument is
 ** the special value [SQLITE_STATIC], then SQLite assumes that the
 ** information is in static, unmanaged space and does not need to be freed.
@@ -2493,18 +2493,18 @@ typedef struct sqlite3_context sqlite3_context;
 ** SQLite makes its own private copy of the data immediately, before
 ** the sqlite3_bind_*() routine returns.
 **
-** The sqlite3_bind_zeroblob() routine binds a BLOB of length N that
+** The upnpd_sqlite3_bind_zeroblob() routine binds a BLOB of length N that
 ** is filled with zeroes.  A zeroblob uses a fixed amount of memory
 ** (just an integer to hold its size) while it is being processed.
 ** Zeroblobs are intended to serve as placeholders for BLOBs whose
 ** content is later written using
-** [sqlite3_blob_open | incremental BLOB I/O] routines.
+** [upnpd_sqlite3_blob_open | incremental BLOB I/O] routines.
 ** A negative value for the zeroblob results in a zero-length BLOB.
 **
 ** The sqlite3_bind_*() routines must be called after
-** [sqlite3_prepare_v2()] (and its variants) or [sqlite3_reset()] and
-** before [sqlite3_step()].
-** Bindings are not cleared by the [sqlite3_reset()] routine.
+** [upnpd_sqlite3_prepare_v2()] (and its variants) or [upnpd_sqlite3_reset()] and
+** before [upnpd_sqlite3_step()].
+** Bindings are not cleared by the [upnpd_sqlite3_reset()] routine.
 ** Unbound parameters are interpreted as NULL.
 **
 ** These routines return [SQLITE_OK] on success or an error code if
@@ -2517,23 +2517,23 @@ typedef struct sqlite3_context sqlite3_context;
 ** a logic error in the application.  Future versions of SQLite might
 ** panic rather than return SQLITE_MISUSE.
 **
-** See also: [sqlite3_bind_parameter_count()],
-** [sqlite3_bind_parameter_name()], and [sqlite3_bind_parameter_index()].
+** See also: [upnpd_sqlite3_bind_parameter_count()],
+** [upnpd_sqlite3_bind_parameter_name()], and [upnpd_sqlite3_bind_parameter_index()].
 **
 ** Requirements:
 ** [H13506] [H13509] [H13512] [H13515] [H13518] [H13521] [H13524] [H13527]
 ** [H13530] [H13533] [H13536] [H13539] [H13542] [H13545] [H13548] [H13551]
 **
 */
-SQLITE_API int sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
-SQLITE_API int sqlite3_bind_double(sqlite3_stmt*, int, double);
-SQLITE_API int sqlite3_bind_int(sqlite3_stmt*, int, int);
-SQLITE_API int sqlite3_bind_int64(sqlite3_stmt*, int, sqlite3_int64);
-SQLITE_API int sqlite3_bind_null(sqlite3_stmt*, int);
-SQLITE_API int sqlite3_bind_text(sqlite3_stmt*, int, const char*, int n, void(*)(void*));
-SQLITE_API int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int, void(*)(void*));
-SQLITE_API int sqlite3_bind_value(sqlite3_stmt*, int, const sqlite3_value*);
-SQLITE_API int sqlite3_bind_zeroblob(sqlite3_stmt*, int, int n);
+SQLITE_API int upnpd_sqlite3_bind_blob(sqlite3_stmt*, int, const void*, int n, void(*)(void*));
+SQLITE_API int upnpd_sqlite3_bind_double(sqlite3_stmt*, int, double);
+SQLITE_API int upnpd_sqlite3_bind_int(sqlite3_stmt*, int, int);
+SQLITE_API int upnpd_sqlite3_bind_int64(sqlite3_stmt*, int, sqlite3_int64);
+SQLITE_API int upnpd_sqlite3_bind_null(sqlite3_stmt*, int);
+SQLITE_API int upnpd_sqlite3_bind_text(sqlite3_stmt*, int, const char*, int n, void(*)(void*));
+SQLITE_API int upnpd_sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int, void(*)(void*));
+SQLITE_API int upnpd_sqlite3_bind_value(sqlite3_stmt*, int, const sqlite3_value*);
+SQLITE_API int upnpd_sqlite3_bind_zeroblob(sqlite3_stmt*, int, int n);
 
 /*
 ** CAPI3REF: Number Of SQL Parameters {H13600} <S70300>
@@ -2541,7 +2541,7 @@ SQLITE_API int sqlite3_bind_zeroblob(sqlite3_stmt*, int, int n);
 ** This routine can be used to find the number of [SQL parameters]
 ** in a [prepared statement].  SQL parameters are tokens of the
 ** form "?", "?NNN", ":AAA", "$AAA", or "@AAA" that serve as
-** placeholders for values that are [sqlite3_bind_blob | bound]
+** placeholders for values that are [upnpd_sqlite3_bind_blob | bound]
 ** to the parameters at a later time.
 **
 ** This routine actually returns the index of the largest (rightmost)
@@ -2549,14 +2549,14 @@ SQLITE_API int sqlite3_bind_zeroblob(sqlite3_stmt*, int, int n);
 ** number of unique parameters.  If parameters of the ?NNN are used,
 ** there may be gaps in the list.
 **
-** See also: [sqlite3_bind_blob|sqlite3_bind()],
-** [sqlite3_bind_parameter_name()], and
-** [sqlite3_bind_parameter_index()].
+** See also: [upnpd_sqlite3_bind_blob|sqlite3_bind()],
+** [upnpd_sqlite3_bind_parameter_name()], and
+** [upnpd_sqlite3_bind_parameter_index()].
 **
 ** Requirements:
 ** [H13601]
 */
-SQLITE_API int sqlite3_bind_parameter_count(sqlite3_stmt*);
+SQLITE_API int upnpd_sqlite3_bind_parameter_count(sqlite3_stmt*);
 
 /*
 ** CAPI3REF: Name Of A Host Parameter {H13620} <S70300>
@@ -2576,48 +2576,48 @@ SQLITE_API int sqlite3_bind_parameter_count(sqlite3_stmt*);
 ** If the value n is out of range or if the n-th parameter is
 ** nameless, then NULL is returned.  The returned string is
 ** always in UTF-8 encoding even if the named parameter was
-** originally specified as UTF-16 in [sqlite3_prepare16()] or
-** [sqlite3_prepare16_v2()].
+** originally specified as UTF-16 in [upnpd_sqlite3_prepare16()] or
+** [upnpd_sqlite3_prepare16_v2()].
 **
-** See also: [sqlite3_bind_blob|sqlite3_bind()],
-** [sqlite3_bind_parameter_count()], and
-** [sqlite3_bind_parameter_index()].
+** See also: [upnpd_sqlite3_bind_blob|sqlite3_bind()],
+** [upnpd_sqlite3_bind_parameter_count()], and
+** [upnpd_sqlite3_bind_parameter_index()].
 **
 ** Requirements:
 ** [H13621]
 */
-SQLITE_API const char *sqlite3_bind_parameter_name(sqlite3_stmt*, int);
+SQLITE_API const char *upnpd_sqlite3_bind_parameter_name(sqlite3_stmt*, int);
 
 /*
 ** CAPI3REF: Index Of A Parameter With A Given Name {H13640} <S70300>
 **
 ** Return the index of an SQL parameter given its name.  The
 ** index value returned is suitable for use as the second
-** parameter to [sqlite3_bind_blob|sqlite3_bind()].  A zero
+** parameter to [upnpd_sqlite3_bind_blob|sqlite3_bind()].  A zero
 ** is returned if no matching parameter is found.  The parameter
 ** name must be given in UTF-8 even if the original statement
-** was prepared from UTF-16 text using [sqlite3_prepare16_v2()].
+** was prepared from UTF-16 text using [upnpd_sqlite3_prepare16_v2()].
 **
-** See also: [sqlite3_bind_blob|sqlite3_bind()],
-** [sqlite3_bind_parameter_count()], and
-** [sqlite3_bind_parameter_index()].
+** See also: [upnpd_sqlite3_bind_blob|sqlite3_bind()],
+** [upnpd_sqlite3_bind_parameter_count()], and
+** [upnpd_sqlite3_bind_parameter_index()].
 **
 ** Requirements:
 ** [H13641]
 */
-SQLITE_API int sqlite3_bind_parameter_index(sqlite3_stmt*, const char *zName);
+SQLITE_API int upnpd_sqlite3_bind_parameter_index(sqlite3_stmt*, const char *zName);
 
 /*
 ** CAPI3REF: Reset All Bindings On A Prepared Statement {H13660} <S70300>
 **
-** Contrary to the intuition of many, [sqlite3_reset()] does not reset
-** the [sqlite3_bind_blob | bindings] on a [prepared statement].
+** Contrary to the intuition of many, [upnpd_sqlite3_reset()] does not reset
+** the [upnpd_sqlite3_bind_blob | bindings] on a [prepared statement].
 ** Use this routine to reset all host parameters to NULL.
 **
 ** Requirements:
 ** [H13661]
 */
-SQLITE_API int sqlite3_clear_bindings(sqlite3_stmt*);
+SQLITE_API int upnpd_sqlite3_clear_bindings(sqlite3_stmt*);
 
 /*
 ** CAPI3REF: Number Of Columns In A Result Set {H13710} <S10700>
@@ -2629,24 +2629,24 @@ SQLITE_API int sqlite3_clear_bindings(sqlite3_stmt*);
 ** Requirements:
 ** [H13711]
 */
-SQLITE_API int sqlite3_column_count(sqlite3_stmt *pStmt);
+SQLITE_API int upnpd_sqlite3_column_count(sqlite3_stmt *pStmt);
 
 /*
 ** CAPI3REF: Column Names In A Result Set {H13720} <S10700>
 **
 ** These routines return the name assigned to a particular column
-** in the result set of a [SELECT] statement.  The sqlite3_column_name()
+** in the result set of a [SELECT] statement.  The upnpd_sqlite3_column_name()
 ** interface returns a pointer to a zero-terminated UTF-8 string
-** and sqlite3_column_name16() returns a pointer to a zero-terminated
+** and upnpd_sqlite3_column_name16() returns a pointer to a zero-terminated
 ** UTF-16 string.  The first parameter is the [prepared statement]
 ** that implements the [SELECT] statement. The second parameter is the
 ** column number.  The leftmost column is number 0.
 **
 ** The returned string pointer is valid until either the [prepared statement]
-** is destroyed by [sqlite3_finalize()] or until the next call to
-** sqlite3_column_name() or sqlite3_column_name16() on the same column.
+** is destroyed by [upnpd_sqlite3_finalize()] or until the next call to
+** upnpd_sqlite3_column_name() or upnpd_sqlite3_column_name16() on the same column.
 **
-** If sqlite3_malloc() fails during the processing of either routine
+** If upnpd_sqlite3_malloc() fails during the processing of either routine
 ** (for example during a conversion from UTF-8 to UTF-16) then a
 ** NULL pointer is returned.
 **
@@ -2658,8 +2658,8 @@ SQLITE_API int sqlite3_column_count(sqlite3_stmt *pStmt);
 ** Requirements:
 ** [H13721] [H13723] [H13724] [H13725] [H13726] [H13727]
 */
-SQLITE_API const char *sqlite3_column_name(sqlite3_stmt*, int N);
-SQLITE_API const void *sqlite3_column_name16(sqlite3_stmt*, int N);
+SQLITE_API const char *upnpd_sqlite3_column_name(sqlite3_stmt*, int N);
+SQLITE_API const void *upnpd_sqlite3_column_name16(sqlite3_stmt*, int N);
 
 /*
 ** CAPI3REF: Source Of Data In A Query Result {H13740} <S10700>
@@ -2671,7 +2671,7 @@ SQLITE_API const void *sqlite3_column_name16(sqlite3_stmt*, int N);
 ** the database name, the _table_ routines return the table name, and
 ** the origin_ routines return the column name.
 ** The returned string is valid until the [prepared statement] is destroyed
-** using [sqlite3_finalize()] or until the same information is requested
+** using [upnpd_sqlite3_finalize()] or until the same information is requested
 ** again in a different encoding.
 **
 ** The names returned are the original un-aliased names of the
@@ -2745,21 +2745,21 @@ SQLITE_API const void *sqlite3_column_origin_name16(sqlite3_stmt*,int);
 ** Requirements:
 ** [H13761] [H13762] [H13763]
 */
-SQLITE_API const char *sqlite3_column_decltype(sqlite3_stmt*,int);
-SQLITE_API const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
+SQLITE_API const char *upnpd_sqlite3_column_decltype(sqlite3_stmt*,int);
+SQLITE_API const void *upnpd_sqlite3_column_decltype16(sqlite3_stmt*,int);
 
 /*
 ** CAPI3REF: Evaluate An SQL Statement {H13200} <S10000>
 **
 ** After a [prepared statement] has been prepared using either
-** [sqlite3_prepare_v2()] or [sqlite3_prepare16_v2()] or one of the legacy
-** interfaces [sqlite3_prepare()] or [sqlite3_prepare16()], this function
+** [upnpd_sqlite3_prepare_v2()] or [upnpd_sqlite3_prepare16_v2()] or one of the legacy
+** interfaces [upnpd_sqlite3_prepare()] or [upnpd_sqlite3_prepare16()], this function
 ** must be called one or more times to evaluate the statement.
 **
-** The details of the behavior of the sqlite3_step() interface depend
+** The details of the behavior of the upnpd_sqlite3_step() interface depend
 ** on whether the statement was prepared using the newer "v2" interface
-** [sqlite3_prepare_v2()] and [sqlite3_prepare16_v2()] or the older legacy
-** interface [sqlite3_prepare()] and [sqlite3_prepare16()].  The use of the
+** [upnpd_sqlite3_prepare_v2()] and [upnpd_sqlite3_prepare16_v2()] or the older legacy
+** interface [upnpd_sqlite3_prepare()] and [upnpd_sqlite3_prepare16()].  The use of the
 ** new "v2" interface is recommended for new applications but the legacy
 ** interface will continue to be supported.
 **
@@ -2776,47 +2776,47 @@ SQLITE_API const void *sqlite3_column_decltype16(sqlite3_stmt*,int);
 ** continuing.
 **
 ** [SQLITE_DONE] means that the statement has finished executing
-** successfully.  sqlite3_step() should not be called again on this virtual
-** machine without first calling [sqlite3_reset()] to reset the virtual
+** successfully.  upnpd_sqlite3_step() should not be called again on this virtual
+** machine without first calling [upnpd_sqlite3_reset()] to reset the virtual
 ** machine back to its initial state.
 **
 ** If the SQL statement being executed returns any data, then [SQLITE_ROW]
 ** is returned each time a new row of data is ready for processing by the
 ** caller. The values may be accessed using the [column access functions].
-** sqlite3_step() is called again to retrieve the next row of data.
+** upnpd_sqlite3_step() is called again to retrieve the next row of data.
 **
 ** [SQLITE_ERROR] means that a run-time error (such as a constraint
-** violation) has occurred.  sqlite3_step() should not be called again on
-** the VM. More information may be found by calling [sqlite3_errmsg()].
+** violation) has occurred.  upnpd_sqlite3_step() should not be called again on
+** the VM. More information may be found by calling [upnpd_sqlite3_errmsg()].
 ** With the legacy interface, a more specific error code (for example,
 ** [SQLITE_INTERRUPT], [SQLITE_SCHEMA], [SQLITE_CORRUPT], and so forth)
-** can be obtained by calling [sqlite3_reset()] on the
+** can be obtained by calling [upnpd_sqlite3_reset()] on the
 ** [prepared statement].  In the "v2" interface,
-** the more specific error code is returned directly by sqlite3_step().
+** the more specific error code is returned directly by upnpd_sqlite3_step().
 **
 ** [SQLITE_MISUSE] means that the this routine was called inappropriately.
 ** Perhaps it was called on a [prepared statement] that has
-** already been [sqlite3_finalize | finalized] or on one that had
+** already been [upnpd_sqlite3_finalize | finalized] or on one that had
 ** previously returned [SQLITE_ERROR] or [SQLITE_DONE].  Or it could
 ** be the case that the same database connection is being used by two or
 ** more threads at the same moment in time.
 **
-** <b>Goofy Interface Alert:</b> In the legacy interface, the sqlite3_step()
+** <b>Goofy Interface Alert:</b> In the legacy interface, the upnpd_sqlite3_step()
 ** API always returns a generic error code, [SQLITE_ERROR], following any
 ** error other than [SQLITE_BUSY] and [SQLITE_MISUSE].  You must call
-** [sqlite3_reset()] or [sqlite3_finalize()] in order to find one of the
+** [upnpd_sqlite3_reset()] or [upnpd_sqlite3_finalize()] in order to find one of the
 ** specific [error codes] that better describes the error.
 ** We admit that this is a goofy design.  The problem has been fixed
 ** with the "v2" interface.  If you prepare all of your SQL statements
-** using either [sqlite3_prepare_v2()] or [sqlite3_prepare16_v2()] instead
-** of the legacy [sqlite3_prepare()] and [sqlite3_prepare16()] interfaces,
+** using either [upnpd_sqlite3_prepare_v2()] or [upnpd_sqlite3_prepare16_v2()] instead
+** of the legacy [upnpd_sqlite3_prepare()] and [upnpd_sqlite3_prepare16()] interfaces,
 ** then the more specific [error codes] are returned directly
-** by sqlite3_step().  The use of the "v2" interface is recommended.
+** by upnpd_sqlite3_step().  The use of the "v2" interface is recommended.
 **
 ** Requirements:
 ** [H13202] [H15304] [H15306] [H15308] [H15310]
 */
-SQLITE_API int sqlite3_step(sqlite3_stmt*);
+SQLITE_API int upnpd_sqlite3_step(sqlite3_stmt*);
 
 /*
 ** CAPI3REF: Number of columns in a result set {H13770} <S10700>
@@ -2826,7 +2826,7 @@ SQLITE_API int sqlite3_step(sqlite3_stmt*);
 ** Requirements:
 ** [H13771] [H13772]
 */
-SQLITE_API int sqlite3_data_count(sqlite3_stmt *pStmt);
+SQLITE_API int upnpd_sqlite3_data_count(sqlite3_stmt *pStmt);
 
 /*
 ** CAPI3REF: Fundamental Datatypes {H10265} <S10110><S10120>
@@ -2869,63 +2869,63 @@ SQLITE_API int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** These routines return information about a single column of the current
 ** result row of a query.  In every case the first argument is a pointer
 ** to the [prepared statement] that is being evaluated (the [sqlite3_stmt*]
-** that was returned from [sqlite3_prepare_v2()] or one of its variants)
+** that was returned from [upnpd_sqlite3_prepare_v2()] or one of its variants)
 ** and the second argument is the index of the column for which information
 ** should be returned.  The leftmost column of the result set has the index 0.
 **
 ** If the SQL statement does not currently point to a valid row, or if the
 ** column index is out of range, the result is undefined.
 ** These routines may only be called when the most recent call to
-** [sqlite3_step()] has returned [SQLITE_ROW] and neither
-** [sqlite3_reset()] nor [sqlite3_finalize()] have been called subsequently.
-** If any of these routines are called after [sqlite3_reset()] or
-** [sqlite3_finalize()] or after [sqlite3_step()] has returned
+** [upnpd_sqlite3_step()] has returned [SQLITE_ROW] and neither
+** [upnpd_sqlite3_reset()] nor [upnpd_sqlite3_finalize()] have been called subsequently.
+** If any of these routines are called after [upnpd_sqlite3_reset()] or
+** [upnpd_sqlite3_finalize()] or after [upnpd_sqlite3_step()] has returned
 ** something other than [SQLITE_ROW], the results are undefined.
-** If [sqlite3_step()] or [sqlite3_reset()] or [sqlite3_finalize()]
+** If [upnpd_sqlite3_step()] or [upnpd_sqlite3_reset()] or [upnpd_sqlite3_finalize()]
 ** are called from a different thread while any of these routines
 ** are pending, then the results are undefined.
 **
-** The sqlite3_column_type() routine returns the
+** The upnpd_sqlite3_column_type() routine returns the
 ** [SQLITE_INTEGER | datatype code] for the initial data type
 ** of the result column.  The returned value is one of [SQLITE_INTEGER],
 ** [SQLITE_FLOAT], [SQLITE_TEXT], [SQLITE_BLOB], or [SQLITE_NULL].  The value
-** returned by sqlite3_column_type() is only meaningful if no type
+** returned by upnpd_sqlite3_column_type() is only meaningful if no type
 ** conversions have occurred as described below.  After a type conversion,
-** the value returned by sqlite3_column_type() is undefined.  Future
-** versions of SQLite may change the behavior of sqlite3_column_type()
+** the value returned by upnpd_sqlite3_column_type() is undefined.  Future
+** versions of SQLite may change the behavior of upnpd_sqlite3_column_type()
 ** following a type conversion.
 **
-** If the result is a BLOB or UTF-8 string then the sqlite3_column_bytes()
+** If the result is a BLOB or UTF-8 string then the upnpd_sqlite3_column_bytes()
 ** routine returns the number of bytes in that BLOB or string.
-** If the result is a UTF-16 string, then sqlite3_column_bytes() converts
+** If the result is a UTF-16 string, then upnpd_sqlite3_column_bytes() converts
 ** the string to UTF-8 and then returns the number of bytes.
-** If the result is a numeric value then sqlite3_column_bytes() uses
-** [sqlite3_snprintf()] to convert that value to a UTF-8 string and returns
+** If the result is a numeric value then upnpd_sqlite3_column_bytes() uses
+** [upnpd_sqlite3_snprintf()] to convert that value to a UTF-8 string and returns
 ** the number of bytes in that string.
 ** The value returned does not include the zero terminator at the end
 ** of the string.  For clarity: the value returned is the number of
 ** bytes in the string, not the number of characters.
 **
-** Strings returned by sqlite3_column_text() and sqlite3_column_text16(),
+** Strings returned by upnpd_sqlite3_column_text() and upnpd_sqlite3_column_text16(),
 ** even empty strings, are always zero terminated.  The return
-** value from sqlite3_column_blob() for a zero-length BLOB is an arbitrary
+** value from upnpd_sqlite3_column_blob() for a zero-length BLOB is an arbitrary
 ** pointer, possibly even a NULL pointer.
 **
-** The sqlite3_column_bytes16() routine is similar to sqlite3_column_bytes()
+** The upnpd_sqlite3_column_bytes16() routine is similar to upnpd_sqlite3_column_bytes()
 ** but leaves the result in UTF-16 in native byte order instead of UTF-8.
 ** The zero terminator is not included in this count.
 **
-** The object returned by [sqlite3_column_value()] is an
+** The object returned by [upnpd_sqlite3_column_value()] is an
 ** [unprotected sqlite3_value] object.  An unprotected sqlite3_value object
-** may only be used with [sqlite3_bind_value()] and [sqlite3_result_value()].
+** may only be used with [upnpd_sqlite3_bind_value()] and [upnpd_sqlite3_result_value()].
 ** If the [unprotected sqlite3_value] object returned by
-** [sqlite3_column_value()] is used in any other way, including calls
-** to routines like [sqlite3_value_int()], [sqlite3_value_text()],
-** or [sqlite3_value_bytes()], then the behavior is undefined.
+** [upnpd_sqlite3_column_value()] is used in any other way, including calls
+** to routines like [upnpd_sqlite3_value_int()], [upnpd_sqlite3_value_text()],
+** or [upnpd_sqlite3_value_bytes()], then the behavior is undefined.
 **
 ** These routines attempt to convert the value where appropriate.  For
 ** example, if the internal representation is FLOAT and a text result
-** is requested, [sqlite3_snprintf()] is used internally to perform the
+** is requested, [upnpd_sqlite3_snprintf()] is used internally to perform the
 ** conversion automatically.  The following table details the conversions
 ** that are applied:
 **
@@ -2959,20 +2959,20 @@ SQLITE_API int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** C programmers.
 **
 ** Note that when type conversions occur, pointers returned by prior
-** calls to sqlite3_column_blob(), sqlite3_column_text(), and/or
-** sqlite3_column_text16() may be invalidated.
+** calls to upnpd_sqlite3_column_blob(), upnpd_sqlite3_column_text(), and/or
+** upnpd_sqlite3_column_text16() may be invalidated.
 ** Type conversions and pointer invalidations might occur
 ** in the following cases:
 **
 ** <ul>
-** <li> The initial content is a BLOB and sqlite3_column_text() or
-**      sqlite3_column_text16() is called.  A zero-terminator might
+** <li> The initial content is a BLOB and upnpd_sqlite3_column_text() or
+**      upnpd_sqlite3_column_text16() is called.  A zero-terminator might
 **      need to be added to the string.</li>
-** <li> The initial content is UTF-8 text and sqlite3_column_bytes16() or
-**      sqlite3_column_text16() is called.  The content must be converted
+** <li> The initial content is UTF-8 text and upnpd_sqlite3_column_bytes16() or
+**      upnpd_sqlite3_column_text16() is called.  The content must be converted
 **      to UTF-16.</li>
-** <li> The initial content is UTF-16 text and sqlite3_column_bytes() or
-**      sqlite3_column_text() is called.  The content must be converted
+** <li> The initial content is UTF-16 text and upnpd_sqlite3_column_bytes() or
+**      upnpd_sqlite3_column_text() is called.  The content must be converted
 **      to UTF-8.</li>
 ** </ul>
 **
@@ -2986,51 +2986,51 @@ SQLITE_API int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** in one of the following ways:
 **
 ** <ul>
-**  <li>sqlite3_column_text() followed by sqlite3_column_bytes()</li>
-**  <li>sqlite3_column_blob() followed by sqlite3_column_bytes()</li>
-**  <li>sqlite3_column_text16() followed by sqlite3_column_bytes16()</li>
+**  <li>upnpd_sqlite3_column_text() followed by upnpd_sqlite3_column_bytes()</li>
+**  <li>upnpd_sqlite3_column_blob() followed by upnpd_sqlite3_column_bytes()</li>
+**  <li>upnpd_sqlite3_column_text16() followed by upnpd_sqlite3_column_bytes16()</li>
 ** </ul>
 **
-** In other words, you should call sqlite3_column_text(),
-** sqlite3_column_blob(), or sqlite3_column_text16() first to force the result
-** into the desired format, then invoke sqlite3_column_bytes() or
-** sqlite3_column_bytes16() to find the size of the result.  Do not mix calls
-** to sqlite3_column_text() or sqlite3_column_blob() with calls to
-** sqlite3_column_bytes16(), and do not mix calls to sqlite3_column_text16()
-** with calls to sqlite3_column_bytes().
+** In other words, you should call upnpd_sqlite3_column_text(),
+** upnpd_sqlite3_column_blob(), or upnpd_sqlite3_column_text16() first to force the result
+** into the desired format, then invoke upnpd_sqlite3_column_bytes() or
+** upnpd_sqlite3_column_bytes16() to find the size of the result.  Do not mix calls
+** to upnpd_sqlite3_column_text() or upnpd_sqlite3_column_blob() with calls to
+** upnpd_sqlite3_column_bytes16(), and do not mix calls to upnpd_sqlite3_column_text16()
+** with calls to upnpd_sqlite3_column_bytes().
 **
 ** The pointers returned are valid until a type conversion occurs as
-** described above, or until [sqlite3_step()] or [sqlite3_reset()] or
-** [sqlite3_finalize()] is called.  The memory space used to hold strings
+** described above, or until [upnpd_sqlite3_step()] or [upnpd_sqlite3_reset()] or
+** [upnpd_sqlite3_finalize()] is called.  The memory space used to hold strings
 ** and BLOBs is freed automatically.  Do <b>not</b> pass the pointers returned
-** [sqlite3_column_blob()], [sqlite3_column_text()], etc. into
-** [sqlite3_free()].
+** [upnpd_sqlite3_column_blob()], [upnpd_sqlite3_column_text()], etc. into
+** [upnpd_sqlite3_free()].
 **
 ** If a memory allocation error occurs during the evaluation of any
 ** of these routines, a default value is returned.  The default value
 ** is either the integer 0, the floating point number 0.0, or a NULL
-** pointer.  Subsequent calls to [sqlite3_errcode()] will return
+** pointer.  Subsequent calls to [upnpd_sqlite3_errcode()] will return
 ** [SQLITE_NOMEM].
 **
 ** Requirements:
 ** [H13803] [H13806] [H13809] [H13812] [H13815] [H13818] [H13821] [H13824]
 ** [H13827] [H13830]
 */
-SQLITE_API const void *sqlite3_column_blob(sqlite3_stmt*, int iCol);
-SQLITE_API int sqlite3_column_bytes(sqlite3_stmt*, int iCol);
-SQLITE_API int sqlite3_column_bytes16(sqlite3_stmt*, int iCol);
-SQLITE_API double sqlite3_column_double(sqlite3_stmt*, int iCol);
-SQLITE_API int sqlite3_column_int(sqlite3_stmt*, int iCol);
-SQLITE_API sqlite3_int64 sqlite3_column_int64(sqlite3_stmt*, int iCol);
-SQLITE_API const unsigned char *sqlite3_column_text(sqlite3_stmt*, int iCol);
-SQLITE_API const void *sqlite3_column_text16(sqlite3_stmt*, int iCol);
-SQLITE_API int sqlite3_column_type(sqlite3_stmt*, int iCol);
-SQLITE_API sqlite3_value *sqlite3_column_value(sqlite3_stmt*, int iCol);
+SQLITE_API const void *upnpd_sqlite3_column_blob(sqlite3_stmt*, int iCol);
+SQLITE_API int upnpd_sqlite3_column_bytes(sqlite3_stmt*, int iCol);
+SQLITE_API int upnpd_sqlite3_column_bytes16(sqlite3_stmt*, int iCol);
+SQLITE_API double upnpd_sqlite3_column_double(sqlite3_stmt*, int iCol);
+SQLITE_API int upnpd_sqlite3_column_int(sqlite3_stmt*, int iCol);
+SQLITE_API sqlite3_int64 upnpd_sqlite3_column_int64(sqlite3_stmt*, int iCol);
+SQLITE_API const unsigned char *upnpd_sqlite3_column_text(sqlite3_stmt*, int iCol);
+SQLITE_API const void *upnpd_sqlite3_column_text16(sqlite3_stmt*, int iCol);
+SQLITE_API int upnpd_sqlite3_column_type(sqlite3_stmt*, int iCol);
+SQLITE_API sqlite3_value *upnpd_sqlite3_column_value(sqlite3_stmt*, int iCol);
 
 /*
 ** CAPI3REF: Destroy A Prepared Statement Object {H13300} <S70300><S30100>
 **
-** The sqlite3_finalize() function is called to delete a [prepared statement].
+** The upnpd_sqlite3_finalize() function is called to delete a [prepared statement].
 ** If the statement was executed successfully or not executed at all, then
 ** SQLITE_OK is returned. If execution of the statement failed then an
 ** [error code] or [extended error code] is returned.
@@ -3038,7 +3038,7 @@ SQLITE_API sqlite3_value *sqlite3_column_value(sqlite3_stmt*, int iCol);
 ** This routine can be called at any point during the execution of the
 ** [prepared statement].  If the virtual machine has not
 ** completed execution when this routine is called, that is like
-** encountering an error or an [sqlite3_interrupt | interrupt].
+** encountering an error or an [upnpd_sqlite3_interrupt | interrupt].
 ** Incomplete updates may be rolled back and transactions canceled,
 ** depending on the circumstances, and the
 ** [error code] returned will be [SQLITE_ABORT].
@@ -3046,33 +3046,33 @@ SQLITE_API sqlite3_value *sqlite3_column_value(sqlite3_stmt*, int iCol);
 ** Requirements:
 ** [H11302] [H11304]
 */
-SQLITE_API int sqlite3_finalize(sqlite3_stmt *pStmt);
+SQLITE_API int upnpd_sqlite3_finalize(sqlite3_stmt *pStmt);
 
 /*
 ** CAPI3REF: Reset A Prepared Statement Object {H13330} <S70300>
 **
-** The sqlite3_reset() function is called to reset a [prepared statement]
+** The upnpd_sqlite3_reset() function is called to reset a [prepared statement]
 ** object back to its initial state, ready to be re-executed.
 ** Any SQL statement variables that had values bound to them using
-** the [sqlite3_bind_blob | sqlite3_bind_*() API] retain their values.
-** Use [sqlite3_clear_bindings()] to reset the bindings.
+** the [upnpd_sqlite3_bind_blob | sqlite3_bind_*() API] retain their values.
+** Use [upnpd_sqlite3_clear_bindings()] to reset the bindings.
 **
-** {H11332} The [sqlite3_reset(S)] interface resets the [prepared statement] S
+** {H11332} The [upnpd_sqlite3_reset(S)] interface resets the [prepared statement] S
 **          back to the beginning of its program.
 **
-** {H11334} If the most recent call to [sqlite3_step(S)] for the
+** {H11334} If the most recent call to [upnpd_sqlite3_step(S)] for the
 **          [prepared statement] S returned [SQLITE_ROW] or [SQLITE_DONE],
-**          or if [sqlite3_step(S)] has never before been called on S,
-**          then [sqlite3_reset(S)] returns [SQLITE_OK].
+**          or if [upnpd_sqlite3_step(S)] has never before been called on S,
+**          then [upnpd_sqlite3_reset(S)] returns [SQLITE_OK].
 **
-** {H11336} If the most recent call to [sqlite3_step(S)] for the
+** {H11336} If the most recent call to [upnpd_sqlite3_step(S)] for the
 **          [prepared statement] S indicated an error, then
-**          [sqlite3_reset(S)] returns an appropriate [error code].
+**          [upnpd_sqlite3_reset(S)] returns an appropriate [error code].
 **
-** {H11338} The [sqlite3_reset(S)] interface does not change the values
-**          of any [sqlite3_bind_blob|bindings] on the [prepared statement] S.
+** {H11338} The [upnpd_sqlite3_reset(S)] interface does not change the values
+**          of any [upnpd_sqlite3_bind_blob|bindings] on the [prepared statement] S.
 */
-SQLITE_API int sqlite3_reset(sqlite3_stmt *pStmt);
+SQLITE_API int upnpd_sqlite3_reset(sqlite3_stmt *pStmt);
 
 /*
 ** CAPI3REF: Create Or Redefine SQL Functions {H16100} <S20200>
@@ -3084,8 +3084,8 @@ SQLITE_API int sqlite3_reset(sqlite3_stmt *pStmt);
 ** are used to add SQL functions or aggregates or to redefine the behavior
 ** of existing SQL functions or aggregates.  The only difference between the
 ** two is that the second parameter, the name of the (scalar) function or
-** aggregate, is encoded in UTF-8 for sqlite3_create_function() and UTF-16
-** for sqlite3_create_function16().
+** aggregate, is encoded in UTF-8 for upnpd_sqlite3_create_function() and UTF-16
+** for upnpd_sqlite3_create_function16().
 **
 ** The first parameter is the [database connection] to which the SQL
 ** function is to be added.  If a single program uses more than one database
@@ -3102,7 +3102,7 @@ SQLITE_API int sqlite3_reset(sqlite3_stmt *pStmt);
 ** is the number of arguments that the SQL function or
 ** aggregate takes. If this parameter is -1, then the SQL function or
 ** aggregate may take any number of arguments between 0 and the limit
-** set by [sqlite3_limit]([SQLITE_LIMIT_FUNCTION_ARG]).  If the third
+** set by [upnpd_sqlite3_limit]([SQLITE_LIMIT_FUNCTION_ARG]).  If the third
 ** parameter is less than -1 or greater than 127 then the behavior is
 ** undefined.
 **
@@ -3111,7 +3111,7 @@ SQLITE_API int sqlite3_reset(sqlite3_stmt *pStmt);
 ** its parameters.  Any SQL function implementation should be able to work
 ** work with UTF-8, UTF-16le, or UTF-16be.  But some implementations may be
 ** more efficient with one encoding than another.  It is allowed to
-** invoke sqlite3_create_function() or sqlite3_create_function16() multiple
+** invoke upnpd_sqlite3_create_function() or upnpd_sqlite3_create_function16() multiple
 ** times with the same function but with different values of eTextRep.
 ** When multiple implementations of the same function are available, SQLite
 ** will pick the one that involves the least amount of data conversion.
@@ -3119,7 +3119,7 @@ SQLITE_API int sqlite3_reset(sqlite3_stmt *pStmt);
 ** encoding is used, then the fourth argument should be [SQLITE_ANY].
 **
 ** The fifth parameter is an arbitrary pointer.  The implementation of the
-** function can gain access to this pointer using [sqlite3_user_data()].
+** function can gain access to this pointer using [upnpd_sqlite3_user_data()].
 **
 ** The seventh, eighth and ninth parameters, xFunc, xStep and xFinal, are
 ** pointers to C-language functions that implement the SQL function or
@@ -3158,7 +3158,7 @@ SQLITE_API int sqlite3_reset(sqlite3_stmt *pStmt);
 ** [H16103] [H16106] [H16109] [H16112] [H16118] [H16121] [H16127]
 ** [H16130] [H16133] [H16136] [H16139] [H16142]
 */
-SQLITE_API int sqlite3_create_function(
+SQLITE_API int upnpd_sqlite3_create_function(
   sqlite3 *db,
   const char *zFunctionName,
   int nArg,
@@ -3168,7 +3168,7 @@ SQLITE_API int sqlite3_create_function(
   void (*xStep)(sqlite3_context*,int,sqlite3_value**),
   void (*xFinal)(sqlite3_context*)
 );
-SQLITE_API int sqlite3_create_function16(
+SQLITE_API int upnpd_sqlite3_create_function16(
   sqlite3 *db,
   const void *zFunctionName,
   int nArg,
@@ -3189,8 +3189,8 @@ SQLITE_API int sqlite3_create_function16(
 #define SQLITE_UTF16LE        2
 #define SQLITE_UTF16BE        3
 #define SQLITE_UTF16          4    /* Use native byte order */
-#define SQLITE_ANY            5    /* sqlite3_create_function only */
-#define SQLITE_UTF16_ALIGNED  8    /* sqlite3_create_collation only */
+#define SQLITE_ANY            5    /* upnpd_sqlite3_create_function only */
+#define SQLITE_UTF16_ALIGNED  8    /* upnpd_sqlite3_create_collation only */
 
 /*
 ** CAPI3REF: Deprecated Functions
@@ -3203,12 +3203,12 @@ SQLITE_API int sqlite3_create_function16(
 ** using these functions, we are not going to tell you what they do.
 */
 #ifndef SQLITE_OMIT_DEPRECATED
-SQLITE_API SQLITE_DEPRECATED int sqlite3_aggregate_count(sqlite3_context*);
-SQLITE_API SQLITE_DEPRECATED int sqlite3_expired(sqlite3_stmt*);
-SQLITE_API SQLITE_DEPRECATED int sqlite3_transfer_bindings(sqlite3_stmt*, sqlite3_stmt*);
-SQLITE_API SQLITE_DEPRECATED int sqlite3_global_recover(void);
-SQLITE_API SQLITE_DEPRECATED void sqlite3_thread_cleanup(void);
-SQLITE_API SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),void*,sqlite3_int64);
+SQLITE_API SQLITE_DEPRECATED int upnpd_sqlite3_aggregate_count(sqlite3_context*);
+SQLITE_API SQLITE_DEPRECATED int upnpd_sqlite3_expired(sqlite3_stmt*);
+SQLITE_API SQLITE_DEPRECATED int upnpd_sqlite3_transfer_bindings(sqlite3_stmt*, sqlite3_stmt*);
+SQLITE_API SQLITE_DEPRECATED int upnpd_sqlite3_global_recover(void);
+SQLITE_API SQLITE_DEPRECATED void upnpd_sqlite3_thread_cleanup(void);
+SQLITE_API SQLITE_DEPRECATED int upnpd_sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),void*,sqlite3_int64);
 #endif
 
 /*
@@ -3219,7 +3219,7 @@ SQLITE_API SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int6
 ** the function or aggregate.
 **
 ** The xFunc (for scalar functions) or xStep (for aggregates) parameters
-** to [sqlite3_create_function()] and [sqlite3_create_function16()]
+** to [upnpd_sqlite3_create_function()] and [upnpd_sqlite3_create_function16()]
 ** define callbacks that implement the SQL functions and aggregates.
 ** The 4th parameter to these callbacks is an array of pointers to
 ** [protected sqlite3_value] objects.  There is one [sqlite3_value] object for
@@ -3234,12 +3234,12 @@ SQLITE_API SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int6
 ** except that  these routines take a single [protected sqlite3_value] object
 ** pointer instead of a [sqlite3_stmt*] pointer and an integer column number.
 **
-** The sqlite3_value_text16() interface extracts a UTF-16 string
+** The upnpd_sqlite3_value_text16() interface extracts a UTF-16 string
 ** in the native byte-order of the host machine.  The
-** sqlite3_value_text16be() and sqlite3_value_text16le() interfaces
+** upnpd_sqlite3_value_text16be() and upnpd_sqlite3_value_text16le() interfaces
 ** extract UTF-16 strings as big-endian and little-endian respectively.
 **
-** The sqlite3_value_numeric_type() interface attempts to apply
+** The upnpd_sqlite3_value_numeric_type() interface attempts to apply
 ** numeric affinity to the value.  This means that an attempt is
 ** made to convert the value to an integer or floating point.  If
 ** such a conversion is possible without loss of information (in other
@@ -3248,10 +3248,10 @@ SQLITE_API SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int6
 ** The [SQLITE_INTEGER | datatype] after conversion is returned.
 **
 ** Please pay particular attention to the fact that the pointer returned
-** from [sqlite3_value_blob()], [sqlite3_value_text()], or
-** [sqlite3_value_text16()] can be invalidated by a subsequent call to
-** [sqlite3_value_bytes()], [sqlite3_value_bytes16()], [sqlite3_value_text()],
-** or [sqlite3_value_text16()].
+** from [upnpd_sqlite3_value_blob()], [upnpd_sqlite3_value_text()], or
+** [upnpd_sqlite3_value_text16()] can be invalidated by a subsequent call to
+** [upnpd_sqlite3_value_bytes()], [upnpd_sqlite3_value_bytes16()], [upnpd_sqlite3_value_text()],
+** or [upnpd_sqlite3_value_text16()].
 **
 ** These routines must be called from the same thread as
 ** the SQL function that supplied the [sqlite3_value*] parameters.
@@ -3260,18 +3260,18 @@ SQLITE_API SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int6
 ** [H15103] [H15106] [H15109] [H15112] [H15115] [H15118] [H15121] [H15124]
 ** [H15127] [H15130] [H15133] [H15136]
 */
-SQLITE_API const void *sqlite3_value_blob(sqlite3_value*);
-SQLITE_API int sqlite3_value_bytes(sqlite3_value*);
-SQLITE_API int sqlite3_value_bytes16(sqlite3_value*);
-SQLITE_API double sqlite3_value_double(sqlite3_value*);
-SQLITE_API int sqlite3_value_int(sqlite3_value*);
-SQLITE_API sqlite3_int64 sqlite3_value_int64(sqlite3_value*);
-SQLITE_API const unsigned char *sqlite3_value_text(sqlite3_value*);
-SQLITE_API const void *sqlite3_value_text16(sqlite3_value*);
-SQLITE_API const void *sqlite3_value_text16le(sqlite3_value*);
-SQLITE_API const void *sqlite3_value_text16be(sqlite3_value*);
-SQLITE_API int sqlite3_value_type(sqlite3_value*);
-SQLITE_API int sqlite3_value_numeric_type(sqlite3_value*);
+SQLITE_API const void *upnpd_sqlite3_value_blob(sqlite3_value*);
+SQLITE_API int upnpd_sqlite3_value_bytes(sqlite3_value*);
+SQLITE_API int upnpd_sqlite3_value_bytes16(sqlite3_value*);
+SQLITE_API double upnpd_sqlite3_value_double(sqlite3_value*);
+SQLITE_API int upnpd_sqlite3_value_int(sqlite3_value*);
+SQLITE_API sqlite3_int64 upnpd_sqlite3_value_int64(sqlite3_value*);
+SQLITE_API const unsigned char *upnpd_sqlite3_value_text(sqlite3_value*);
+SQLITE_API const void *upnpd_sqlite3_value_text16(sqlite3_value*);
+SQLITE_API const void *upnpd_sqlite3_value_text16le(sqlite3_value*);
+SQLITE_API const void *upnpd_sqlite3_value_text16be(sqlite3_value*);
+SQLITE_API int upnpd_sqlite3_value_type(sqlite3_value*);
+SQLITE_API int upnpd_sqlite3_value_numeric_type(sqlite3_value*);
 
 /*
 ** CAPI3REF: Obtain Aggregate Function Context {H16210} <S20200>
@@ -3279,10 +3279,10 @@ SQLITE_API int sqlite3_value_numeric_type(sqlite3_value*);
 ** The implementation of aggregate SQL functions use this routine to allocate
 ** a structure for storing their state.
 **
-** The first time the sqlite3_aggregate_context() routine is called for a
+** The first time the upnpd_sqlite3_aggregate_context() routine is called for a
 ** particular aggregate, SQLite allocates nBytes of memory, zeroes out that
 ** memory, and returns a pointer to it. On second and subsequent calls to
-** sqlite3_aggregate_context() for the same aggregate function index,
+** upnpd_sqlite3_aggregate_context() for the same aggregate function index,
 ** the same buffer is returned. The implementation of the aggregate can use
 ** the returned buffer to accumulate data.
 **
@@ -3299,15 +3299,15 @@ SQLITE_API int sqlite3_value_numeric_type(sqlite3_value*);
 ** Requirements:
 ** [H16211] [H16213] [H16215] [H16217]
 */
-SQLITE_API void *sqlite3_aggregate_context(sqlite3_context*, int nBytes);
+SQLITE_API void *upnpd_sqlite3_aggregate_context(sqlite3_context*, int nBytes);
 
 /*
 ** CAPI3REF: User Data For Functions {H16240} <S20200>
 **
-** The sqlite3_user_data() interface returns a copy of
+** The upnpd_sqlite3_user_data() interface returns a copy of
 ** the pointer that was the pUserData parameter (the 5th parameter)
-** of the [sqlite3_create_function()]
-** and [sqlite3_create_function16()] routines that originally
+** of the [upnpd_sqlite3_create_function()]
+** and [upnpd_sqlite3_create_function16()] routines that originally
 ** registered the application defined function. {END}
 **
 ** This routine must be called from the same thread in which
@@ -3316,21 +3316,21 @@ SQLITE_API void *sqlite3_aggregate_context(sqlite3_context*, int nBytes);
 ** Requirements:
 ** [H16243]
 */
-SQLITE_API void *sqlite3_user_data(sqlite3_context*);
+SQLITE_API void *upnpd_sqlite3_user_data(sqlite3_context*);
 
 /*
 ** CAPI3REF: Database Connection For Functions {H16250} <S60600><S20200>
 **
-** The sqlite3_context_db_handle() interface returns a copy of
+** The upnpd_sqlite3_context_db_handle() interface returns a copy of
 ** the pointer to the [database connection] (the 1st parameter)
-** of the [sqlite3_create_function()]
-** and [sqlite3_create_function16()] routines that originally
+** of the [upnpd_sqlite3_create_function()]
+** and [upnpd_sqlite3_create_function16()] routines that originally
 ** registered the application defined function.
 **
 ** Requirements:
 ** [H16253]
 */
-SQLITE_API sqlite3 *sqlite3_context_db_handle(sqlite3_context*);
+SQLITE_API sqlite3 *upnpd_sqlite3_context_db_handle(sqlite3_context*);
 
 /*
 ** CAPI3REF: Function Auxiliary Data {H16270} <S20200>
@@ -3346,20 +3346,20 @@ SQLITE_API sqlite3 *sqlite3_context_db_handle(sqlite3_context*);
 ** invocations of the same function so that the original pattern string
 ** does not need to be recompiled on each invocation.
 **
-** The sqlite3_get_auxdata() interface returns a pointer to the metadata
-** associated by the sqlite3_set_auxdata() function with the Nth argument
+** The upnpd_sqlite3_get_auxdata() interface returns a pointer to the metadata
+** associated by the upnpd_sqlite3_set_auxdata() function with the Nth argument
 ** value to the application-defined function. If no metadata has been ever
 ** been set for the Nth argument of the function, or if the corresponding
 ** function parameter has changed since the meta-data was set,
-** then sqlite3_get_auxdata() returns a NULL pointer.
+** then upnpd_sqlite3_get_auxdata() returns a NULL pointer.
 **
-** The sqlite3_set_auxdata() interface saves the metadata
+** The upnpd_sqlite3_set_auxdata() interface saves the metadata
 ** pointed to by its 3rd parameter as the metadata for the N-th
 ** argument of the application-defined function.  Subsequent
-** calls to sqlite3_get_auxdata() might return this data, if it has
+** calls to upnpd_sqlite3_get_auxdata() might return this data, if it has
 ** not been destroyed.
 ** If it is not NULL, SQLite will invoke the destructor
-** function given by the 4th parameter to sqlite3_set_auxdata() on
+** function given by the 4th parameter to upnpd_sqlite3_set_auxdata() on
 ** the metadata when the corresponding function parameter changes
 ** or when the SQL statement completes, whichever comes first.
 **
@@ -3377,15 +3377,15 @@ SQLITE_API sqlite3 *sqlite3_context_db_handle(sqlite3_context*);
 ** Requirements:
 ** [H16272] [H16274] [H16276] [H16277] [H16278] [H16279]
 */
-SQLITE_API void *sqlite3_get_auxdata(sqlite3_context*, int N);
-SQLITE_API void sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(void*));
+SQLITE_API void *upnpd_sqlite3_get_auxdata(sqlite3_context*, int N);
+SQLITE_API void upnpd_sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(void*));
 
 
 /*
 ** CAPI3REF: Constants Defining Special Destructor Behavior {H10280} <S30100>
 **
 ** These are special values for the destructor that is passed in as the
-** final argument to routines like [sqlite3_result_blob()].  If the destructor
+** final argument to routines like [upnpd_sqlite3_result_blob()].  If the destructor
 ** argument is SQLITE_STATIC, it means that the content pointer is constant
 ** and will never change.  It does not need to be destroyed.  The
 ** SQLITE_TRANSIENT value means that the content will likely change in
@@ -3404,47 +3404,47 @@ typedef void (*sqlite3_destructor_type)(void*);
 **
 ** These routines are used by the xFunc or xFinal callbacks that
 ** implement SQL functions and aggregates.  See
-** [sqlite3_create_function()] and [sqlite3_create_function16()]
+** [upnpd_sqlite3_create_function()] and [upnpd_sqlite3_create_function16()]
 ** for additional information.
 **
 ** These functions work very much like the [parameter binding] family of
 ** functions used to bind values to host parameters in prepared statements.
 ** Refer to the [SQL parameter] documentation for additional information.
 **
-** The sqlite3_result_blob() interface sets the result from
+** The upnpd_sqlite3_result_blob() interface sets the result from
 ** an application-defined function to be the BLOB whose content is pointed
 ** to by the second parameter and which is N bytes long where N is the
 ** third parameter.
 **
-** The sqlite3_result_zeroblob() interfaces set the result of
+** The upnpd_sqlite3_result_zeroblob() interfaces set the result of
 ** the application-defined function to be a BLOB containing all zero
 ** bytes and N bytes in size, where N is the value of the 2nd parameter.
 **
-** The sqlite3_result_double() interface sets the result from
+** The upnpd_sqlite3_result_double() interface sets the result from
 ** an application-defined function to be a floating point value specified
 ** by its 2nd argument.
 **
-** The sqlite3_result_error() and sqlite3_result_error16() functions
+** The upnpd_sqlite3_result_error() and upnpd_sqlite3_result_error16() functions
 ** cause the implemented SQL function to throw an exception.
 ** SQLite uses the string pointed to by the
-** 2nd parameter of sqlite3_result_error() or sqlite3_result_error16()
+** 2nd parameter of upnpd_sqlite3_result_error() or upnpd_sqlite3_result_error16()
 ** as the text of an error message.  SQLite interprets the error
-** message string from sqlite3_result_error() as UTF-8. SQLite
-** interprets the string from sqlite3_result_error16() as UTF-16 in native
-** byte order.  If the third parameter to sqlite3_result_error()
-** or sqlite3_result_error16() is negative then SQLite takes as the error
+** message string from upnpd_sqlite3_result_error() as UTF-8. SQLite
+** interprets the string from upnpd_sqlite3_result_error16() as UTF-16 in native
+** byte order.  If the third parameter to upnpd_sqlite3_result_error()
+** or upnpd_sqlite3_result_error16() is negative then SQLite takes as the error
 ** message all text up through the first zero character.
-** If the third parameter to sqlite3_result_error() or
-** sqlite3_result_error16() is non-negative then SQLite takes that many
+** If the third parameter to upnpd_sqlite3_result_error() or
+** upnpd_sqlite3_result_error16() is non-negative then SQLite takes that many
 ** bytes (not characters) from the 2nd parameter as the error message.
-** The sqlite3_result_error() and sqlite3_result_error16()
+** The upnpd_sqlite3_result_error() and upnpd_sqlite3_result_error16()
 ** routines make a private copy of the error message text before
 ** they return.  Hence, the calling function can deallocate or
 ** modify the text after they return without harm.
-** The sqlite3_result_error_code() function changes the error code
+** The upnpd_sqlite3_result_error_code() function changes the error code
 ** returned by SQLite as a result of an error in a function.  By default,
-** the error code is SQLITE_ERROR.  A subsequent call to sqlite3_result_error()
-** or sqlite3_result_error16() resets the error code to SQLITE_ERROR.
+** the error code is SQLITE_ERROR.  A subsequent call to upnpd_sqlite3_result_error()
+** or upnpd_sqlite3_result_error16() resets the error code to SQLITE_ERROR.
 **
 ** The sqlite3_result_toobig() interface causes SQLite to throw an error
 ** indicating that a string or BLOB is to long to represent.
@@ -3452,49 +3452,49 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** The sqlite3_result_nomem() interface causes SQLite to throw an error
 ** indicating that a memory allocation failed.
 **
-** The sqlite3_result_int() interface sets the return value
+** The upnpd_sqlite3_result_int() interface sets the return value
 ** of the application-defined function to be the 32-bit signed integer
 ** value given in the 2nd argument.
-** The sqlite3_result_int64() interface sets the return value
+** The upnpd_sqlite3_result_int64() interface sets the return value
 ** of the application-defined function to be the 64-bit signed integer
 ** value given in the 2nd argument.
 **
-** The sqlite3_result_null() interface sets the return value
+** The upnpd_sqlite3_result_null() interface sets the return value
 ** of the application-defined function to be NULL.
 **
-** The sqlite3_result_text(), sqlite3_result_text16(),
-** sqlite3_result_text16le(), and sqlite3_result_text16be() interfaces
+** The upnpd_sqlite3_result_text(), upnpd_sqlite3_result_text16(),
+** upnpd_sqlite3_result_text16le(), and upnpd_sqlite3_result_text16be() interfaces
 ** set the return value of the application-defined function to be
 ** a text string which is represented as UTF-8, UTF-16 native byte order,
 ** UTF-16 little endian, or UTF-16 big endian, respectively.
 ** SQLite takes the text result from the application from
-** the 2nd parameter of the sqlite3_result_text* interfaces.
-** If the 3rd parameter to the sqlite3_result_text* interfaces
+** the 2nd parameter of the upnpd_sqlite3_result_text* interfaces.
+** If the 3rd parameter to the upnpd_sqlite3_result_text* interfaces
 ** is negative, then SQLite takes result text from the 2nd parameter
 ** through the first zero character.
-** If the 3rd parameter to the sqlite3_result_text* interfaces
+** If the 3rd parameter to the upnpd_sqlite3_result_text* interfaces
 ** is non-negative, then as many bytes (not characters) of the text
 ** pointed to by the 2nd parameter are taken as the application-defined
 ** function result.
-** If the 4th parameter to the sqlite3_result_text* interfaces
-** or sqlite3_result_blob is a non-NULL pointer, then SQLite calls that
+** If the 4th parameter to the upnpd_sqlite3_result_text* interfaces
+** or upnpd_sqlite3_result_blob is a non-NULL pointer, then SQLite calls that
 ** function as the destructor on the text or BLOB result when it has
 ** finished using that result.
-** If the 4th parameter to the sqlite3_result_text* interfaces or
-** sqlite3_result_blob is the special constant SQLITE_STATIC, then SQLite
+** If the 4th parameter to the upnpd_sqlite3_result_text* interfaces or
+** upnpd_sqlite3_result_blob is the special constant SQLITE_STATIC, then SQLite
 ** assumes that the text or BLOB result is in constant space and does not
 ** copy the it or call a destructor when it has finished using that result.
-** If the 4th parameter to the sqlite3_result_text* interfaces
-** or sqlite3_result_blob is the special constant SQLITE_TRANSIENT
+** If the 4th parameter to the upnpd_sqlite3_result_text* interfaces
+** or upnpd_sqlite3_result_blob is the special constant SQLITE_TRANSIENT
 ** then SQLite makes a copy of the result into space obtained from
-** from [sqlite3_malloc()] before it returns.
+** from [upnpd_sqlite3_malloc()] before it returns.
 **
-** The sqlite3_result_value() interface sets the result of
+** The upnpd_sqlite3_result_value() interface sets the result of
 ** the application-defined function to be a copy the
 ** [unprotected sqlite3_value] object specified by the 2nd parameter.  The
-** sqlite3_result_value() interface makes a copy of the [sqlite3_value]
+** upnpd_sqlite3_result_value() interface makes a copy of the [sqlite3_value]
 ** so that the [sqlite3_value] specified in the parameter may change or
-** be deallocated after sqlite3_result_value() returns without harm.
+** be deallocated after upnpd_sqlite3_result_value() returns without harm.
 ** A [protected sqlite3_value] object may always be used where an
 ** [unprotected sqlite3_value] object is required, so either
 ** kind of [sqlite3_value] object can be used with this interface.
@@ -3508,22 +3508,22 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** [H16427] [H16430] [H16433] [H16436] [H16439] [H16442] [H16445] [H16448]
 ** [H16451] [H16454] [H16457] [H16460] [H16463]
 */
-SQLITE_API void sqlite3_result_blob(sqlite3_context*, const void*, int, void(*)(void*));
-SQLITE_API void sqlite3_result_double(sqlite3_context*, double);
-SQLITE_API void sqlite3_result_error(sqlite3_context*, const char*, int);
-SQLITE_API void sqlite3_result_error16(sqlite3_context*, const void*, int);
-SQLITE_API void sqlite3_result_error_toobig(sqlite3_context*);
-SQLITE_API void sqlite3_result_error_nomem(sqlite3_context*);
-SQLITE_API void sqlite3_result_error_code(sqlite3_context*, int);
-SQLITE_API void sqlite3_result_int(sqlite3_context*, int);
-SQLITE_API void sqlite3_result_int64(sqlite3_context*, sqlite3_int64);
-SQLITE_API void sqlite3_result_null(sqlite3_context*);
-SQLITE_API void sqlite3_result_text(sqlite3_context*, const char*, int, void(*)(void*));
-SQLITE_API void sqlite3_result_text16(sqlite3_context*, const void*, int, void(*)(void*));
-SQLITE_API void sqlite3_result_text16le(sqlite3_context*, const void*, int,void(*)(void*));
-SQLITE_API void sqlite3_result_text16be(sqlite3_context*, const void*, int,void(*)(void*));
-SQLITE_API void sqlite3_result_value(sqlite3_context*, sqlite3_value*);
-SQLITE_API void sqlite3_result_zeroblob(sqlite3_context*, int n);
+SQLITE_API void upnpd_sqlite3_result_blob(sqlite3_context*, const void*, int, void(*)(void*));
+SQLITE_API void upnpd_sqlite3_result_double(sqlite3_context*, double);
+SQLITE_API void upnpd_sqlite3_result_error(sqlite3_context*, const char*, int);
+SQLITE_API void upnpd_sqlite3_result_error16(sqlite3_context*, const void*, int);
+SQLITE_API void upnpd_sqlite3_result_error_toobig(sqlite3_context*);
+SQLITE_API void upnpd_sqlite3_result_error_nomem(sqlite3_context*);
+SQLITE_API void upnpd_sqlite3_result_error_code(sqlite3_context*, int);
+SQLITE_API void upnpd_sqlite3_result_int(sqlite3_context*, int);
+SQLITE_API void upnpd_sqlite3_result_int64(sqlite3_context*, sqlite3_int64);
+SQLITE_API void upnpd_sqlite3_result_null(sqlite3_context*);
+SQLITE_API void upnpd_sqlite3_result_text(sqlite3_context*, const char*, int, void(*)(void*));
+SQLITE_API void upnpd_sqlite3_result_text16(sqlite3_context*, const void*, int, void(*)(void*));
+SQLITE_API void upnpd_sqlite3_result_text16le(sqlite3_context*, const void*, int,void(*)(void*));
+SQLITE_API void upnpd_sqlite3_result_text16be(sqlite3_context*, const void*, int,void(*)(void*));
+SQLITE_API void upnpd_sqlite3_result_value(sqlite3_context*, sqlite3_value*);
+SQLITE_API void upnpd_sqlite3_result_zeroblob(sqlite3_context*, int n);
 
 /*
 ** CAPI3REF: Define New Collating Sequences {H16600} <S20300>
@@ -3532,8 +3532,8 @@ SQLITE_API void sqlite3_result_zeroblob(sqlite3_context*, int n);
 ** [database connection] specified as the first argument.
 **
 ** The name of the new collation sequence is specified as a UTF-8 string
-** for sqlite3_create_collation() and sqlite3_create_collation_v2()
-** and a UTF-16 string for sqlite3_create_collation16(). In all cases
+** for upnpd_sqlite3_create_collation() and upnpd_sqlite3_create_collation_v2()
+** and a UTF-16 string for upnpd_sqlite3_create_collation16(). In all cases
 ** the name is passed as the second function argument.
 **
 ** The third argument may be one of the constants [SQLITE_UTF8],
@@ -3551,7 +3551,7 @@ SQLITE_API void sqlite3_result_zeroblob(sqlite3_context*, int n);
 ** sequence (so that SQLite cannot call it anymore).
 ** Each time the application supplied function is invoked, it is passed
 ** as its first parameter a copy of the void* passed as the fourth argument
-** to sqlite3_create_collation() or sqlite3_create_collation16().
+** to upnpd_sqlite3_create_collation() or upnpd_sqlite3_create_collation16().
 **
 ** The remaining arguments to the application-supplied routine are two strings,
 ** each represented by a (length, data) pair and encoded in the encoding
@@ -3560,29 +3560,29 @@ SQLITE_API void sqlite3_result_zeroblob(sqlite3_context*, int n);
 ** return negative, zero or positive if the first string is less than,
 ** equal to, or greater than the second string. i.e. (STRING1 - STRING2).
 **
-** The sqlite3_create_collation_v2() works like sqlite3_create_collation()
+** The upnpd_sqlite3_create_collation_v2() works like upnpd_sqlite3_create_collation()
 ** except that it takes an extra argument which is a destructor for
 ** the collation.  The destructor is called when the collation is
 ** destroyed and is passed a copy of the fourth parameter void* pointer
-** of the sqlite3_create_collation_v2().
+** of the upnpd_sqlite3_create_collation_v2().
 ** Collations are destroyed when they are overridden by later calls to the
 ** collation creation functions or when the [database connection] is closed
-** using [sqlite3_close()].
+** using [upnpd_sqlite3_close()].
 **
-** See also:  [sqlite3_collation_needed()] and [sqlite3_collation_needed16()].
+** See also:  [upnpd_sqlite3_collation_needed()] and [upnpd_sqlite3_collation_needed16()].
 **
 ** Requirements:
 ** [H16603] [H16604] [H16606] [H16609] [H16612] [H16615] [H16618] [H16621]
 ** [H16624] [H16627] [H16630]
 */
-SQLITE_API int sqlite3_create_collation(
+SQLITE_API int upnpd_sqlite3_create_collation(
   sqlite3*, 
   const char *zName, 
   int eTextRep, 
   void*,
   int(*xCompare)(void*,int,const void*,int,const void*)
 );
-SQLITE_API int sqlite3_create_collation_v2(
+SQLITE_API int upnpd_sqlite3_create_collation_v2(
   sqlite3*, 
   const char *zName, 
   int eTextRep, 
@@ -3590,7 +3590,7 @@ SQLITE_API int sqlite3_create_collation_v2(
   int(*xCompare)(void*,int,const void*,int,const void*),
   void(*xDestroy)(void*)
 );
-SQLITE_API int sqlite3_create_collation16(
+SQLITE_API int upnpd_sqlite3_create_collation16(
   sqlite3*, 
   const void *zName,
   int eTextRep, 
@@ -3606,33 +3606,33 @@ SQLITE_API int sqlite3_create_collation16(
 ** [database connection] to be called whenever an undefined collation
 ** sequence is required.
 **
-** If the function is registered using the sqlite3_collation_needed() API,
+** If the function is registered using the upnpd_sqlite3_collation_needed() API,
 ** then it is passed the names of undefined collation sequences as strings
-** encoded in UTF-8. {H16703} If sqlite3_collation_needed16() is used,
+** encoded in UTF-8. {H16703} If upnpd_sqlite3_collation_needed16() is used,
 ** the names are passed as UTF-16 in machine native byte order.
 ** A call to either function replaces any existing callback.
 **
 ** When the callback is invoked, the first argument passed is a copy
-** of the second argument to sqlite3_collation_needed() or
-** sqlite3_collation_needed16().  The second argument is the database
+** of the second argument to upnpd_sqlite3_collation_needed() or
+** upnpd_sqlite3_collation_needed16().  The second argument is the database
 ** connection.  The third argument is one of [SQLITE_UTF8], [SQLITE_UTF16BE],
 ** or [SQLITE_UTF16LE], indicating the most desirable form of the collation
 ** sequence function required.  The fourth parameter is the name of the
 ** required collation sequence.
 **
 ** The callback function should register the desired collation using
-** [sqlite3_create_collation()], [sqlite3_create_collation16()], or
-** [sqlite3_create_collation_v2()].
+** [upnpd_sqlite3_create_collation()], [upnpd_sqlite3_create_collation16()], or
+** [upnpd_sqlite3_create_collation_v2()].
 **
 ** Requirements:
 ** [H16702] [H16704] [H16706]
 */
-SQLITE_API int sqlite3_collation_needed(
+SQLITE_API int upnpd_sqlite3_collation_needed(
   sqlite3*, 
   void*, 
   void(*)(void*,sqlite3*,int eTextRep,const char*)
 );
-SQLITE_API int sqlite3_collation_needed16(
+SQLITE_API int upnpd_sqlite3_collation_needed16(
   sqlite3*, 
   void*,
   void(*)(void*,sqlite3*,int eTextRep,const void*)
@@ -3640,7 +3640,7 @@ SQLITE_API int sqlite3_collation_needed16(
 
 /*
 ** Specify the key for an encrypted database.  This routine should be
-** called right after sqlite3_open().
+** called right after upnpd_sqlite3_open().
 **
 ** The code to implement this API is not available in the public release
 ** of SQLite.
@@ -3666,7 +3666,7 @@ SQLITE_API int sqlite3_rekey(
 /*
 ** CAPI3REF: Suspend Execution For A Short Time {H10530} <S40410>
 **
-** The sqlite3_sleep() function causes the current thread to suspend execution
+** The upnpd_sqlite3_sleep() function causes the current thread to suspend execution
 ** for at least a number of milliseconds specified in its parameter.
 **
 ** If the operating system does not support sleep requests with
@@ -3679,7 +3679,7 @@ SQLITE_API int sqlite3_rekey(
 **
 ** Requirements: [H10533] [H10536]
 */
-SQLITE_API int sqlite3_sleep(int);
+SQLITE_API int upnpd_sqlite3_sleep(int);
 
 /*
 ** CAPI3REF: Name Of The Folder Holding Temporary Files {H10310} <S20000>
@@ -3700,13 +3700,13 @@ SQLITE_API int sqlite3_sleep(int);
 ** thereafter.
 **
 ** The [temp_store_directory pragma] may modify this variable and cause
-** it to point to memory obtained from [sqlite3_malloc].  Furthermore,
+** it to point to memory obtained from [upnpd_sqlite3_malloc].  Furthermore,
 ** the [temp_store_directory pragma] always assumes that any string
 ** that this variable points to is held in memory obtained from 
-** [sqlite3_malloc] and the pragma may attempt to free that memory
-** using [sqlite3_free].
+** [upnpd_sqlite3_malloc] and the pragma may attempt to free that memory
+** using [upnpd_sqlite3_free].
 ** Hence, if this variable is modified directly, either it should be
-** made NULL or made to point to memory obtained from [sqlite3_malloc]
+** made NULL or made to point to memory obtained from [upnpd_sqlite3_malloc]
 ** or else the use of the [temp_store_directory pragma] should be avoided.
 */
 SQLITE_API SQLITE_EXTERN char *sqlite3_temp_directory;
@@ -3715,7 +3715,7 @@ SQLITE_API SQLITE_EXTERN char *sqlite3_temp_directory;
 ** CAPI3REF: Test For Auto-Commit Mode {H12930} <S60200>
 ** KEYWORDS: {autocommit mode}
 **
-** The sqlite3_get_autocommit() interface returns non-zero or
+** The upnpd_sqlite3_get_autocommit() interface returns non-zero or
 ** zero if the given database connection is or is not in autocommit mode,
 ** respectively.  Autocommit mode is on by default.
 ** Autocommit mode is disabled by a [BEGIN] statement.
@@ -3734,20 +3734,20 @@ SQLITE_API SQLITE_EXTERN char *sqlite3_temp_directory;
 **
 ** Requirements: [H12931] [H12932] [H12933] [H12934]
 */
-SQLITE_API int sqlite3_get_autocommit(sqlite3*);
+SQLITE_API int upnpd_sqlite3_get_autocommit(sqlite3*);
 
 /*
 ** CAPI3REF: Find The Database Handle Of A Prepared Statement {H13120} <S60600>
 **
-** The sqlite3_db_handle interface returns the [database connection] handle
+** The upnpd_sqlite3_db_handle interface returns the [database connection] handle
 ** to which a [prepared statement] belongs.  The [database connection]
-** returned by sqlite3_db_handle is the same [database connection] that was the first argument
-** to the [sqlite3_prepare_v2()] call (or its variants) that was used to
+** returned by upnpd_sqlite3_db_handle is the same [database connection] that was the first argument
+** to the [upnpd_sqlite3_prepare_v2()] call (or its variants) that was used to
 ** create the statement in the first place.
 **
 ** Requirements: [H13123]
 */
-SQLITE_API sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
+SQLITE_API sqlite3 *upnpd_sqlite3_db_handle(sqlite3_stmt*);
 
 /*
 ** CAPI3REF: Find the next prepared statement {H13140} <S60600>
@@ -3759,23 +3759,23 @@ SQLITE_API sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 ** satisfies the conditions of this routine, it returns NULL.
 **
 ** The [database connection] pointer D in a call to
-** [sqlite3_next_stmt(D,S)] must refer to an open database
+** [upnpd_sqlite3_next_stmt(D,S)] must refer to an open database
 ** connection and in particular must not be a NULL pointer.
 **
 ** Requirements: [H13143] [H13146] [H13149] [H13152]
 */
-SQLITE_API sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
+SQLITE_API sqlite3_stmt *upnpd_sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 
 /*
 ** CAPI3REF: Commit And Rollback Notification Callbacks {H12950} <S60400>
 **
-** The sqlite3_commit_hook() interface registers a callback
+** The upnpd_sqlite3_commit_hook() interface registers a callback
 ** function to be invoked whenever a transaction is [COMMIT | committed].
-** Any callback set by a previous call to sqlite3_commit_hook()
+** Any callback set by a previous call to upnpd_sqlite3_commit_hook()
 ** for the same database connection is overridden.
-** The sqlite3_rollback_hook() interface registers a callback
+** The upnpd_sqlite3_rollback_hook() interface registers a callback
 ** function to be invoked whenever a transaction is [ROLLBACK | rolled back].
-** Any callback set by a previous call to sqlite3_commit_hook()
+** Any callback set by a previous call to upnpd_sqlite3_commit_hook()
 ** for the same database connection is overridden.
 ** The pArg argument is passed through to the callback.
 ** If the callback on a commit hook function returns non-zero,
@@ -3787,9 +3787,9 @@ SQLITE_API sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 ** The callback implementation must not do anything that will modify
 ** the database connection that invoked the callback.  Any actions
 ** to modify the database connection must be deferred until after the
-** completion of the [sqlite3_step()] call that triggered the commit
+** completion of the [upnpd_sqlite3_step()] call that triggered the commit
 ** or rollback hook in the first place.
-** Note that [sqlite3_prepare_v2()] and [sqlite3_step()] both modify their
+** Note that [upnpd_sqlite3_prepare_v2()] and [upnpd_sqlite3_step()] both modify their
 ** database connections for the meaning of "modify" in this paragraph.
 **
 ** Registering a NULL function disables the callback.
@@ -3809,19 +3809,19 @@ SQLITE_API sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 ** rolled back because a commit callback returned non-zero.
 ** <todo> Check on this </todo>
 **
-** See also the [sqlite3_update_hook()] interface.
+** See also the [upnpd_sqlite3_update_hook()] interface.
 **
 ** Requirements:
 ** [H12951] [H12952] [H12953] [H12954] [H12955]
 ** [H12961] [H12962] [H12963] [H12964]
 */
-SQLITE_API void *sqlite3_commit_hook(sqlite3*, int(*)(void*), void*);
-SQLITE_API void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
+SQLITE_API void *upnpd_sqlite3_commit_hook(sqlite3*, int(*)(void*), void*);
+SQLITE_API void *upnpd_sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 
 /*
 ** CAPI3REF: Data Change Notification Callbacks {H12970} <S60400>
 **
-** The sqlite3_update_hook() interface registers a callback function
+** The upnpd_sqlite3_update_hook() interface registers a callback function
 ** with the [database connection] identified by the first argument
 ** to be invoked whenever a row is updated, inserted or deleted.
 ** Any callback set by a previous call to this function
@@ -3830,7 +3830,7 @@ SQLITE_API void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 ** The second argument is a pointer to the function to invoke when a
 ** row is updated, inserted or deleted.
 ** The first argument to the callback is a copy of the third argument
-** to sqlite3_update_hook().
+** to upnpd_sqlite3_update_hook().
 ** The second callback argument is one of [SQLITE_INSERT], [SQLITE_DELETE],
 ** or [SQLITE_UPDATE], depending on the operation that caused the callback
 ** to be invoked.
@@ -3852,20 +3852,20 @@ SQLITE_API void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 ** The update hook implementation must not do anything that will modify
 ** the database connection that invoked the update hook.  Any actions
 ** to modify the database connection must be deferred until after the
-** completion of the [sqlite3_step()] call that triggered the update hook.
-** Note that [sqlite3_prepare_v2()] and [sqlite3_step()] both modify their
+** completion of the [upnpd_sqlite3_step()] call that triggered the update hook.
+** Note that [upnpd_sqlite3_prepare_v2()] and [upnpd_sqlite3_step()] both modify their
 ** database connections for the meaning of "modify" in this paragraph.
 **
 ** If another function was previously registered, its pArg value
 ** is returned.  Otherwise NULL is returned.
 **
-** See also the [sqlite3_commit_hook()] and [sqlite3_rollback_hook()]
+** See also the [upnpd_sqlite3_commit_hook()] and [upnpd_sqlite3_rollback_hook()]
 ** interfaces.
 **
 ** Requirements:
 ** [H12971] [H12973] [H12975] [H12977] [H12979] [H12981] [H12983] [H12986]
 */
-SQLITE_API void *sqlite3_update_hook(
+SQLITE_API void *upnpd_sqlite3_update_hook(
   sqlite3*, 
   void(*)(void *,int ,char const *,char const *,sqlite3_int64),
   void*
@@ -3885,12 +3885,12 @@ SQLITE_API void *sqlite3_update_hook(
 ** sharing was enabled or disabled for each thread separately.
 **
 ** The cache sharing mode set by this interface effects all subsequent
-** calls to [sqlite3_open()], [sqlite3_open_v2()], and [sqlite3_open16()].
+** calls to [upnpd_sqlite3_open()], [upnpd_sqlite3_open_v2()], and [upnpd_sqlite3_open16()].
 ** Existing database connections continue use the sharing mode
 ** that was in effect at the time they were opened.
 **
 ** Virtual tables cannot be used with a shared cache.  When shared
-** cache is enabled, the [sqlite3_create_module()] API used to register
+** cache is enabled, the [upnpd_sqlite3_create_module()] API used to register
 ** virtual tables will always return an error.
 **
 ** This routine returns [SQLITE_OK] if shared cache was enabled or disabled
@@ -3904,37 +3904,37 @@ SQLITE_API void *sqlite3_update_hook(
 **
 ** Requirements: [H10331] [H10336] [H10337] [H10339]
 */
-SQLITE_API int sqlite3_enable_shared_cache(int);
+SQLITE_API int upnpd_sqlite3_enable_shared_cache(int);
 
 /*
 ** CAPI3REF: Attempt To Free Heap Memory {H17340} <S30220>
 **
-** The sqlite3_release_memory() interface attempts to free N bytes
+** The upnpd_sqlite3_release_memory() interface attempts to free N bytes
 ** of heap memory by deallocating non-essential memory allocations
 ** held by the database library. {END}  Memory used to cache database
 ** pages to improve performance is an example of non-essential memory.
-** sqlite3_release_memory() returns the number of bytes actually freed,
+** upnpd_sqlite3_release_memory() returns the number of bytes actually freed,
 ** which might be more or less than the amount requested.
 **
 ** Requirements: [H17341] [H17342]
 */
-SQLITE_API int sqlite3_release_memory(int);
+SQLITE_API int upnpd_sqlite3_release_memory(int);
 
 /*
 ** CAPI3REF: Impose A Limit On Heap Size {H17350} <S30220>
 **
-** The sqlite3_soft_heap_limit() interface places a "soft" limit
+** The upnpd_sqlite3_soft_heap_limit() interface places a "soft" limit
 ** on the amount of heap memory that may be allocated by SQLite.
 ** If an internal allocation is requested that would exceed the
-** soft heap limit, [sqlite3_release_memory()] is invoked one or
+** soft heap limit, [upnpd_sqlite3_release_memory()] is invoked one or
 ** more times to free up some space before the allocation is performed.
 **
-** The limit is called "soft", because if [sqlite3_release_memory()]
+** The limit is called "soft", because if [upnpd_sqlite3_release_memory()]
 ** cannot free sufficient memory to prevent the limit from being exceeded,
 ** the memory is allocated anyway and the current operation proceeds.
 **
 ** A negative or zero value for N means that there is no soft heap limit and
-** [sqlite3_release_memory()] will only be called when memory is exhausted.
+** [upnpd_sqlite3_release_memory()] will only be called when memory is exhausted.
 ** The default value for the soft heap limit is zero.
 **
 ** SQLite makes a best effort to honor the soft heap limit.
@@ -3953,7 +3953,7 @@ SQLITE_API int sqlite3_release_memory(int);
 ** Requirements:
 ** [H16351] [H16352] [H16353] [H16354] [H16355] [H16358]
 */
-SQLITE_API void sqlite3_soft_heap_limit(int);
+SQLITE_API void upnpd_sqlite3_soft_heap_limit(int);
 
 /*
 ** CAPI3REF: Extract Metadata About A Column Of A Table {H12850} <S60300>
@@ -4012,7 +4012,7 @@ SQLITE_API void sqlite3_soft_heap_limit(int);
 ** This function may load one or more schemas from database files. If an
 ** error occurs during this process, or if the requested table or column
 ** cannot be found, an [error code] is returned and an error message left
-** in the [database connection] (to be retrieved using sqlite3_errmsg()).
+** in the [database connection] (to be retrieved using upnpd_sqlite3_errmsg()).
 **
 ** This API is only available if the library was compiled with the
 ** [SQLITE_ENABLE_COLUMN_METADATA] C-preprocessor symbol defined.
@@ -4048,8 +4048,8 @@ SQLITE_API int sqlite3_table_column_metadata(
 ** {H12605} If an error occurs and pzErrMsg is not 0, then the
 **          [sqlite3_load_extension()] interface shall attempt to
 **          fill *pzErrMsg with error message text stored in memory
-**          obtained from [sqlite3_malloc()]. {END}  The calling function
-**          should free this memory by calling [sqlite3_free()].
+**          obtained from [upnpd_sqlite3_malloc()]. {END}  The calling function
+**          should free this memory by calling [upnpd_sqlite3_free()].
 **
 ** {H12606} Extension loading must be enabled using
 **          [sqlite3_enable_load_extension()] prior to calling this API,
@@ -4088,38 +4088,38 @@ SQLITE_API int sqlite3_enable_load_extension(sqlite3 *db, int onoff);
 ** to all new [database connections]. {END}
 **
 ** This routine stores a pointer to the extension in an array that is
-** obtained from [sqlite3_malloc()].  If you run a memory leak checker
+** obtained from [upnpd_sqlite3_malloc()].  If you run a memory leak checker
 ** on your program and it reports a leak because of this array, invoke
-** [sqlite3_reset_auto_extension()] prior to shutdown to free the memory.
+** [upnpd_sqlite3_reset_auto_extension()] prior to shutdown to free the memory.
 **
 ** {H12641} This function registers an extension entry point that is
 **          automatically invoked whenever a new [database connection]
-**          is opened using [sqlite3_open()], [sqlite3_open16()],
-**          or [sqlite3_open_v2()].
+**          is opened using [upnpd_sqlite3_open()], [upnpd_sqlite3_open16()],
+**          or [upnpd_sqlite3_open_v2()].
 **
 ** {H12642} Duplicate extensions are detected so calling this routine
 **          multiple times with the same extension is harmless.
 **
 ** {H12643} This routine stores a pointer to the extension in an array
-**          that is obtained from [sqlite3_malloc()].
+**          that is obtained from [upnpd_sqlite3_malloc()].
 **
 ** {H12644} Automatic extensions apply across all threads.
 */
-SQLITE_API int sqlite3_auto_extension(void (*xEntryPoint)(void));
+SQLITE_API int upnpd_sqlite3_auto_extension(void (*xEntryPoint)(void));
 
 /*
 ** CAPI3REF: Reset Automatic Extension Loading {H12660} <S20500>
 **
 ** This function disables all previously registered automatic
 ** extensions. {END}  It undoes the effect of all prior
-** [sqlite3_auto_extension()] calls.
+** [upnpd_sqlite3_auto_extension()] calls.
 **
 ** {H12661} This function disables all previously registered
 **          automatic extensions.
 **
 ** {H12662} This function disables automatic extensions in all threads.
 */
-SQLITE_API void sqlite3_reset_auto_extension(void);
+SQLITE_API void upnpd_sqlite3_reset_auto_extension(void);
 
 /*
 ****** EXPERIMENTAL - subject to change without notice **************
@@ -4151,7 +4151,7 @@ typedef struct sqlite3_module sqlite3_module;
 **
 ** A virtual table module is created by filling in a persistent
 ** instance of this structure and passing a pointer to that instance
-** to [sqlite3_create_module()] or [sqlite3_create_module_v2()].
+** to [upnpd_sqlite3_create_module()] or [upnpd_sqlite3_create_module_v2()].
 ** The registration remains valid until it is replaced by a different
 ** module or until the [database connection] closes.  The content
 ** of this structure must not change while it is registered with
@@ -4226,7 +4226,7 @@ struct sqlite3_module {
 **
 ** The idxNum and idxPtr values are recorded and passed into the
 ** [xFilter] method.
-** [sqlite3_free()] is used to free idxPtr if and only iff
+** [upnpd_sqlite3_free()] is used to free idxPtr if and only iff
 ** needToFreeIdxPtr is true.
 **
 ** The orderByConsumed means that output from [xFilter]/[xNext] will occur in
@@ -4258,8 +4258,8 @@ struct sqlite3_index_info {
     unsigned char omit;      /* Do not code a test for this constraint */
   } *aConstraintUsage;
   int idxNum;                /* Number used to identify the index */
-  char *idxStr;              /* String, possibly obtained from sqlite3_malloc */
-  int needToFreeIdxStr;      /* Free idxStr using sqlite3_free() if true */
+  char *idxStr;              /* String, possibly obtained from upnpd_sqlite3_malloc */
+  int needToFreeIdxStr;      /* Free idxStr using upnpd_sqlite3_free() if true */
   int orderByConsumed;       /* True if output is already ordered */
   double estimatedCost;      /* Estimated cost of using this index */
 };
@@ -4288,9 +4288,9 @@ struct sqlite3_index_info {
 ** when a new virtual table is be being created or reinitialized.
 **
 ** This interface has exactly the same effect as calling
-** [sqlite3_create_module_v2()] with a NULL client data destructor.
+** [upnpd_sqlite3_create_module_v2()] with a NULL client data destructor.
 */
-SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_create_module(
+SQLITE_API SQLITE_EXPERIMENTAL int upnpd_sqlite3_create_module(
   sqlite3 *db,               /* SQLite connection to register module with */
   const char *zName,         /* Name of the module */
   const sqlite3_module *p,   /* Methods for the module */
@@ -4301,13 +4301,13 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_create_module(
 ** CAPI3REF: Register A Virtual Table Implementation {H18210} <S20400>
 ** EXPERIMENTAL
 **
-** This routine is identical to the [sqlite3_create_module()] method,
+** This routine is identical to the [upnpd_sqlite3_create_module()] method,
 ** except that it has an extra parameter to specify 
 ** a destructor function for the client data pointer.  SQLite will
 ** invoke the destructor function (if it is not NULL) when SQLite
 ** no longer needs the pClientData pointer.  
 */
-SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_create_module_v2(
+SQLITE_API SQLITE_EXPERIMENTAL int upnpd_sqlite3_create_module_v2(
   sqlite3 *db,               /* SQLite connection to register module with */
   const char *zName,         /* Name of the module */
   const sqlite3_module *p,   /* Methods for the module */
@@ -4328,16 +4328,16 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_create_module_v2(
 ** common to all module implementations.
 **
 ** Virtual tables methods can set an error message by assigning a
-** string obtained from [sqlite3_mprintf()] to zErrMsg.  The method should
-** take care that any prior string is freed by a call to [sqlite3_free()]
+** string obtained from [upnpd_sqlite3_mprintf()] to zErrMsg.  The method should
+** take care that any prior string is freed by a call to [upnpd_sqlite3_free()]
 ** prior to assigning a new string to zErrMsg.  After the error message
 ** is delivered up to the client application, the string will be automatically
-** freed by sqlite3_free() and the zErrMsg field will be zeroed.
+** freed by upnpd_sqlite3_free() and the zErrMsg field will be zeroed.
 */
 struct sqlite3_vtab {
   const sqlite3_module *pModule;  /* The module for this virtual table */
   int nRef;                       /* NO LONGER USED */
-  char *zErrMsg;                  /* Error message from sqlite3_mprintf() */
+  char *zErrMsg;                  /* Error message from upnpd_sqlite3_mprintf() */
   /* Virtual table implementations will typically add additional fields */
 };
 
@@ -4373,7 +4373,7 @@ struct sqlite3_vtab_cursor {
 ** to declare the format (the names and datatypes of the columns) of
 ** the virtual tables they implement.
 */
-SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_declare_vtab(sqlite3*, const char *zSQL);
+SQLITE_API SQLITE_EXPERIMENTAL int upnpd_sqlite3_declare_vtab(sqlite3*, const char *zSQL);
 
 /*
 ** CAPI3REF: Overload A Function For A Virtual Table {H18300} <S20400>
@@ -4392,7 +4392,7 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_declare_vtab(sqlite3*, const char *zS
 ** purpose is to be a placeholder function that can be overloaded
 ** by a [virtual table].
 */
-SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_overload_function(sqlite3*, const char *zFuncName, int nArg);
+SQLITE_API SQLITE_EXPERIMENTAL int upnpd_sqlite3_overload_function(sqlite3*, const char *zFuncName, int nArg);
 
 /*
 ** The interface to the virtual-table mechanism defined above (back up
@@ -4411,12 +4411,12 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_overload_function(sqlite3*, const cha
 ** KEYWORDS: {BLOB handle} {BLOB handles}
 **
 ** An instance of this object represents an open BLOB on which
-** [sqlite3_blob_open | incremental BLOB I/O] can be performed.
-** Objects of this type are created by [sqlite3_blob_open()]
-** and destroyed by [sqlite3_blob_close()].
-** The [sqlite3_blob_read()] and [sqlite3_blob_write()] interfaces
+** [upnpd_sqlite3_blob_open | incremental BLOB I/O] can be performed.
+** Objects of this type are created by [upnpd_sqlite3_blob_open()]
+** and destroyed by [upnpd_sqlite3_blob_close()].
+** The [upnpd_sqlite3_blob_read()] and [upnpd_sqlite3_blob_write()] interfaces
 ** can be used to read or write small subsections of the BLOB.
-** The [sqlite3_blob_bytes()] interface returns the size of the BLOB in bytes.
+** The [upnpd_sqlite3_blob_bytes()] interface returns the size of the BLOB in bytes.
 */
 typedef struct sqlite3_blob sqlite3_blob;
 
@@ -4444,9 +4444,9 @@ typedef struct sqlite3_blob sqlite3_blob;
 ** to *ppBlob. Otherwise an [error code] is returned and *ppBlob is set
 ** to be a null pointer.
 ** This function sets the [database connection] error code and message
-** accessible via [sqlite3_errcode()] and [sqlite3_errmsg()] and related
+** accessible via [upnpd_sqlite3_errcode()] and [upnpd_sqlite3_errmsg()] and related
 ** functions.  Note that the *ppBlob variable is always initialized in a
-** way that makes it safe to invoke [sqlite3_blob_close()] on *ppBlob
+** way that makes it safe to invoke [upnpd_sqlite3_blob_close()] on *ppBlob
 ** regardless of the success or failure of this routine.
 **
 ** If the row that a BLOB handle points to is modified by an
@@ -4454,29 +4454,29 @@ typedef struct sqlite3_blob sqlite3_blob;
 ** then the BLOB handle is marked as "expired".
 ** This is true if any column of the row is changed, even a column
 ** other than the one the BLOB handle is open on.
-** Calls to [sqlite3_blob_read()] and [sqlite3_blob_write()] for
+** Calls to [upnpd_sqlite3_blob_read()] and [upnpd_sqlite3_blob_write()] for
 ** a expired BLOB handle fail with an return code of [SQLITE_ABORT].
 ** Changes written into a BLOB prior to the BLOB expiring are not
 ** rollback by the expiration of the BLOB.  Such changes will eventually
 ** commit if the transaction continues to completion.
 **
-** Use the [sqlite3_blob_bytes()] interface to determine the size of
+** Use the [upnpd_sqlite3_blob_bytes()] interface to determine the size of
 ** the opened blob.  The size of a blob may not be changed by this
 ** underface.  Use the [UPDATE] SQL command to change the size of a
 ** blob.
 **
-** The [sqlite3_bind_zeroblob()] and [sqlite3_result_zeroblob()] interfaces
+** The [upnpd_sqlite3_bind_zeroblob()] and [upnpd_sqlite3_result_zeroblob()] interfaces
 ** and the built-in [zeroblob] SQL function can be used, if desired,
 ** to create an empty, zero-filled blob in which to read or write using
 ** this interface.
 **
 ** To avoid a resource leak, every open [BLOB handle] should eventually
-** be released by a call to [sqlite3_blob_close()].
+** be released by a call to [upnpd_sqlite3_blob_close()].
 **
 ** Requirements:
 ** [H17813] [H17814] [H17816] [H17819] [H17821] [H17824]
 */
-SQLITE_API int sqlite3_blob_open(
+SQLITE_API int upnpd_sqlite3_blob_open(
   sqlite3*,
   const char *zDb,
   const char *zTable,
@@ -4506,12 +4506,12 @@ SQLITE_API int sqlite3_blob_open(
 ** an error code, the BLOB is still closed.
 **
 ** Calling this routine with a null pointer (which as would be returned
-** by failed call to [sqlite3_blob_open()]) is a harmless no-op.
+** by failed call to [upnpd_sqlite3_blob_open()]) is a harmless no-op.
 **
 ** Requirements:
 ** [H17833] [H17836] [H17839]
 */
-SQLITE_API int sqlite3_blob_close(sqlite3_blob *);
+SQLITE_API int upnpd_sqlite3_blob_close(sqlite3_blob *);
 
 /*
 ** CAPI3REF: Return The Size Of An Open BLOB {H17840} <S30230>
@@ -4522,14 +4522,14 @@ SQLITE_API int sqlite3_blob_close(sqlite3_blob *);
 ** blob content; they cannot change the size of a blob.
 **
 ** This routine only works on a [BLOB handle] which has been created
-** by a prior successful call to [sqlite3_blob_open()] and which has not
-** been closed by [sqlite3_blob_close()].  Passing any other pointer in
+** by a prior successful call to [upnpd_sqlite3_blob_open()] and which has not
+** been closed by [upnpd_sqlite3_blob_close()].  Passing any other pointer in
 ** to this routine results in undefined and probably undesirable behavior.
 **
 ** Requirements:
 ** [H17843]
 */
-SQLITE_API int sqlite3_blob_bytes(sqlite3_blob *);
+SQLITE_API int upnpd_sqlite3_blob_bytes(sqlite3_blob *);
 
 /*
 ** CAPI3REF: Read Data From A BLOB Incrementally {H17850} <S30230>
@@ -4542,7 +4542,7 @@ SQLITE_API int sqlite3_blob_bytes(sqlite3_blob *);
 ** [SQLITE_ERROR] is returned and no data is read.  If N or iOffset is
 ** less than zero, [SQLITE_ERROR] is returned and no data is read.
 ** The size of the blob (and hence the maximum value of N+iOffset)
-** can be determined using the [sqlite3_blob_bytes()] interface.
+** can be determined using the [upnpd_sqlite3_blob_bytes()] interface.
 **
 ** An attempt to read from an expired [BLOB handle] fails with an
 ** error code of [SQLITE_ABORT].
@@ -4551,16 +4551,16 @@ SQLITE_API int sqlite3_blob_bytes(sqlite3_blob *);
 ** Otherwise, an [error code] or an [extended error code] is returned.
 **
 ** This routine only works on a [BLOB handle] which has been created
-** by a prior successful call to [sqlite3_blob_open()] and which has not
-** been closed by [sqlite3_blob_close()].  Passing any other pointer in
+** by a prior successful call to [upnpd_sqlite3_blob_open()] and which has not
+** been closed by [upnpd_sqlite3_blob_close()].  Passing any other pointer in
 ** to this routine results in undefined and probably undesirable behavior.
 **
-** See also: [sqlite3_blob_write()].
+** See also: [upnpd_sqlite3_blob_write()].
 **
 ** Requirements:
 ** [H17853] [H17856] [H17859] [H17862] [H17863] [H17865] [H17868]
 */
-SQLITE_API int sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
+SQLITE_API int upnpd_sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
 
 /*
 ** CAPI3REF: Write Data Into A BLOB Incrementally {H17870} <S30230>
@@ -4570,7 +4570,7 @@ SQLITE_API int sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
 ** into the open BLOB, starting at offset iOffset.
 **
 ** If the [BLOB handle] passed as the first argument was not opened for
-** writing (the flags parameter to [sqlite3_blob_open()] was zero),
+** writing (the flags parameter to [upnpd_sqlite3_blob_open()] was zero),
 ** this function returns [SQLITE_READONLY].
 **
 ** This function may only modify the contents of the BLOB; it is
@@ -4579,7 +4579,7 @@ SQLITE_API int sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
 ** [SQLITE_ERROR] is returned and no data is written.  If N is
 ** less than zero [SQLITE_ERROR] is returned and no data is written.
 ** The size of the BLOB (and hence the maximum value of N+iOffset)
-** can be determined using the [sqlite3_blob_bytes()] interface.
+** can be determined using the [upnpd_sqlite3_blob_bytes()] interface.
 **
 ** An attempt to write to an expired [BLOB handle] fails with an
 ** error code of [SQLITE_ABORT].  Writes to the BLOB that occurred
@@ -4592,17 +4592,17 @@ SQLITE_API int sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
 ** Otherwise, an  [error code] or an [extended error code] is returned.
 **
 ** This routine only works on a [BLOB handle] which has been created
-** by a prior successful call to [sqlite3_blob_open()] and which has not
-** been closed by [sqlite3_blob_close()].  Passing any other pointer in
+** by a prior successful call to [upnpd_sqlite3_blob_open()] and which has not
+** been closed by [upnpd_sqlite3_blob_close()].  Passing any other pointer in
 ** to this routine results in undefined and probably undesirable behavior.
 **
-** See also: [sqlite3_blob_read()].
+** See also: [upnpd_sqlite3_blob_read()].
 **
 ** Requirements:
 ** [H17873] [H17874] [H17875] [H17876] [H17877] [H17879] [H17882] [H17885]
 ** [H17888]
 */
-SQLITE_API int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOffset);
+SQLITE_API int upnpd_sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOffset);
 
 /*
 ** CAPI3REF: Virtual File System Objects {H11200} <S20100>
@@ -4614,13 +4614,13 @@ SQLITE_API int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOff
 ** New VFSes can be registered and existing VFSes can be unregistered.
 ** The following interfaces are provided.
 **
-** The sqlite3_vfs_find() interface returns a pointer to a VFS given its name.
+** The upnpd_sqlite3_vfs_find() interface returns a pointer to a VFS given its name.
 ** Names are case sensitive.
 ** Names are zero-terminated UTF-8 strings.
 ** If there is no match, a NULL pointer is returned.
 ** If zVfsName is NULL then the default VFS is returned.
 **
-** New VFSes are registered with sqlite3_vfs_register().
+** New VFSes are registered with upnpd_sqlite3_vfs_register().
 ** Each new VFS becomes the default VFS if the makeDflt flag is set.
 ** The same VFS can be registered multiple times without injury.
 ** To make an existing VFS into the default VFS, register it again
@@ -4629,16 +4629,16 @@ SQLITE_API int sqlite3_blob_write(sqlite3_blob *, const void *z, int n, int iOff
 ** VFS is registered with a name that is NULL or an empty string,
 ** then the behavior is undefined.
 **
-** Unregister a VFS with the sqlite3_vfs_unregister() interface.
+** Unregister a VFS with the upnpd_sqlite3_vfs_unregister() interface.
 ** If the default VFS is unregistered, another VFS is chosen as
 ** the default.  The choice for the new VFS is arbitrary.
 **
 ** Requirements:
 ** [H11203] [H11206] [H11209] [H11212] [H11215] [H11218]
 */
-SQLITE_API sqlite3_vfs *sqlite3_vfs_find(const char *zVfsName);
-SQLITE_API int sqlite3_vfs_register(sqlite3_vfs*, int makeDflt);
-SQLITE_API int sqlite3_vfs_unregister(sqlite3_vfs*);
+SQLITE_API sqlite3_vfs *upnpd_sqlite3_vfs_find(const char *zVfsName);
+SQLITE_API int upnpd_sqlite3_vfs_register(sqlite3_vfs*, int makeDflt);
+SQLITE_API int upnpd_sqlite3_vfs_unregister(sqlite3_vfs*);
 
 /*
 ** CAPI3REF: Mutexes {H17000} <S20000>
@@ -4670,15 +4670,15 @@ SQLITE_API int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** macro defined (with "-DSQLITE_MUTEX_APPDEF=1"), then no mutex
 ** implementation is included with the library. In this case the
 ** application must supply a custom mutex implementation using the
-** [SQLITE_CONFIG_MUTEX] option of the sqlite3_config() function
-** before calling sqlite3_initialize() or any other public sqlite3_
-** function that calls sqlite3_initialize().
+** [SQLITE_CONFIG_MUTEX] option of the upnpd_sqlite3_config() function
+** before calling upnpd_sqlite3_initialize() or any other public sqlite3_
+** function that calls upnpd_sqlite3_initialize().
 **
-** {H17011} The sqlite3_mutex_alloc() routine allocates a new
+** {H17011} The upnpd_sqlite3_mutex_alloc() routine allocates a new
 ** mutex and returns a pointer to it. {H17012} If it returns NULL
 ** that means that a mutex could not be allocated. {H17013} SQLite
 ** will unwind its stack and return an error. {H17014} The argument
-** to sqlite3_mutex_alloc() is one of these integer constants:
+** to upnpd_sqlite3_mutex_alloc() is one of these integer constants:
 **
 ** <ul>
 ** <li>  SQLITE_MUTEX_FAST
@@ -4691,7 +4691,7 @@ SQLITE_API int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** <li>  SQLITE_MUTEX_STATIC_LRU2
 ** </ul>
 **
-** {H17015} The first two constants cause sqlite3_mutex_alloc() to create
+** {H17015} The first two constants cause upnpd_sqlite3_mutex_alloc() to create
 ** a new mutex.  The new mutex is recursive when SQLITE_MUTEX_RECURSIVE
 ** is used but not necessarily so when SQLITE_MUTEX_FAST is used. {END}
 ** The mutex implementation does not need to make a distinction
@@ -4701,7 +4701,7 @@ SQLITE_API int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** implementation is available on the host platform, the mutex subsystem
 ** might return such a mutex in response to SQLITE_MUTEX_FAST.
 **
-** {H17017} The other allowed parameters to sqlite3_mutex_alloc() each return
+** {H17017} The other allowed parameters to upnpd_sqlite3_mutex_alloc() each return
 ** a pointer to a static preexisting mutex. {END}  Four static mutexes are
 ** used by the current version of SQLite.  Future versions of SQLite
 ** may add additional static mutexes.  Static mutexes are for internal
@@ -4710,22 +4710,22 @@ SQLITE_API int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** SQLITE_MUTEX_RECURSIVE.
 **
 ** {H17018} Note that if one of the dynamic mutex parameters (SQLITE_MUTEX_FAST
-** or SQLITE_MUTEX_RECURSIVE) is used then sqlite3_mutex_alloc()
+** or SQLITE_MUTEX_RECURSIVE) is used then upnpd_sqlite3_mutex_alloc()
 ** returns a different mutex on every call.  {H17034} But for the static
 ** mutex types, the same mutex is returned on every call that has
 ** the same type number.
 **
-** {H17019} The sqlite3_mutex_free() routine deallocates a previously
+** {H17019} The upnpd_sqlite3_mutex_free() routine deallocates a previously
 ** allocated dynamic mutex. {H17020} SQLite is careful to deallocate every
 ** dynamic mutex that it allocates. {A17021} The dynamic mutexes must not be in
 ** use when they are deallocated. {A17022} Attempting to deallocate a static
 ** mutex results in undefined behavior. {H17023} SQLite never deallocates
 ** a static mutex. {END}
 **
-** The sqlite3_mutex_enter() and sqlite3_mutex_try() routines attempt
+** The upnpd_sqlite3_mutex_enter() and upnpd_sqlite3_mutex_try() routines attempt
 ** to enter a mutex. {H17024} If another thread is already within the mutex,
-** sqlite3_mutex_enter() will block and sqlite3_mutex_try() will return
-** SQLITE_BUSY. {H17025}  The sqlite3_mutex_try() interface returns [SQLITE_OK]
+** upnpd_sqlite3_mutex_enter() will block and upnpd_sqlite3_mutex_try() will return
+** SQLITE_BUSY. {H17025}  The upnpd_sqlite3_mutex_try() interface returns [SQLITE_OK]
 ** upon successful entry.  {H17026} Mutexes created using
 ** SQLITE_MUTEX_RECURSIVE can be entered multiple times by the same thread.
 ** {H17027} In such cases the,
@@ -4736,27 +4736,27 @@ SQLITE_API int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** such behavior in its own use of mutexes.
 **
 ** Some systems (for example, Windows 95) do not support the operation
-** implemented by sqlite3_mutex_try().  On those systems, sqlite3_mutex_try()
+** implemented by upnpd_sqlite3_mutex_try().  On those systems, upnpd_sqlite3_mutex_try()
 ** will always return SQLITE_BUSY.  {H17030} The SQLite core only ever uses
-** sqlite3_mutex_try() as an optimization so this is acceptable behavior.
+** upnpd_sqlite3_mutex_try() as an optimization so this is acceptable behavior.
 **
-** {H17031} The sqlite3_mutex_leave() routine exits a mutex that was
+** {H17031} The upnpd_sqlite3_mutex_leave() routine exits a mutex that was
 ** previously entered by the same thread.  {A17032} The behavior
 ** is undefined if the mutex is not currently entered by the
 ** calling thread or is not currently allocated.  {H17033} SQLite will
 ** never do either. {END}
 **
-** If the argument to sqlite3_mutex_enter(), sqlite3_mutex_try(), or
-** sqlite3_mutex_leave() is a NULL pointer, then all three routines
+** If the argument to upnpd_sqlite3_mutex_enter(), upnpd_sqlite3_mutex_try(), or
+** upnpd_sqlite3_mutex_leave() is a NULL pointer, then all three routines
 ** behave as no-ops.
 **
 ** See also: [sqlite3_mutex_held()] and [sqlite3_mutex_notheld()].
 */
-SQLITE_API sqlite3_mutex *sqlite3_mutex_alloc(int);
-SQLITE_API void sqlite3_mutex_free(sqlite3_mutex*);
-SQLITE_API void sqlite3_mutex_enter(sqlite3_mutex*);
-SQLITE_API int sqlite3_mutex_try(sqlite3_mutex*);
-SQLITE_API void sqlite3_mutex_leave(sqlite3_mutex*);
+SQLITE_API sqlite3_mutex *upnpd_sqlite3_mutex_alloc(int);
+SQLITE_API void upnpd_sqlite3_mutex_free(sqlite3_mutex*);
+SQLITE_API void upnpd_sqlite3_mutex_enter(sqlite3_mutex*);
+SQLITE_API int upnpd_sqlite3_mutex_try(sqlite3_mutex*);
+SQLITE_API void upnpd_sqlite3_mutex_leave(sqlite3_mutex*);
 
 /*
 ** CAPI3REF: Mutex Methods Object {H17120} <S20130>
@@ -4770,33 +4770,33 @@ SQLITE_API void sqlite3_mutex_leave(sqlite3_mutex*);
 ** implementation for specialized deployments or systems for which SQLite
 ** does not provide a suitable implementation. In this case, the user
 ** creates and populates an instance of this structure to pass
-** to sqlite3_config() along with the [SQLITE_CONFIG_MUTEX] option.
+** to upnpd_sqlite3_config() along with the [SQLITE_CONFIG_MUTEX] option.
 ** Additionally, an instance of this structure can be used as an
 ** output variable when querying the system for the current mutex
 ** implementation, using the [SQLITE_CONFIG_GETMUTEX] option.
 **
 ** The xMutexInit method defined by this structure is invoked as
-** part of system initialization by the sqlite3_initialize() function.
+** part of system initialization by the upnpd_sqlite3_initialize() function.
 ** {H17001} The xMutexInit routine shall be called by SQLite once for each
-** effective call to [sqlite3_initialize()].
+** effective call to [upnpd_sqlite3_initialize()].
 **
 ** The xMutexEnd method defined by this structure is invoked as
-** part of system shutdown by the sqlite3_shutdown() function. The
+** part of system shutdown by the upnpd_sqlite3_shutdown() function. The
 ** implementation of this method is expected to release all outstanding
 ** resources obtained by the mutex methods implementation, especially
 ** those obtained by the xMutexInit method. {H17003} The xMutexEnd()
-** interface shall be invoked once for each call to [sqlite3_shutdown()].
+** interface shall be invoked once for each call to [upnpd_sqlite3_shutdown()].
 **
 ** The remaining seven methods defined by this structure (xMutexAlloc,
 ** xMutexFree, xMutexEnter, xMutexTry, xMutexLeave, xMutexHeld and
 ** xMutexNotheld) implement the following interfaces (respectively):
 **
 ** <ul>
-**   <li>  [sqlite3_mutex_alloc()] </li>
-**   <li>  [sqlite3_mutex_free()] </li>
-**   <li>  [sqlite3_mutex_enter()] </li>
-**   <li>  [sqlite3_mutex_try()] </li>
-**   <li>  [sqlite3_mutex_leave()] </li>
+**   <li>  [upnpd_sqlite3_mutex_alloc()] </li>
+**   <li>  [upnpd_sqlite3_mutex_free()] </li>
+**   <li>  [upnpd_sqlite3_mutex_enter()] </li>
+**   <li>  [upnpd_sqlite3_mutex_try()] </li>
+**   <li>  [upnpd_sqlite3_mutex_leave()] </li>
 **   <li>  [sqlite3_mutex_held()] </li>
 **   <li>  [sqlite3_mutex_notheld()] </li>
 ** </ul>
@@ -4857,7 +4857,7 @@ SQLITE_API int sqlite3_mutex_notheld(sqlite3_mutex*);
 /*
 ** CAPI3REF: Mutex Types {H17001} <H17000>
 **
-** The [sqlite3_mutex_alloc()] interface takes a single argument
+** The [upnpd_sqlite3_mutex_alloc()] interface takes a single argument
 ** which is one of these integer constants.
 **
 ** The set of static mutexes may change from one SQLite release to the
@@ -4867,7 +4867,7 @@ SQLITE_API int sqlite3_mutex_notheld(sqlite3_mutex*);
 #define SQLITE_MUTEX_FAST             0
 #define SQLITE_MUTEX_RECURSIVE        1
 #define SQLITE_MUTEX_STATIC_MASTER    2
-#define SQLITE_MUTEX_STATIC_MEM       3  /* sqlite3_malloc() */
+#define SQLITE_MUTEX_STATIC_MEM       3  /* upnpd_sqlite3_malloc() */
 #define SQLITE_MUTEX_STATIC_MEM2      4  /* NOT USED */
 #define SQLITE_MUTEX_STATIC_OPEN      4  /* sqlite3BtreeOpen() */
 #define SQLITE_MUTEX_STATIC_PRNG      5  /* sqlite3_random() */
@@ -4883,12 +4883,12 @@ SQLITE_API int sqlite3_mutex_notheld(sqlite3_mutex*);
 ** If the [threading mode] is Single-thread or Multi-thread then this
 ** routine returns a NULL pointer.
 */
-SQLITE_API sqlite3_mutex *sqlite3_db_mutex(sqlite3*);
+SQLITE_API sqlite3_mutex *upnpd_sqlite3_db_mutex(sqlite3*);
 
 /*
 ** CAPI3REF: Low-Level Control Of Database Files {H11300} <S30800>
 **
-** {H11301} The [sqlite3_file_control()] interface makes a direct call to the
+** {H11301} The [upnpd_sqlite3_file_control()] interface makes a direct call to the
 ** xFileControl method for the [sqlite3_io_methods] object associated
 ** with a particular database identified by the second argument. {H11302} The
 ** name of the database is the name assigned to the database by the
@@ -4901,20 +4901,20 @@ SQLITE_API sqlite3_mutex *sqlite3_db_mutex(sqlite3*);
 **
 ** {H11306} If the second parameter (zDbName) does not match the name of any
 ** open database file, then SQLITE_ERROR is returned. {H11307} This error
-** code is not remembered and will not be recalled by [sqlite3_errcode()]
-** or [sqlite3_errmsg()]. {A11308} The underlying xFileControl method might
+** code is not remembered and will not be recalled by [upnpd_sqlite3_errcode()]
+** or [upnpd_sqlite3_errmsg()]. {A11308} The underlying xFileControl method might
 ** also return SQLITE_ERROR.  {A11309} There is no way to distinguish between
 ** an incorrect zDbName and an SQLITE_ERROR return from the underlying
 ** xFileControl method. {END}
 **
 ** See also: [SQLITE_FCNTL_LOCKSTATE]
 */
-SQLITE_API int sqlite3_file_control(sqlite3*, const char *zDbName, int op, void*);
+SQLITE_API int upnpd_sqlite3_file_control(sqlite3*, const char *zDbName, int op, void*);
 
 /*
 ** CAPI3REF: Testing Interface {H11400} <S30800>
 **
-** The sqlite3_test_control() interface is used to read out internal
+** The upnpd_sqlite3_test_control() interface is used to read out internal
 ** state of SQLite and to inject faults into SQLite for testing
 ** purposes.  The first parameter is an operation code that determines
 ** the number, meaning, and operation of all subsequent parameters.
@@ -4928,18 +4928,18 @@ SQLITE_API int sqlite3_file_control(sqlite3*, const char *zDbName, int op, void*
 ** Unlike most of the SQLite API, this function is not guaranteed to
 ** operate consistently from one release to the next.
 */
-SQLITE_API int sqlite3_test_control(int op, ...);
+SQLITE_API int upnpd_sqlite3_test_control(int op, ...);
 
 /*
 ** CAPI3REF: Testing Interface Operation Codes {H11410} <H11400>
 **
 ** These constants are the valid operation code parameters used
-** as the first argument to [sqlite3_test_control()].
+** as the first argument to [upnpd_sqlite3_test_control()].
 **
 ** These parameters and their meanings are subject to change
 ** without notice.  These values are for testing purposes only.
 ** Applications should not use any of these parameters or the
-** [sqlite3_test_control()] interface.
+** [upnpd_sqlite3_test_control()] interface.
 */
 #define SQLITE_TESTCTRL_PRNG_SAVE                5
 #define SQLITE_TESTCTRL_PRNG_RESTORE             6
@@ -4980,9 +4980,9 @@ SQLITE_API int sqlite3_test_control(int op, ...);
 ** and it is possible that another thread might change the parameter
 ** in between the times when *pCurrent and *pHighwater are written.
 **
-** See also: [sqlite3_db_status()]
+** See also: [upnpd_sqlite3_db_status()]
 */
-SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
+SQLITE_API SQLITE_EXPERIMENTAL int upnpd_sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 
 
 /*
@@ -4990,13 +4990,13 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_status(int op, int *pCurrent, int *pH
 ** EXPERIMENTAL
 **
 ** These integer constants designate various run-time status parameters
-** that can be returned by [sqlite3_status()].
+** that can be returned by [upnpd_sqlite3_status()].
 **
 ** <dl>
 ** <dt>SQLITE_STATUS_MEMORY_USED</dt>
 ** <dd>This parameter is the current amount of memory checked out
-** using [sqlite3_malloc()], either directly or indirectly.  The
-** figure includes calls made to [sqlite3_malloc()] by the application
+** using [upnpd_sqlite3_malloc()], either directly or indirectly.  The
+** figure includes calls made to [upnpd_sqlite3_malloc()] by the application
 ** and internal memory usage by the SQLite library.  Scratch memory
 ** controlled by [SQLITE_CONFIG_SCRATCH] and auxiliary page-cache
 ** memory controlled by [SQLITE_CONFIG_PAGECACHE] is not included in
@@ -5005,9 +5005,9 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_status(int op, int *pCurrent, int *pH
 **
 ** <dt>SQLITE_STATUS_MALLOC_SIZE</dt>
 ** <dd>This parameter records the largest memory allocation request
-** handed to [sqlite3_malloc()] or [sqlite3_realloc()] (or their
+** handed to [upnpd_sqlite3_malloc()] or [upnpd_sqlite3_realloc()] (or their
 ** internal equivalents).  Only the value returned in the
-** *pHighwater parameter to [sqlite3_status()] is of interest.  
+** *pHighwater parameter to [upnpd_sqlite3_status()] is of interest.  
 ** The value written into the *pCurrent parameter is undefined.</dd>
 **
 ** <dt>SQLITE_STATUS_PAGECACHE_USED</dt>
@@ -5019,7 +5019,7 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_status(int op, int *pCurrent, int *pH
 ** <dt>SQLITE_STATUS_PAGECACHE_OVERFLOW</dt>
 ** <dd>This parameter returns the number of bytes of page cache
 ** allocation which could not be statisfied by the [SQLITE_CONFIG_PAGECACHE]
-** buffer and where forced to overflow to [sqlite3_malloc()].  The
+** buffer and where forced to overflow to [upnpd_sqlite3_malloc()].  The
 ** returned value includes allocations that overflowed because they
 ** where too large (they were larger than the "sz" parameter to
 ** [SQLITE_CONFIG_PAGECACHE]) and allocations that overflowed because
@@ -5028,7 +5028,7 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_status(int op, int *pCurrent, int *pH
 ** <dt>SQLITE_STATUS_PAGECACHE_SIZE</dt>
 ** <dd>This parameter records the largest memory allocation request
 ** handed to [pagecache memory allocator].  Only the value returned in the
-** *pHighwater parameter to [sqlite3_status()] is of interest.  
+** *pHighwater parameter to [upnpd_sqlite3_status()] is of interest.  
 ** The value written into the *pCurrent parameter is undefined.</dd>
 **
 ** <dt>SQLITE_STATUS_SCRATCH_USED</dt>
@@ -5042,7 +5042,7 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_status(int op, int *pCurrent, int *pH
 ** <dt>SQLITE_STATUS_SCRATCH_OVERFLOW</dt>
 ** <dd>This parameter returns the number of bytes of scratch memory
 ** allocation which could not be statisfied by the [SQLITE_CONFIG_SCRATCH]
-** buffer and where forced to overflow to [sqlite3_malloc()].  The values
+** buffer and where forced to overflow to [upnpd_sqlite3_malloc()].  The values
 ** returned include overflows because the requested allocation was too
 ** larger (that is, because the requested allocation was larger than the
 ** "sz" parameter to [SQLITE_CONFIG_SCRATCH]) and because no scratch buffer
@@ -5052,7 +5052,7 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_status(int op, int *pCurrent, int *pH
 ** <dt>SQLITE_STATUS_SCRATCH_SIZE</dt>
 ** <dd>This parameter records the largest memory allocation request
 ** handed to [scratch memory allocator].  Only the value returned in the
-** *pHighwater parameter to [sqlite3_status()] is of interest.  
+** *pHighwater parameter to [upnpd_sqlite3_status()] is of interest.  
 ** The value written into the *pCurrent parameter is undefined.</dd>
 **
 ** <dt>SQLITE_STATUS_PARSER_STACK</dt>
@@ -5088,15 +5088,15 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_status(int op, int *pCurrent, int *pH
 ** the resetFlg is true, then the highest instantaneous value is
 ** reset back down to the current value.
 **
-** See also: [sqlite3_status()] and [sqlite3_stmt_status()].
+** See also: [upnpd_sqlite3_status()] and [upnpd_sqlite3_stmt_status()].
 */
-SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
+SQLITE_API SQLITE_EXPERIMENTAL int upnpd_sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 
 /*
 ** CAPI3REF: Status Parameters for database connections {H17520} <H17500>
 ** EXPERIMENTAL
 **
-** Status verbs for [sqlite3_db_status()].
+** Status verbs for [upnpd_sqlite3_db_status()].
 **
 ** <dl>
 ** <dt>SQLITE_DBSTATUS_LOOKASIDE_USED</dt>
@@ -5129,16 +5129,16 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_db_status(sqlite3*, int op, int *pCur
 ** If the resetFlg is true, then the counter is reset to zero after this
 ** interface call returns.
 **
-** See also: [sqlite3_status()] and [sqlite3_db_status()].
+** See also: [upnpd_sqlite3_status()] and [upnpd_sqlite3_db_status()].
 */
-SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
+SQLITE_API SQLITE_EXPERIMENTAL int upnpd_sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 
 /*
 ** CAPI3REF: Status Parameters for prepared statements {H17570} <H17550>
 ** EXPERIMENTAL
 **
 ** These preprocessor macros define integer codes that name counter
-** values associated with the [sqlite3_stmt_status()] interface.
+** values associated with the [upnpd_sqlite3_stmt_status()] interface.
 ** The meanings of the various counters are as follows:
 **
 ** <dl>
@@ -5176,7 +5176,7 @@ typedef struct sqlite3_pcache sqlite3_pcache;
 ** CAPI3REF: Application Defined Page Cache.
 ** EXPERIMENTAL
 **
-** The [sqlite3_config]([SQLITE_CONFIG_PCACHE], ...) interface can
+** The [upnpd_sqlite3_config]([SQLITE_CONFIG_PCACHE], ...) interface can
 ** register an alternative page cache implementation by passing in an 
 ** instance of the sqlite3_pcache_methods structure. The majority of the 
 ** heap memory used by sqlite is used by the page cache to cache data read 
@@ -5188,14 +5188,14 @@ typedef struct sqlite3_pcache sqlite3_pcache;
 ** how long.
 **
 ** The contents of the structure are copied to an internal buffer by sqlite
-** within the call to [sqlite3_config].
+** within the call to [upnpd_sqlite3_config].
 **
-** The xInit() method is called once for each call to [sqlite3_initialize()]
+** The xInit() method is called once for each call to [upnpd_sqlite3_initialize()]
 ** (usually only once during the lifetime of the process). It is passed
 ** a copy of the sqlite3_pcache_methods.pArg value. It can be used to set
 ** up global structures and mutexes required by the custom page cache 
 ** implementation. The xShutdown() method is called from within 
-** [sqlite3_shutdown()], if the application invokes this API. It can be used
+** [upnpd_sqlite3_shutdown()], if the application invokes this API. It can be used
 ** to clean up any outstanding resources before process shutdown, if required.
 **
 ** The xCreate() method is used to construct a new cache instance. The
@@ -5307,8 +5307,8 @@ struct sqlite3_pcache_methods {
 **
 ** The sqlite3_backup object records state information about an ongoing
 ** online backup operation.  The sqlite3_backup object is created by
-** a call to [sqlite3_backup_init()] and is destroyed by a call to
-** [sqlite3_backup_finish()].
+** a call to [upnpd_sqlite3_backup_init()] and is destroyed by a call to
+** [upnpd_sqlite3_backup_finish()].
 **
 ** See Also: [Using the SQLite Online Backup API]
 */
@@ -5333,123 +5333,123 @@ typedef struct sqlite3_backup sqlite3_backup;
 ** 
 ** To perform a backup operation: 
 **   <ol>
-**     <li><b>sqlite3_backup_init()</b> is called once to initialize the
+**     <li><b>upnpd_sqlite3_backup_init()</b> is called once to initialize the
 **         backup, 
-**     <li><b>sqlite3_backup_step()</b> is called one or more times to transfer 
+**     <li><b>upnpd_sqlite3_backup_step()</b> is called one or more times to transfer 
 **         the data between the two databases, and finally
-**     <li><b>sqlite3_backup_finish()</b> is called to release all resources 
+**     <li><b>upnpd_sqlite3_backup_finish()</b> is called to release all resources 
 **         associated with the backup operation. 
 **   </ol>
-** There should be exactly one call to sqlite3_backup_finish() for each
-** successful call to sqlite3_backup_init().
+** There should be exactly one call to upnpd_sqlite3_backup_finish() for each
+** successful call to upnpd_sqlite3_backup_init().
 **
-** <b>sqlite3_backup_init()</b>
+** <b>upnpd_sqlite3_backup_init()</b>
 **
-** The first two arguments passed to [sqlite3_backup_init()] are the database
+** The first two arguments passed to [upnpd_sqlite3_backup_init()] are the database
 ** handle associated with the destination database and the database name 
 ** used to attach the destination database to the handle. The database name
 ** is "main" for the main database, "temp" for the temporary database, or
 ** the name specified as part of the [ATTACH] statement if the destination is
 ** an attached database. The third and fourth arguments passed to 
-** sqlite3_backup_init() identify the [database connection]
+** upnpd_sqlite3_backup_init() identify the [database connection]
 ** and database name used
 ** to access the source database. The values passed for the source and 
 ** destination [database connection] parameters must not be the same.
 **
-** If an error occurs within sqlite3_backup_init(), then NULL is returned
+** If an error occurs within upnpd_sqlite3_backup_init(), then NULL is returned
 ** and an error code and error message written into the [database connection] 
 ** passed as the first argument. They may be retrieved using the
-** [sqlite3_errcode()], [sqlite3_errmsg()], and [sqlite3_errmsg16()] functions.
+** [upnpd_sqlite3_errcode()], [upnpd_sqlite3_errmsg()], and [upnpd_sqlite3_errmsg16()] functions.
 ** Otherwise, if successful, a pointer to an [sqlite3_backup] object is
-** returned. This pointer may be used with the sqlite3_backup_step() and
-** sqlite3_backup_finish() functions to perform the specified backup 
+** returned. This pointer may be used with the upnpd_sqlite3_backup_step() and
+** upnpd_sqlite3_backup_finish() functions to perform the specified backup 
 ** operation.
 **
-** <b>sqlite3_backup_step()</b>
+** <b>upnpd_sqlite3_backup_step()</b>
 **
-** Function [sqlite3_backup_step()] is used to copy up to nPage pages between 
+** Function [upnpd_sqlite3_backup_step()] is used to copy up to nPage pages between 
 ** the source and destination databases, where nPage is the value of the 
-** second parameter passed to sqlite3_backup_step(). If nPage is a negative
+** second parameter passed to upnpd_sqlite3_backup_step(). If nPage is a negative
 ** value, all remaining source pages are copied. If the required pages are 
 ** succesfully copied, but there are still more pages to copy before the 
 ** backup is complete, it returns [SQLITE_OK]. If no error occured and there 
 ** are no more pages to copy, then [SQLITE_DONE] is returned. If an error 
 ** occurs, then an SQLite error code is returned. As well as [SQLITE_OK] and
-** [SQLITE_DONE], a call to sqlite3_backup_step() may return [SQLITE_READONLY],
+** [SQLITE_DONE], a call to upnpd_sqlite3_backup_step() may return [SQLITE_READONLY],
 ** [SQLITE_NOMEM], [SQLITE_BUSY], [SQLITE_LOCKED], or an
 ** [SQLITE_IOERR_ACCESS | SQLITE_IOERR_XXX] extended error code.
 **
 ** As well as the case where the destination database file was opened for
-** read-only access, sqlite3_backup_step() may return [SQLITE_READONLY] if
+** read-only access, upnpd_sqlite3_backup_step() may return [SQLITE_READONLY] if
 ** the destination is an in-memory database with a different page size
 ** from the source database.
 **
-** If sqlite3_backup_step() cannot obtain a required file-system lock, then
-** the [sqlite3_busy_handler | busy-handler function]
+** If upnpd_sqlite3_backup_step() cannot obtain a required file-system lock, then
+** the [upnpd_sqlite3_busy_handler | busy-handler function]
 ** is invoked (if one is specified). If the 
 ** busy-handler returns non-zero before the lock is available, then 
 ** [SQLITE_BUSY] is returned to the caller. In this case the call to
-** sqlite3_backup_step() can be retried later. If the source
+** upnpd_sqlite3_backup_step() can be retried later. If the source
 ** [database connection]
-** is being used to write to the source database when sqlite3_backup_step()
+** is being used to write to the source database when upnpd_sqlite3_backup_step()
 ** is called, then [SQLITE_LOCKED] is returned immediately. Again, in this
-** case the call to sqlite3_backup_step() can be retried later on. If
+** case the call to upnpd_sqlite3_backup_step() can be retried later on. If
 ** [SQLITE_IOERR_ACCESS | SQLITE_IOERR_XXX], [SQLITE_NOMEM], or
 ** [SQLITE_READONLY] is returned, then 
-** there is no point in retrying the call to sqlite3_backup_step(). These 
+** there is no point in retrying the call to upnpd_sqlite3_backup_step(). These 
 ** errors are considered fatal. At this point the application must accept 
 ** that the backup operation has failed and pass the backup operation handle 
-** to the sqlite3_backup_finish() to release associated resources.
+** to the upnpd_sqlite3_backup_finish() to release associated resources.
 **
-** Following the first call to sqlite3_backup_step(), an exclusive lock is
+** Following the first call to upnpd_sqlite3_backup_step(), an exclusive lock is
 ** obtained on the destination file. It is not released until either 
-** sqlite3_backup_finish() is called or the backup operation is complete 
-** and sqlite3_backup_step() returns [SQLITE_DONE]. Additionally, each time 
-** a call to sqlite3_backup_step() is made a [shared lock] is obtained on
+** upnpd_sqlite3_backup_finish() is called or the backup operation is complete 
+** and upnpd_sqlite3_backup_step() returns [SQLITE_DONE]. Additionally, each time 
+** a call to upnpd_sqlite3_backup_step() is made a [shared lock] is obtained on
 ** the source database file. This lock is released before the
-** sqlite3_backup_step() call returns. Because the source database is not
-** locked between calls to sqlite3_backup_step(), it may be modified mid-way
+** upnpd_sqlite3_backup_step() call returns. Because the source database is not
+** locked between calls to upnpd_sqlite3_backup_step(), it may be modified mid-way
 ** through the backup procedure. If the source database is modified by an
 ** external process or via a database connection other than the one being
 ** used by the backup operation, then the backup will be transparently
-** restarted by the next call to sqlite3_backup_step(). If the source 
+** restarted by the next call to upnpd_sqlite3_backup_step(). If the source 
 ** database is modified by the using the same database connection as is used
 ** by the backup operation, then the backup database is transparently 
 ** updated at the same time.
 **
-** <b>sqlite3_backup_finish()</b>
+** <b>upnpd_sqlite3_backup_finish()</b>
 **
-** Once sqlite3_backup_step() has returned [SQLITE_DONE], or when the 
+** Once upnpd_sqlite3_backup_step() has returned [SQLITE_DONE], or when the 
 ** application wishes to abandon the backup operation, the [sqlite3_backup]
-** object should be passed to sqlite3_backup_finish(). This releases all
-** resources associated with the backup operation. If sqlite3_backup_step()
+** object should be passed to upnpd_sqlite3_backup_finish(). This releases all
+** resources associated with the backup operation. If upnpd_sqlite3_backup_step()
 ** has not yet returned [SQLITE_DONE], then any active write-transaction on the
 ** destination database is rolled back. The [sqlite3_backup] object is invalid
-** and may not be used following a call to sqlite3_backup_finish().
+** and may not be used following a call to upnpd_sqlite3_backup_finish().
 **
-** The value returned by sqlite3_backup_finish is [SQLITE_OK] if no error
-** occurred, regardless or whether or not sqlite3_backup_step() was called
+** The value returned by upnpd_sqlite3_backup_finish is [SQLITE_OK] if no error
+** occurred, regardless or whether or not upnpd_sqlite3_backup_step() was called
 ** a sufficient number of times to complete the backup operation. Or, if
 ** an out-of-memory condition or IO error occured during a call to
-** sqlite3_backup_step() then [SQLITE_NOMEM] or an
+** upnpd_sqlite3_backup_step() then [SQLITE_NOMEM] or an
 ** [SQLITE_IOERR_ACCESS | SQLITE_IOERR_XXX] error code
 ** is returned. In this case the error code and an error message are
 ** written to the destination [database connection].
 **
-** A return of [SQLITE_BUSY] or [SQLITE_LOCKED] from sqlite3_backup_step() is
+** A return of [SQLITE_BUSY] or [SQLITE_LOCKED] from upnpd_sqlite3_backup_step() is
 ** not a permanent error and does not affect the return value of
-** sqlite3_backup_finish().
+** upnpd_sqlite3_backup_finish().
 **
-** <b>sqlite3_backup_remaining(), sqlite3_backup_pagecount()</b>
+** <b>upnpd_sqlite3_backup_remaining(), upnpd_sqlite3_backup_pagecount()</b>
 **
-** Each call to sqlite3_backup_step() sets two values stored internally
+** Each call to upnpd_sqlite3_backup_step() sets two values stored internally
 ** by an [sqlite3_backup] object. The number of pages still to be backed
-** up, which may be queried by sqlite3_backup_remaining(), and the total
+** up, which may be queried by upnpd_sqlite3_backup_remaining(), and the total
 ** number of pages in the source database file, which may be queried by
-** sqlite3_backup_pagecount().
+** upnpd_sqlite3_backup_pagecount().
 **
 ** The values returned by these functions are only updated by
-** sqlite3_backup_step(). If the source database is modified during a backup
+** upnpd_sqlite3_backup_step(). If the source database is modified during a backup
 ** operation, then the values are not updated to account for any extra
 ** pages that need to be updated or the size of the source database file
 ** changing.
@@ -5464,8 +5464,8 @@ typedef struct sqlite3_backup sqlite3_backup;
 **
 ** However, the application must guarantee that the destination database
 ** connection handle is not passed to any other API (by any thread) after 
-** sqlite3_backup_init() is called and before the corresponding call to
-** sqlite3_backup_finish(). Unfortunately SQLite does not currently check
+** upnpd_sqlite3_backup_init() is called and before the corresponding call to
+** upnpd_sqlite3_backup_finish(). Unfortunately SQLite does not currently check
 ** for this, if the application does use the destination [database connection]
 ** for some other purpose during a backup operation, things may appear to
 ** work correctly but in fact be subtly malfunctioning.  Use of the
@@ -5477,25 +5477,25 @@ typedef struct sqlite3_backup sqlite3_backup;
 ** is not accessed while the backup is running. In practice this means
 ** that the application must guarantee that the file-system file being 
 ** backed up to is not accessed by any connection within the process,
-** not just the specific connection that was passed to sqlite3_backup_init().
+** not just the specific connection that was passed to upnpd_sqlite3_backup_init().
 **
 ** The [sqlite3_backup] object itself is partially threadsafe. Multiple 
-** threads may safely make multiple concurrent calls to sqlite3_backup_step().
-** However, the sqlite3_backup_remaining() and sqlite3_backup_pagecount()
+** threads may safely make multiple concurrent calls to upnpd_sqlite3_backup_step().
+** However, the upnpd_sqlite3_backup_remaining() and upnpd_sqlite3_backup_pagecount()
 ** APIs are not strictly speaking threadsafe. If they are invoked at the
-** same time as another thread is invoking sqlite3_backup_step() it is
+** same time as another thread is invoking upnpd_sqlite3_backup_step() it is
 ** possible that they return invalid values.
 */
-SQLITE_API sqlite3_backup *sqlite3_backup_init(
+SQLITE_API sqlite3_backup *upnpd_sqlite3_backup_init(
   sqlite3 *pDest,                        /* Destination database handle */
   const char *zDestName,                 /* Destination database name */
   sqlite3 *pSource,                      /* Source database handle */
   const char *zSourceName                /* Source database name */
 );
-SQLITE_API int sqlite3_backup_step(sqlite3_backup *p, int nPage);
-SQLITE_API int sqlite3_backup_finish(sqlite3_backup *p);
-SQLITE_API int sqlite3_backup_remaining(sqlite3_backup *p);
-SQLITE_API int sqlite3_backup_pagecount(sqlite3_backup *p);
+SQLITE_API int upnpd_sqlite3_backup_step(sqlite3_backup *p, int nPage);
+SQLITE_API int upnpd_sqlite3_backup_finish(sqlite3_backup *p);
+SQLITE_API int upnpd_sqlite3_backup_remaining(sqlite3_backup *p);
+SQLITE_API int upnpd_sqlite3_backup_pagecount(sqlite3_backup *p);
 
 /*
 ** CAPI3REF: Unlock Notification
@@ -5523,7 +5523,7 @@ SQLITE_API int sqlite3_backup_pagecount(sqlite3_backup *p);
 ** sqlite3_unlock_notify() method with the blocked connection handle as 
 ** the first argument to register for a callback that will be invoked
 ** when the blocking connections current transaction is concluded. The
-** callback is invoked from within the [sqlite3_step] or [sqlite3_close]
+** callback is invoked from within the [upnpd_sqlite3_step] or [upnpd_sqlite3_close]
 ** call that concludes the blocking connections transaction.
 **
 ** If sqlite3_unlock_notify() is called in a multi-threaded application,
@@ -5544,7 +5544,7 @@ SQLITE_API int sqlite3_backup_pagecount(sqlite3_backup *p);
 ** called with a NULL pointer as its second argument, then any existing
 ** unlock-notify callback is cancelled. The blocked connections 
 ** unlock-notify callback may also be canceled by closing the blocked
-** connection using [sqlite3_close()].
+** connection using [upnpd_sqlite3_close()].
 **
 ** The unlock-notify callback is not reentrant. If an application invokes
 ** any sqlite3_xxx API functions from within an unlock-notify callback, a
@@ -5596,7 +5596,7 @@ SQLITE_API int sqlite3_backup_pagecount(sqlite3_backup *p);
 **
 ** <b>The "DROP TABLE" Exception</b>
 **
-** When a call to [sqlite3_step()] returns SQLITE_LOCKED, it is almost 
+** When a call to [upnpd_sqlite3_step()] returns SQLITE_LOCKED, it is almost 
 ** always appropriate to call sqlite3_unlock_notify(). There is however,
 ** one exception. When executing a "DROP TABLE" or "DROP INDEX" statement,
 ** SQLite checks if there are any currently executing SELECT statements
@@ -5607,7 +5607,7 @@ SQLITE_API int sqlite3_backup_pagecount(sqlite3_backup *p);
 ** or "DROP INDEX" query, an infinite loop might be the result.
 **
 ** One way around this problem is to check the extended error code returned
-** by an sqlite3_step() call. If there is a blocking connection, then the
+** by an upnpd_sqlite3_step() call. If there is a blocking connection, then the
 ** extended error code is set to SQLITE_LOCKED_SHAREDCACHE. Otherwise, in
 ** the special "DROP TABLE/INDEX" case, the extended error code is just 
 ** SQLITE_LOCKED.
@@ -5623,12 +5623,12 @@ SQLITE_API int sqlite3_unlock_notify(
 ** CAPI3REF: String Comparison
 ** EXPERIMENTAL
 **
-** The [sqlite3_strnicmp()] API allows applications and extensions to
+** The [upnpd_sqlite3_strnicmp()] API allows applications and extensions to
 ** compare the contents of two buffers containing UTF-8 strings in a
 ** case-indendent fashion, using the same definition of case independence 
 ** that SQLite uses internally when comparing identifiers.
 */
-SQLITE_API int sqlite3_strnicmp(const char *, const char *, int);
+SQLITE_API int upnpd_sqlite3_strnicmp(const char *, const char *, int);
 
 /*
 ** Undo the hack that converts floating point types to integer for

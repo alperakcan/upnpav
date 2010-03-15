@@ -6,13 +6,13 @@
 #ifdef XML_TOK_NS_C
 
 const ENCODING *
-NS(XmlGetUtf8InternalEncoding)(void)
+NS(upnpd_XmlGetUtf8InternalEncoding)(void)
 {
   return &ns(internal_utf8_encoding).enc;
 }
 
 const ENCODING *
-NS(XmlGetUtf16InternalEncoding)(void)
+NS(upnpd_XmlGetUtf16InternalEncoding)(void)
 {
 #if BYTEORDER == 1234
   return &ns(internal_little2_encoding).enc;
@@ -53,7 +53,7 @@ NS(initScanContent)(const ENCODING *enc, const char *ptr, const char *end,
 }
 
 int
-NS(XmlInitEncoding)(INIT_ENCODING *p, const ENCODING **encPtr,
+NS(upnpd_XmlInitEncoding)(INIT_ENCODING *p, const ENCODING **encPtr,
                     const char *name)
 {
   int i = getEncodingIndex(name);
@@ -88,7 +88,7 @@ NS(findEncoding)(const ENCODING *enc, const char *ptr, const char *end)
 }
 
 int
-NS(XmlParseXmlDecl)(int isGeneralTextEntity,
+NS(upnpd_XmlParseXmlDecl)(int isGeneralTextEntity,
                     const ENCODING *enc,
                     const char *ptr,
                     const char *end,

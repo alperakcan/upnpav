@@ -36,7 +36,7 @@
 
 int platform_debug = 0;
 
-void debug_debugf (char *file, int line, const char *func, char *fmt, ...)
+void upnpd_debug_debugf (char *file, int line, const char *func, char *fmt, ...)
 {
 	int n;
 	int s;
@@ -70,7 +70,7 @@ void debug_debugf (char *file, int line, const char *func, char *fmt, ...)
 		}
 	}
 
-	fprintf(stderr, "\033[1;30m[0x%08X] \033[0m%s \033[1;30m[%s (%s:%d)]\033[0m\n", (unsigned int) thread_self(), p, func, file, line);
+	fprintf(stderr, "\033[1;30m[0x%08X] \033[0m%s \033[1;30m[%s (%s:%d)]\033[0m\n", (unsigned int) upnpd_thread_self(), p, func, file, line);
 	fflush(stderr);
 	free(p);
 

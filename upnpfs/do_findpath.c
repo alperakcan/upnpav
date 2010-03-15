@@ -84,16 +84,16 @@ upnpfs_cache_t * do_findcache (const char *path)
 	upnpfs_cache_t *c;
 	upnpfs_cache_t *n;
 	debugfs("enter");
-	thread_mutex_lock(priv.cache_mutex);
+	upnpd_thread_mutex_lock(priv.cache_mutex);
 	list_for_each_entry(c, &priv.cache, head) {
 		if (strcmp(path, c->path) == 0) {
 			n = do_referencecache(c);
 			debugfs("returning cache entry %p", n);
-			thread_mutex_unlock(priv.cache_mutex);
+			upnpd_thread_mutex_unlock(priv.cache_mutex);
 			return n;
 		}
 	}
-	thread_mutex_unlock(priv.cache_mutex);
+	upnpd_thread_mutex_unlock(priv.cache_mutex);
 	debugfs("leave");
 	return NULL;
 }
@@ -103,12 +103,12 @@ upnpfs_cache_t * do_insertcache (const char *path, const char *device, entry_t *
 	upnpfs_cache_t *c;
 	upnpfs_cache_t *n;
 	debugfs("enter");
-	thread_mutex_lock(priv.cache_mutex);
+	upnpd_thread_mutex_lock(priv.cache_mutex);
 	list_for_each_entry(c, &priv.cache, head) {
 		if (strcmp(path, c->path) == 0) {
 			n = do_referencecache(c);
 			debugfs("returning cache entry '%p'", n);
-			thread_mutex_unlock(priv.cache_mutex);
+			upnpd_thread_mutex_unlock(priv.cache_mutex);
 			return n;
 		}
 	}
@@ -122,7 +122,7 @@ upnpfs_cache_t * do_insertcache (const char *path, const char *device, entry_t *
 	c = (upnpfs_cache_t *) malloc(sizeof(upnpfs_cache_t));
 	if (c == NULL) {
 		debugfs("malloc() failed");
-		thread_mutex_unlock(priv.cache_mutex);
+		upnpd_thread_mutex_unlock(priv.cache_mutex);
 		return NULL;
 	}
 	memset(c, 0, sizeof(upnpfs_cache_t));
@@ -141,12 +141,12 @@ upnpfs_cache_t * do_insertcache (const char *path, const char *device, entry_t *
 	if (do_validatecache(c) != 0) {
 		debugfs("do_validatecache() failed");
 		do_releasecache(c);
-		thread_mutex_unlock(priv.cache_mutex);
+		upnpd_thread_mutex_unlock(priv.cache_mutex);
 		return NULL;
 	}
 	n = do_referencecache(c);
 	list_add(&c->head, &priv.cache);
-	thread_mutex_unlock(priv.cache_mutex);
+	upnpd_thread_mutex_unlock(priv.cache_mutex);
 	debugfs("leave");
 	return n;
 }
@@ -194,14 +194,14 @@ upnpfs_cache_t * do_findpath (const char *path)
 		return NULL;
 	}
 	debugfs("device: '%s'", d);
-	e = controller_browse_metadata(priv.controller, d, "0");
+	e = upnpd_controller_browse_metadata(priv.controller, d, "0");
 	if (e == NULL) {
 		free(tmp);
 		return NULL;
 	}
 	if (asprintf(&pt, "/%s", d) < 0) {
 		free(tmp);
-		entry_uninit(e);
+		upnpd_entry_uninit(e);
 		return NULL;
 	}
 	c = do_insertcache(pt, d, e);
@@ -210,11 +210,11 @@ upnpfs_cache_t * do_findpath (const char *path)
 		free(o);
 		o = e->didl.entryid;
 		e->didl.entryid = NULL;
-		entry_uninit(e);
-		e = controller_browse_children(priv.controller, d, o);
+		upnpd_entry_uninit(e);
+		e = upnpd_controller_browse_children(priv.controller, d, o);
 		debugfs("controller_browse_clidren returned %p", e);
 		if (e == NULL) {
-			debugfs("controller_browse_children('%s', '%s') failed", d, o);
+			debugfs("upnpd_controller_browse_children('%s', '%s') failed", d, o);
 			free(pt);
 			free(o);
 			free(tmp);
@@ -232,17 +232,17 @@ upnpfs_cache_t * do_findpath (const char *path)
 			debugfs("could not find object '%s' in '%s'", o, d);
 			free(pt);
 			free(o);
-			entry_uninit(r);
+			upnpd_entry_uninit(r);
 			do_releasecache(c);
 			free(tmp);
 			return NULL;
 		}
-		e = controller_browse_metadata(priv.controller, d, e->didl.entryid);
+		e = upnpd_controller_browse_metadata(priv.controller, d, e->didl.entryid);
 		if (e == NULL) {
 			debugfs("could not find object '%s' in '%s'", o, d);
 			free(pt);
 			free(o);
-			entry_uninit(r);
+			upnpd_entry_uninit(r);
 			do_releasecache(c);
 			free(tmp);
 			return NULL;
@@ -251,7 +251,7 @@ upnpfs_cache_t * do_findpath (const char *path)
 			free(pt);
 			free(o);
 			free(tmp);
-			entry_uninit(r);
+			upnpd_entry_uninit(r);
 			do_releasecache(c);
 			return NULL;
 		}
@@ -259,11 +259,11 @@ upnpfs_cache_t * do_findpath (const char *path)
 		pt = ptm;
 		do_releasecache(c);
 		c = do_insertcache(pt, d, e);
-		entry_uninit(r);
+		upnpd_entry_uninit(r);
 	}
 	free(pt);
 	free(o);
-	entry_uninit(e);
+	upnpd_entry_uninit(e);
 	free(tmp);
 	debugfs("leave");
 	return c;

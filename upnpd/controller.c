@@ -90,11 +90,11 @@ static int browse_local (const char *path)
 {
 	upnpd_item_t *item;
 	upnpd_item_t *items;
-	items = upnpd_controller_browse_local(path);
+	items = upnpavd_controller_browse_local(path);
 	for (item = items; item; item = item->next) {
 		printf("%s - %s (pid: %s, class: %s, size: %llu)\n", item->id, item->title, item->pid, item->class, item->size);
 	}
-	upnpd_controller_free_items(items);
+	upnpavd_controller_free_items(items);
 	return 0;
 }
 
@@ -102,18 +102,18 @@ static int browse_device (upnpd_controller_t *controller, char *device, char *ob
 {
 	upnpd_item_t *item;
 	upnpd_item_t *items;
-	items = upnpd_controller_browse_device(controller, device, object);
+	items = upnpavd_controller_browse_device(controller, device, object);
 	for (item = items; item; item = item->next) {
 		printf("%s - %s (pid: %s, class: %s, size: %llu)\n", item->id, item->title, item->pid, item->class, item->size);
 	}
-	upnpd_controller_free_items(items);
+	upnpavd_controller_free_items(items);
 	return 0;
 }
 
 static int metadata_device (upnpd_controller_t *controller, char *device, char *object)
 {
 	upnpd_item_t *item;
-	item = upnpd_controller_metadata_device(controller, device, object);
+	item = upnpavd_controller_metadata_device(controller, device, object);
 	if (item != NULL) {
 		printf("id      : %s\n", item->id);
 		printf("pid     : %s\n", item->pid);
@@ -122,20 +122,20 @@ static int metadata_device (upnpd_controller_t *controller, char *device, char *
 		printf("size    : %llu\n", item->size);
 		printf("location: %s\n", item->location);
 	}
-	upnpd_controller_free_items(item);
+	upnpavd_controller_free_items(item);
 	return 0;
 }
 
 static int refresh_devices (upnpd_controller_t *controller)
 {
-	return upnpd_controller_scan_devices(controller, 1);
+	return upnpavd_controller_scan_devices(controller, 1);
 }
 
 static int list_devices (upnpd_controller_t *controller)
 {
 	upnpd_device_t *device;
 	upnpd_device_t *devices;
-	devices = upnpd_controller_get_devices(controller);
+	devices = upnpavd_controller_get_devices(controller);
 	for (device = devices; device; device = device->next) {
 		printf("-- %s\n", device->name);
 		printf("  type       : %s\n", device->type);
@@ -143,7 +143,7 @@ static int list_devices (upnpd_controller_t *controller)
 		printf("  location   : %s\n", device->location);
 		printf("  expiretime : %d\n", device->expiretime);
 	}
-	upnpd_controller_free_devices(devices);
+	upnpavd_controller_free_devices(devices);
 	return 0;
 }
 
@@ -275,9 +275,9 @@ static int controller_main (char *options)
 		}
 	}
 
-	controller = upnpd_controller_init(interface);
+	controller = upnpavd_controller_init(interface);
 	if (controller == NULL) {
-		printf("controller_init() failed\n");
+		printf("upnpd_controller_init() failed\n");
 		goto out;
 	}
 
@@ -294,9 +294,9 @@ static int controller_main (char *options)
 		free(rline);
 	};
 
-	rc = upnpd_controller_uninit(controller);
+	rc = upnpavd_controller_uninit(controller);
 	if (rc != 0) {
-		printf("controller_uninit(controller) failed\n");
+		printf("upnpd_controller_uninit(controller) failed\n");
 		goto out;
 	}
 	ret = 0;

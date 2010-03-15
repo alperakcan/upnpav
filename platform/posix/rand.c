@@ -29,12 +29,12 @@
 
 #include <stdlib.h>
 
-void rand_srand (unsigned int seed)
+void upnpd_rand_srand (unsigned int seed)
 {
 	srand(seed);
 }
 
-int rand_rand (void)
+int upnpd_rand_rand (void)
 {
 	return rand();
 }

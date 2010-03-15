@@ -54,12 +54,12 @@ static int http_read (upnpfs_http_t *http, char *buffer, unsigned int size)
 	while (t != size) {
 		pitem.item = http->socket;
 		pitem.events = POLL_EVENT_IN;
-		rc = socket_poll(&pitem, 1, 1000);
+		rc = upnpd_socket_poll(&pitem, 1, 1000);
 		if (rc <= 0 || (pitem.revents & POLL_EVENT_IN) == 0) {
 			debugfs("poll() %d failed", rc);
 			return 0;
 		}
-		r = socket_recv(http->socket, buffer + t, size - t);
+		r = upnpd_socket_recv(http->socket, buffer + t, size - t);
 		if (r <= 0) {
 			debugfs("recv() failed");
 			break;
@@ -79,12 +79,12 @@ static int http_write (upnpfs_http_t *http, char *buffer, unsigned int size)
 	while (t != size) {
 		pitem.item = http->socket;
 		pitem.events = POLL_EVENT_OUT;
-		rc = socket_poll(&pitem, 1, 1000);
+		rc = upnpd_socket_poll(&pitem, 1, 1000);
 		if (rc <= 0 || (pitem.revents & POLL_EVENT_OUT) == 0) {
 			debugfs("poll() failed");
 			return 0;
 		}
-		s = socket_send(http->socket, buffer + t, size - t);
+		s = upnpd_socket_send(http->socket, buffer + t, size - t);
 		if (s <= 0) {
 			debugfs("send() failed");
 			break;
@@ -104,13 +104,13 @@ static int http_getline (socket_t *socket, int timeout, char *buf, int buflen)
 	count = 0;
 	pitem.item = socket;
 	pitem.events = POLL_EVENT_IN;
-	rc = socket_poll(&pitem, 1, 1000);
+	rc = upnpd_socket_poll(&pitem, 1, 1000);
 	if (rc <= 0 || (pitem.revents & POLL_EVENT_IN) == 0) {
 		return 0;
 	}
 
 	while (1) {
-		if (socket_recv(socket, &c, 1) <= 0) {
+		if (upnpd_socket_recv(socket, &c, 1) <= 0) {
 			break;
 		}
 		buf[count] = c;
@@ -135,9 +135,9 @@ static int http_close (upnpfs_http_t *http)
 	}
 	free(http->buffer);
 	if (http->socket != NULL) {
-		socket_close(http->socket);
+		upnpd_socket_close(http->socket);
 	}
-	upnp_url_uninit(&http->url);
+	upnpd_upnp_url_uninit(&http->url);
 	free(http);
 	return 0;
 }
@@ -211,16 +211,16 @@ static upnpfs_http_t * http_open (const char *path, unsigned long long offset)
 		return NULL;
 	}
 	memset(h, 0, sizeof(upnpfs_http_t));
-	if (upnp_url_parse(path, &h->url) != 0) {
-		debugf("upnp_url_parse('%s') failed", path);
+	if (upnpd_upnp_url_parse(path, &h->url) != 0) {
+		debugf("upnpd_upnp_url_parse('%s') failed", path);
 		goto error;
 	}
-	h->socket = socket_open(SOCKET_TYPE_STREAM);
+	h->socket = upnpd_socket_open(SOCKET_TYPE_STREAM);
 	if (h->socket == NULL) {
 		debugfs("socket() failed");
 		goto error;
 	}
-	if (socket_connect(h->socket, h->url.host, h->url.port, 10000) < 0) {
+	if (upnpd_socket_connect(h->socket, h->url.host, h->url.port, 10000) < 0) {
 		debugfs("connect() failed");
 		goto error;
 	}
@@ -303,24 +303,24 @@ int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse
 	debugfs("enter (fi: %p)", fi);
 	f = (upnpfs_file_t *) (unsigned long) fi->fh;
 	if (f->metadata == 1) {
-		e = controller_browse_metadata(priv.controller, f->cache->device, f->cache->object);
+		e = upnpd_controller_browse_metadata(priv.controller, f->cache->device, f->cache->object);
 		if (e == NULL) {
-			debugfs("controller_browse_metadata() failed");
+			debugfs("upnpd_controller_browse_metadata() failed");
 			return -EIO;
 		}
 		if (e->metadata == NULL) {
 			debugfs("no metadata information");
-			entry_uninit(e);
+			upnpd_entry_uninit(e);
 			return -EIO;
 		}
 		len = strlen(e->metadata);
 		if (offset >= len) {
-			entry_uninit(e);
+			upnpd_entry_uninit(e);
 			return 0;
 		}
 		siz = (size < (len - offset)) ? size : (len - offset);
 		memcpy(buf, e->metadata, siz);
-		entry_uninit(e);
+		upnpd_entry_uninit(e);
 		debugfs("leave, size: %u, offset: %u, len: %d", (unsigned int) size, (unsigned int) offset, siz);
 		return siz;
 	} else if (f->device == 1) {
@@ -328,7 +328,7 @@ int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse
 		siz = 0;
 		ptr = NULL;
 		debugf("reading '%s' info", f->dname);
-		thread_mutex_lock(priv.controller->mutex);
+		upnpd_thread_mutex_lock(priv.controller->mutex);
 		list_for_each_entry(device, &priv.controller->devices, head) {
 			if (strcmp(device->name, f->dname) == 0) {
 				i = asprintf(&tmp, "%s\n", device->name);
@@ -360,7 +360,7 @@ int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse
 				break;
 			}
 		}
-		thread_mutex_unlock(priv.controller->mutex);
+		upnpd_thread_mutex_unlock(priv.controller->mutex);
 		if (len > 0) {
 			len = strlen(ptr);
 			siz = (size < (len - offset)) ? siz : (len - offset);

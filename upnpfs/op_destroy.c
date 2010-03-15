@@ -32,7 +32,7 @@ void op_destroy (void *userdata)
 	upnpfs_cache_t *c;
 	upnpfs_cache_t *cn;
 	debugfs("enter");
-	controller_uninit(priv.controller);
+	upnpd_controller_uninit(priv.controller);
 	free(priv.options);
 	list_for_each_entry_safe(c, cn, &priv.cache, head) {
 		list_del(&c->head);
@@ -42,6 +42,6 @@ void op_destroy (void *userdata)
 		free(c->source);
 		free(c);
 	}
-	thread_mutex_destroy(priv.cache_mutex);
+	upnpd_thread_mutex_destroy(priv.cache_mutex);
 	debugfs("leave");
 }

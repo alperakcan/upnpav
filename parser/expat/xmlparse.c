@@ -26,18 +26,18 @@
 #ifdef XML_UNICODE
 #define XML_ENCODE_MAX XML_UTF16_ENCODE_MAX
 #define XmlConvert XmlUtf16Convert
-#define XmlGetInternalEncoding XmlGetUtf16InternalEncoding
-#define XmlGetInternalEncodingNS XmlGetUtf16InternalEncodingNS
-#define XmlEncode XmlUtf16Encode
+#define XmlGetInternalEncoding upnpd_XmlGetUtf16InternalEncoding
+#define XmlGetInternalEncodingNS upnpd_XmlGetUtf16InternalEncodingNS
+#define XmlEncode upnpd_XmlUtf16Encode
 /* Using pointer subtraction to convert to integer type. */
 #define MUST_CONVERT(enc, s) (!(enc)->isUtf16 || (((char *)(s) - (char *)NULL) & 1))
 typedef unsigned short ICHAR;
 #else
 #define XML_ENCODE_MAX XML_UTF8_ENCODE_MAX
 #define XmlConvert XmlUtf8Convert
-#define XmlGetInternalEncoding XmlGetUtf8InternalEncoding
-#define XmlGetInternalEncodingNS XmlGetUtf8InternalEncodingNS
-#define XmlEncode XmlUtf8Encode
+#define XmlGetInternalEncoding upnpd_XmlGetUtf8InternalEncoding
+#define XmlGetInternalEncodingNS upnpd_XmlGetUtf8InternalEncodingNS
+#define XmlEncode upnpd_XmlUtf8Encode
 #define MUST_CONVERT(enc, s) (!(enc)->isUtf8)
 typedef char ICHAR;
 #endif
@@ -45,11 +45,11 @@ typedef char ICHAR;
 
 #ifndef XML_NS
 
-#define XmlInitEncodingNS XmlInitEncoding
-#define XmlInitUnknownEncodingNS XmlInitUnknownEncoding
+#define upnpd_XmlInitEncodingNS upnpd_XmlInitEncoding
+#define upnpd_XmlInitUnknownEncodingNS upnpd_XmlInitUnknownEncoding
 #undef XmlGetInternalEncodingNS
 #define XmlGetInternalEncodingNS XmlGetInternalEncoding
-#define XmlParseXmlDeclNS XmlParseXmlDecl
+#define upnpd_XmlParseXmlDeclNS upnpd_XmlParseXmlDecl
 
 #endif
 
@@ -166,11 +166,11 @@ typedef struct {
 /* TAG represents an open element.
    The name of the element is stored in both the document and API
    encodings.  The memory buffer 'buf' is a separately-allocated
-   memory area which stores the name.  During the XML_Parse()/
+   memory area which stores the name.  During the upnpd_XML_Parse()/
    XMLParseBuffer() when the element is open, the memory for the 'raw'
    version of the name (in the document encoding) is shared with the
    document buffer.  If the element is open across calls to
-   XML_Parse()/XML_ParseBuffer(), the buffer is re-allocated to
+   upnpd_XML_Parse()/upnpd_XML_ParseBuffer(), the buffer is re-allocated to
    contain the 'raw' name as well.
 
    A parser re-uses these structures, maintaining a list of allocated
@@ -295,7 +295,7 @@ typedef struct open_internal_entity {
   XML_Bool betweenDecl; /* WFC: PE Between Declarations */
 } OPEN_INTERNAL_ENTITY;
 
-typedef enum XML_Error PTRCALL Processor(XML_Parser parser,
+typedef enum XML_Error PTRCALL Processor(upnpd_XML_Parser parser,
                                          const char *start,
                                          const char *end,
                                          const char **endPtr);
@@ -320,68 +320,68 @@ static Processor externalEntityContentProcessor;
 static Processor internalEntityProcessor;
 
 static enum XML_Error
-handleUnknownEncoding(XML_Parser parser, const XML_Char *encodingName);
+handleUnknownEncoding(upnpd_XML_Parser parser, const XML_Char *encodingName);
 static enum XML_Error
-processXmlDecl(XML_Parser parser, int isGeneralTextEntity,
+processXmlDecl(upnpd_XML_Parser parser, int isGeneralTextEntity,
                const char *s, const char *next);
 static enum XML_Error
-initializeEncoding(XML_Parser parser);
+initializeEncoding(upnpd_XML_Parser parser);
 static enum XML_Error
-doProlog(XML_Parser parser, const ENCODING *enc, const char *s, 
+doProlog(upnpd_XML_Parser parser, const ENCODING *enc, const char *s, 
          const char *end, int tok, const char *next, const char **nextPtr, 
          XML_Bool haveMore);
 static enum XML_Error
-processInternalEntity(XML_Parser parser, ENTITY *entity, 
+processInternalEntity(upnpd_XML_Parser parser, ENTITY *entity, 
                       XML_Bool betweenDecl);
 static enum XML_Error
-doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc,
+doContent(upnpd_XML_Parser parser, int startTagLevel, const ENCODING *enc,
           const char *start, const char *end, const char **endPtr, 
           XML_Bool haveMore);
 static enum XML_Error
-doCdataSection(XML_Parser parser, const ENCODING *, const char **startPtr,
+doCdataSection(upnpd_XML_Parser parser, const ENCODING *, const char **startPtr,
                const char *end, const char **nextPtr, XML_Bool haveMore);
 #ifdef XML_DTD
 static enum XML_Error
-doIgnoreSection(XML_Parser parser, const ENCODING *, const char **startPtr,
+doIgnoreSection(upnpd_XML_Parser parser, const ENCODING *, const char **startPtr,
                 const char *end, const char **nextPtr, XML_Bool haveMore);
 #endif /* XML_DTD */
 
 static enum XML_Error
-storeAtts(XML_Parser parser, const ENCODING *, const char *s,
+storeAtts(upnpd_XML_Parser parser, const ENCODING *, const char *s,
           TAG_NAME *tagNamePtr, BINDING **bindingsPtr);
 static enum XML_Error
-addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
+addBinding(upnpd_XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
            const XML_Char *uri, BINDING **bindingsPtr);
 static int
 defineAttribute(ELEMENT_TYPE *type, ATTRIBUTE_ID *, XML_Bool isCdata, 
-                XML_Bool isId, const XML_Char *dfltValue, XML_Parser parser);
+                XML_Bool isId, const XML_Char *dfltValue, upnpd_XML_Parser parser);
 static enum XML_Error
-storeAttributeValue(XML_Parser parser, const ENCODING *, XML_Bool isCdata,
+storeAttributeValue(upnpd_XML_Parser parser, const ENCODING *, XML_Bool isCdata,
                     const char *, const char *, STRING_POOL *);
 static enum XML_Error
-appendAttributeValue(XML_Parser parser, const ENCODING *, XML_Bool isCdata,
+appendAttributeValue(upnpd_XML_Parser parser, const ENCODING *, XML_Bool isCdata,
                      const char *, const char *, STRING_POOL *);
 static ATTRIBUTE_ID *
-getAttributeId(XML_Parser parser, const ENCODING *enc, const char *start,
+getAttributeId(upnpd_XML_Parser parser, const ENCODING *enc, const char *start,
                const char *end);
 static int
-setElementTypePrefix(XML_Parser parser, ELEMENT_TYPE *);
+setElementTypePrefix(upnpd_XML_Parser parser, ELEMENT_TYPE *);
 static enum XML_Error
-storeEntityValue(XML_Parser parser, const ENCODING *enc, const char *start,
+storeEntityValue(upnpd_XML_Parser parser, const ENCODING *enc, const char *start,
                  const char *end);
 static int
-reportProcessingInstruction(XML_Parser parser, const ENCODING *enc,
+reportProcessingInstruction(upnpd_XML_Parser parser, const ENCODING *enc,
                             const char *start, const char *end);
 static int
-reportComment(XML_Parser parser, const ENCODING *enc, const char *start,
+reportComment(upnpd_XML_Parser parser, const ENCODING *enc, const char *start,
               const char *end);
 static void
-reportDefault(XML_Parser parser, const ENCODING *enc, const char *start,
+reportDefault(upnpd_XML_Parser parser, const ENCODING *enc, const char *start,
               const char *end);
 
-static const XML_Char * getContext(XML_Parser parser);
+static const XML_Char * getContext(upnpd_XML_Parser parser);
 static XML_Bool
-setContext(XML_Parser parser, const XML_Char *context);
+setContext(upnpd_XML_Parser parser, const XML_Char *context);
 
 static void FASTCALL normalizePublicId(XML_Char *s);
 
@@ -423,19 +423,19 @@ poolCopyStringN(STRING_POOL *pool, const XML_Char *s, int n);
 static const XML_Char * FASTCALL
 poolAppendString(STRING_POOL *pool, const XML_Char *s);
 
-static int FASTCALL nextScaffoldPart(XML_Parser parser);
-static XML_Content * build_model(XML_Parser parser);
+static int FASTCALL nextScaffoldPart(upnpd_XML_Parser parser);
+static XML_Content * build_model(upnpd_XML_Parser parser);
 static ELEMENT_TYPE *
-getElementType(XML_Parser parser, const ENCODING *enc,
+getElementType(upnpd_XML_Parser parser, const ENCODING *enc,
                const char *ptr, const char *end);
 
-static XML_Parser
+static upnpd_XML_Parser
 parserCreate(const XML_Char *encodingName,
              const XML_Memory_Handling_Suite *memsuite,
              const XML_Char *nameSep,
              DTD *dtd);
 static void
-parserInit(XML_Parser parser, const XML_Char *encodingName);
+parserInit(upnpd_XML_Parser parser, const XML_Char *encodingName);
 
 #define poolStart(pool) ((pool)->start)
 #define poolEnd(pool) ((pool)->ptr)
@@ -449,7 +449,7 @@ parserInit(XML_Parser parser, const XML_Char *encodingName);
    ? 0 \
    : ((*((pool)->ptr)++ = c), 1))
 
-struct XML_ParserStruct {
+struct upnpd_XML_ParserStruct {
   /* The first member must be userData so that the XML_GetUserData
      macro works. */
   void *m_userData;
@@ -482,7 +482,7 @@ struct XML_ParserStruct {
   XML_EndNamespaceDeclHandler m_endNamespaceDeclHandler;
   XML_NotStandaloneHandler m_notStandaloneHandler;
   XML_ExternalEntityRefHandler m_externalEntityRefHandler;
-  XML_Parser m_externalEntityRefHandlerArg;
+  upnpd_XML_Parser m_externalEntityRefHandlerArg;
   XML_SkippedEntityHandler m_skippedEntityHandler;
   XML_UnknownEncodingHandler m_unknownEncodingHandler;
   XML_ElementDeclHandler m_elementDeclHandler;
@@ -539,7 +539,7 @@ struct XML_ParserStruct {
   char *m_groupConnector;
   unsigned int m_groupSize;
   XML_Char m_namespaceSeparator;
-  XML_Parser m_parentParser;
+  upnpd_XML_Parser m_parentParser;
   XML_ParsingStatus m_parsingStatus;
 #ifdef XML_DTD
   XML_Bool m_isParamEntity;
@@ -654,18 +654,18 @@ struct XML_ParserStruct {
 #define paramEntityParsing (parser->m_paramEntityParsing)
 #endif /* XML_DTD */
 
-XML_Parser XMLCALL
-XML_ParserCreate(const XML_Char *encodingName)
+upnpd_XML_Parser XMLCALL
+upnpd_XML_ParserCreate(const XML_Char *encodingName)
 {
-  return XML_ParserCreate_MM(encodingName, NULL, NULL);
+  return upnpd_XML_ParserCreate_MM(encodingName, NULL, NULL);
 }
 
-XML_Parser XMLCALL
-XML_ParserCreateNS(const XML_Char *encodingName, XML_Char nsSep)
+upnpd_XML_Parser XMLCALL
+upnpd_XML_ParserCreateNS(const XML_Char *encodingName, XML_Char nsSep)
 {
   XML_Char tmp[2];
   *tmp = nsSep;
-  return XML_ParserCreate_MM(encodingName, NULL, tmp);
+  return upnpd_XML_ParserCreate_MM(encodingName, NULL, tmp);
 }
 
 static const XML_Char implicitContext[] = {
@@ -677,36 +677,36 @@ static const XML_Char implicitContext[] = {
   ASCII_s, ASCII_p, ASCII_a, ASCII_c, ASCII_e, '\0'
 };
 
-XML_Parser XMLCALL
-XML_ParserCreate_MM(const XML_Char *encodingName,
+upnpd_XML_Parser XMLCALL
+upnpd_XML_ParserCreate_MM(const XML_Char *encodingName,
                     const XML_Memory_Handling_Suite *memsuite,
                     const XML_Char *nameSep)
 {
-  XML_Parser parser = parserCreate(encodingName, memsuite, nameSep, NULL);
+  upnpd_XML_Parser parser = parserCreate(encodingName, memsuite, nameSep, NULL);
   if (parser != NULL && ns) {
     /* implicit context only set for root parser, since child
        parsers (i.e. external entity parsers) will inherit it
     */
     if (!setContext(parser, implicitContext)) {
-      XML_ParserFree(parser);
+      upnpd_XML_ParserFree(parser);
       return NULL;
     }
   }
   return parser;
 }
 
-static XML_Parser
+static upnpd_XML_Parser
 parserCreate(const XML_Char *encodingName,
              const XML_Memory_Handling_Suite *memsuite,
              const XML_Char *nameSep,
              DTD *dtd)
 {
-  XML_Parser parser;
+  upnpd_XML_Parser parser;
 
   if (memsuite) {
     XML_Memory_Handling_Suite *mtemp;
-    parser = (XML_Parser)
-      memsuite->malloc_fcn(sizeof(struct XML_ParserStruct));
+    parser = (upnpd_XML_Parser)
+      memsuite->malloc_fcn(sizeof(struct upnpd_XML_ParserStruct));
     if (parser != NULL) {
       mtemp = (XML_Memory_Handling_Suite *)&(parser->m_mem);
       mtemp->malloc_fcn = memsuite->malloc_fcn;
@@ -716,7 +716,7 @@ parserCreate(const XML_Char *encodingName,
   }
   else {
     XML_Memory_Handling_Suite *mtemp;
-    parser = (XML_Parser)malloc(sizeof(struct XML_ParserStruct));
+    parser = (upnpd_XML_Parser)malloc(sizeof(struct upnpd_XML_ParserStruct));
     if (parser != NULL) {
       mtemp = (XML_Memory_Handling_Suite *)&(parser->m_mem);
       mtemp->malloc_fcn = malloc;
@@ -780,7 +780,7 @@ parserCreate(const XML_Char *encodingName,
   parserInit(parser, encodingName);
 
   if (encodingName && !protocolEncodingName) {
-    XML_ParserFree(parser);
+    upnpd_XML_ParserFree(parser);
     return NULL;
   }
 
@@ -797,15 +797,15 @@ parserCreate(const XML_Char *encodingName,
 }
 
 static void
-parserInit(XML_Parser parser, const XML_Char *encodingName)
+parserInit(upnpd_XML_Parser parser, const XML_Char *encodingName)
 {
   processor = prologInitProcessor;
-  XmlPrologStateInit(&prologState);
+  upnpd_XmlPrologStateInit(&prologState);
   protocolEncodingName = (encodingName != NULL
                           ? poolCopyString(&tempPool, encodingName)
                           : NULL);
   curBase = NULL;
-  XmlInitEncoding(&initEncoding, &encoding, 0);
+  upnpd_XmlInitEncoding(&initEncoding, &encoding, 0);
   userData = NULL;
   handlerArg = NULL;
   startElementHandler = NULL;
@@ -870,7 +870,7 @@ parserInit(XML_Parser parser, const XML_Char *encodingName)
 
 /* moves list of bindings to freeBindingList */
 static void FASTCALL
-moveToFreeBindingList(XML_Parser parser, BINDING *bindings)
+moveToFreeBindingList(upnpd_XML_Parser parser, BINDING *bindings)
 {
   while (bindings) {
     BINDING *b = bindings;
@@ -881,7 +881,7 @@ moveToFreeBindingList(XML_Parser parser, BINDING *bindings)
 }
 
 XML_Bool XMLCALL
-XML_ParserReset(XML_Parser parser, const XML_Char *encodingName)
+upnpd_XML_ParserReset(upnpd_XML_Parser parser, const XML_Char *encodingName)
 {
   TAG *tStk;
   OPEN_INTERNAL_ENTITY *openEntityList;
@@ -917,9 +917,9 @@ XML_ParserReset(XML_Parser parser, const XML_Char *encodingName)
 }
 
 enum XML_Status XMLCALL
-XML_SetEncoding(XML_Parser parser, const XML_Char *encodingName)
+upnpd_XML_SetEncoding(upnpd_XML_Parser parser, const XML_Char *encodingName)
 {
-  /* Block after XML_Parse()/XML_ParseBuffer() has been called.
+  /* Block after upnpd_XML_Parse()/upnpd_XML_ParseBuffer() has been called.
      XXX There's no way for the caller to determine which of the
      XXX possible error cases caused the XML_STATUS_ERROR return.
   */
@@ -935,12 +935,12 @@ XML_SetEncoding(XML_Parser parser, const XML_Char *encodingName)
   return XML_STATUS_OK;
 }
 
-XML_Parser XMLCALL
-XML_ExternalEntityParserCreate(XML_Parser oldParser,
+upnpd_XML_Parser XMLCALL
+upnpd_XML_ExternalEntityParserCreate(upnpd_XML_Parser oldParser,
                                const XML_Char *context,
                                const XML_Char *encodingName)
 {
-  XML_Parser parser = oldParser;
+  upnpd_XML_Parser parser = oldParser;
   DTD *newDtd = NULL;
   DTD *oldDtd = _dtd;
   XML_StartElementHandler oldStartElementHandler = startElementHandler;
@@ -976,7 +976,7 @@ XML_ExternalEntityParserCreate(XML_Parser oldParser,
   void *oldUserData = userData;
   void *oldHandlerArg = handlerArg;
   XML_Bool oldDefaultExpandInternalEntities = defaultExpandInternalEntities;
-  XML_Parser oldExternalEntityRefHandlerArg = externalEntityRefHandlerArg;
+  upnpd_XML_Parser oldExternalEntityRefHandlerArg = externalEntityRefHandlerArg;
 #ifdef XML_DTD
   enum XML_ParamEntityParsing oldParamEntityParsing = paramEntityParsing;
   int oldInEntityValue = prologState.inEntityValue;
@@ -1043,7 +1043,7 @@ XML_ExternalEntityParserCreate(XML_Parser oldParser,
 #endif /* XML_DTD */
     if (!dtdCopy(_dtd, oldDtd, &parser->m_mem)
       || !setContext(parser, context)) {
-      XML_ParserFree(parser);
+      upnpd_XML_ParserFree(parser);
       return NULL;
     }
     processor = externalEntityInitProcessor;
@@ -1058,7 +1058,7 @@ XML_ExternalEntityParserCreate(XML_Parser oldParser,
        This would leave those prefixes with dangling pointers.
     */
     isParamEntity = XML_TRUE;
-    XmlPrologStateInitExternalEntity(&prologState);
+    upnpd_XmlPrologStateInitExternalEntity(&prologState);
     processor = externalParEntInitProcessor;
   }
 #endif /* XML_DTD */
@@ -1066,7 +1066,7 @@ XML_ExternalEntityParserCreate(XML_Parser oldParser,
 }
 
 static void FASTCALL
-destroyBindings(BINDING *bindings, XML_Parser parser)
+destroyBindings(BINDING *bindings, upnpd_XML_Parser parser)
 {
   for (;;) {
     BINDING *b = bindings;
@@ -1079,7 +1079,7 @@ destroyBindings(BINDING *bindings, XML_Parser parser)
 }
 
 void XMLCALL
-XML_ParserFree(XML_Parser parser)
+upnpd_XML_ParserFree(upnpd_XML_Parser parser)
 {
   TAG *tagList;
   OPEN_INTERNAL_ENTITY *entityList;
@@ -1141,16 +1141,16 @@ XML_ParserFree(XML_Parser parser)
 }
 
 void XMLCALL
-XML_UseParserAsHandlerArg(XML_Parser parser)
+upnpd_XML_UseParserAsHandlerArg(upnpd_XML_Parser parser)
 {
   handlerArg = parser;
 }
 
 enum XML_Error XMLCALL
-XML_UseForeignDTD(XML_Parser parser, XML_Bool useDTD)
+upnpd_XML_UseForeignDTD(upnpd_XML_Parser parser, XML_Bool useDTD)
 {
 #ifdef XML_DTD
-  /* block after XML_Parse()/XML_ParseBuffer() has been called */
+  /* block after upnpd_XML_Parse()/upnpd_XML_ParseBuffer() has been called */
   if (ps_parsing == XML_PARSING || ps_parsing == XML_SUSPENDED)
     return XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING;
   useForeignDTD = useDTD;
@@ -1161,16 +1161,16 @@ XML_UseForeignDTD(XML_Parser parser, XML_Bool useDTD)
 }
 
 void XMLCALL
-XML_SetReturnNSTriplet(XML_Parser parser, int do_nst)
+upnpd_XML_SetReturnNSTriplet(upnpd_XML_Parser parser, int do_nst)
 {
-  /* block after XML_Parse()/XML_ParseBuffer() has been called */
+  /* block after upnpd_XML_Parse()/upnpd_XML_ParseBuffer() has been called */
   if (ps_parsing == XML_PARSING || ps_parsing == XML_SUSPENDED)
     return;
   ns_triplets = do_nst ? XML_TRUE : XML_FALSE;
 }
 
 void XMLCALL
-XML_SetUserData(XML_Parser parser, void *p)
+upnpd_XML_SetUserData(upnpd_XML_Parser parser, void *p)
 {
   if (handlerArg == userData)
     handlerArg = userData = p;
@@ -1179,7 +1179,7 @@ XML_SetUserData(XML_Parser parser, void *p)
 }
 
 enum XML_Status XMLCALL
-XML_SetBase(XML_Parser parser, const XML_Char *p)
+upnpd_XML_SetBase(upnpd_XML_Parser parser, const XML_Char *p)
 {
   if (p) {
     p = poolCopyString(&_dtd->pool, p);
@@ -1193,25 +1193,25 @@ XML_SetBase(XML_Parser parser, const XML_Char *p)
 }
 
 const XML_Char * XMLCALL
-XML_GetBase(XML_Parser parser)
+upnpd_XML_GetBase(upnpd_XML_Parser parser)
 {
   return curBase;
 }
 
 int XMLCALL
-XML_GetSpecifiedAttributeCount(XML_Parser parser)
+upnpd_XML_GetSpecifiedAttributeCount(upnpd_XML_Parser parser)
 {
   return nSpecifiedAtts;
 }
 
 int XMLCALL
-XML_GetIdAttributeIndex(XML_Parser parser)
+upnpd_XML_GetIdAttributeIndex(upnpd_XML_Parser parser)
 {
   return idAttIndex;
 }
 
 void XMLCALL
-XML_SetElementHandler(XML_Parser parser,
+upnpd_XML_SetElementHandler(upnpd_XML_Parser parser,
                       XML_StartElementHandler start,
                       XML_EndElementHandler end)
 {
@@ -1220,40 +1220,40 @@ XML_SetElementHandler(XML_Parser parser,
 }
 
 void XMLCALL
-XML_SetStartElementHandler(XML_Parser parser,
+upnpd_XML_SetStartElementHandler(upnpd_XML_Parser parser,
                            XML_StartElementHandler start) {
   startElementHandler = start;
 }
 
 void XMLCALL
-XML_SetEndElementHandler(XML_Parser parser,
+upnpd_XML_SetEndElementHandler(upnpd_XML_Parser parser,
                          XML_EndElementHandler end) {
   endElementHandler = end;
 }
 
 void XMLCALL
-XML_SetCharacterDataHandler(XML_Parser parser,
+upnpd_XML_SetCharacterDataHandler(upnpd_XML_Parser parser,
                             XML_CharacterDataHandler handler)
 {
   characterDataHandler = handler;
 }
 
 void XMLCALL
-XML_SetProcessingInstructionHandler(XML_Parser parser,
+upnpd_XML_SetProcessingInstructionHandler(upnpd_XML_Parser parser,
                                     XML_ProcessingInstructionHandler handler)
 {
   processingInstructionHandler = handler;
 }
 
 void XMLCALL
-XML_SetCommentHandler(XML_Parser parser,
+upnpd_XML_SetCommentHandler(upnpd_XML_Parser parser,
                       XML_CommentHandler handler)
 {
   commentHandler = handler;
 }
 
 void XMLCALL
-XML_SetCdataSectionHandler(XML_Parser parser,
+upnpd_XML_SetCdataSectionHandler(upnpd_XML_Parser parser,
                            XML_StartCdataSectionHandler start,
                            XML_EndCdataSectionHandler end)
 {
@@ -1262,19 +1262,19 @@ XML_SetCdataSectionHandler(XML_Parser parser,
 }
 
 void XMLCALL
-XML_SetStartCdataSectionHandler(XML_Parser parser,
+upnpd_XML_SetStartCdataSectionHandler(upnpd_XML_Parser parser,
                                 XML_StartCdataSectionHandler start) {
   startCdataSectionHandler = start;
 }
 
 void XMLCALL
-XML_SetEndCdataSectionHandler(XML_Parser parser,
+upnpd_XML_SetEndCdataSectionHandler(upnpd_XML_Parser parser,
                               XML_EndCdataSectionHandler end) {
   endCdataSectionHandler = end;
 }
 
 void XMLCALL
-XML_SetDefaultHandler(XML_Parser parser,
+upnpd_XML_SetDefaultHandler(upnpd_XML_Parser parser,
                       XML_DefaultHandler handler)
 {
   defaultHandler = handler;
@@ -1282,7 +1282,7 @@ XML_SetDefaultHandler(XML_Parser parser,
 }
 
 void XMLCALL
-XML_SetDefaultHandlerExpand(XML_Parser parser,
+upnpd_XML_SetDefaultHandlerExpand(upnpd_XML_Parser parser,
                             XML_DefaultHandler handler)
 {
   defaultHandler = handler;
@@ -1290,7 +1290,7 @@ XML_SetDefaultHandlerExpand(XML_Parser parser,
 }
 
 void XMLCALL
-XML_SetDoctypeDeclHandler(XML_Parser parser,
+upnpd_XML_SetDoctypeDeclHandler(upnpd_XML_Parser parser,
                           XML_StartDoctypeDeclHandler start,
                           XML_EndDoctypeDeclHandler end)
 {
@@ -1299,33 +1299,33 @@ XML_SetDoctypeDeclHandler(XML_Parser parser,
 }
 
 void XMLCALL
-XML_SetStartDoctypeDeclHandler(XML_Parser parser,
+upnpd_XML_SetStartDoctypeDeclHandler(upnpd_XML_Parser parser,
                                XML_StartDoctypeDeclHandler start) {
   startDoctypeDeclHandler = start;
 }
 
 void XMLCALL
-XML_SetEndDoctypeDeclHandler(XML_Parser parser,
+upnpd_XML_SetEndDoctypeDeclHandler(upnpd_XML_Parser parser,
                              XML_EndDoctypeDeclHandler end) {
   endDoctypeDeclHandler = end;
 }
 
 void XMLCALL
-XML_SetUnparsedEntityDeclHandler(XML_Parser parser,
+upnpd_XML_SetUnparsedEntityDeclHandler(upnpd_XML_Parser parser,
                                  XML_UnparsedEntityDeclHandler handler)
 {
   unparsedEntityDeclHandler = handler;
 }
 
 void XMLCALL
-XML_SetNotationDeclHandler(XML_Parser parser,
+upnpd_XML_SetNotationDeclHandler(upnpd_XML_Parser parser,
                            XML_NotationDeclHandler handler)
 {
   notationDeclHandler = handler;
 }
 
 void XMLCALL
-XML_SetNamespaceDeclHandler(XML_Parser parser,
+upnpd_XML_SetNamespaceDeclHandler(upnpd_XML_Parser parser,
                             XML_StartNamespaceDeclHandler start,
                             XML_EndNamespaceDeclHandler end)
 {
@@ -1334,49 +1334,49 @@ XML_SetNamespaceDeclHandler(XML_Parser parser,
 }
 
 void XMLCALL
-XML_SetStartNamespaceDeclHandler(XML_Parser parser,
+upnpd_XML_SetStartNamespaceDeclHandler(upnpd_XML_Parser parser,
                                  XML_StartNamespaceDeclHandler start) {
   startNamespaceDeclHandler = start;
 }
 
 void XMLCALL
-XML_SetEndNamespaceDeclHandler(XML_Parser parser,
+upnpd_XML_SetEndNamespaceDeclHandler(upnpd_XML_Parser parser,
                                XML_EndNamespaceDeclHandler end) {
   endNamespaceDeclHandler = end;
 }
 
 void XMLCALL
-XML_SetNotStandaloneHandler(XML_Parser parser,
+upnpd_XML_SetNotStandaloneHandler(upnpd_XML_Parser parser,
                             XML_NotStandaloneHandler handler)
 {
   notStandaloneHandler = handler;
 }
 
 void XMLCALL
-XML_SetExternalEntityRefHandler(XML_Parser parser,
+upnpd_XML_SetExternalEntityRefHandler(upnpd_XML_Parser parser,
                                 XML_ExternalEntityRefHandler handler)
 {
   externalEntityRefHandler = handler;
 }
 
 void XMLCALL
-XML_SetExternalEntityRefHandlerArg(XML_Parser parser, void *arg)
+upnpd_XML_SetExternalEntityRefHandlerArg(upnpd_XML_Parser parser, void *arg)
 {
   if (arg)
-    externalEntityRefHandlerArg = (XML_Parser)arg;
+    externalEntityRefHandlerArg = (upnpd_XML_Parser)arg;
   else
     externalEntityRefHandlerArg = parser;
 }
 
 void XMLCALL
-XML_SetSkippedEntityHandler(XML_Parser parser,
+upnpd_XML_SetSkippedEntityHandler(upnpd_XML_Parser parser,
                             XML_SkippedEntityHandler handler)
 {
   skippedEntityHandler = handler;
 }
 
 void XMLCALL
-XML_SetUnknownEncodingHandler(XML_Parser parser,
+upnpd_XML_SetUnknownEncodingHandler(upnpd_XML_Parser parser,
                               XML_UnknownEncodingHandler handler,
                               void *data)
 {
@@ -1385,37 +1385,37 @@ XML_SetUnknownEncodingHandler(XML_Parser parser,
 }
 
 void XMLCALL
-XML_SetElementDeclHandler(XML_Parser parser,
+upnpd_XML_SetElementDeclHandler(upnpd_XML_Parser parser,
                           XML_ElementDeclHandler eldecl)
 {
   elementDeclHandler = eldecl;
 }
 
 void XMLCALL
-XML_SetAttlistDeclHandler(XML_Parser parser,
+upnpd_XML_SetAttlistDeclHandler(upnpd_XML_Parser parser,
                           XML_AttlistDeclHandler attdecl)
 {
   attlistDeclHandler = attdecl;
 }
 
 void XMLCALL
-XML_SetEntityDeclHandler(XML_Parser parser,
+upnpd_XML_SetEntityDeclHandler(upnpd_XML_Parser parser,
                          XML_EntityDeclHandler handler)
 {
   entityDeclHandler = handler;
 }
 
 void XMLCALL
-XML_SetXmlDeclHandler(XML_Parser parser,
+upnpd_XML_SetXmlDeclHandler(upnpd_XML_Parser parser,
                       XML_XmlDeclHandler handler) {
   xmlDeclHandler = handler;
 }
 
 int XMLCALL
-XML_SetParamEntityParsing(XML_Parser parser,
+upnpd_XML_SetParamEntityParsing(upnpd_XML_Parser parser,
                           enum XML_ParamEntityParsing peParsing)
 {
-  /* block after XML_Parse()/XML_ParseBuffer() has been called */
+  /* block after upnpd_XML_Parse()/upnpd_XML_ParseBuffer() has been called */
   if (ps_parsing == XML_PARSING || ps_parsing == XML_SUSPENDED)
     return 0;
 #ifdef XML_DTD
@@ -1427,7 +1427,7 @@ XML_SetParamEntityParsing(XML_Parser parser,
 }
 
 enum XML_Status XMLCALL
-XML_Parse(XML_Parser parser, const char *s, int len, int isFinal)
+upnpd_XML_Parse(upnpd_XML_Parser parser, const char *s, int len, int isFinal)
 {
   switch (ps_parsing) {
   case XML_SUSPENDED:
@@ -1538,18 +1538,18 @@ XML_Parse(XML_Parser parser, const char *s, int len, int isFinal)
   }
 #endif  /* not defined XML_CONTEXT_BYTES */
   else {
-    void *buff = XML_GetBuffer(parser, len);
+    void *buff = upnpd_XML_GetBuffer(parser, len);
     if (buff == NULL)
       return XML_STATUS_ERROR;
     else {
       memcpy(buff, s, len);
-      return XML_ParseBuffer(parser, len, isFinal);
+      return upnpd_XML_ParseBuffer(parser, len, isFinal);
     }
   }
 }
 
 enum XML_Status XMLCALL
-XML_ParseBuffer(XML_Parser parser, int len, int isFinal)
+upnpd_XML_ParseBuffer(upnpd_XML_Parser parser, int len, int isFinal)
 {
   const char *start;
   enum XML_Status result = XML_STATUS_OK;
@@ -1600,7 +1600,7 @@ XML_ParseBuffer(XML_Parser parser, int len, int isFinal)
 }
 
 void * XMLCALL
-XML_GetBuffer(XML_Parser parser, int len)
+upnpd_XML_GetBuffer(upnpd_XML_Parser parser, int len)
 {
   switch (ps_parsing) {
   case XML_SUSPENDED:
@@ -1679,7 +1679,7 @@ XML_GetBuffer(XML_Parser parser, int len)
 }
 
 enum XML_Status XMLCALL
-XML_StopParser(XML_Parser parser, XML_Bool resumable)
+upnpd_XML_StopParser(upnpd_XML_Parser parser, XML_Bool resumable)
 {
   switch (ps_parsing) {
   case XML_SUSPENDED:
@@ -1709,7 +1709,7 @@ XML_StopParser(XML_Parser parser, XML_Bool resumable)
 }
 
 enum XML_Status XMLCALL
-XML_ResumeParser(XML_Parser parser)
+upnpd_XML_ResumeParser(upnpd_XML_Parser parser)
 {
   enum XML_Status result = XML_STATUS_OK;
 
@@ -1747,20 +1747,20 @@ XML_ResumeParser(XML_Parser parser)
 }
 
 void XMLCALL
-XML_GetParsingStatus(XML_Parser parser, XML_ParsingStatus *status)
+upnpd_XML_GetParsingStatus(upnpd_XML_Parser parser, XML_ParsingStatus *status)
 {
   assert(status != NULL);
   *status = parser->m_parsingStatus;
 }
 
 enum XML_Error XMLCALL
-XML_GetErrorCode(XML_Parser parser)
+upnpd_XML_GetErrorCode(upnpd_XML_Parser parser)
 {
   return errorCode;
 }
 
 XML_Index XMLCALL
-XML_GetCurrentByteIndex(XML_Parser parser)
+upnpd_XML_GetCurrentByteIndex(upnpd_XML_Parser parser)
 {
   if (eventPtr)
     return parseEndByteIndex - (parseEndPtr - eventPtr);
@@ -1768,7 +1768,7 @@ XML_GetCurrentByteIndex(XML_Parser parser)
 }
 
 int XMLCALL
-XML_GetCurrentByteCount(XML_Parser parser)
+upnpd_XML_GetCurrentByteCount(upnpd_XML_Parser parser)
 {
   if (eventEndPtr && eventPtr)
     return (int)(eventEndPtr - eventPtr);
@@ -1776,7 +1776,7 @@ XML_GetCurrentByteCount(XML_Parser parser)
 }
 
 const char * XMLCALL
-XML_GetInputContext(XML_Parser parser, int *offset, int *size)
+upnpd_XML_GetInputContext(upnpd_XML_Parser parser, int *offset, int *size)
 {
 #ifdef XML_CONTEXT_BYTES
   if (eventPtr && buffer) {
@@ -1789,7 +1789,7 @@ XML_GetInputContext(XML_Parser parser, int *offset, int *size)
 }
 
 XML_Size XMLCALL
-XML_GetCurrentLineNumber(XML_Parser parser)
+upnpd_XML_GetCurrentLineNumber(upnpd_XML_Parser parser)
 {
   if (eventPtr && eventPtr >= positionPtr) {
     XmlUpdatePosition(encoding, positionPtr, eventPtr, &position);
@@ -1799,7 +1799,7 @@ XML_GetCurrentLineNumber(XML_Parser parser)
 }
 
 XML_Size XMLCALL
-XML_GetCurrentColumnNumber(XML_Parser parser)
+upnpd_XML_GetCurrentColumnNumber(upnpd_XML_Parser parser)
 {
   if (eventPtr && eventPtr >= positionPtr) {
     XmlUpdatePosition(encoding, positionPtr, eventPtr, &position);
@@ -1809,31 +1809,31 @@ XML_GetCurrentColumnNumber(XML_Parser parser)
 }
 
 void XMLCALL
-XML_FreeContentModel(XML_Parser parser, XML_Content *model)
+upnpd_XML_FreeContentModel(upnpd_XML_Parser parser, XML_Content *model)
 {
   FREE(model);
 }
 
 void * XMLCALL
-XML_MemMalloc(XML_Parser parser, size_t size)
+upnpd_XML_MemMalloc(upnpd_XML_Parser parser, size_t size)
 {
   return MALLOC(size);
 }
 
 void * XMLCALL
-XML_MemRealloc(XML_Parser parser, void *ptr, size_t size)
+upnpd_XML_MemRealloc(upnpd_XML_Parser parser, void *ptr, size_t size)
 {
   return REALLOC(ptr, size);
 }
 
 void XMLCALL
-XML_MemFree(XML_Parser parser, void *ptr)
+upnpd_XML_MemFree(upnpd_XML_Parser parser, void *ptr)
 {
   FREE(ptr);
 }
 
 void XMLCALL
-XML_DefaultCurrent(XML_Parser parser)
+upnpd_XML_DefaultCurrent(upnpd_XML_Parser parser)
 {
   if (defaultHandler) {
     if (openInternalEntities)
@@ -1847,7 +1847,7 @@ XML_DefaultCurrent(XML_Parser parser)
 }
 
 const XML_LChar * XMLCALL
-XML_ErrorString(enum XML_Error code)
+upnpd_XML_ErrorString(enum XML_Error code)
 {
   static const XML_LChar* const message[] = {
     0,
@@ -1898,7 +1898,7 @@ XML_ErrorString(enum XML_Error code)
 }
 
 const XML_LChar * XMLCALL
-XML_ExpatVersion(void) {
+upnpd_XML_ExpatVersion(void) {
 
   /* V1 is used to string-ize the version number. However, it would
      string-ize the actual version macro *names* unless we get them
@@ -1918,7 +1918,7 @@ XML_ExpatVersion(void) {
 }
 
 XML_Expat_Version XMLCALL
-XML_ExpatVersionInfo(void)
+upnpd_XML_ExpatVersionInfo(void)
 {
   XML_Expat_Version version;
 
@@ -1930,7 +1930,7 @@ XML_ExpatVersionInfo(void)
 }
 
 const XML_Feature * XMLCALL
-XML_GetFeatureList(void)
+upnpd_XML_GetFeatureList(void)
 {
   static const XML_Feature features[] = {
     {XML_FEATURE_SIZEOF_XML_CHAR,  XML_L("sizeof(XML_Char)"),
@@ -1971,7 +1971,7 @@ XML_GetFeatureList(void)
    permanent location, since the parse buffer is about to be discarded.
 */
 static XML_Bool
-storeRawNames(XML_Parser parser)
+storeRawNames(upnpd_XML_Parser parser)
 {
   TAG *tag = tagStack;
   while (tag) {
@@ -2016,7 +2016,7 @@ storeRawNames(XML_Parser parser)
 }
 
 static enum XML_Error PTRCALL
-contentProcessor(XML_Parser parser,
+contentProcessor(upnpd_XML_Parser parser,
                  const char *start,
                  const char *end,
                  const char **endPtr)
@@ -2031,7 +2031,7 @@ contentProcessor(XML_Parser parser,
 }
 
 static enum XML_Error PTRCALL
-externalEntityInitProcessor(XML_Parser parser,
+externalEntityInitProcessor(upnpd_XML_Parser parser,
                             const char *start,
                             const char *end,
                             const char **endPtr)
@@ -2044,7 +2044,7 @@ externalEntityInitProcessor(XML_Parser parser,
 }
 
 static enum XML_Error PTRCALL
-externalEntityInitProcessor2(XML_Parser parser,
+externalEntityInitProcessor2(upnpd_XML_Parser parser,
                              const char *start,
                              const char *end,
                              const char **endPtr)
@@ -2084,7 +2084,7 @@ externalEntityInitProcessor2(XML_Parser parser,
 }
 
 static enum XML_Error PTRCALL
-externalEntityInitProcessor3(XML_Parser parser,
+externalEntityInitProcessor3(upnpd_XML_Parser parser,
                              const char *start,
                              const char *end,
                              const char **endPtr)
@@ -2132,7 +2132,7 @@ externalEntityInitProcessor3(XML_Parser parser,
 }
 
 static enum XML_Error PTRCALL
-externalEntityContentProcessor(XML_Parser parser,
+externalEntityContentProcessor(upnpd_XML_Parser parser,
                                const char *start,
                                const char *end,
                                const char **endPtr)
@@ -2147,7 +2147,7 @@ externalEntityContentProcessor(XML_Parser parser,
 }
 
 static enum XML_Error
-doContent(XML_Parser parser,
+doContent(upnpd_XML_Parser parser,
           int startTagLevel,
           const ENCODING *enc,
           const char *s,
@@ -2614,7 +2614,7 @@ doContent(XML_Parser parser,
    - generate namespace aware element name (URI, prefix)
 */
 static enum XML_Error
-storeAtts(XML_Parser parser, const ENCODING *enc,
+storeAtts(upnpd_XML_Parser parser, const ENCODING *enc,
           const char *attStr, TAG_NAME *tagNamePtr,
           BINDING **bindingsPtr)
 {
@@ -2732,7 +2732,7 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
       attIndex++;
   }
 
-  /* set-up for XML_GetSpecifiedAttributeCount and XML_GetIdAttributeIndex */
+  /* set-up for upnpd_XML_GetSpecifiedAttributeCount and upnpd_XML_GetIdAttributeIndex */
   nSpecifiedAtts = attIndex;
   if (elementType->idAtt && (elementType->idAtt->name)[-1]) {
     for (i = 0; i < attIndex; i += 2)
@@ -2945,7 +2945,7 @@ storeAtts(XML_Parser parser, const ENCODING *enc,
    Therefore one must keep track of the old value outside of addBinding().
 */
 static enum XML_Error
-addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
+addBinding(upnpd_XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
            const XML_Char *uri, BINDING **bindingsPtr)
 {
   static const XML_Char xmlNamespace[] = {
@@ -3062,7 +3062,7 @@ addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
    the whole file is parsed with one call.
 */
 static enum XML_Error PTRCALL
-cdataSectionProcessor(XML_Parser parser,
+cdataSectionProcessor(upnpd_XML_Parser parser,
                       const char *start,
                       const char *end,
                       const char **endPtr)
@@ -3088,7 +3088,7 @@ cdataSectionProcessor(XML_Parser parser,
    the section is not yet closed.
 */
 static enum XML_Error
-doCdataSection(XML_Parser parser,
+doCdataSection(upnpd_XML_Parser parser,
                const ENCODING *enc,
                const char **startPtr,
                const char *end,
@@ -3204,7 +3204,7 @@ doCdataSection(XML_Parser parser,
    the whole file is parsed with one call.
 */
 static enum XML_Error PTRCALL
-ignoreSectionProcessor(XML_Parser parser,
+ignoreSectionProcessor(upnpd_XML_Parser parser,
                        const char *start,
                        const char *end,
                        const char **endPtr)
@@ -3224,7 +3224,7 @@ ignoreSectionProcessor(XML_Parser parser,
    if the section is not yet closed.
 */
 static enum XML_Error
-doIgnoreSection(XML_Parser parser,
+doIgnoreSection(upnpd_XML_Parser parser,
                 const ENCODING *enc,
                 const char **startPtr,
                 const char *end,
@@ -3285,7 +3285,7 @@ doIgnoreSection(XML_Parser parser,
 #endif /* XML_DTD */
 
 static enum XML_Error
-initializeEncoding(XML_Parser parser)
+initializeEncoding(upnpd_XML_Parser parser)
 {
   const char *s;
 #ifdef XML_UNICODE
@@ -3308,13 +3308,13 @@ initializeEncoding(XML_Parser parser)
 #else
   s = protocolEncodingName;
 #endif
-  if ((ns ? XmlInitEncodingNS : XmlInitEncoding)(&initEncoding, &encoding, s))
+  if ((ns ? upnpd_XmlInitEncodingNS : upnpd_XmlInitEncoding)(&initEncoding, &encoding, s))
     return XML_ERROR_NONE;
   return handleUnknownEncoding(parser, protocolEncodingName);
 }
 
 static enum XML_Error
-processXmlDecl(XML_Parser parser, int isGeneralTextEntity,
+processXmlDecl(upnpd_XML_Parser parser, int isGeneralTextEntity,
                const char *s, const char *next)
 {
   const char *encodingName = NULL;
@@ -3325,8 +3325,8 @@ processXmlDecl(XML_Parser parser, int isGeneralTextEntity,
   const XML_Char *storedversion = NULL;
   int standalone = -1;
   if (!(ns
-        ? XmlParseXmlDeclNS
-        : XmlParseXmlDecl)(isGeneralTextEntity,
+        ? upnpd_XmlParseXmlDeclNS
+        : upnpd_XmlParseXmlDecl)(isGeneralTextEntity,
                            encoding,
                            s,
                            next,
@@ -3403,7 +3403,7 @@ processXmlDecl(XML_Parser parser, int isGeneralTextEntity,
 }
 
 static enum XML_Error
-handleUnknownEncoding(XML_Parser parser, const XML_Char *encodingName)
+handleUnknownEncoding(upnpd_XML_Parser parser, const XML_Char *encodingName)
 {
   if (unknownEncodingHandler) {
     XML_Encoding info;
@@ -3416,15 +3416,15 @@ handleUnknownEncoding(XML_Parser parser, const XML_Char *encodingName)
     if (unknownEncodingHandler(unknownEncodingHandlerData, encodingName,
                                &info)) {
       ENCODING *enc;
-      unknownEncodingMem = MALLOC(XmlSizeOfUnknownEncoding());
+      unknownEncodingMem = MALLOC(upnpd_XmlSizeOfUnknownEncoding());
       if (!unknownEncodingMem) {
         if (info.release)
           info.release(info.data);
         return XML_ERROR_NO_MEMORY;
       }
       enc = (ns
-             ? XmlInitUnknownEncodingNS
-             : XmlInitUnknownEncoding)(unknownEncodingMem,
+             ? upnpd_XmlInitUnknownEncodingNS
+             : upnpd_XmlInitUnknownEncoding)(unknownEncodingMem,
                                        info.map,
                                        info.convert,
                                        info.data);
@@ -3442,7 +3442,7 @@ handleUnknownEncoding(XML_Parser parser, const XML_Char *encodingName)
 }
 
 static enum XML_Error PTRCALL
-prologInitProcessor(XML_Parser parser,
+prologInitProcessor(upnpd_XML_Parser parser,
                     const char *s,
                     const char *end,
                     const char **nextPtr)
@@ -3457,7 +3457,7 @@ prologInitProcessor(XML_Parser parser,
 #ifdef XML_DTD
 
 static enum XML_Error PTRCALL
-externalParEntInitProcessor(XML_Parser parser,
+externalParEntInitProcessor(upnpd_XML_Parser parser,
                             const char *s,
                             const char *end,
                             const char **nextPtr)
@@ -3466,7 +3466,7 @@ externalParEntInitProcessor(XML_Parser parser,
   if (result != XML_ERROR_NONE)
     return result;
 
-  /* we know now that XML_Parse(Buffer) has been called,
+  /* we know now that upnpd_XML_Parse(Buffer) has been called,
      so we consider the external parameter entity read */
   _dtd->paramEntityRead = XML_TRUE;
 
@@ -3481,7 +3481,7 @@ externalParEntInitProcessor(XML_Parser parser,
 }
 
 static enum XML_Error PTRCALL
-entityValueInitProcessor(XML_Parser parser,
+entityValueInitProcessor(upnpd_XML_Parser parser,
                          const char *s,
                          const char *end,
                          const char **nextPtr)
@@ -3548,7 +3548,7 @@ entityValueInitProcessor(XML_Parser parser,
 }
 
 static enum XML_Error PTRCALL
-externalParEntProcessor(XML_Parser parser,
+externalParEntProcessor(upnpd_XML_Parser parser,
                         const char *s,
                         const char *end,
                         const char **nextPtr)
@@ -3589,7 +3589,7 @@ externalParEntProcessor(XML_Parser parser,
 }
 
 static enum XML_Error PTRCALL
-entityValueProcessor(XML_Parser parser,
+entityValueProcessor(upnpd_XML_Parser parser,
                      const char *s,
                      const char *end,
                      const char **nextPtr)
@@ -3627,7 +3627,7 @@ entityValueProcessor(XML_Parser parser,
 #endif /* XML_DTD */
 
 static enum XML_Error PTRCALL
-prologProcessor(XML_Parser parser,
+prologProcessor(upnpd_XML_Parser parser,
                 const char *s,
                 const char *end,
                 const char **nextPtr)
@@ -3639,7 +3639,7 @@ prologProcessor(XML_Parser parser,
 }
 
 static enum XML_Error
-doProlog(XML_Parser parser,
+doProlog(upnpd_XML_Parser parser,
          const ENCODING *enc,
          const char *s,
          const char *end,
@@ -4615,7 +4615,7 @@ doProlog(XML_Parser parser,
 }
 
 static enum XML_Error PTRCALL
-epilogProcessor(XML_Parser parser,
+epilogProcessor(upnpd_XML_Parser parser,
                 const char *s,
                 const char *end,
                 const char **nextPtr)
@@ -4682,7 +4682,7 @@ epilogProcessor(XML_Parser parser,
 }
 
 static enum XML_Error
-processInternalEntity(XML_Parser parser, ENTITY *entity,
+processInternalEntity(upnpd_XML_Parser parser, ENTITY *entity,
                       XML_Bool betweenDecl)
 {
   const char *textStart, *textEnd;
@@ -4739,7 +4739,7 @@ processInternalEntity(XML_Parser parser, ENTITY *entity,
 }
 
 static enum XML_Error PTRCALL
-internalEntityProcessor(XML_Parser parser,
+internalEntityProcessor(upnpd_XML_Parser parser,
                         const char *s,
                         const char *end,
                         const char **nextPtr)
@@ -4800,7 +4800,7 @@ internalEntityProcessor(XML_Parser parser,
 }
 
 static enum XML_Error PTRCALL
-errorProcessor(XML_Parser parser,
+errorProcessor(upnpd_XML_Parser parser,
                const char *s,
                const char *end,
                const char **nextPtr)
@@ -4809,7 +4809,7 @@ errorProcessor(XML_Parser parser,
 }
 
 static enum XML_Error
-storeAttributeValue(XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
+storeAttributeValue(upnpd_XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
                     const char *ptr, const char *end,
                     STRING_POOL *pool)
 {
@@ -4825,7 +4825,7 @@ storeAttributeValue(XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
 }
 
 static enum XML_Error
-appendAttributeValue(XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
+appendAttributeValue(upnpd_XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
                      const char *ptr, const char *end,
                      STRING_POOL *pool)
 {
@@ -4975,7 +4975,7 @@ appendAttributeValue(XML_Parser parser, const ENCODING *enc, XML_Bool isCdata,
 }
 
 static enum XML_Error
-storeEntityValue(XML_Parser parser,
+storeEntityValue(upnpd_XML_Parser parser,
                  const ENCODING *enc,
                  const char *entityTextPtr,
                  const char *entityTextEnd)
@@ -5164,7 +5164,7 @@ normalizeLines(XML_Char *s)
 }
 
 static int
-reportProcessingInstruction(XML_Parser parser, const ENCODING *enc,
+reportProcessingInstruction(upnpd_XML_Parser parser, const ENCODING *enc,
                             const char *start, const char *end)
 {
   const XML_Char *target;
@@ -5193,7 +5193,7 @@ reportProcessingInstruction(XML_Parser parser, const ENCODING *enc,
 }
 
 static int
-reportComment(XML_Parser parser, const ENCODING *enc,
+reportComment(upnpd_XML_Parser parser, const ENCODING *enc,
               const char *start, const char *end)
 {
   XML_Char *data;
@@ -5215,7 +5215,7 @@ reportComment(XML_Parser parser, const ENCODING *enc,
 }
 
 static void
-reportDefault(XML_Parser parser, const ENCODING *enc,
+reportDefault(upnpd_XML_Parser parser, const ENCODING *enc,
               const char *s, const char *end)
 {
   if (MUST_CONVERT(enc, s)) {
@@ -5244,7 +5244,7 @@ reportDefault(XML_Parser parser, const ENCODING *enc,
 
 static int
 defineAttribute(ELEMENT_TYPE *type, ATTRIBUTE_ID *attId, XML_Bool isCdata,
-                XML_Bool isId, const XML_Char *value, XML_Parser parser)
+                XML_Bool isId, const XML_Char *value, upnpd_XML_Parser parser)
 {
   DEFAULT_ATTRIBUTE *att;
   if (value || isId) {
@@ -5287,7 +5287,7 @@ defineAttribute(ELEMENT_TYPE *type, ATTRIBUTE_ID *attId, XML_Bool isCdata,
 }
 
 static int
-setElementTypePrefix(XML_Parser parser, ELEMENT_TYPE *elementType)
+setElementTypePrefix(upnpd_XML_Parser parser, ELEMENT_TYPE *elementType)
 {
   DTD * const dtd = _dtd;  /* save one level of indirection */
   const XML_Char *name;
@@ -5317,7 +5317,7 @@ setElementTypePrefix(XML_Parser parser, ELEMENT_TYPE *elementType)
 }
 
 static ATTRIBUTE_ID *
-getAttributeId(XML_Parser parser, const ENCODING *enc,
+getAttributeId(upnpd_XML_Parser parser, const ENCODING *enc,
                const char *start, const char *end)
 {
   DTD * const dtd = _dtd;  /* save one level of indirection */
@@ -5380,7 +5380,7 @@ getAttributeId(XML_Parser parser, const ENCODING *enc,
 #define CONTEXT_SEP XML_T(ASCII_FF)
 
 static const XML_Char *
-getContext(XML_Parser parser)
+getContext(upnpd_XML_Parser parser)
 {
   DTD * const dtd = _dtd;  /* save one level of indirection */
   HASH_TABLE_ITER iter;
@@ -5449,7 +5449,7 @@ getContext(XML_Parser parser)
 }
 
 static XML_Bool
-setContext(XML_Parser parser, const XML_Char *context)
+setContext(upnpd_XML_Parser parser, const XML_Char *context)
 {
   DTD * const dtd = _dtd;  /* save one level of indirection */
   const XML_Char *s = context;
@@ -6157,7 +6157,7 @@ poolGrow(STRING_POOL *pool)
 }
 
 static int FASTCALL
-nextScaffoldPart(XML_Parser parser)
+nextScaffoldPart(upnpd_XML_Parser parser)
 {
   DTD * const dtd = _dtd;  /* save one level of indirection */
   CONTENT_SCAFFOLD * me;
@@ -6205,7 +6205,7 @@ nextScaffoldPart(XML_Parser parser)
 }
 
 static void
-build_node(XML_Parser parser,
+build_node(upnpd_XML_Parser parser,
            int src_node,
            XML_Content *dest,
            XML_Content **contpos,
@@ -6243,7 +6243,7 @@ build_node(XML_Parser parser,
 }
 
 static XML_Content *
-build_model (XML_Parser parser)
+build_model (upnpd_XML_Parser parser)
 {
   DTD * const dtd = _dtd;  /* save one level of indirection */
   XML_Content *ret;
@@ -6264,7 +6264,7 @@ build_model (XML_Parser parser)
 }
 
 static ELEMENT_TYPE *
-getElementType(XML_Parser parser,
+getElementType(upnpd_XML_Parser parser,
                const ENCODING *enc,
                const char *ptr,
                const char *end)
