@@ -40,7 +40,7 @@
 
 #include "controller.h"
 
-struct upnpd_controller_s {
+struct upnpavd_controller_s {
 	char *interface;
 	char *ipaddr;
 	char *netmask;
@@ -48,16 +48,16 @@ struct upnpd_controller_s {
 	client_t *client;
 };
 
-upnpd_controller_t * upnpavd_controller_init (const char *interface)
+upnpavd_controller_t * upnpavd_controller_init (const char *interface)
 {
 	char *opt;
-	upnpd_controller_t *c;
+	upnpavd_controller_t *c;
 
-	c = (upnpd_controller_t *) malloc(sizeof(upnpd_controller_t));
+	c = (upnpavd_controller_t *) malloc(sizeof(upnpavd_controller_t));
 	if (c == NULL) {
 		goto err0;
 	}
-	memset(c, 0, sizeof(upnpd_controller_t));
+	memset(c, 0, sizeof(upnpavd_controller_t));
 
 	c->interface = strdup(interface);
 	c->ipaddr = upnpd_interface_getaddr(interface);
@@ -89,7 +89,7 @@ err1:	free(c->netmask);
 err0:	return NULL;
 }
 
-int upnpavd_controller_uninit (upnpd_controller_t *controller)
+int upnpavd_controller_uninit (upnpavd_controller_t *controller)
 {
 	free(controller->interface);
 	free(controller->ipaddr);
@@ -99,12 +99,12 @@ int upnpavd_controller_uninit (upnpd_controller_t *controller)
 	return 0;
 }
 
-int upnpavd_controller_scan_devices (upnpd_controller_t *controller, int remove)
+int upnpavd_controller_scan_devices (upnpavd_controller_t *controller, int remove)
 {
 	return upnpd_client_refresh(controller->client, remove);
 }
 
-static int upnpd_controller_free_device (upnpd_device_t *device)
+static int upnpavd_controller_free_device (upnpavd_device_t *device)
 {
 	free(device->name);
 	free(device->type);
@@ -114,25 +114,25 @@ static int upnpd_controller_free_device (upnpd_device_t *device)
 	return 0;
 }
 
-upnpd_device_t * upnpavd_controller_get_devices (upnpd_controller_t *controller)
+upnpavd_device_t * upnpavd_controller_get_devices (upnpavd_controller_t *controller)
 {
 	client_t *client;
 	client_device_t *device;
 
-	upnpd_device_t *d;
-	upnpd_device_t *r;
-	upnpd_device_t *t;
+	upnpavd_device_t *d;
+	upnpavd_device_t *r;
+	upnpavd_device_t *t;
 
 	r = NULL;
 	client = controller->client;
 
 	upnpd_thread_mutex_lock(client->mutex);
 	list_for_each_entry(device, &client->devices, head) {
-		d = (upnpd_device_t *) malloc(sizeof(upnpd_device_t));
+		d = (upnpavd_device_t *) malloc(sizeof(upnpavd_device_t));
 		if (d == NULL) {
 			continue;
 		}
-		memset(d, 0, sizeof(upnpd_device_t));
+		memset(d, 0, sizeof(upnpavd_device_t));
 		d->name = strdup(device->name);
 		d->type = strdup(device->type);
 		d->uuid = strdup(device->uuid);
@@ -142,7 +142,7 @@ upnpd_device_t * upnpavd_controller_get_devices (upnpd_controller_t *controller)
 		    d->type == NULL ||
 		    d->uuid == NULL ||
 		    d->location == NULL) {
-			upnpd_controller_free_device(d);
+			upnpavd_controller_free_device(d);
 			continue;
 		}
 		if (r == NULL) {
@@ -157,26 +157,26 @@ upnpd_device_t * upnpavd_controller_get_devices (upnpd_controller_t *controller)
 	return r;
 }
 
-int upnpavd_controller_free_devices (upnpd_device_t *device)
+int upnpavd_controller_free_devices (upnpavd_device_t *device)
 {
-	upnpd_device_t *t;
+	upnpavd_device_t *t;
 	while (device) {
 		t = device;
 		device = device->next;
-		upnpd_controller_free_device(t);
+		upnpavd_controller_free_device(t);
 	}
 	return 0;
 }
 
-upnpd_item_t * upnpavd_controller_browse_device (upnpd_controller_t *controller, const char *device, const char *item)
+upnpavd_item_t * upnpavd_controller_browse_device (upnpavd_controller_t *controller, const char *device, const char *item)
 {
 	entry_t *e;
 	entry_t *entry;
 	client_t *client;
 
-	upnpd_item_t *i;
-	upnpd_item_t *r;
-	upnpd_item_t *t;
+	upnpavd_item_t *i;
+	upnpavd_item_t *r;
+	upnpavd_item_t *t;
 
 	r = NULL;
 	client = controller->client;
@@ -184,11 +184,11 @@ upnpd_item_t * upnpavd_controller_browse_device (upnpd_controller_t *controller,
 	entry = upnpd_controller_browse_children(client, device, (item == NULL) ? "0" : item);
 
 	for (e = entry; e; e = e->next) {
-		i = (upnpd_item_t *) malloc(sizeof(upnpd_item_t));
+		i = (upnpavd_item_t *) malloc(sizeof(upnpavd_item_t));
 		if (i == NULL) {
 			continue;
 		}
-		memset(i, 0, sizeof(upnpd_item_t));
+		memset(i, 0, sizeof(upnpavd_item_t));
 		i->id = e->didl.entryid;
 		i->pid = e->didl.parentid;
 		i->title = e->didl.dc.title;
@@ -221,23 +221,23 @@ upnpd_item_t * upnpavd_controller_browse_device (upnpd_controller_t *controller,
 	return r;
 }
 
-upnpd_item_t * upnpavd_controller_metadata_device (upnpd_controller_t *controller, const char *device, const char *item)
+upnpavd_item_t * upnpavd_controller_metadata_device (upnpavd_controller_t *controller, const char *device, const char *item)
 {
 	entry_t *entry;
 	client_t *client;
 
-	upnpd_item_t *i;
+	upnpavd_item_t *i;
 
 	i = NULL;
 	client = controller->client;
 
 	entry = upnpd_controller_browse_metadata(client, device, (item == NULL) ? "0" : item);
 	if (entry != NULL) {
-		i = (upnpd_item_t *) malloc(sizeof(upnpd_item_t));
+		i = (upnpavd_item_t *) malloc(sizeof(upnpavd_item_t));
 		if (i == NULL) {
 			goto out;
 		}
-		memset(i, 0, sizeof(upnpd_item_t));
+		memset(i, 0, sizeof(upnpavd_item_t));
 		i->id = entry->didl.entryid;
 		i->pid = entry->didl.parentid;
 		i->title = entry->didl.dc.title;
@@ -264,7 +264,7 @@ out:	upnpd_entry_uninit(entry);
 	return i;
 }
 
-static int upnpd_controller_free_item (upnpd_item_t *item)
+static int upnpavd_controller_free_item (upnpavd_item_t *item)
 {
 	free(item->id);
 	free(item->pid);
@@ -275,16 +275,16 @@ static int upnpd_controller_free_item (upnpd_item_t *item)
 	return 0;
 }
 
-upnpd_item_t * upnpavd_controller_browse_local (const char *path)
+upnpavd_item_t * upnpavd_controller_browse_local (const char *path)
 {
 	char *p;
 	dir_t *dir;
 	dir_entry_t *current;
 	metadata_t *metadata;
 
-	upnpd_item_t *i;
-	upnpd_item_t *r;
-	upnpd_item_t *t;
+	upnpavd_item_t *i;
+	upnpavd_item_t *r;
+	upnpavd_item_t *t;
 
 	r = NULL;
 
@@ -312,13 +312,13 @@ upnpd_item_t * upnpavd_controller_browse_local (const char *path)
 			continue;
 		}
 
-		i = (upnpd_item_t *) malloc(sizeof(upnpd_item_t));
+		i = (upnpavd_item_t *) malloc(sizeof(upnpavd_item_t));
 		if (i == NULL) {
 			free(p);
 			upnpd_metadata_uninit(metadata);
 			continue;
 		}
-		memset(i, 0, sizeof(upnpd_item_t));
+		memset(i, 0, sizeof(upnpavd_item_t));
 
 		i->id = p;
 		i->pid = strdup(path);
@@ -326,7 +326,7 @@ upnpd_item_t * upnpavd_controller_browse_local (const char *path)
 		i->size = metadata->size;
 		i->duration = (metadata->duration) ? strdup(metadata->duration) : NULL;
 		if (asprintf(&p, "file://%s", p) < 0) {
-			upnpd_controller_free_item(i);
+			upnpavd_controller_free_item(i);
 			upnpd_metadata_uninit(metadata);
 			continue;
 		}
@@ -341,7 +341,7 @@ upnpd_item_t * upnpavd_controller_browse_local (const char *path)
 		} else if (metadata->type == METADATA_TYPE_IMAGE) {
 			i->class = strdup("object.item.imageItem.photo");
 		} else {
-			upnpd_controller_free_item(i);
+			upnpavd_controller_free_item(i);
 			upnpd_metadata_uninit(metadata);
 			continue;
 		}
@@ -361,13 +361,13 @@ upnpd_item_t * upnpavd_controller_browse_local (const char *path)
 	return r;
 }
 
-int upnpavd_controller_free_items (upnpd_item_t *item)
+int upnpavd_controller_free_items (upnpavd_item_t *item)
 {
-	upnpd_item_t *t;
+	upnpavd_item_t *t;
 	while (item) {
 		t = item;
 		item = item->next;
-		upnpd_controller_free_item(t);
+		upnpavd_controller_free_item(t);
 	}
 	return 0;
 }

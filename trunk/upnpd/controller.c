@@ -88,8 +88,8 @@ static int add_history (const char *line)
 
 static int browse_local (const char *path)
 {
-	upnpd_item_t *item;
-	upnpd_item_t *items;
+	upnpavd_item_t *item;
+	upnpavd_item_t *items;
 	items = upnpavd_controller_browse_local(path);
 	for (item = items; item; item = item->next) {
 		printf("%s - %s (pid: %s, class: %s, size: %llu)\n", item->id, item->title, item->pid, item->class, item->size);
@@ -98,10 +98,10 @@ static int browse_local (const char *path)
 	return 0;
 }
 
-static int browse_device (upnpd_controller_t *controller, char *device, char *object)
+static int browse_device (upnpavd_controller_t *controller, char *device, char *object)
 {
-	upnpd_item_t *item;
-	upnpd_item_t *items;
+	upnpavd_item_t *item;
+	upnpavd_item_t *items;
 	items = upnpavd_controller_browse_device(controller, device, object);
 	for (item = items; item; item = item->next) {
 		printf("%s - %s (pid: %s, class: %s, size: %llu)\n", item->id, item->title, item->pid, item->class, item->size);
@@ -110,9 +110,9 @@ static int browse_device (upnpd_controller_t *controller, char *device, char *ob
 	return 0;
 }
 
-static int metadata_device (upnpd_controller_t *controller, char *device, char *object)
+static int metadata_device (upnpavd_controller_t *controller, char *device, char *object)
 {
-	upnpd_item_t *item;
+	upnpavd_item_t *item;
 	item = upnpavd_controller_metadata_device(controller, device, object);
 	if (item != NULL) {
 		printf("id      : %s\n", item->id);
@@ -126,15 +126,15 @@ static int metadata_device (upnpd_controller_t *controller, char *device, char *
 	return 0;
 }
 
-static int refresh_devices (upnpd_controller_t *controller)
+static int refresh_devices (upnpavd_controller_t *controller)
 {
 	return upnpavd_controller_scan_devices(controller, 1);
 }
 
-static int list_devices (upnpd_controller_t *controller)
+static int list_devices (upnpavd_controller_t *controller)
 {
-	upnpd_device_t *device;
-	upnpd_device_t *devices;
+	upnpavd_device_t *device;
+	upnpavd_device_t *devices;
 	devices = upnpavd_controller_get_devices(controller);
 	for (device = devices; device; device = device->next) {
 		printf("-- %s\n", device->name);
@@ -147,7 +147,7 @@ static int list_devices (upnpd_controller_t *controller)
 	return 0;
 }
 
-static int controller_rline_process (upnpd_controller_t *controller, char *command)
+static int controller_rline_process (upnpavd_controller_t *controller, char *command)
 {
 	int ret;
 	char *b;
@@ -255,7 +255,7 @@ static int controller_main (char *options)
 	char *rcommand;
 	char *interface;
 	char *suboptions;
-	upnpd_controller_t *controller;
+	upnpavd_controller_t *controller;
 
 	ret = -1;
 	err = 0;

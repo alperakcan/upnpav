@@ -25,11 +25,11 @@
  * For more info contact CoreCodec through info@corecodec.com
  */
 
-typedef struct upnpd_controller_s upnpd_controller_t;
-typedef struct upnpd_device_s upnpd_device_t;
-typedef struct upnpd_item_s upnpd_item_t;
+typedef struct upnpavd_controller_s upnpavd_controller_t;
+typedef struct upnpavd_device_s upnpavd_device_t;
+typedef struct upnpavd_item_s upnpavd_item_t;
 
-struct upnpd_device_s {
+struct upnpavd_device_s {
 	/** device name */
 	char *name;
 	/** device type */
@@ -41,10 +41,10 @@ struct upnpd_device_s {
 	/** device expire time */
 	int expiretime;
 	/** next device */
-	upnpd_device_t *next;
+	upnpavd_device_t *next;
 };
 
-struct upnpd_item_s {
+struct upnpavd_item_s {
 	/** item id */
 	char *id;
 	/** item parent id */
@@ -60,23 +60,23 @@ struct upnpd_item_s {
 	/** item duration */
 	char *duration;
 	/** next item */
-	upnpd_item_t *next;
+	upnpavd_item_t *next;
 };
 
-upnpd_controller_t * upnpavd_controller_init (const char *interface);
+upnpavd_controller_t * upnpavd_controller_init (const char *interface);
 
-int upnpavd_controller_uninit (upnpd_controller_t *controller);
+int upnpavd_controller_uninit (upnpavd_controller_t *controller);
 
-int upnpavd_controller_scan_devices (upnpd_controller_t *controller, int remove);
+int upnpavd_controller_scan_devices (upnpavd_controller_t *controller, int remove);
 
-upnpd_device_t * upnpavd_controller_get_devices (upnpd_controller_t *controller);
+upnpavd_device_t * upnpavd_controller_get_devices (upnpavd_controller_t *controller);
 
-int upnpavd_controller_free_devices (upnpd_device_t *device);
+int upnpavd_controller_free_devices (upnpavd_device_t *device);
 
-upnpd_item_t * upnpavd_controller_browse_device (upnpd_controller_t *controller, const char *device, const char *item);
+upnpavd_item_t * upnpavd_controller_browse_device (upnpavd_controller_t *controller, const char *device, const char *item);
 
-upnpd_item_t * upnpavd_controller_metadata_device (upnpd_controller_t *controller, const char *device, const char *item);
+upnpavd_item_t * upnpavd_controller_metadata_device (upnpavd_controller_t *controller, const char *device, const char *item);
 
-upnpd_item_t * upnpavd_controller_browse_local (const char *path);
+upnpavd_item_t * upnpavd_controller_browse_local (const char *path);
 
-int upnpavd_controller_free_items (upnpd_item_t *item);
+int upnpavd_controller_free_items (upnpavd_item_t *item);

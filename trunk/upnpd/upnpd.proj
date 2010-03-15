@@ -4,6 +4,7 @@ CON upnpd
 {
   USE(ENABLE_CONTROLLER) upnpd_controller
   USE(ENABLE_MEDIASERVER) upnpd_mediaserver
+  USE(ENABLE_MEDIARENDERER) upnpd_mediarenderer
   
   EXPINCLUDE .
   
@@ -12,6 +13,7 @@ CON upnpd
   
   SOURCE(ENABLE_CONTROLLER) controller.c
   SOURCE(ENABLE_MEDIASERVER) mediaserver.c
+  SOURCE(ENABLE_MEDIARENDERER) mediarenderer.c
   
   LIBS(HAVE_LIBREADLINE) readline
   LIBS(HAVE_LIBREADLINE) termcap

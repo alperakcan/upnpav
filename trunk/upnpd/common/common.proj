@@ -20,8 +20,9 @@ LIB upnpd_common
   SOURCE inttool.c
   SOURCE xml.c
   SOURCE uri.c
-  SOURCE(ENABLE_MEDIASERVER) mediaserver.c
   SOURCE(ENABLE_CONTROLLER) controller.c
+  SOURCE(ENABLE_MEDIASERVER) mediaserver.c
+  SOURCE(ENABLE_MEDIARENDERER) mediarenderer.c
   
   HEADER common.h
 }

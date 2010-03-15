@@ -434,6 +434,20 @@ enable_mediaserver=yes
 AC_DEFINE(ENABLE_MEDIASERVER, 1, [Define to 1 if you want 'mediaserver' support.])
 )
 
+AC_ARG_ENABLE([mediarenderer],
+[  --disable-mediarenderer   disable mediarenderer application [[default=yes]]],
+if test "$enableval" = "no"
+then
+	enable_mediarenderer=no
+else
+	enable_mediarenderer=yes
+	AC_DEFINE(ENABLE_MEDIARENDERER, 1, [Define to 1 if you want 'mediarenderer' support.])
+fi
+,
+enable_mediarenderer=yes
+AC_DEFINE(ENABLE_MEDIARENDERER, 1, [Define to 1 if you want 'mediarenderer' support.])
+)
+
 AC_ARG_ENABLE([transcode],
 [  --enable-transcode   enable transcode support [[default=no]]],
 if test "$enableval" = "no"
@@ -482,6 +496,7 @@ AM_CONDITIONAL(DARWIN, test "$arch" = darwin)
 
 AM_CONDITIONAL(ENABLE_CONTROLLER, test "$enable_controller" = "yes")
 AM_CONDITIONAL(ENABLE_MEDIASERVER, test "$enable_mediaserver" = "yes")
+AM_CONDITIONAL(ENABLE_MEDIARENDERER, test "$enable_mediarenderer" = "yes")
 AM_CONDITIONAL(ENABLE_TRANSCODE, test "$enable_transcode" = "yes")
 AM_CONDITIONAL(ENABLE_UPNPFS, test "$enable_upnpfs" = "yes")
 
