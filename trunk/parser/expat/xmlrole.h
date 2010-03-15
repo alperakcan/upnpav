@@ -8,7 +8,7 @@
 #ifdef __VMS
 /*      0        1         2         3      0        1         2         3
         1234567890123456789012345678901     1234567890123456789012345678901 */
-#define XmlPrologStateInitExternalEntity    XmlPrologStateInitExternalEnt
+#define upnpd_XmlPrologStateInitExternalEntity    upnpd_XmlPrologStateInitExternalEnt
 #endif
 
 #include "xmltok.h"
@@ -99,9 +99,9 @@ typedef struct prolog_state {
 #endif /* XML_DTD */
 } PROLOG_STATE;
 
-void XmlPrologStateInit(PROLOG_STATE *);
+void upnpd_XmlPrologStateInit(PROLOG_STATE *);
 #ifdef XML_DTD
-void XmlPrologStateInitExternalEntity(PROLOG_STATE *);
+void upnpd_XmlPrologStateInitExternalEntity(PROLOG_STATE *);
 #endif /* XML_DTD */
 
 #define XmlTokenRole(state, tok, ptr, end, enc) \

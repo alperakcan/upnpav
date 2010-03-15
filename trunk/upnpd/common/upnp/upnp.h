@@ -114,23 +114,23 @@ typedef struct upnp_url_s {
 	char *path;
 } upnp_url_t;
 
-int upnp_url_uninit (upnp_url_t *url);
-int upnp_url_parse (const char *uri, upnp_url_t *url);
+int upnpd_upnp_url_uninit (upnp_url_t *url);
+int upnpd_upnp_url_parse (const char *uri, upnp_url_t *url);
 
-char * upnp_download (upnp_t *upnp, const char *location);
-char * upnp_makeaction (upnp_t *upnp, const char *actionname, const char *controlurl, const char *servicetype, const int param_count, char **param_name, char **param_val);
-int upnp_search (upnp_t *upnp, int timeout, const char *uuid);
-int upnp_subscribe (upnp_t *upnp, const char *serviceurl, int *timeout, char **sid);
-int upnp_resolveurl (const char *baseurl, const char *relativeurl, char *absoluteurl);
-int upnp_register_client (upnp_t *upnp, int (*callback) (void *cookie, upnp_event_t *), void *cookie);
+char * upnpd_upnp_download (upnp_t *upnp, const char *location);
+char * upnpd_upnp_makeaction (upnp_t *upnp, const char *actionname, const char *controlurl, const char *servicetype, const int param_count, char **param_name, char **param_val);
+int upnpd_upnp_search (upnp_t *upnp, int timeout, const char *uuid);
+int upnpd_upnp_subscribe (upnp_t *upnp, const char *serviceurl, int *timeout, char **sid);
+int upnpd_upnp_resolveurl (const char *baseurl, const char *relativeurl, char *absoluteurl);
+int upnpd_upnp_register_client (upnp_t *upnp, int (*callback) (void *cookie, upnp_event_t *), void *cookie);
 
-int upnp_advertise (upnp_t *upnp);
-int upnp_register_device (upnp_t *upnp, const char *description, int (*callback) (void *cookie, upnp_event_t *), void *cookie);
-char * upnp_getaddress (upnp_t *upnp);
-unsigned short upnp_getport (upnp_t *upnp);
-upnp_t * upnp_init (const char *host, const char *mask, const unsigned short port, gena_callback_vfs_t *vfscallbacks, void *vfscookie);
-int upnp_uninit (upnp_t *upnp);
-int upnp_accept_subscription (upnp_t *upnp, const char *udn, const char *serviceid, const char **variable_names, const char **variable_values, const unsigned int variables_count, const char *sid);
-int upnp_addtoactionresponse (upnp_event_action_t *response, const char *service, const char *variable, const char *value);
+int upnpd_upnp_advertise (upnp_t *upnp);
+int upnpd_upnp_register_device (upnp_t *upnp, const char *description, int (*callback) (void *cookie, upnp_event_t *), void *cookie);
+char * upnpd_upnp_getaddress (upnp_t *upnp);
+unsigned short upnpd_upnp_getport (upnp_t *upnp);
+upnp_t * upnpd_upnp_init (const char *host, const char *mask, const unsigned short port, gena_callback_vfs_t *vfscallbacks, void *vfscookie);
+int upnpd_upnp_uninit (upnp_t *upnp);
+int upnpd_upnp_accept_subscription (upnp_t *upnp, const char *udn, const char *serviceid, const char **variable_names, const char **variable_values, const unsigned int variables_count, const char *sid);
+int upnpd_upnp_addtoactionresponse (upnp_event_action_t *response, const char *service, const char *variable, const char *value);
 
 #endif /* UPNP_H_ */

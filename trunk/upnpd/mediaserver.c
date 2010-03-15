@@ -105,7 +105,7 @@ static int mediaserver_rline_process (device_t *device, char *command)
 		       "refresh - refresh entries\n"
 		       "quit    - quit mediaserver\n");
 	} else if (strcmp(argv[0], "refresh") == 0) {
-		return mediaserver_refresh(device);
+		return upnpd_mediaserver_refresh(device);
 	} else if (strcmp(argv[0], "quit") == 0) {
 		ret = -1;
 	}
@@ -146,9 +146,9 @@ int mediaserver_main (char *options)
 
 	ret = -1;
 
-	mediaserver = mediaserver_init(options);
+	mediaserver = upnpd_mediaserver_init(options);
 	if (mediaserver == NULL) {
-		debugf("mediaserver_init() failed");
+		debugf("upnpd_mediaserver_init() failed");
 		goto out;
 	}
 
@@ -168,16 +168,16 @@ int mediaserver_main (char *options)
 			}
 			free(rline);
 		} else {
-			time_sleep(2);
+			upnpd_time_sleep(2);
 		}
 #else
-		time_sleep(2);
+		upnpd_time_sleep(2);
 #endif
 	};
 
-	rc = mediaserver_uninit(mediaserver);
+	rc = upnpd_mediaserver_uninit(mediaserver);
 	if (rc != 0) {
-		debugf("mediaserver_uninit(mediaserver) failed");
+		debugf("upnpd_mediaserver_uninit(mediaserver) failed");
 		goto out;
 	}
 	ret = 0;

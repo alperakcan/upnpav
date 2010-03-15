@@ -54,15 +54,15 @@ static int device_vfsgetinfo (void *cookie, char *path, gena_fileinfo_t *info)
 	device_service_t *service;
 	debugf("device vfs get info (%s)", path);
 	device = (device_t *) cookie;
-	thread_mutex_lock(device->mutex);
+	upnpd_thread_mutex_lock(device->mutex);
 	/* is fake file */
 	for (s = 0; (service = device->services[s]) != NULL; s++) {
 		if (strcmp(path, service->scpdurl) == 0) {
 			info->size = strlen(service->description);
-			info->mtime = (time_gettimeofday() / 1000);
+			info->mtime = (upnpd_time_gettimeofday() / 1000);
 			info->mimetype = strdup("text/xml");
 			debugf("found service scpd url (%d)", info->size);
-			thread_mutex_unlock(device->mutex);
+			upnpd_thread_mutex_unlock(device->mutex);
 			return 0;
 		}
 	}
@@ -70,10 +70,10 @@ static int device_vfsgetinfo (void *cookie, char *path, gena_fileinfo_t *info)
 	for (c = 0; (icon = &device->icons[c])->url != NULL; c++) {
 		if (strcmp(path, icon->url) == 0) {
 			info->size = icon->size;
-			info->mtime = (time_gettimeofday() / 1000);
+			info->mtime = (upnpd_time_gettimeofday() / 1000);
 			info->mimetype = strdup(icon->mimetype);
 			debugf("found icon url (%d)", info->size);
-			thread_mutex_unlock(device->mutex);
+			upnpd_thread_mutex_unlock(device->mutex);
 			return 0;
 		}
 	}
@@ -82,12 +82,12 @@ static int device_vfsgetinfo (void *cookie, char *path, gena_fileinfo_t *info)
 		if (service->vfscallbacks != NULL && service->vfscallbacks->info != NULL) {
 			if (service->vfscallbacks->info(service, path, info) == 0) {
 				debugf("found service file");
-				thread_mutex_unlock(device->mutex);
+				upnpd_thread_mutex_unlock(device->mutex);
 				return 0;
 			}
 		}
 	}
-	thread_mutex_unlock(device->mutex);
+	upnpd_thread_mutex_unlock(device->mutex);
 	return -1;
 }
 
@@ -101,20 +101,20 @@ static void * device_vfsopen (void *cookie, char *path, gena_filemode_t mode)
 	device_service_t *service;
 	debugf("device vfs open (%s)", path);
 	device = (device_t *) cookie;
-	thread_mutex_lock(device->mutex);
+	upnpd_thread_mutex_lock(device->mutex);
 	/* is fake file */
 	for (s = 0; (service = device->services[s]) != NULL; s++) {
 		if (strcmp(path, service->scpdurl) == 0) {
 			file = (upnp_file_t *) malloc(sizeof(upnp_file_t));
 			if (file == NULL) {
-				thread_mutex_unlock(device->mutex);
+				upnpd_thread_mutex_unlock(device->mutex);
 				return NULL;
 			}
 			memset(file, 0, sizeof(upnp_file_t));
 			file->virtual = 1;
 			file->size = strlen(service->description);
 			file->buf = strdup(service->description);
-			thread_mutex_unlock(device->mutex);
+			upnpd_thread_mutex_unlock(device->mutex);
 			return file;
 		}
 	}
@@ -123,7 +123,7 @@ static void * device_vfsopen (void *cookie, char *path, gena_filemode_t mode)
 		if (strcmp(path, icon->url) == 0) {
 			file = (upnp_file_t *) malloc(sizeof(upnp_file_t));
 			if (file == NULL) {
-				thread_mutex_unlock(device->mutex);
+				upnpd_thread_mutex_unlock(device->mutex);
 				return NULL;
 			}
 			memset(file, 0, sizeof(upnp_file_t));
@@ -132,11 +132,11 @@ static void * device_vfsopen (void *cookie, char *path, gena_filemode_t mode)
 			file->buf = (char *) malloc(icon->size);
 			if (file->buf == NULL) {
 				free(file);
-				thread_mutex_unlock(device->mutex);
+				upnpd_thread_mutex_unlock(device->mutex);
 				return NULL;
 			}
 			memcpy(file->buf, icon->buffer, icon->size);
-			thread_mutex_unlock(device->mutex);
+			upnpd_thread_mutex_unlock(device->mutex);
 			return file;
 		}
 	}
@@ -146,12 +146,12 @@ static void * device_vfsopen (void *cookie, char *path, gena_filemode_t mode)
 			file = service->vfscallbacks->open(service, path, mode);
 			if (file != NULL) {
 				debugf("found service file");
-				thread_mutex_unlock(device->mutex);
+				upnpd_thread_mutex_unlock(device->mutex);
 				return file;
 			}
 		}
 	}
-	thread_mutex_unlock(device->mutex);
+	upnpd_thread_mutex_unlock(device->mutex);
 	return NULL;
 }
 
@@ -279,18 +279,18 @@ static void device_event_action_request (device_t *device, upnp_event_action_t *
 		event->errcode = UPNP_ERROR_INVALID_ACTION;
 		return;
 	}
-	service = device_service_find(device, event->serviceid);
+	service = upnpd_device_service_find(device, event->serviceid);
 	if (service == NULL) {
 		debugf("discarding event - serviceid '%s' not recognized", event->serviceid);
 		event->errcode = UPNP_ERROR_INVALID_ACTION;
 		return;
 	}
-	thread_mutex_lock(service->mutex);
-	action = service_action_find(service, event->action);
+	upnpd_thread_mutex_lock(service->mutex);
+	action = upnpd_service_action_find(service, event->action);
 	if (action == NULL) {
 		debugf("unknown action '%s' for service '%s'", event->action, event->serviceid);
 		event->errcode = UPNP_ERROR_INVALID_ACTION;
-		thread_mutex_unlock(service->mutex);
+		upnpd_thread_mutex_unlock(service->mutex);
 		return;
 	}
 	if (action->function != NULL) {
@@ -303,7 +303,7 @@ static void device_event_action_request (device_t *device, upnp_event_action_t *
 	} else {
 		debugf("got valid action '%s', but no handler defined", action->name);
 	}
-	thread_mutex_unlock(service->mutex);
+	upnpd_thread_mutex_unlock(service->mutex);
 }
 
 static void device_event_subscription_request (device_t *device, upnp_event_subscribe_t *event)
@@ -328,12 +328,12 @@ static void device_event_subscription_request (device_t *device, upnp_event_subs
 		debugf("discarding event - udn '%s' not recognized", event->udn);
 		return;
 	}
-	service = device_service_find(device, event->serviceid);
+	service = upnpd_device_service_find(device, event->serviceid);
 	if (service == NULL) {
 		debugf("discarding event - serviceid '%s' not recognized", event->serviceid);
 		return;
 	}
-	thread_mutex_lock(service->mutex);
+	upnpd_thread_mutex_lock(service->mutex);
 	variable_count = 0;
 	for (i = 0; (variable = &service->variables[i])->name != NULL; i++) {
 		if (variable->sendevent == VARIABLE_SENDEVENT_YES) {
@@ -344,13 +344,13 @@ static void device_event_subscription_request (device_t *device, upnp_event_subs
 	variable_names = (char **) malloc(sizeof(char *) * (variable_count + 1));
 	if (variable_names == NULL) {
 		debugf("malloc(sizeof(char *) * (variable_count + 1)) failed");
-		thread_mutex_unlock(service->mutex);
+		upnpd_thread_mutex_unlock(service->mutex);
 		return;
 	}
 	variable_values = (char **) malloc(sizeof(char *) * (variable_count + 1));
 	if (variable_values == NULL) {
 		debugf("malloc(sizeof(char *) * (variable_count + 1)) failed");
-		thread_mutex_unlock(service->mutex);
+		upnpd_thread_mutex_unlock(service->mutex);
 		return;
 	}
 	memset(variable_names, 0, sizeof(char *) * (variable_count + 1));
@@ -359,25 +359,25 @@ static void device_event_subscription_request (device_t *device, upnp_event_subs
 	for (i = 0; (variable = &service->variables[i])->name != NULL; i++) {
 		if (variable->sendevent == VARIABLE_SENDEVENT_YES) {
 			variable_names[variable_count] = variable->name;
-			variable_values[variable_count] = xml_escape(variable->value, 0);
+			variable_values[variable_count] = upnpd_xml_escape(variable->value, 0);
 			debugf("evented '%s' : '%s'", variable_names[variable_count], variable_values[variable_count]);
 			variable_count++;
 		}
 	}
-	upnp_accept_subscription(device->upnp, event->udn, event->serviceid, (const char **) variable_names, (const char **) variable_values, variable_count, event->sid);
+	upnpd_upnp_accept_subscription(device->upnp, event->udn, event->serviceid, (const char **) variable_names, (const char **) variable_values, variable_count, event->sid);
 	for (i = 0; i < variable_count; i++) {
 		free(variable_values[i]);
 	}
 	free(variable_names);
 	free(variable_values);
-	thread_mutex_unlock(service->mutex);
+	upnpd_thread_mutex_unlock(service->mutex);
 }
 
 static int device_event_handler (void *cookie, upnp_event_t *event)
 {
 	device_t *device;
 	device = (device_t *) cookie;
-	thread_mutex_lock(device->mutex);
+	upnpd_thread_mutex_lock(device->mutex);
 	switch (event->type) {
 		case UPNP_EVENT_TYPE_SUBSCRIBE_REQUEST:
 			device_event_subscription_request(device, &event->event.subscribe);
@@ -388,34 +388,34 @@ static int device_event_handler (void *cookie, upnp_event_t *event)
 		default:
 			break;
 	}
-	thread_mutex_unlock(device->mutex);
+	upnpd_thread_mutex_unlock(device->mutex);
 	return 0;
 }
 
-int device_init (device_t *device)
+int upnpd_device_init (device_t *device)
 {
 	int ret;
 	char *tmp;
 	uuid_gen_t uuid;
 	ret = -1;
 	debugf("initializing device '%s'", device->name);
-	device->mutex = thread_mutex_init("device->mutex", 0);
+	device->mutex = upnpd_thread_mutex_init("device->mutex", 0);
 	if (device->mutex == NULL) {
-		debugf("thread_mutex_init(device->mutex, 0) failed");
+		debugf("upnpd_thread_mutex_init(device->mutex, 0) failed");
 		goto out;
 	}
 	debugf("initializing upnp stack");
-	device->upnp = upnp_init(device->ipaddr, device->ifmask, 0, &device_vfscallbacks, device);
+	device->upnp = upnpd_upnp_init(device->ipaddr, device->ifmask, 0, &device_vfscallbacks, device);
 	if (device->upnp == NULL) {
-		debugf("upnp_init('%s') failed", device->ipaddr);
-		thread_mutex_destroy(device->mutex);
+		debugf("upnpd_upnp_init('%s') failed", device->ipaddr);
+		upnpd_thread_mutex_destroy(device->mutex);
 		device->mutex = NULL;
 		goto out;
 	}
-	device->port = upnp_getport(device->upnp);
-	device->ipaddress = upnp_getaddress(device->upnp);
+	device->port = upnpd_upnp_getport(device->upnp);
+	device->ipaddress = upnpd_upnp_getaddress(device->upnp);
 	debugf("enabling internal web server");
-	upnp_uuid_generate(&uuid);
+	upnpd_upnp_uuid_generate(&uuid);
 	if (device->uuid == NULL) {
 		device->uuid = (char *) malloc(sizeof(char) * (strlen("uuid:") + 44 + 1));
 		if (device->uuid == NULL) {
@@ -432,17 +432,17 @@ int device_init (device_t *device)
 	}
 	device->expiretime = 100;
 	debugf("generating device '%s' description", device->name);
-	device->description = description_generate_from_device(device);
+	device->description = upnpd_description_generate_from_device(device);
 	if (device->description == NULL) {
-		debugf("description_generate_from_device(device) failed");
+		debugf("upnpd_description_generate_from_device(device) failed");
 		goto out;
 	}
-	if (upnp_register_device(device->upnp, device->description, device_event_handler, device) != 0) {
-		debugf("upnp_register_device() failed");
+	if (upnpd_upnp_register_device(device->upnp, device->description, device_event_handler, device) != 0) {
+		debugf("upnpd_upnp_register_device() failed");
 		goto out;
 	}
-	if (upnp_advertise(device->upnp) != 0) {
-		debugf("upnp_advertise() failed");
+	if (upnpd_upnp_advertise(device->upnp) != 0) {
+		debugf("upnpd_upnp_advertise() failed");
 		goto out;
 	}
 	debugf("listening for control point connections");
@@ -463,7 +463,7 @@ int device_init (device_t *device)
 out:	return ret;
 }
 
-int device_uninit (device_t *device)
+int upnpd_device_uninit (device_t *device)
 {
 	int i;
 	int ret;
@@ -471,19 +471,19 @@ int device_uninit (device_t *device)
 	ret = -1;
 	debugf("uninitializing device '%s'", device->name);
 	if (device->mutex) {
-		thread_mutex_lock(device->mutex);
+		upnpd_thread_mutex_lock(device->mutex);
 	}
 	debugf("uninitializing services");
 	for (i = 0; device->services && ((service = device->services[i]) != NULL); i++) {
 		debugf("uninitializing service '%s'", service->name);
 		device->services[i] = NULL;
-		service_uninit(service);
+		upnpd_service_uninit(service);
 	}
 	debugf("unregistering device '%s'", device->name);
-	upnp_uninit(device->upnp);
+	upnpd_upnp_uninit(device->upnp);
 	if (device->mutex) {
-		thread_mutex_unlock(device->mutex);
-		thread_mutex_destroy(device->mutex);
+		upnpd_thread_mutex_unlock(device->mutex);
+		upnpd_thread_mutex_destroy(device->mutex);
 	}
 	free(device->services);
 	free(device->description);
@@ -492,7 +492,7 @@ int device_uninit (device_t *device)
 	return 0;
 }
 
-int device_service_add (device_t *device, device_service_t *service)
+int upnpd_device_service_add (device_t *device, device_service_t *service)
 {
 	int s;
 	int ret;
@@ -519,7 +519,7 @@ int device_service_add (device_t *device, device_service_t *service)
 out:	return ret;
 }
 
-device_service_t * device_service_find (device_t *device, char *serviceid)
+device_service_t * upnpd_device_service_find (device_t *device, char *serviceid)
 {
 	int s;
 	device_service_t *service;

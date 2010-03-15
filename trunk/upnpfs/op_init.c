@@ -32,28 +32,28 @@ void * op_init (struct fuse_conn_info *conn)
 	char *ipaddr;
 	char *netmask;
 	debugfs("enter");
-	ipaddr = interface_getaddr(opts.interface);
+	ipaddr = upnpd_interface_getaddr(opts.interface);
 	if (ipaddr == NULL) {
-		debugfs("interface_getaddr('%s') failed", opts.interface);
+		debugfs("upnpd_interface_getaddr('%s') failed", opts.interface);
 		exit(-1);
 	}
-	netmask = interface_getmask(opts.interface);
+	netmask = upnpd_interface_getmask(opts.interface);
 	if (netmask == NULL) {
-		debugfs("interface_getmask('%s') failed", opts.interface);
+		debugfs("upnpd_interface_getmask('%s') failed", opts.interface);
 		exit(-2);
 	}
 	if (asprintf(&priv.options, "daemonize=0,interface=%s,netmask=%s", ipaddr, netmask) < 0) {
-		debugfs("interface_getaddr('%s') failed", opts.interface);
+		debugfs("upnpd_interface_getaddr('%s') failed", opts.interface);
 		exit(-3);
 	}
-	priv.controller = controller_init(priv.options);
+	priv.controller = upnpd_controller_init(priv.options);
 	if (priv.controller == NULL) {
-		debugfs("controller_init('%s') failed", priv.options);
+		debugfs("upnpd_controller_init('%s') failed", priv.options);
 		exit(-4);
 	}
 	list_init(&priv.cache);
 	priv.cache_size = opts.cache_size;
-	priv.cache_mutex = thread_mutex_init("cache_mutex", 0);
+	priv.cache_mutex = upnpd_thread_mutex_init("cache_mutex", 0);
 	free(ipaddr);
 	debugfs("leave");
 	return NULL;

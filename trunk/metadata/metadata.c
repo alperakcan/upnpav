@@ -159,20 +159,20 @@ static metadata_info_t metadata_info[] = {
 	{ METADATA_TYPE_UNKNOWN },
 };
 
-metadata_t * metadata_init (const char *path)
+metadata_t * upnpd_metadata_init (const char *path)
 {
 	int i;
 	char *p;
 	time_t mtime;
 	metadata_t *m;
-	file_stat_t stat;
+	upnpd_file_stat_t stat;
 	struct tm modtime;
 	metadata_info_t *info;
 
-	if (file_access(path, FILE_MODE_READ) != 0) {
+	if (upnpd_file_access(path, FILE_MODE_READ) != 0) {
 		return NULL;
 	}
-	if (file_stat(path, &stat) != 0) {
+	if (upnpd_file_stat(path, &stat) != 0) {
 		return NULL;
 	}
 
@@ -197,7 +197,7 @@ metadata_t * metadata_init (const char *path)
 			strftime(m->date, 30, "%F %T", &modtime);
 		}
 		for (i = 0; (info = &metadata_info[i])->type != METADATA_TYPE_UNKNOWN; i++) {
-			if (file_match(info->extension, m->basename, FILE_MATCH_CASEFOLD) == 0) {
+			if (upnpd_file_match(info->extension, m->basename, FILE_MATCH_CASEFOLD) == 0) {
 				m->type = info->type;
 				m->mimetype = strdup(info->mimetype);
 				break;
@@ -233,11 +233,11 @@ metadata_t * metadata_init (const char *path)
 		return m;
 	}
 error:
-	metadata_uninit(m);
+	upnpd_metadata_uninit(m);
 	return NULL;
 }
 
-int metadata_uninit (metadata_t *metadata)
+int upnpd_metadata_uninit (metadata_t *metadata)
 {
 	if (metadata == NULL) {
 		return 0;

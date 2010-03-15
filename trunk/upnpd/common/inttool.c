@@ -29,13 +29,13 @@
 #include <string.h>
 #include <inttypes.h>
 
-char * uint32tostr (char *out, uint32_t val)
+char * upnpd_uint32tostr (char *out, uint32_t val)
 {
 	sprintf(out, "%u", val);
 	return out;
 }
 
-uint32_t strtouint32 (const char *in)
+uint32_t upnpd_strtouint32 (const char *in)
 {
 	uint32_t r;
 	if (in != NULL) {
@@ -50,7 +50,7 @@ uint32_t strtouint32 (const char *in)
 	return 0;
 }
 
-int32_t strtoint32 (const char *in)
+int32_t upnpd_strtoint32 (const char *in)
 {
 	int32_t r;
 	if (in != NULL) {

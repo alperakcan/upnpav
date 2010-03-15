@@ -44,7 +44,7 @@
 #define isalpha(c) (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z'))
 #define isalnum(c) (isdigit(c) || isalpha(c))
 
-static void uri_escape_real (const char *str, char *target, uint32_t *length)
+static void upnpd_uri_escape_real (const char *str, char *target, uint32_t *length)
 {
 	if (target != NULL) {
 		uint32_t len = 0;
@@ -76,18 +76,18 @@ static void uri_escape_real (const char *str, char *target, uint32_t *length)
 	}
 }
 
-char * uri_escape (const char *str)
+char * upnpd_uri_escape (const char *str)
 {
 	uint32_t len;
 	char *out;
 
 	len = 0;
-	uri_escape_real(str, NULL, &len);
+	upnpd_uri_escape_real(str, NULL, &len);
 	out = malloc(len + 1);
 	if (out == NULL) {
 		debugf("malloc(len + 1) failed");
 		return NULL;
 	}
-	uri_escape_real(str, out, NULL);
+	upnpd_uri_escape_real(str, out, NULL);
 	return out;
 }

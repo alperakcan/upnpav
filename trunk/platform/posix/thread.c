@@ -68,7 +68,7 @@ struct thread_mutex_s {
         pthread_mutex_t mutex;
 };
 
-thread_cond_t * thread_cond_init (const char *name)
+thread_cond_t * upnpd_thread_cond_init (const char *name)
 {
         thread_cond_t *c;
         c = (thread_cond_t *) malloc(sizeof(thread_cond_t));
@@ -84,7 +84,7 @@ thread_cond_t * thread_cond_init (const char *name)
         return c;
 }
 
-int thread_cond_destroy (thread_cond_t *cond)
+int upnpd_thread_cond_destroy (thread_cond_t *cond)
 {
         pthread_cond_destroy(&cond->cond);
         free(cond->name);
@@ -92,29 +92,29 @@ int thread_cond_destroy (thread_cond_t *cond)
         return 0;
 }
 
-int thread_cond_signal (thread_cond_t *cond)
+int upnpd_thread_cond_signal (thread_cond_t *cond)
 {
         return pthread_cond_signal(&cond->cond);
 }
 
-int thread_cond_broadcast (thread_cond_t *cond)
+int upnpd_thread_cond_broadcast (thread_cond_t *cond)
 {
 	return pthread_cond_broadcast(&cond->cond);
 }
 
-int thread_cond_wait (thread_cond_t *cond, thread_mutex_t *mutex)
+int upnpd_thread_cond_wait (thread_cond_t *cond, thread_mutex_t *mutex)
 {
         return pthread_cond_wait(&cond->cond, &mutex->mutex);
 }
 
-int thread_cond_timedwait (thread_cond_t *cond, thread_mutex_t *mut, int msec)
+int upnpd_thread_cond_timedwait (thread_cond_t *cond, thread_mutex_t *mut, int msec)
 {
         int ret;
         struct timeval tval;
         struct timespec tspec;
 
         if (msec < 0) {
-                return thread_cond_wait(cond, mut);
+                return upnpd_thread_cond_wait(cond, mut);
         }
 
         gettimeofday(&tval, NULL);
@@ -144,7 +144,7 @@ again:  ret = pthread_cond_timedwait(&cond->cond, &mut->mutex, &tspec);
         return ret;
 }
 
-thread_mutex_t * thread_mutex_init (const char *name, int recursive)
+thread_mutex_t * upnpd_thread_mutex_init (const char *name, int recursive)
 {
         thread_mutex_t *m;
         m = (thread_mutex_t *) malloc(sizeof(thread_mutex_t));
@@ -174,7 +174,7 @@ thread_mutex_t * thread_mutex_init (const char *name, int recursive)
         return m;
 }
 
-int thread_mutex_destroy (thread_mutex_t *mutex)
+int upnpd_thread_mutex_destroy (thread_mutex_t *mutex)
 {
         pthread_mutex_destroy(&mutex->mutex);
         free(mutex->name);
@@ -182,14 +182,14 @@ int thread_mutex_destroy (thread_mutex_t *mutex)
         return 0;
 }
 
-int thread_mutex_lock (thread_mutex_t *mutex)
+int upnpd_thread_mutex_lock (thread_mutex_t *mutex)
 {
 	int r;
 	r = pthread_mutex_lock(&mutex->mutex);
 	return r;
 }
 
-int thread_mutex_unlock (thread_mutex_t *mutex)
+int upnpd_thread_mutex_unlock (thread_mutex_t *mutex)
 {
 	int r;
 	r = pthread_mutex_unlock(&mutex->mutex);
@@ -202,17 +202,17 @@ static void * thread_run (void *farg)
         void *p = arg->arg;
         void * (*f) (void *) = arg->f;
 
-        thread_mutex_lock(arg->mut);
+        upnpd_thread_mutex_lock(arg->mut);
         arg->flag = 1;
-        thread_cond_signal(arg->cond);
-        thread_mutex_unlock(arg->mut);
+        upnpd_thread_cond_signal(arg->cond);
+        upnpd_thread_mutex_unlock(arg->mut);
 
         f(p);
 
         return NULL;
 }
 
-thread_t * thread_create (const char *name, void * (*function) (void *), void *farg)
+thread_t * upnpd_thread_create (const char *name, void * (*function) (void *), void *farg)
 {
         int ret;
         thread_t *tid;
@@ -226,30 +226,30 @@ thread_t * thread_create (const char *name, void * (*function) (void *), void *f
         arg->f = function;
         arg->arg = farg;
         arg->name = tid->name;
-        arg->cond = thread_cond_init("arg->cond");
-        arg->mut = thread_mutex_init("arg->mut", 0);
+        arg->cond = upnpd_thread_cond_init("arg->cond");
+        arg->mut = upnpd_thread_mutex_init("arg->mut", 0);
         arg->flag = 0;
 
-        thread_mutex_lock(arg->mut);
+        upnpd_thread_mutex_lock(arg->mut);
         ret = pthread_create(&(tid->thread), NULL, arg->r, arg);
         if (ret != 0) {
                 goto out;
         }
         while (arg->flag != 1) {
-                thread_cond_wait(arg->cond, arg->mut);
+                upnpd_thread_cond_wait(arg->cond, arg->mut);
         }
 out:
-        thread_mutex_unlock(arg->mut);
+        upnpd_thread_mutex_unlock(arg->mut);
 
-        thread_cond_destroy(arg->cond);
-        thread_mutex_destroy(arg->mut);
+        upnpd_thread_cond_destroy(arg->cond);
+        upnpd_thread_mutex_destroy(arg->mut);
         free(arg);
         arg = NULL;
 
         return tid;
 }
 
-int thread_join (thread_t *thread)
+int upnpd_thread_join (thread_t *thread)
 {
         free(thread->name);
         pthread_join(thread->thread, NULL);
@@ -257,12 +257,12 @@ int thread_join (thread_t *thread)
         return 0;
 }
 
-unsigned int thread_self (void)
+unsigned int upnpd_thread_self (void)
 {
 	return (unsigned int) pthread_self();
 }
 
-int thread_sched_yield (void)
+int upnpd_thread_sched_yield (void)
 {
         return sched_yield();
 }

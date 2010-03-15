@@ -104,9 +104,9 @@ extern "C" {
 #define XML_ATTRIBUTE_VALUE_LITERAL 0
 #define XML_ENTITY_VALUE_LITERAL 1
 
-/* The size of the buffer passed to XmlUtf8Encode must be at least this. */
+/* The size of the buffer passed to upnpd_XmlUtf8Encode must be at least this. */
 #define XML_UTF8_ENCODE_MAX 4
-/* The size of the buffer passed to XmlUtf16Encode must be at least this. */
+/* The size of the buffer passed to upnpd_XmlUtf16Encode must be at least this. */
 #define XML_UTF16_ENCODE_MAX 2
 
 typedef struct position {
@@ -263,7 +263,7 @@ typedef struct {
   const ENCODING **encPtr;
 } INIT_ENCODING;
 
-int XmlParseXmlDecl(int isGeneralTextEntity,
+int upnpd_XmlParseXmlDecl(int isGeneralTextEntity,
                     const ENCODING *enc,
                     const char *ptr,
                     const char *end,
@@ -274,23 +274,23 @@ int XmlParseXmlDecl(int isGeneralTextEntity,
                     const ENCODING **namedEncodingPtr,
                     int *standalonePtr);
 
-int XmlInitEncoding(INIT_ENCODING *, const ENCODING **, const char *name);
-const ENCODING *XmlGetUtf8InternalEncoding(void);
-const ENCODING *XmlGetUtf16InternalEncoding(void);
-int FASTCALL XmlUtf8Encode(int charNumber, char *buf);
-int FASTCALL XmlUtf16Encode(int charNumber, unsigned short *buf);
-int XmlSizeOfUnknownEncoding(void);
+int upnpd_XmlInitEncoding(INIT_ENCODING *, const ENCODING **, const char *name);
+const ENCODING *upnpd_XmlGetUtf8InternalEncoding(void);
+const ENCODING *upnpd_XmlGetUtf16InternalEncoding(void);
+int FASTCALL upnpd_XmlUtf8Encode(int charNumber, char *buf);
+int FASTCALL upnpd_XmlUtf16Encode(int charNumber, unsigned short *buf);
+int upnpd_XmlSizeOfUnknownEncoding(void);
 
 
 typedef int (XMLCALL *CONVERTER) (void *userData, const char *p);
 
 ENCODING *
-XmlInitUnknownEncoding(void *mem,
+upnpd_XmlInitUnknownEncoding(void *mem,
                        int *table,
                        CONVERTER convert,
                        void *userData);
 
-int XmlParseXmlDeclNS(int isGeneralTextEntity,
+int upnpd_XmlParseXmlDeclNS(int isGeneralTextEntity,
                       const ENCODING *enc,
                       const char *ptr,
                       const char *end,
@@ -301,11 +301,11 @@ int XmlParseXmlDeclNS(int isGeneralTextEntity,
                       const ENCODING **namedEncodingPtr,
                       int *standalonePtr);
 
-int XmlInitEncodingNS(INIT_ENCODING *, const ENCODING **, const char *name);
-const ENCODING *XmlGetUtf8InternalEncodingNS(void);
-const ENCODING *XmlGetUtf16InternalEncodingNS(void);
+int upnpd_XmlInitEncodingNS(INIT_ENCODING *, const ENCODING **, const char *name);
+const ENCODING *upnpd_XmlGetUtf8InternalEncodingNS(void);
+const ENCODING *upnpd_XmlGetUtf16InternalEncodingNS(void);
 ENCODING *
-XmlInitUnknownEncodingNS(void *mem,
+upnpd_XmlInitUnknownEncodingNS(void *mem,
                          int *table,
                          CONVERTER convert,
                          void *userData);

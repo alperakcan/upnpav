@@ -531,64 +531,64 @@ struct device_s {
 
 /* client.c */
 
-int client_init (client_t *client);
-int client_uninit (client_t *client);
-int client_refresh (client_t *client, int remove);
-char * client_action (client_t *client, const char *devicename, const char *servicetype, const char *actionname, char **param_name, char **param_val, int param_count);
+int upnpd_client_init (client_t *client);
+int upnpd_client_uninit (client_t *client);
+int upnpd_client_refresh (client_t *client, int remove);
+char * upnpd_client_action (client_t *client, const char *devicename, const char *servicetype, const char *actionname, char **param_name, char **param_val, int param_count);
 
 /* controller.c */
 
-client_t * controller_init (char *options);
-int controller_uninit (client_t *controller);
-entry_t * controller_browse_children (client_t *controller, const char *device, const char *object);
-entry_t * controller_browse_metadata (client_t *controller, const char *device, const char *object);
+client_t * upnpd_controller_init (char *options);
+int upnpd_controller_uninit (client_t *controller);
+entry_t * upnpd_controller_browse_children (client_t *controller, const char *device, const char *object);
+entry_t * upnpd_controller_browse_metadata (client_t *controller, const char *device, const char *object);
 
 /* device.c */
 
-int device_init (device_t *device);
-int device_uninit (device_t *device);
-int device_service_add (device_t *device, device_service_t *service);
-device_service_t * device_service_find (device_t *device, char *serviceid);
+int upnpd_device_init (device_t *device);
+int upnpd_device_uninit (device_t *device);
+int upnpd_device_service_add (device_t *device, device_service_t *service);
+device_service_t * upnpd_device_service_find (device_t *device, char *serviceid);
 
 /* entry.c */
 
-char * entryid_id_from_path (const char *path);
-entry_t * entry_didl_from_id (void *database, const char *id);
-entry_t * entry_didl_from_path (const char *path);
-int entry_print (entry_t *file);
-int entry_dump (entry_t *file);
+char * upnpd_entryid_id_from_path (const char *path);
+entry_t * upnpd_entry_didl_from_id (void *database, const char *id);
+entry_t * upnpd_entry_didl_from_path (const char *path);
+int upnpd_entry_print (entry_t *file);
+int upnpd_entry_dump (entry_t *file);
 int entry_normalize_parent (entry_t *entry);
 int entry_normalize_root (entry_t *entry);
-void * entry_scan (const char *path, int rescan, int transcode);
-entry_t * entry_init_from_id (void *database, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total);
-entry_t * entry_init_from_path (const char *path, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total);
-entry_t * entry_init_from_search (void *database, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total, const char *serach);
-int entry_uninit (entry_t *root);
-entry_t * entry_from_result (const char *result);
-char * entry_to_result (device_service_t *service, entry_t *entry, int metadata);
+void * upnpd_entry_scan (const char *path, int rescan, int transcode);
+entry_t * upnpd_entry_init_from_id (void *database, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total);
+entry_t * upnpd_entry_init_from_path (const char *path, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total);
+entry_t * upnpd_entry_init_from_search (void *database, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total, const char *serach);
+int upnpd_entry_uninit (entry_t *root);
+entry_t * upnpd_entry_from_result (const char *result);
+char * upnpd_entry_to_result (device_service_t *service, entry_t *entry, int metadata);
 
 /* contentdir.c */
 
-device_service_t * contentdirectory_init (const char *directory, int cached, int transcode, const char *fontfile, const char *codepage);
+device_service_t * upnpd_contentdirectory_init (const char *directory, int cached, int transcode, const char *fontfile, const char *codepage);
 
 /* connection.c */
 
-int connectionmanager_register_mimetype (device_service_t *service, const char *mime);
-uint32_t connection_instance_new (void);
-int connectionmanager_uninit (device_service_t *cotentdir);
-device_service_t * connectionmanager_init (void);
+int upnpd_connectionmanager_register_mimetype (device_service_t *service, const char *mime);
+uint32_t upnpd_connection_instance_new (void);
+int upnpd_connectionmanager_uninit (device_service_t *cotentdir);
+device_service_t * upnpd_connectionmanager_init (void);
 
 /* inttool.c */
 
-char * uint32tostr (char *out, uint32_t val);
-uint32_t strtouint32 (const char *in);
-int32_t strtoint32 (const char *in);
+char * upnpd_uint32tostr (char *out, uint32_t val);
+uint32_t upnpd_strtouint32 (const char *in);
+int32_t upnpd_strtoint32 (const char *in);
 
 /* mediaserver.c */
 
-device_t * mediaserver_init (char *options);
-int mediaserver_uninit (device_t *mediaserver);
-int mediaserver_refresh (device_t *mediaserver);
+device_t * upnpd_mediaserver_init (char *options);
+int upnpd_mediaserver_uninit (device_t *mediaserver);
+int upnpd_mediaserver_refresh (device_t *mediaserver);
 
 /* mediarender.c */
 
@@ -596,27 +596,27 @@ device_t * mediarender_init (char *options);
 int mediarender_uninit (device_t *mediarender);
 
 /* registrar */
-device_service_t * registrar_init (void);
+device_service_t * upnpd_registrar_init (void);
 
 /* service.c */
 
-int service_init (device_service_t *service);
-int service_uninit (device_service_t *service);
-service_variable_t * service_variable_find (device_service_t *service, char *name);
-service_action_t * service_action_find (device_service_t *service, char *name);
+int upnpd_service_init (device_service_t *service);
+int upnpd_service_uninit (device_service_t *service);
+service_variable_t * upnpd_service_variable_find (device_service_t *service, char *name);
+service_action_t * upnpd_service_action_find (device_service_t *service, char *name);
 
 /* upnp.c */
 
-char * description_generate_from_device (device_t *device);
-char * description_generate_from_service (device_service_t *service);
-int upnp_add_response (upnp_event_action_t *request, char *servicetype, char *key, const char *value);
+char * upnpd_description_generate_from_device (device_t *device);
+char * upnpd_description_generate_from_service (device_service_t *service);
+int upnpd_upnp_add_response (upnp_event_action_t *request, char *servicetype, char *key, const char *value);
 
 /* xml.c */
 
-char * xml_escape (const char *str, int attribute);
+char * upnpd_xml_escape (const char *str, int attribute);
 
 /* uri.c */
 
-char * uri_escape (const char *str);
+char * upnpd_uri_escape (const char *str);
 
 #endif /*COMMON_H_*/

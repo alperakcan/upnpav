@@ -210,7 +210,7 @@ error:
 	return -1;
 }
 
-char * description_generate_from_service (device_service_t *service)
+char * upnpd_description_generate_from_service (device_service_t *service)
 {
 	char *ret = NULL;
 	if (strappend(&ret, "<?xml version=\"1.0\"?>") != 0) {
@@ -226,7 +226,7 @@ error:
 	return NULL;
 }
 
-char * description_generate_from_device (device_t *device)
+char * upnpd_description_generate_from_device (device_t *device)
 {
 	char *ret = NULL;
 	if (strappend(&ret, "<?xml version=\"1.0\"?>") != 0) {
@@ -242,13 +242,13 @@ error:
 	return NULL;
 }
 
-int upnp_add_response (upnp_event_action_t *request, char *servicetype, char *key, const char *value)
+int upnpd_upnp_add_response (upnp_event_action_t *request, char *servicetype, char *key, const char *value)
 {
 	int rc;
 	debugf("adding '%s'='%s' to response", key, value);
-	rc = upnp_addtoactionresponse(request, servicetype, key, value);
+	rc = upnpd_upnp_addtoactionresponse(request, servicetype, key, value);
 	if (rc != 0) {
-		debugf("upnp_addtoactionresponse() failed");
+		debugf("upnpd_upnp_addtoactionresponse() failed");
 		request->errcode = UPNP_ERROR_ACTION_FAILED;
 		return -1;
 	}

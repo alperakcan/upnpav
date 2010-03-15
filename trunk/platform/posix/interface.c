@@ -56,7 +56,7 @@ static char * __inet_ntoa__ (struct in_addr in)
 	return buf;
 }
 
-char * interface_getaddr (const char *ifname)
+char * upnpd_interface_getaddr (const char *ifname)
 {
 	int sock;
 	struct ifreq *ifr;
@@ -79,7 +79,7 @@ char * interface_getaddr (const char *ifname)
 	return __inet_ntoa__(INADDR(ifr_addr.sa_data));
 }
 
-char * interface_getmask (const char *ifname)
+char * upnpd_interface_getmask (const char *ifname)
 {
 	int sock;
 	struct ifreq *ifr;
@@ -102,7 +102,7 @@ char * interface_getmask (const char *ifname)
 	return __inet_ntoa__(INADDR(ifr_addr.sa_data));
 }
 
-int interface_printall (void)
+int upnpd_interface_printall (void)
 {
 	int sockfd;
 	int size  = 1;

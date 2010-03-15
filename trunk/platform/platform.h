@@ -65,14 +65,14 @@ typedef struct thread_mutex_s thread_mutex_t;
  *
  * @returns NULL on error, otherwise the thread object
  */
-thread_t * thread_create (const char *name, void * (*function) (void *), void *arg);
+thread_t * upnpd_thread_create (const char *name, void * (*function) (void *), void *arg);
 
 /**
  * @brief returns the thread identifier for the calling thread.
  *
  * @returns thread id.
  */
-unsigned int thread_self (void);
+unsigned int upnpd_thread_self (void);
 
 /**
  * @brief suspends the execution of the calling thread until the
@@ -83,7 +83,7 @@ unsigned int thread_self (void);
  *
  * @returns 0 on success, 1 on error.
  */
-int thread_join (thread_t *thread);
+int upnpd_thread_join (thread_t *thread);
 
 /**
  * @brief initialize the mutex object
@@ -93,7 +93,7 @@ int thread_join (thread_t *thread);
  *
  * @returns NULL on error, otherwise the mutex object
  */
-thread_mutex_t * thread_mutex_init (const char *name, int recursive);
+thread_mutex_t * upnpd_thread_mutex_init (const char *name, int recursive);
 
 /**
  * @brief locks the given mutex
@@ -102,7 +102,7 @@ thread_mutex_t * thread_mutex_init (const char *name, int recursive);
  *
  * @returns 0 on success, 1 on error.
  */
-int thread_mutex_lock (thread_mutex_t *mutex);
+int upnpd_thread_mutex_lock (thread_mutex_t *mutex);
 
 /**
  * @brief unlocks the given mutex
@@ -111,7 +111,7 @@ int thread_mutex_lock (thread_mutex_t *mutex);
  *
  * @returns 0 on success, 1 on error.
  */
-int thread_mutex_unlock (thread_mutex_t *mutex);
+int upnpd_thread_mutex_unlock (thread_mutex_t *mutex);
 
 /**
  * @brief destroys the given mutex
@@ -120,7 +120,7 @@ int thread_mutex_unlock (thread_mutex_t *mutex);
  *
  * @returns 0 on success, 1 on error.
  */
-int thread_mutex_destroy (thread_mutex_t *mutex);
+int upnpd_thread_mutex_destroy (thread_mutex_t *mutex);
 
 /**
  * @brief initialize condition variable object
@@ -129,7 +129,7 @@ int thread_mutex_destroy (thread_mutex_t *mutex);
  *
  * @returns NULL on error, otherwise the condition variable object
  */
-thread_cond_t * thread_cond_init (const char *name);
+thread_cond_t * upnpd_thread_cond_init (const char *name);
 
 /**
  * @brief wait on condition variable by automatically unocking the
@@ -140,7 +140,7 @@ thread_cond_t * thread_cond_init (const char *name);
  *
  * @returns 0 on success, otherwise -1
  */
-int thread_cond_wait (thread_cond_t *cond, thread_mutex_t *mutex);
+int upnpd_thread_cond_wait (thread_cond_t *cond, thread_mutex_t *mutex);
 
 /**
  * @brief wait on condition variable for a specific amount of time.
@@ -151,7 +151,7 @@ int thread_cond_wait (thread_cond_t *cond, thread_mutex_t *mutex);
  *
  * @returns 0 on success, 1 on timeout, -1 on error
  */
-int thread_cond_timedwait (thread_cond_t *cond, thread_mutex_t *mutex, int timeout);
+int upnpd_thread_cond_timedwait (thread_cond_t *cond, thread_mutex_t *mutex, int timeout);
 
 /**
  * @brief unlock a thread waiting for a condition variable
@@ -160,7 +160,7 @@ int thread_cond_timedwait (thread_cond_t *cond, thread_mutex_t *mutex, int timeo
  *
  * @returns 0 on success, otherwise -1
  */
-int thread_cond_signal (thread_cond_t *cond);
+int upnpd_thread_cond_signal (thread_cond_t *cond);
 
 /**
  * @brief unlocks all threads waiting for a condition variable
@@ -169,7 +169,7 @@ int thread_cond_signal (thread_cond_t *cond);
  *
  * @returns 0 on success, otherwise -1
  */
-int thread_cond_broadcast (thread_cond_t *cond);
+int upnpd_thread_cond_broadcast (thread_cond_t *cond);
 
 /**
  * @brief destroys given condition variable object
@@ -178,7 +178,7 @@ int thread_cond_broadcast (thread_cond_t *cond);
  *
  * @returns 0 on success, otherwise -1
  */
-int thread_cond_destroy (thread_cond_t *cond);
+int upnpd_thread_cond_destroy (thread_cond_t *cond);
 
 /*@}*/
 
@@ -241,7 +241,7 @@ typedef struct socket_s socket_t;
  *
  * @returns socket object on success, otherwise NULL
  */
-socket_t * socket_open (socket_type_t type);
+socket_t * upnpd_socket_open (socket_type_t type);
 
 /**
  * @brief binds a socket to a given address and port
@@ -252,7 +252,7 @@ socket_t * socket_open (socket_type_t type);
  *
  * @returns 0 on success, otherwise -1
  */
-int socket_bind (socket_t *socket, const char *address, int port);
+int upnpd_socket_bind (socket_t *socket, const char *address, int port);
 
 /**
  * @brief sets maximum allowed connection for a given socket object
@@ -262,7 +262,7 @@ int socket_bind (socket_t *socket, const char *address, int port);
  *
  * @returns 0 on success, otherwise -1
  */
-int socket_listen (socket_t *socket, int backlog);
+int upnpd_socket_listen (socket_t *socket, int backlog);
 
 /**
  * @brief accepts a new connection on given socket object
@@ -271,7 +271,7 @@ int socket_listen (socket_t *socket, int backlog);
  *
  * @returns new socket object for accepted connection, otherwise NULL
  */
-socket_t * socket_accept (socket_t *socket);
+socket_t * upnpd_socket_accept (socket_t *socket);
 
 /**
  * @brief connects to given address and port with given timeout value
@@ -283,7 +283,7 @@ socket_t * socket_accept (socket_t *socket);
  *
  * @returns 0 on success, otherwise -1
  */
-int socket_connect (socket_t *socket, const char *address, int port, int timeout);
+int upnpd_socket_connect (socket_t *socket, const char *address, int port, int timeout);
 
 /**
  * @brief receive data from stream socket
@@ -294,7 +294,7 @@ int socket_connect (socket_t *socket, const char *address, int port, int timeout
  *
  * @returns received buffer size on success, -1 on error
  */
-int socket_recv (socket_t *socket, void *buffer, int length);
+int upnpd_socket_recv (socket_t *socket, void *buffer, int length);
 
 /**
  * @brief send data from stream socket
@@ -305,7 +305,7 @@ int socket_recv (socket_t *socket, void *buffer, int length);
  *
  * @returns sent buffer size on success, -1 on error
  */
-int socket_send (socket_t *socket, const void *buffer, int length);
+int upnpd_socket_send (socket_t *socket, const void *buffer, int length);
 
 /**
  * @brief receive data from datagram socket
@@ -318,7 +318,7 @@ int socket_send (socket_t *socket, const void *buffer, int length);
  *
  * @returns received buffer size, sender address, sender port on success, -1 on error
  */
-int socket_recvfrom (socket_t *socket, void *buf, int length, char *address, int *port);
+int upnpd_socket_recvfrom (socket_t *socket, void *buf, int length, char *address, int *port);
 
 /**
  * @bried send data from datagram socket to given address, port
@@ -331,7 +331,7 @@ int socket_recvfrom (socket_t *socket, void *buf, int length, char *address, int
  *
  * @return send buffer size on success, -1 on error
  */
-int socket_sendto (socket_t *socket, const void *buf, int length, const char *address, int port);
+int upnpd_socket_sendto (socket_t *socket, const void *buf, int length, const char *address, int port);
 
 /**
  * @brief poll events on given socket tiwh a given timeout value
@@ -343,7 +343,7 @@ int socket_sendto (socket_t *socket, const void *buf, int length, const char *ad
  *
  * @returns 0 on timeout, 1 on success, -1 on error
  */
-int socket_poll (poll_item_t *items, unsigned int nitems, int timeout);
+int upnpd_socket_poll (poll_item_t *items, unsigned int nitems, int timeout);
 
 /**
  * @brief closes and destroys given socket object
@@ -352,7 +352,7 @@ int socket_poll (poll_item_t *items, unsigned int nitems, int timeout);
  *
  * @return 0 on success, -1 on error
  */
-int socket_close (socket_t *socket);
+int upnpd_socket_close (socket_t *socket);
 
 /**
  * @brief sets reusable flag for given socket object
@@ -362,7 +362,7 @@ int socket_close (socket_t *socket);
  *
  * @returns 0 on success, -1 on error
  */
-int socket_option_reuseaddr (socket_t *socket, int on);
+int upnpd_socket_option_reuseaddr (socket_t *socket, int on);
 
 /**
  * @brief joins/leaves to a given multicast address
@@ -373,7 +373,7 @@ int socket_option_reuseaddr (socket_t *socket, int on);
  *
  * @returns 0 on success, -1 on error
  */
-int socket_option_membership (socket_t *socket, const char *address, int on);
+int upnpd_socket_option_membership (socket_t *socket, const char *address, int on);
 
 /**
  * @brief sets multicast time to live value for given socket
@@ -383,7 +383,7 @@ int socket_option_membership (socket_t *socket, const char *address, int on);
  *
  * @returns 0 on success, -1 on error
  */
-int socket_option_multicastttl (socket_t *socket, int ttl);
+int upnpd_socket_option_multicastttl (socket_t *socket, int ttl);
 
 /**
  * @brief  converts the Internet host address from the IPv4 numbers-and-dots
@@ -394,7 +394,7 @@ int socket_option_multicastttl (socket_t *socket, int ttl);
  *
  * @returns 0 on success, -1 on error
  */
-int socket_inet_aton (const char *address, unsigned int *baddress);
+int upnpd_socket_inet_aton (const char *address, unsigned int *baddress);
 
 /*@}*/
 
@@ -425,7 +425,7 @@ typedef enum {
 	FILE_SEEK_CUR = 0x01,
 	/** seek from end of file */
 	FILE_SEEK_END = 0x02,
-} file_seek_t;
+} upnpd_file_seek_t;
 
 /**
  * @brief file types
@@ -445,7 +445,7 @@ typedef enum {
 typedef enum {
 	/** ignore case sensitive matching */
 	FILE_MATCH_CASEFOLD = 0x01,
-} file_match_t;
+} upnpd_file_match_t;
 
 /**
  * @brief exported file structure
@@ -460,14 +460,14 @@ typedef struct dir_s dir_t;
 /**
  * @brief file stat information
  */
-typedef struct file_stat_s {
+typedef struct upnpd_file_stat_s {
 	/** file size */
 	unsigned long long size;
 	/** file modification time */
 	unsigned int mtime;
 	/** file type */
 	file_type_t type;
-} file_stat_t;
+} upnpd_file_stat_t;
 
 /**
  * @brief directory entry information
@@ -487,35 +487,35 @@ typedef struct dir_entry_s {
  */
 #define FILE_ISDIR(type) (type & FILE_TYPE_DIRECTORY)
 
-int file_match (const char *path, const char *string, file_match_t flag);
-int file_access (const char *path, file_mode_t mode);
-int file_stat (const char *path, file_stat_t *stat);
-file_t * file_open (const char *path, file_mode_t mode);
-int file_read (file_t *file, void *buffer, int length);
-int file_write (file_t *file, const void *buffer, int length);
-unsigned long long file_seek (file_t *file, unsigned long long offset, file_seek_t whence);
-int file_poll (file_t *socket, poll_event_t request, poll_event_t *result, int timeout);
-int file_close (file_t *file);
+int upnpd_file_match (const char *path, const char *string, upnpd_file_match_t flag);
+int upnpd_file_access (const char *path, file_mode_t mode);
+int upnpd_file_stat (const char *path, upnpd_file_stat_t *stat);
+file_t * upnpd_file_open (const char *path, file_mode_t mode);
+int upnpd_file_read (file_t *file, void *buffer, int length);
+int upnpd_file_write (file_t *file, const void *buffer, int length);
+unsigned long long upnpd_file_seek (file_t *file, unsigned long long offset, upnpd_file_seek_t whence);
+int upnpd_file_poll (file_t *socket, poll_event_t request, poll_event_t *result, int timeout);
+int upnpd_file_close (file_t *file);
 
-dir_t * file_opendir (const char *path);
-int file_readdir (dir_t *dir, dir_entry_t *entry);
-int file_closedir (dir_t *dir);
+dir_t * upnpd_file_opendir (const char *path);
+int upnpd_file_readdir (dir_t *dir, dir_entry_t *entry);
+int upnpd_file_closedir (dir_t *dir);
 
-void rand_srand (unsigned int seed);
-int rand_rand (void);
+void upnpd_rand_srand (unsigned int seed);
+int upnpd_rand_rand (void);
 
-void time_sleep (unsigned int secs);
-void time_usleep (unsigned int usecs);
-unsigned long long time_gettimeofday (void);
-int time_strftime (char *str, int max, unsigned long long tm);
+void upnpd_time_sleep (unsigned int secs);
+void upnpd_time_usleep (unsigned int usecs);
+unsigned long long upnpd_time_gettimeofday (void);
+int upnpd_time_strftime (char *str, int max, unsigned long long tm);
 
-char * interface_getaddr (const char *ifname);
-char * interface_getmask (const char *ifname);
-int interface_printall (void);
+char * upnpd_interface_getaddr (const char *ifname);
+char * upnpd_interface_getmask (const char *ifname);
+int upnpd_interface_printall (void);
 
 extern int platform_debug;
-#define debugf(fmt...) debug_debugf(__FILE__, __LINE__, __FUNCTION__, fmt);
-void debug_debugf (char *file, int line, const char *func, char *fmt, ...);
+#define debugf(fmt...) upnpd_debug_debugf(__FILE__, __LINE__, __FUNCTION__, fmt);
+void upnpd_debug_debugf (char *file, int line, const char *func, char *fmt, ...);
 
 /* link list derived from linux kernel */
 

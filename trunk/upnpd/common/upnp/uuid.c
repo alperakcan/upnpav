@@ -35,22 +35,22 @@
 #include "platform.h"
 #include "uuid.h"
 
-void upnp_uuid_generate (uuid_gen_t *uuid)
+void upnpd_upnp_uuid_generate (uuid_gen_t *uuid)
 {
 	unsigned long long tm;
 	const char *uuid_format = "%08x-%04x-%04x-%04x-%02x%02x%02x%02x%02x%02x";
-	tm = time_gettimeofday();
+	tm = upnpd_time_gettimeofday();
 	memset(uuid, 0, sizeof(uuid_gen_t));
 	uuid->time_low = (tm >> 32) & 0xffffffff;
 	uuid->time_mid = (tm >> 16) & 0x0000ffff;
 	uuid->time_high_version = tm & 0xffff;
 	uuid->clock_seq = 0;
-	uuid->node[0] = rand_rand() & 0xff;
-	uuid->node[1] = rand_rand() & 0xff;
-	uuid->node[2] = rand_rand() & 0xff;
-	uuid->node[3] = rand_rand() & 0xff;
-	uuid->node[4] = rand_rand() & 0xff;
-	uuid->node[5] = rand_rand() & 0xff;
+	uuid->node[0] = upnpd_rand_rand() & 0xff;
+	uuid->node[1] = upnpd_rand_rand() & 0xff;
+	uuid->node[2] = upnpd_rand_rand() & 0xff;
+	uuid->node[3] = upnpd_rand_rand() & 0xff;
+	uuid->node[4] = upnpd_rand_rand() & 0xff;
+	uuid->node[5] = upnpd_rand_rand() & 0xff;
 	sprintf(uuid->uuid,
 		uuid_format,
 		uuid->time_low,

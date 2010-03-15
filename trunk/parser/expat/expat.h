@@ -8,10 +8,10 @@
 #ifdef __VMS
 /*      0        1         2         3      0        1         2         3
         1234567890123456789012345678901     1234567890123456789012345678901 */
-#define XML_SetProcessingInstructionHandler XML_SetProcessingInstrHandler
-#define XML_SetUnparsedEntityDeclHandler    XML_SetUnparsedEntDeclHandler
-#define XML_SetStartNamespaceDeclHandler    XML_SetStartNamespcDeclHandler
-#define XML_SetExternalEntityRefHandlerArg  XML_SetExternalEntRefHandlerArg
+#define upnpd_XML_SetProcessingInstructionHandler XML_SetProcessingInstrHandler
+#define upnpd_XML_SetUnparsedEntityDeclHandler    XML_SetUnparsedEntDeclHandler
+#define upnpd_XML_SetStartNamespaceDeclHandler    XML_SetStartNamespcDeclHandler
+#define upnpd_XML_SetExternalEntityRefHandlerArg  XML_SetExternalEntRefHandlerArg
 #endif
 
 #include <stdlib.h>
@@ -21,8 +21,8 @@
 extern "C" {
 #endif
 
-struct XML_ParserStruct;
-typedef struct XML_ParserStruct *XML_Parser;
+struct upnpd_XML_ParserStruct;
+typedef struct upnpd_XML_ParserStruct *upnpd_XML_Parser;
 
 /* Should this be defined using stdbool.h when C99 is available? */
 typedef unsigned char XML_Bool;
@@ -152,7 +152,7 @@ typedef void (XMLCALL *XML_ElementDeclHandler) (void *userData,
                                                 XML_Content *model);
 
 XMLPARSEAPI(void)
-XML_SetElementDeclHandler(XML_Parser parser,
+upnpd_XML_SetElementDeclHandler(upnpd_XML_Parser parser,
                           XML_ElementDeclHandler eldecl);
 
 /* The Attlist declaration handler is called for *each* attribute. So
@@ -172,7 +172,7 @@ typedef void (XMLCALL *XML_AttlistDeclHandler) (
                                     int              isrequired);
 
 XMLPARSEAPI(void)
-XML_SetAttlistDeclHandler(XML_Parser parser,
+upnpd_XML_SetAttlistDeclHandler(upnpd_XML_Parser parser,
                           XML_AttlistDeclHandler attdecl);
 
 /* The XML declaration handler is called for *both* XML declarations
@@ -189,7 +189,7 @@ typedef void (XMLCALL *XML_XmlDeclHandler) (void           *userData,
                                             int             standalone);
 
 XMLPARSEAPI(void)
-XML_SetXmlDeclHandler(XML_Parser parser,
+upnpd_XML_SetXmlDeclHandler(upnpd_XML_Parser parser,
                       XML_XmlDeclHandler xmldecl);
 
 
@@ -202,8 +202,8 @@ typedef struct {
 /* Constructs a new parser; encoding is the encoding specified by the
    external protocol or NULL if there is none specified.
 */
-XMLPARSEAPI(XML_Parser)
-XML_ParserCreate(const XML_Char *encoding);
+XMLPARSEAPI(upnpd_XML_Parser)
+upnpd_XML_ParserCreate(const XML_Char *encoding);
 
 /* Constructs a new parser and namespace processor.  Element type
    names and attribute names that belong to a namespace will be
@@ -214,10 +214,10 @@ XML_ParserCreate(const XML_Char *encoding);
    name.  If the namespace separator is '\0' then the namespace URI
    and the local part will be concatenated without any separator.
    It is a programming error to use the separator '\0' with namespace
-   triplets (see XML_SetReturnNSTriplet).
+   triplets (see upnpd_XML_SetReturnNSTriplet).
 */
-XMLPARSEAPI(XML_Parser)
-XML_ParserCreateNS(const XML_Char *encoding, XML_Char namespaceSeparator);
+XMLPARSEAPI(upnpd_XML_Parser)
+upnpd_XML_ParserCreateNS(const XML_Char *encoding, XML_Char namespaceSeparator);
 
 
 /* Constructs a new parser using the memory management suite referred to
@@ -229,8 +229,8 @@ XML_ParserCreateNS(const XML_Char *encoding, XML_Char namespaceSeparator);
    All further memory operations used for the created parser will come from
    the given suite.
 */
-XMLPARSEAPI(XML_Parser)
-XML_ParserCreate_MM(const XML_Char *encoding,
+XMLPARSEAPI(upnpd_XML_Parser)
+upnpd_XML_ParserCreate_MM(const XML_Char *encoding,
                     const XML_Memory_Handling_Suite *memsuite,
                     const XML_Char *namespaceSeparator);
 
@@ -244,7 +244,7 @@ XML_ParserCreate_MM(const XML_Char *encoding,
    Added in Expat 1.95.3.
 */
 XMLPARSEAPI(XML_Bool)
-XML_ParserReset(XML_Parser parser, const XML_Char *encoding);
+upnpd_XML_ParserReset(upnpd_XML_Parser parser, const XML_Char *encoding);
 
 /* atts is array of name/value pairs, terminated by 0;
    names and values are 0 terminated.
@@ -338,7 +338,7 @@ typedef void (XMLCALL *XML_EntityDeclHandler) (
                               const XML_Char *notationName);
 
 XMLPARSEAPI(void)
-XML_SetEntityDeclHandler(XML_Parser parser,
+upnpd_XML_SetEntityDeclHandler(upnpd_XML_Parser parser,
                          XML_EntityDeclHandler handler);
 
 /* OBSOLETE -- OBSOLETE -- OBSOLETE
@@ -346,7 +346,7 @@ XML_SetEntityDeclHandler(XML_Parser parser,
    It is provided here for backward compatibility.
 
    This is called for a declaration of an unparsed (NDATA) entity.
-   The base argument is whatever was set by XML_SetBase. The
+   The base argument is whatever was set by upnpd_XML_SetBase. The
    entityName, systemId and notationName arguments will never be
    NULL. The other arguments may be.
 */
@@ -359,7 +359,7 @@ typedef void (XMLCALL *XML_UnparsedEntityDeclHandler) (
                                     const XML_Char *notationName);
 
 /* This is called for a declaration of notation.  The base argument is
-   whatever was set by XML_SetBase. The notationName will never be
+   whatever was set by upnpd_XML_SetBase. The notationName will never be
    NULL.  The other arguments can be.
 */
 typedef void (XMLCALL *XML_NotationDeclHandler) (
@@ -398,17 +398,17 @@ typedef int (XMLCALL *XML_NotStandaloneHandler) (void *userData);
 /* This is called for a reference to an external parsed general
    entity.  The referenced entity is not automatically parsed.  The
    application can parse it immediately or later using
-   XML_ExternalEntityParserCreate.
+   upnpd_XML_ExternalEntityParserCreate.
 
    The parser argument is the parser parsing the entity containing the
    reference; it can be passed as the parser argument to
-   XML_ExternalEntityParserCreate.  The systemId argument is the
+   upnpd_XML_ExternalEntityParserCreate.  The systemId argument is the
    system identifier as specified in the entity declaration; it will
    not be NULL.
 
    The base argument is the system identifier that should be used as
    the base for resolving systemId if systemId was relative; this is
-   set by XML_SetBase; it may be NULL.
+   set by upnpd_XML_SetBase; it may be NULL.
 
    The publicId argument is the public identifier as specified in the
    entity declaration, or NULL if none was specified; the whitespace
@@ -416,7 +416,7 @@ typedef int (XMLCALL *XML_NotStandaloneHandler) (void *userData);
    the XML spec.
 
    The context argument specifies the parsing context in the format
-   expected by the context argument to XML_ExternalEntityParserCreate;
+   expected by the context argument to upnpd_XML_ExternalEntityParserCreate;
    context is valid only until the handler returns, so if the
    referenced entity is to be parsed later, it must be copied.
    context is NULL only when the entity is a parameter entity.
@@ -430,7 +430,7 @@ typedef int (XMLCALL *XML_NotStandaloneHandler) (void *userData);
    not userData.
 */
 typedef int (XMLCALL *XML_ExternalEntityRefHandler) (
-                                    XML_Parser parser,
+                                    upnpd_XML_Parser parser,
                                     const XML_Char *context,
                                     const XML_Char *base,
                                     const XML_Char *systemId,
@@ -440,7 +440,7 @@ typedef int (XMLCALL *XML_ExternalEntityRefHandler) (
    1) An entity reference is encountered for which no declaration
       has been read *and* this is not an error.
    2) An internal entity reference is read, but not expanded, because
-      XML_SetDefaultHandler has been called.
+      upnpd_XML_SetDefaultHandler has been called.
    Note: skipped parameter entities in declarations and skipped general
          entities in attribute values cannot be reported, because
          the event would be out of sync with the reporting of the
@@ -513,7 +513,7 @@ typedef struct {
 /* This is called for an encoding that is unknown to the parser.
 
    The encodingHandlerData argument is that which was passed as the
-   second argument to XML_SetUnknownEncodingHandler.
+   second argument to upnpd_XML_SetUnknownEncodingHandler.
 
    The name argument gives the name of the encoding as specified in
    the encoding declaration.
@@ -531,40 +531,40 @@ typedef int (XMLCALL *XML_UnknownEncodingHandler) (
                                     XML_Encoding *info);
 
 XMLPARSEAPI(void)
-XML_SetElementHandler(XML_Parser parser,
+upnpd_XML_SetElementHandler(upnpd_XML_Parser parser,
                       XML_StartElementHandler start,
                       XML_EndElementHandler end);
 
 XMLPARSEAPI(void)
-XML_SetStartElementHandler(XML_Parser parser,
+upnpd_XML_SetStartElementHandler(upnpd_XML_Parser parser,
                            XML_StartElementHandler handler);
 
 XMLPARSEAPI(void)
-XML_SetEndElementHandler(XML_Parser parser,
+upnpd_XML_SetEndElementHandler(upnpd_XML_Parser parser,
                          XML_EndElementHandler handler);
 
 XMLPARSEAPI(void)
-XML_SetCharacterDataHandler(XML_Parser parser,
+upnpd_XML_SetCharacterDataHandler(upnpd_XML_Parser parser,
                             XML_CharacterDataHandler handler);
 
 XMLPARSEAPI(void)
-XML_SetProcessingInstructionHandler(XML_Parser parser,
+upnpd_XML_SetProcessingInstructionHandler(upnpd_XML_Parser parser,
                                     XML_ProcessingInstructionHandler handler);
 XMLPARSEAPI(void)
-XML_SetCommentHandler(XML_Parser parser,
+upnpd_XML_SetCommentHandler(upnpd_XML_Parser parser,
                       XML_CommentHandler handler);
 
 XMLPARSEAPI(void)
-XML_SetCdataSectionHandler(XML_Parser parser,
+upnpd_XML_SetCdataSectionHandler(upnpd_XML_Parser parser,
                            XML_StartCdataSectionHandler start,
                            XML_EndCdataSectionHandler end);
 
 XMLPARSEAPI(void)
-XML_SetStartCdataSectionHandler(XML_Parser parser,
+upnpd_XML_SetStartCdataSectionHandler(upnpd_XML_Parser parser,
                                 XML_StartCdataSectionHandler start);
 
 XMLPARSEAPI(void)
-XML_SetEndCdataSectionHandler(XML_Parser parser,
+upnpd_XML_SetEndCdataSectionHandler(upnpd_XML_Parser parser,
                               XML_EndCdataSectionHandler end);
 
 /* This sets the default handler and also inhibits expansion of
@@ -572,7 +572,7 @@ XML_SetEndCdataSectionHandler(XML_Parser parser,
    default handler, or to the skipped entity handler, if one is set.
 */
 XMLPARSEAPI(void)
-XML_SetDefaultHandler(XML_Parser parser,
+upnpd_XML_SetDefaultHandler(upnpd_XML_Parser parser,
                       XML_DefaultHandler handler);
 
 /* This sets the default handler but does not inhibit expansion of
@@ -580,49 +580,49 @@ XML_SetDefaultHandler(XML_Parser parser,
    default handler.
 */
 XMLPARSEAPI(void)
-XML_SetDefaultHandlerExpand(XML_Parser parser,
+upnpd_XML_SetDefaultHandlerExpand(upnpd_XML_Parser parser,
                             XML_DefaultHandler handler);
 
 XMLPARSEAPI(void)
-XML_SetDoctypeDeclHandler(XML_Parser parser,
+upnpd_XML_SetDoctypeDeclHandler(upnpd_XML_Parser parser,
                           XML_StartDoctypeDeclHandler start,
                           XML_EndDoctypeDeclHandler end);
 
 XMLPARSEAPI(void)
-XML_SetStartDoctypeDeclHandler(XML_Parser parser,
+upnpd_XML_SetStartDoctypeDeclHandler(upnpd_XML_Parser parser,
                                XML_StartDoctypeDeclHandler start);
 
 XMLPARSEAPI(void)
-XML_SetEndDoctypeDeclHandler(XML_Parser parser,
+upnpd_XML_SetEndDoctypeDeclHandler(upnpd_XML_Parser parser,
                              XML_EndDoctypeDeclHandler end);
 
 XMLPARSEAPI(void)
-XML_SetUnparsedEntityDeclHandler(XML_Parser parser,
+upnpd_XML_SetUnparsedEntityDeclHandler(upnpd_XML_Parser parser,
                                  XML_UnparsedEntityDeclHandler handler);
 
 XMLPARSEAPI(void)
-XML_SetNotationDeclHandler(XML_Parser parser,
+upnpd_XML_SetNotationDeclHandler(upnpd_XML_Parser parser,
                            XML_NotationDeclHandler handler);
 
 XMLPARSEAPI(void)
-XML_SetNamespaceDeclHandler(XML_Parser parser,
+upnpd_XML_SetNamespaceDeclHandler(upnpd_XML_Parser parser,
                             XML_StartNamespaceDeclHandler start,
                             XML_EndNamespaceDeclHandler end);
 
 XMLPARSEAPI(void)
-XML_SetStartNamespaceDeclHandler(XML_Parser parser,
+upnpd_XML_SetStartNamespaceDeclHandler(upnpd_XML_Parser parser,
                                  XML_StartNamespaceDeclHandler start);
 
 XMLPARSEAPI(void)
-XML_SetEndNamespaceDeclHandler(XML_Parser parser,
+upnpd_XML_SetEndNamespaceDeclHandler(upnpd_XML_Parser parser,
                                XML_EndNamespaceDeclHandler end);
 
 XMLPARSEAPI(void)
-XML_SetNotStandaloneHandler(XML_Parser parser,
+upnpd_XML_SetNotStandaloneHandler(upnpd_XML_Parser parser,
                             XML_NotStandaloneHandler handler);
 
 XMLPARSEAPI(void)
-XML_SetExternalEntityRefHandler(XML_Parser parser,
+upnpd_XML_SetExternalEntityRefHandler(upnpd_XML_Parser parser,
                                 XML_ExternalEntityRefHandler handler);
 
 /* If a non-NULL value for arg is specified here, then it will be
@@ -630,15 +630,15 @@ XML_SetExternalEntityRefHandler(XML_Parser parser,
    instead of the parser object.
 */
 XMLPARSEAPI(void)
-XML_SetExternalEntityRefHandlerArg(XML_Parser parser,
+upnpd_XML_SetExternalEntityRefHandlerArg(upnpd_XML_Parser parser,
                                    void *arg);
 
 XMLPARSEAPI(void)
-XML_SetSkippedEntityHandler(XML_Parser parser,
+upnpd_XML_SetSkippedEntityHandler(upnpd_XML_Parser parser,
                             XML_SkippedEntityHandler handler);
 
 XMLPARSEAPI(void)
-XML_SetUnknownEncodingHandler(XML_Parser parser,
+upnpd_XML_SetUnknownEncodingHandler(upnpd_XML_Parser parser,
                               XML_UnknownEncodingHandler handler,
                               void *encodingHandlerData);
 
@@ -647,7 +647,7 @@ XML_SetUnknownEncodingHandler(XML_Parser parser,
    corresponding markup to be passed to the default handler.
 */
 XMLPARSEAPI(void)
-XML_DefaultCurrent(XML_Parser parser);
+upnpd_XML_DefaultCurrent(upnpd_XML_Parser parser);
 
 /* If do_nst is non-zero, and namespace processing is in effect, and
    a name has a prefix (i.e. an explicit namespace qualifier) then
@@ -659,35 +659,35 @@ XML_DefaultCurrent(XML_Parser parser);
    default manner (URI + sep + local_name) whether or not the name
    has a prefix.
 
-   Note: Calling XML_SetReturnNSTriplet after XML_Parse or
-     XML_ParseBuffer has no effect.
+   Note: Calling upnpd_XML_SetReturnNSTriplet after upnpd_XML_Parse or
+     upnpd_XML_ParseBuffer has no effect.
 */
 
 XMLPARSEAPI(void)
-XML_SetReturnNSTriplet(XML_Parser parser, int do_nst);
+upnpd_XML_SetReturnNSTriplet(upnpd_XML_Parser parser, int do_nst);
 
 /* This value is passed as the userData argument to callbacks. */
 XMLPARSEAPI(void)
-XML_SetUserData(XML_Parser parser, void *userData);
+upnpd_XML_SetUserData(upnpd_XML_Parser parser, void *userData);
 
-/* Returns the last value set by XML_SetUserData or NULL. */
+/* Returns the last value set by upnpd_XML_SetUserData or NULL. */
 #define XML_GetUserData(parser) (*(void **)(parser))
 
 /* This is equivalent to supplying an encoding argument to
-   XML_ParserCreate. On success XML_SetEncoding returns non-zero,
+   upnpd_XML_ParserCreate. On success upnpd_XML_SetEncoding returns non-zero,
    zero otherwise.
-   Note: Calling XML_SetEncoding after XML_Parse or XML_ParseBuffer
+   Note: Calling upnpd_XML_SetEncoding after upnpd_XML_Parse or upnpd_XML_ParseBuffer
      has no effect and returns XML_STATUS_ERROR.
 */
 XMLPARSEAPI(enum XML_Status)
-XML_SetEncoding(XML_Parser parser, const XML_Char *encoding);
+upnpd_XML_SetEncoding(upnpd_XML_Parser parser, const XML_Char *encoding);
 
 /* If this function is called, then the parser will be passed as the
    first argument to callbacks instead of userData.  The userData will
    still be accessible using XML_GetUserData.
 */
 XMLPARSEAPI(void)
-XML_UseParserAsHandlerArg(XML_Parser parser);
+upnpd_XML_UseParserAsHandlerArg(upnpd_XML_Parser parser);
 
 /* If useDTD == XML_TRUE is passed to this function, then the parser
    will assume that there is an external subset, even if none is
@@ -698,7 +698,7 @@ XML_UseParserAsHandlerArg(XML_Parser parser);
      useDTD == XML_TRUE will make the parser behave as if the document
      had a DTD with an external subset.
    Note: If this function is called, then this must be done before
-     the first call to XML_Parse or XML_ParseBuffer, since it will
+     the first call to upnpd_XML_Parse or upnpd_XML_ParseBuffer, since it will
      have no effect after that.  Returns
      XML_ERROR_CANT_CHANGE_FEATURE_ONCE_PARSING.
    Note: If the document does not have a DOCTYPE declaration at all,
@@ -708,7 +708,7 @@ XML_UseParserAsHandlerArg(XML_Parser parser);
      XML_ERROR_FEATURE_REQUIRES_XML_DTD.
 */
 XMLPARSEAPI(enum XML_Error)
-XML_UseForeignDTD(XML_Parser parser, XML_Bool useDTD);
+upnpd_XML_UseForeignDTD(upnpd_XML_Parser parser, XML_Bool useDTD);
 
 
 /* Sets the base to be used for resolving relative URIs in system
@@ -720,10 +720,10 @@ XML_UseForeignDTD(XML_Parser parser, XML_Bool useDTD);
    XML_STATUS_OK otherwise.
 */
 XMLPARSEAPI(enum XML_Status)
-XML_SetBase(XML_Parser parser, const XML_Char *base);
+upnpd_XML_SetBase(upnpd_XML_Parser parser, const XML_Char *base);
 
 XMLPARSEAPI(const XML_Char *)
-XML_GetBase(XML_Parser parser);
+upnpd_XML_GetBase(upnpd_XML_Parser parser);
 
 /* Returns the number of the attribute/value pairs passed in last call
    to the XML_StartElementHandler that were specified in the start-tag
@@ -732,7 +732,7 @@ XML_GetBase(XML_Parser parser);
    XML_StartElementHandler.
 */
 XMLPARSEAPI(int)
-XML_GetSpecifiedAttributeCount(XML_Parser parser);
+upnpd_XML_GetSpecifiedAttributeCount(upnpd_XML_Parser parser);
 
 /* Returns the index of the ID attribute passed in the last call to
    XML_StartElementHandler, or -1 if there is no ID attribute.  Each
@@ -740,10 +740,10 @@ XML_GetSpecifiedAttributeCount(XML_Parser parser);
    index into the atts array passed to the XML_StartElementHandler.
 */
 XMLPARSEAPI(int)
-XML_GetIdAttributeIndex(XML_Parser parser);
+upnpd_XML_GetIdAttributeIndex(upnpd_XML_Parser parser);
 
 /* Parses some input. Returns XML_STATUS_ERROR if a fatal error is
-   detected.  The last call to XML_Parse must have isFinal true; len
+   detected.  The last call to upnpd_XML_Parse must have isFinal true; len
    may be zero for this call (or any other).
 
    Though the return values for these functions has always been
@@ -752,15 +752,15 @@ XML_GetIdAttributeIndex(XML_Parser parser);
    values.
 */
 XMLPARSEAPI(enum XML_Status)
-XML_Parse(XML_Parser parser, const char *s, int len, int isFinal);
+upnpd_XML_Parse(upnpd_XML_Parser parser, const char *s, int len, int isFinal);
 
 XMLPARSEAPI(void *)
-XML_GetBuffer(XML_Parser parser, int len);
+upnpd_XML_GetBuffer(upnpd_XML_Parser parser, int len);
 
 XMLPARSEAPI(enum XML_Status)
-XML_ParseBuffer(XML_Parser parser, int len, int isFinal);
+upnpd_XML_ParseBuffer(upnpd_XML_Parser parser, int len, int isFinal);
 
-/* Stops parsing, causing XML_Parse() or XML_ParseBuffer() to return.
+/* Stops parsing, causing upnpd_XML_Parse() or upnpd_XML_ParseBuffer() to return.
    Must be called from within a call-back handler, except when aborting
    (resumable = 0) an already suspended parser. Some call-backs may
    still follow because they would otherwise get lost. Examples:
@@ -778,25 +778,25 @@ XML_ParseBuffer(XML_Parser parser, int len, int isFinal);
    - XML_ERROR_SUSPEND_PE: when suspending while parsing an external PE.
 
    When resumable != 0 (true) then parsing is suspended, that is, 
-   XML_Parse() and XML_ParseBuffer() return XML_STATUS_SUSPENDED. 
-   Otherwise, parsing is aborted, that is, XML_Parse() and XML_ParseBuffer()
+   upnpd_XML_Parse() and upnpd_XML_ParseBuffer() return XML_STATUS_SUSPENDED. 
+   Otherwise, parsing is aborted, that is, upnpd_XML_Parse() and upnpd_XML_ParseBuffer()
    return XML_STATUS_ERROR with error code XML_ERROR_ABORTED.
 
    *Note*:
    This will be applied to the current parser instance only, that is, if
    there is a parent parser then it will continue parsing when the
    externalEntityRefHandler() returns. It is up to the implementation of
-   the externalEntityRefHandler() to call XML_StopParser() on the parent
+   the externalEntityRefHandler() to call upnpd_XML_StopParser() on the parent
    parser (recursively), if one wants to stop parsing altogether.
 
-   When suspended, parsing can be resumed by calling XML_ResumeParser(). 
+   When suspended, parsing can be resumed by calling upnpd_XML_ResumeParser(). 
 */
 XMLPARSEAPI(enum XML_Status)
-XML_StopParser(XML_Parser parser, XML_Bool resumable);
+upnpd_XML_StopParser(upnpd_XML_Parser parser, XML_Bool resumable);
 
-/* Resumes parsing after it has been suspended with XML_StopParser().
+/* Resumes parsing after it has been suspended with upnpd_XML_StopParser().
    Must not be called from within a handler call-back. Returns same
-   status codes as XML_Parse() or XML_ParseBuffer().
+   status codes as upnpd_XML_Parse() or upnpd_XML_ParseBuffer().
    Additional error code XML_ERROR_NOT_SUSPENDED possible.   
 
    *Note*:
@@ -804,10 +804,10 @@ XML_StopParser(XML_Parser parser, XML_Bool resumable);
    first, and on its parent parser only after the child parser has finished,
    to be applied recursively until the document entity's parser is restarted.
    That is, the parent parser will not resume by itself and it is up to the
-   application to call XML_ResumeParser() on it at the appropriate moment.
+   application to call upnpd_XML_ResumeParser() on it at the appropriate moment.
 */
 XMLPARSEAPI(enum XML_Status)
-XML_ResumeParser(XML_Parser parser);
+upnpd_XML_ResumeParser(upnpd_XML_Parser parser);
 
 enum XML_Parsing {
   XML_INITIALIZED,
@@ -823,13 +823,13 @@ typedef struct {
 
 /* Returns status of parser with respect to being initialized, parsing,
    finished, or suspended and processing the final buffer.
-   XXX XML_Parse() and XML_ParseBuffer() should return XML_ParsingStatus,
+   XXX upnpd_XML_Parse() and upnpd_XML_ParseBuffer() should return XML_ParsingStatus,
    XXX with XML_FINISHED_OK or XML_FINISHED_ERROR replacing XML_FINISHED
 */
 XMLPARSEAPI(void)
-XML_GetParsingStatus(XML_Parser parser, XML_ParsingStatus *status);
+upnpd_XML_GetParsingStatus(upnpd_XML_Parser parser, XML_ParsingStatus *status);
 
-/* Creates an XML_Parser object that can parse an external general
+/* Creates an upnpd_XML_Parser object that can parse an external general
    entity; context is a '\0'-terminated string specifying the parse
    context; encoding is a '\0'-terminated string giving the name of
    the externally specified encoding, or NULL if there is no
@@ -843,10 +843,10 @@ XML_GetParsingStatus(XML_Parser parser, XML_ParsingStatus *status);
    been freed.  The new parser is completely independent and may
    safely be used in a separate thread.  The handlers and userData are
    initialized from the parser argument.  Returns NULL if out of memory.
-   Otherwise returns a new XML_Parser object.
+   Otherwise returns a new upnpd_XML_Parser object.
 */
-XMLPARSEAPI(XML_Parser)
-XML_ExternalEntityParserCreate(XML_Parser parser,
+XMLPARSEAPI(upnpd_XML_Parser)
+upnpd_XML_ExternalEntityParserCreate(upnpd_XML_Parser parser,
                                const XML_Char *context,
                                const XML_Char *encoding);
 
@@ -860,34 +860,34 @@ enum XML_ParamEntityParsing {
    subset). If parsing of parameter entities is enabled, then
    references to external parameter entities (including the external
    DTD subset) will be passed to the handler set with
-   XML_SetExternalEntityRefHandler.  The context passed will be 0.
+   upnpd_XML_SetExternalEntityRefHandler.  The context passed will be 0.
 
    Unlike external general entities, external parameter entities can
    only be parsed synchronously.  If the external parameter entity is
    to be parsed, it must be parsed during the call to the external
    entity ref handler: the complete sequence of
-   XML_ExternalEntityParserCreate, XML_Parse/XML_ParseBuffer and
-   XML_ParserFree calls must be made during this call.  After
-   XML_ExternalEntityParserCreate has been called to create the parser
+   upnpd_XML_ExternalEntityParserCreate, upnpd_XML_Parse/upnpd_XML_ParseBuffer and
+   upnpd_XML_ParserFree calls must be made during this call.  After
+   upnpd_XML_ExternalEntityParserCreate has been called to create the parser
    for the external parameter entity (context must be 0 for this
    call), it is illegal to make any calls on the old parser until
-   XML_ParserFree has been called on the newly created parser.
+   upnpd_XML_ParserFree has been called on the newly created parser.
    If the library has been compiled without support for parameter
    entity parsing (ie without XML_DTD being defined), then
-   XML_SetParamEntityParsing will return 0 if parsing of parameter
+   upnpd_XML_SetParamEntityParsing will return 0 if parsing of parameter
    entities is requested; otherwise it will return non-zero.
-   Note: If XML_SetParamEntityParsing is called after XML_Parse or
-      XML_ParseBuffer, then it has no effect and will always return 0.
+   Note: If upnpd_XML_SetParamEntityParsing is called after upnpd_XML_Parse or
+      upnpd_XML_ParseBuffer, then it has no effect and will always return 0.
 */
 XMLPARSEAPI(int)
-XML_SetParamEntityParsing(XML_Parser parser,
+upnpd_XML_SetParamEntityParsing(upnpd_XML_Parser parser,
                           enum XML_ParamEntityParsing parsing);
 
-/* If XML_Parse or XML_ParseBuffer have returned XML_STATUS_ERROR, then
-   XML_GetErrorCode returns information about the error.
+/* If upnpd_XML_Parse or upnpd_XML_ParseBuffer have returned XML_STATUS_ERROR, then
+   upnpd_XML_GetErrorCode returns information about the error.
 */
 XMLPARSEAPI(enum XML_Error)
-XML_GetErrorCode(XML_Parser parser);
+upnpd_XML_GetErrorCode(upnpd_XML_Parser parser);
 
 /* These functions return information about the current parse
    location.  They may be called from any callback called to report
@@ -899,21 +899,21 @@ XML_GetErrorCode(XML_Parser parser);
    functions, the position indicated will be just past the last parse
    event (regardless of whether there was an associated callback).
    
-   They may also be called after returning from a call to XML_Parse
-   or XML_ParseBuffer.  If the return value is XML_STATUS_ERROR then
+   They may also be called after returning from a call to upnpd_XML_Parse
+   or upnpd_XML_ParseBuffer.  If the return value is XML_STATUS_ERROR then
    the location is the location of the character at which the error
    was detected; otherwise the location is the location of the last
    parse event, as described above.
 */
-XMLPARSEAPI(XML_Size) XML_GetCurrentLineNumber(XML_Parser parser);
-XMLPARSEAPI(XML_Size) XML_GetCurrentColumnNumber(XML_Parser parser);
-XMLPARSEAPI(XML_Index) XML_GetCurrentByteIndex(XML_Parser parser);
+XMLPARSEAPI(XML_Size) upnpd_XML_GetCurrentLineNumber(upnpd_XML_Parser parser);
+XMLPARSEAPI(XML_Size) upnpd_XML_GetCurrentColumnNumber(upnpd_XML_Parser parser);
+XMLPARSEAPI(XML_Index) upnpd_XML_GetCurrentByteIndex(upnpd_XML_Parser parser);
 
 /* Return the number of bytes in the current event.
    Returns 0 if the event is in an internal entity.
 */
 XMLPARSEAPI(int)
-XML_GetCurrentByteCount(XML_Parser parser);
+upnpd_XML_GetCurrentByteCount(upnpd_XML_Parser parser);
 
 /* If XML_CONTEXT_BYTES is defined, returns the input buffer, sets
    the integer pointed to by offset to the offset within this buffer
@@ -926,40 +926,40 @@ XML_GetCurrentByteCount(XML_Parser parser);
    the handler that makes the call.
 */
 XMLPARSEAPI(const char *)
-XML_GetInputContext(XML_Parser parser,
+upnpd_XML_GetInputContext(upnpd_XML_Parser parser,
                     int *offset,
                     int *size);
 
 /* For backwards compatibility with previous versions. */
-#define XML_GetErrorLineNumber   XML_GetCurrentLineNumber
-#define XML_GetErrorColumnNumber XML_GetCurrentColumnNumber
-#define XML_GetErrorByteIndex    XML_GetCurrentByteIndex
+#define XML_GetErrorLineNumber   upnpd_XML_GetCurrentLineNumber
+#define XML_GetErrorColumnNumber upnpd_XML_GetCurrentColumnNumber
+#define XML_GetErrorByteIndex    upnpd_XML_GetCurrentByteIndex
 
 /* Frees the content model passed to the element declaration handler */
 XMLPARSEAPI(void)
-XML_FreeContentModel(XML_Parser parser, XML_Content *model);
+upnpd_XML_FreeContentModel(upnpd_XML_Parser parser, XML_Content *model);
 
 /* Exposing the memory handling functions used in Expat */
 XMLPARSEAPI(void *)
-XML_MemMalloc(XML_Parser parser, size_t size);
+upnpd_XML_MemMalloc(upnpd_XML_Parser parser, size_t size);
 
 XMLPARSEAPI(void *)
-XML_MemRealloc(XML_Parser parser, void *ptr, size_t size);
+upnpd_XML_MemRealloc(upnpd_XML_Parser parser, void *ptr, size_t size);
 
 XMLPARSEAPI(void)
-XML_MemFree(XML_Parser parser, void *ptr);
+upnpd_XML_MemFree(upnpd_XML_Parser parser, void *ptr);
 
 /* Frees memory used by the parser. */
 XMLPARSEAPI(void)
-XML_ParserFree(XML_Parser parser);
+upnpd_XML_ParserFree(upnpd_XML_Parser parser);
 
 /* Returns a string describing the error. */
 XMLPARSEAPI(const XML_LChar *)
-XML_ErrorString(enum XML_Error code);
+upnpd_XML_ErrorString(enum XML_Error code);
 
 /* Return a string containing the version number of this expat */
 XMLPARSEAPI(const XML_LChar *)
-XML_ExpatVersion(void);
+upnpd_XML_ExpatVersion(void);
 
 typedef struct {
   int major;
@@ -971,7 +971,7 @@ typedef struct {
    number information for this version of expat.
 */
 XMLPARSEAPI(XML_Expat_Version)
-XML_ExpatVersionInfo(void);
+upnpd_XML_ExpatVersionInfo(void);
 
 /* Added in Expat 1.95.5. */
 enum XML_FeatureEnum {
@@ -995,7 +995,7 @@ typedef struct {
 } XML_Feature;
 
 XMLPARSEAPI(const XML_Feature *)
-XML_GetFeatureList(void);
+upnpd_XML_GetFeatureList(void);
 
 
 /* Expat follows the GNU/Linux convention of odd number minor version for

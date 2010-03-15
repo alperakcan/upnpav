@@ -75,7 +75,7 @@ static inline int file_mode_open (file_mode_t mode)
 	return m;
 }
 
-static inline int file_whence_seek (file_seek_t whence)
+static inline int file_whence_seek (upnpd_file_seek_t whence)
 {
 	if (whence == FILE_SEEK_SET) return SEEK_SET;
 	if (whence == FILE_SEEK_CUR) return SEEK_CUR;
@@ -83,7 +83,7 @@ static inline int file_whence_seek (file_seek_t whence)
 	return SEEK_SET;
 }
 
-static inline int file_flag_match (file_match_t flag)
+static inline int file_flag_match (upnpd_file_match_t flag)
 {
 	int f;
 	f = 0;
@@ -91,21 +91,21 @@ static inline int file_flag_match (file_match_t flag)
 	return f;
 }
 
-int file_match (const char *path, const char *string, file_match_t flag)
+int upnpd_file_match (const char *path, const char *string, upnpd_file_match_t flag)
 {
 	int f;
 	f = file_flag_match(flag);
 	return fnmatch(path, string, f);
 }
 
-int file_access (const char *path, file_mode_t mode)
+int upnpd_file_access (const char *path, file_mode_t mode)
 {
 	int m;
 	m = file_mode_access(mode);
 	return access(path, m);
 }
 
-int file_stat (const char *path, file_stat_t *st)
+int upnpd_file_stat (const char *path, upnpd_file_stat_t *st)
 {
 	struct stat stbuf;
 	if (stat(path, &stbuf) < 0) {
@@ -119,7 +119,7 @@ int file_stat (const char *path, file_stat_t *st)
 	return 0;
 }
 
-file_t * file_open (const char *path, file_mode_t mode)
+file_t * upnpd_file_open (const char *path, file_mode_t mode)
 {
 	int m;
 	file_t *f;
@@ -144,24 +144,24 @@ file_t * file_open (const char *path, file_mode_t mode)
 	return f;
 }
 
-int file_read (file_t *file, void *buffer, int length)
+int upnpd_file_read (file_t *file, void *buffer, int length)
 {
 	return read(file->fd, buffer, length);
 }
 
-int file_write (file_t *file, const void *buffer, int length)
+int upnpd_file_write (file_t *file, const void *buffer, int length)
 {
 	return write(file->fd, buffer, length);
 }
 
-unsigned long long file_seek (file_t *file, unsigned long long offset, file_seek_t whence)
+unsigned long long upnpd_file_seek (file_t *file, unsigned long long offset, upnpd_file_seek_t whence)
 {
 	int s;
 	int rc;
-	file_stat_t stat;
+	upnpd_file_stat_t stat;
 	unsigned long long r;
 	s = file_whence_seek(whence);
-	rc = file_stat(file->path, &stat);
+	rc = upnpd_file_stat(file->path, &stat);
 	if (rc != 0) {
 		return -1;
 	}
@@ -173,7 +173,7 @@ unsigned long long file_seek (file_t *file, unsigned long long offset, file_seek
 	return r;
 }
 
-int file_close (file_t *file)
+int upnpd_file_close (file_t *file)
 {
 	if (file) {
 		close(file->fd);
@@ -183,7 +183,7 @@ int file_close (file_t *file)
 	return 0;
 }
 
-dir_t * file_opendir (const char *path)
+dir_t * upnpd_file_opendir (const char *path)
 {
 	dir_t *d;
 	d = (dir_t *) malloc(sizeof(dir_t));
@@ -198,7 +198,7 @@ dir_t * file_opendir (const char *path)
 	return d;
 }
 
-int file_readdir (dir_t *dir, dir_entry_t *entry)
+int upnpd_file_readdir (dir_t *dir, dir_entry_t *entry)
 {
 	struct dirent *c;
 	c = readdir(dir->dir);
@@ -212,7 +212,7 @@ int file_readdir (dir_t *dir, dir_entry_t *entry)
 	return 0;
 }
 
-int file_closedir (dir_t *dir)
+int upnpd_file_closedir (dir_t *dir)
 {
 	closedir(dir->dir);
 	free(dir);
@@ -241,7 +241,7 @@ static inline poll_event_t file_bsd_event (int bsd)
 	return event;
 }
 
-int file_poll (file_t *file, poll_event_t request, poll_event_t *result, int timeout)
+int upnpd_file_poll (file_t *file, poll_event_t request, poll_event_t *result, int timeout)
 {
 	int rc;
 	struct pollfd pfd;

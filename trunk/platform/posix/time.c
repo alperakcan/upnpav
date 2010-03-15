@@ -31,17 +31,17 @@
 #include <time.h>
 #include <sys/time.h>
 
-int time_sleep (unsigned int secs)
+int upnpd_time_sleep (unsigned int secs)
 {
 	return sleep(secs);
 }
 
-int time_usleep (unsigned int usecs)
+int upnpd_time_usleep (unsigned int usecs)
 {
 	return usleep(usecs);
 }
 
-unsigned long long time_gettimeofday (void)
+unsigned long long upnpd_time_gettimeofday (void)
 {
 	long long tsec;
 	long long tusec;
@@ -54,7 +54,7 @@ unsigned long long time_gettimeofday (void)
 	return tsec + tusec;
 }
 
-int time_strftime (char *str, int max, unsigned long long tm)
+int upnpd_time_strftime (char *str, int max, unsigned long long tm)
 {
 	time_t t;
 	static const char RFC1123FMT[] = "%a, %d %b %Y %H:%M:%S GMT";

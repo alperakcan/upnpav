@@ -45,6 +45,6 @@
   * @param *context  - callback context
   * @returns 0 on success, -1 on error
   */
-int xml_parse_buffer_callback (const char *buffer, unsigned int len, int (*callback) (void *context, const char *path, const char *name, const char **atrr, const char *value), void *context);
+int upnpd_xml_parse_buffer_callback (const char *buffer, unsigned int len, int (*callback) (void *context, const char *path, const char *name, const char **atrr, const char *value), void *context);
 
 /*@}*/

@@ -36,4 +36,4 @@ struct uuid_gen_s {
 	char uuid[50];
 };
 
-void upnp_uuid_generate (uuid_gen_t *uuid);
+void upnpd_upnp_uuid_generate (uuid_gen_t *uuid);

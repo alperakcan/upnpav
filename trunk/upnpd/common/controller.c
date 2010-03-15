@@ -77,7 +77,7 @@ static client_t controller = {
 	.descriptions = controller_devices,
 };
 
-client_t * controller_init (char *options)
+client_t * upnpd_controller_init (char *options)
 {
 	int rc;
 	int err;
@@ -122,19 +122,19 @@ client_t * controller_init (char *options)
 	controller.ifmask = netmask;
 
 	debugf("initializing controller client");
-	rc = client_init(&controller);
+	rc = upnpd_client_init(&controller);
 	if (rc != 0) {
-		debugf("client_init(&controller) failed");
+		debugf("upnpd_client_init(&controller) failed");
 		return NULL;
 	}
 	debugf("initialized controller client");
 	return &controller;
 }
 
-int controller_uninit (client_t *controller)
+int upnpd_controller_uninit (client_t *controller)
 {
 	debugf("uninitializing controller client");
-	client_uninit(controller);
+	upnpd_client_uninit(controller);
 	debugf("uninitialized controller client");
 	return 0;
 }
@@ -157,18 +157,18 @@ static int controller_parser_callback (void *context, const char *path, const ch
 	}
 	if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/TotalMatches") == 0 ||
 	    strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:BrowseResponse/TotalMatches") == 0) {
-		data->totalmatches = strtouint32(value);
+		data->totalmatches = upnpd_strtouint32(value);
 	} else if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/NumberReturned") == 0 ||
 	           strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:BrowseResponse/NumberReturned") == 0) {
-		data->numberreturned = strtouint32(value);
+		data->numberreturned = upnpd_strtouint32(value);
 	} else if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/UpdateID") == 0 ||
 		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:BrowseResponse/UpdateID") == 0) {
-		data->updateid = strtouint32(value);
+		data->updateid = upnpd_strtouint32(value);
 	} else if (strcmp(path, "/s:Envelope/s:Body/u:BrowseResponse/Result") == 0 ||
 		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:BrowseResponse/Result") == 0) {
-		tentry = entry_from_result(value);
+		tentry = upnpd_entry_from_result(value);
 		if (tentry == NULL) {
-			debugf("entry_from_result() failed");
+			debugf("upnpd_entry_from_result() failed");
 		} else {
 			if (data->entry == NULL) {
 				data->entry = tentry;
@@ -187,7 +187,7 @@ static int controller_parser_callback (void *context, const char *path, const ch
 	return 0;
 }
 
-entry_t * controller_browse_children (client_t *controller, const char *device, const char *object)
+entry_t * upnpd_controller_browse_children (client_t *controller, const char *device, const char *object)
 {
 	char *params[6];
 	char *values[6];
@@ -222,16 +222,16 @@ entry_t * controller_browse_children (client_t *controller, const char *device, 
 		values[5] = "+dc:title";
 
 		debugf("browsing '%s':'%s'", device, object);
-		action = client_action(controller, device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
+		action = upnpd_client_action(controller, device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
 		if (action == NULL) {
-			debugf("client_action() failed");
+			debugf("upnpd_client_action() failed");
 			goto out;
 		}
 		data.numberreturned = 0;
 		data.totalmatches = 0;
 		data.updateid = 0;
-		if (xml_parse_buffer_callback(action, strlen(action), controller_parser_callback, &data) != 0) {
-			debugf("xml_parse_buffer_callback() failed");
+		if (upnpd_xml_parse_buffer_callback(action, strlen(action), controller_parser_callback, &data) != 0) {
+			debugf("upnpd_xml_parse_buffer_callback() failed");
 			free(action);
 			goto out;
 		}
@@ -251,7 +251,7 @@ out:
 	return data.entry;
 }
 
-entry_t * controller_browse_metadata (client_t *controller, const char *device, const char *object)
+entry_t * upnpd_controller_browse_metadata (client_t *controller, const char *device, const char *object)
 {
 	char *params[6];
 	char *values[6];
@@ -276,14 +276,14 @@ entry_t * controller_browse_metadata (client_t *controller, const char *device, 
 	values[5] = "+dc:title";
 
 	debugf("browsing '%s':'%s'", device, object);
-	action = client_action(controller, device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
+	action = upnpd_client_action(controller, device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
 	if (action == NULL) {
-		debugf("client_action() failed");
+		debugf("upnpd_client_action() failed");
 		goto out;
 	}
 	memset(&data, 0, sizeof(data));
-	if (xml_parse_buffer_callback(action, strlen(action), controller_parser_callback, &data) != 0) {
-		debugf("xml_parse_buffer_callback() failed");
+	if (upnpd_xml_parse_buffer_callback(action, strlen(action), controller_parser_callback, &data) != 0) {
+		debugf("upnpd_xml_parse_buffer_callback() failed");
 	}
 	free(action);
 out:

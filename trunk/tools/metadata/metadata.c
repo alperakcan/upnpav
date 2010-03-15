@@ -25,9 +25,9 @@ int main (int argc, char *argv[])
 		return -1;
 	}
 
-	md = metadata_init(argv[1]);
+	md = upnpd_metadata_init(argv[1]);
 	if (md == NULL) {
-		printf("metadata_init(%s) failed\n", argv[1]);
+		printf("upnpd_metadata_init(%s) failed\n", argv[1]);
 		return -1;
 	}
 
@@ -45,7 +45,7 @@ int main (int argc, char *argv[])
 	printf("  duration    : %s\n", md->duration);
 	printf("  size        : %llu\n", md->size);
 
-	metadata_uninit(md);
+	upnpd_metadata_uninit(md);
 
 	return 0;
 }

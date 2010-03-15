@@ -1188,7 +1188,7 @@ checkCharRefNumber(int result)
 }
 
 int FASTCALL
-XmlUtf8Encode(int c, char *buf)
+upnpd_XmlUtf8Encode(int c, char *buf)
 {
   enum {
     /* minN is minimum legal resulting value for N byte sequence */
@@ -1225,7 +1225,7 @@ XmlUtf8Encode(int c, char *buf)
 }
 
 int FASTCALL
-XmlUtf16Encode(int charNum, unsigned short *buf)
+upnpd_XmlUtf16Encode(int charNum, unsigned short *buf)
 {
   if (charNum < 0)
     return 0;
@@ -1253,7 +1253,7 @@ struct unknown_encoding {
 #define AS_UNKNOWN_ENCODING(enc)  ((const struct unknown_encoding *) (enc))
 
 int
-XmlSizeOfUnknownEncoding(void)
+upnpd_XmlSizeOfUnknownEncoding(void)
 {
   return sizeof(struct unknown_encoding);
 }
@@ -1302,7 +1302,7 @@ unknown_toUtf8(const ENCODING *enc,
     n = *utf8++;
     if (n == 0) {
       int c = uenc->convert(uenc->userData, *fromP);
-      n = XmlUtf8Encode(c, buf);
+      n = upnpd_XmlUtf8Encode(c, buf);
       if (n > toLim - *toP)
         break;
       utf8 = buf;
@@ -1341,7 +1341,7 @@ unknown_toUtf16(const ENCODING *enc,
 }
 
 ENCODING *
-XmlInitUnknownEncoding(void *mem,
+upnpd_XmlInitUnknownEncoding(void *mem,
                        int *table,
                        CONVERTER convert, 
                        void *userData)
@@ -1397,7 +1397,7 @@ XmlInitUnknownEncoding(void *mem,
         e->normal.type[i] = BT_NAME;
       else
         e->normal.type[i] = BT_OTHER;
-      e->utf8[i][0] = (char)XmlUtf8Encode(c, e->utf8[i] + 1);
+      e->utf8[i][0] = (char)upnpd_XmlUtf8Encode(c, e->utf8[i] + 1);
       e->utf16[i] = (unsigned short)c;
     }
   }
@@ -1635,12 +1635,12 @@ initScan(const ENCODING * const *encodingTable,
 #undef ns
 
 ENCODING *
-XmlInitUnknownEncodingNS(void *mem,
+upnpd_XmlInitUnknownEncodingNS(void *mem,
                          int *table,
                          CONVERTER convert, 
                          void *userData)
 {
-  ENCODING *enc = XmlInitUnknownEncoding(mem, table, convert, userData);
+  ENCODING *enc = upnpd_XmlInitUnknownEncoding(mem, table, convert, userData);
   if (enc)
     ((struct normal_encoding *)enc)->type[ASCII_COLON] = BT_COLON;
   return enc;

@@ -85,7 +85,7 @@ static char * entryid_path_from_id (const char *id)
 	return path;
 }
 
-char * entryid_id_from_path (const char *path)
+char * upnpd_entryid_id_from_path (const char *path)
 {
 	int i;
 	int l;
@@ -109,7 +109,7 @@ char * entryid_id_from_path (const char *path)
 static char * entryid_init_value (const char *path)
 {
 	char *id;
-	id = entryid_id_from_path(path);
+	id = upnpd_entryid_id_from_path(path);
 	if (id == NULL) {
 		debugf("etnryid_id_from_path(); failed");
 		return NULL;
@@ -130,7 +130,7 @@ static char * entryid_parentid_from_path (const char *path)
 		memset(parent, 0, p - path + 1);
 		memcpy(parent, path, p - path);
 	}
-	parentid = entryid_id_from_path(parent);
+	parentid = upnpd_entryid_id_from_path(parent);
 	free(parent);
 	return parentid;
 }
@@ -241,7 +241,7 @@ static entry_t * entry_init_from_database (database_entry_t *dentry)
 	return entry;
 }
 
-entry_t * entry_didl_from_id (void *database, const char *id)
+entry_t * upnpd_entry_didl_from_id (void *database, const char *id)
 {
 	char *path;
 	entry_t *entry;
@@ -250,29 +250,29 @@ entry_t * entry_didl_from_id (void *database, const char *id)
 	db = (database_t *) database;
 	if (db == NULL) {
 		path = entryid_path_from_id(id);
-		entry = entry_didl_from_path(path);
+		entry = upnpd_entry_didl_from_path(path);
 		free(path);
 		return entry;
 	} else {
-		de = database_query_entry(db, id);
+		de = upnpd_database_query_entry(db, id);
 		entry = entry_init_from_database(de);
-		database_entry_free(de);
+		upnpd_database_entry_free(de);
 		return entry;
 	}
 }
 
-entry_t * entry_didl_from_path (const char *path)
+entry_t * upnpd_entry_didl_from_path (const char *path)
 {
 	entry_t *entry;
 	metadata_t *metadata;
-	metadata = metadata_init(path);
+	metadata = upnpd_metadata_init(path);
 	if (metadata == NULL) {
-		debugf("metadata_init('%s') failed", path);
+		debugf("upnpd_metadata_init('%s') failed", path);
 		return NULL;
 	}
 	entry = (entry_t *) malloc(sizeof(entry_t));
 	if (entry == NULL) {
-		metadata_uninit(metadata);
+		upnpd_metadata_uninit(metadata);
 		return NULL;
 	}
 	memset(entry, 0, sizeof(entry_t));
@@ -378,14 +378,14 @@ entry_t * entry_didl_from_path (const char *path)
 	} else {
 		goto error;
 	}
-	metadata_uninit(metadata);
+	upnpd_metadata_uninit(metadata);
 	return entry;
-error:	entry_uninit(entry);
-	metadata_uninit(metadata);
+error:	upnpd_entry_uninit(entry);
+	upnpd_metadata_uninit(metadata);
 	return NULL;
 }
 
-int entry_print (entry_t *entry)
+int upnpd_entry_print (entry_t *entry)
 {
 	entry_t *c;
 	if (entry == NULL) {
@@ -403,7 +403,7 @@ int entry_print (entry_t *entry)
 	return 0;
 }
 
-int entry_dump (entry_t *entry)
+int upnpd_entry_dump (entry_t *entry)
 {
 	entry_t *c;
 	if (entry == NULL) {
@@ -473,7 +473,7 @@ int entry_dump (entry_t *entry)
 	return 0;
 }
 
-static int entry_scan_path (database_t *database, const char *path, const char *parentid, int transcode)
+static int upnpd_entry_scan_path (database_t *database, const char *path, const char *parentid, int transcode)
 {
 	char *tmp;
 	char *ptr;
@@ -487,13 +487,13 @@ static int entry_scan_path (database_t *database, const char *path, const char *
 	if (current == NULL) {
 		return -1;
 	}
-	dir = file_opendir(path);
+	dir = upnpd_file_opendir(path);
 	if (dir == NULL) {
 		free(current);
 		return -1;
 	}
 	debugf("looking into: %s", path);
-	while (file_readdir(dir, current) == 0) {
+	while (upnpd_file_readdir(dir, current) == 0) {
 		if (strncmp(current->name, ".", 1) == 0) {
 			/* will cover parent, self, hidden */
 			continue;
@@ -501,16 +501,16 @@ static int entry_scan_path (database_t *database, const char *path, const char *
 		if (asprintf(&ptr, "%s/%s", path, current->name) < 0) {
 			continue;
 		}
-		entry = entry_didl_from_path(ptr);
+		entry = upnpd_entry_didl_from_path(ptr);
 		if (entry == NULL) {
-			debugf("entry_didl_from_path(%s, %s) failed", ptr, path);
+			debugf("upnpd_entry_didl_from_path(%s, %s) failed", ptr, path);
 			free(ptr);
 			continue;
 		}
 		debugf("found: %s", entry->path);
 		if (entry->didl.upnp.type != DIDL_UPNP_OBJECT_TYPE_UNKNOWN) {
 			size = entry->didl.res.size;
-			objectid = database_insert(database,
+			objectid = upnpd_database_insert(database,
 					entry->didl.upnp.object.class,
 					parentid,
 					entry->path,
@@ -522,7 +522,7 @@ static int entry_scan_path (database_t *database, const char *path, const char *
 					entry->ext_info);
 			if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER) {
 				if (asprintf(&tmp, "%s$%llu", parentid, objectid) > 0) {
-					entry_scan_path(database, entry->path, tmp, transcode);
+					upnpd_entry_scan_path(database, entry->path, tmp, transcode);
 					free(tmp);
 				}
 			} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_MOVIE) {
@@ -530,7 +530,7 @@ static int entry_scan_path (database_t *database, const char *path, const char *
 					debugf("adding transcode mirror");
 					size = ~0ULL >> 1;
 					if (asprintf(&tmp, "%s%s", TRANSCODE_PREFIX, entry->didl.dc.title) > 0) {
-						objectid = database_insert(database,
+						objectid = upnpd_database_insert(database,
 								entry->didl.upnp.object.class,
 								parentid,
 								entry->path,
@@ -545,27 +545,27 @@ static int entry_scan_path (database_t *database, const char *path, const char *
 				}
 			}
 		}
-		entry_uninit(entry);
+		upnpd_entry_uninit(entry);
 		free(ptr);
 	}
 	free(current);
-	file_closedir(dir);
+	upnpd_file_closedir(dir);
 	return 0;
 }
 
-void * entry_scan (const char *path, int rescan, int transcode)
+void * upnpd_entry_scan (const char *path, int rescan, int transcode)
 {
 	int ret;
 	database_t *database;
-	database = database_init(rescan);
+	database = upnpd_database_init(rescan);
 	if (rescan) {
-		ret = entry_scan_path(database, path, "0", transcode);
-		database_index(database);
+		ret = upnpd_entry_scan_path(database, path, "0", transcode);
+		upnpd_database_index(database);
 	}
 	return (void *) database;
 }
 
-entry_t * entry_init_from_id (void *database, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total)
+entry_t * upnpd_entry_init_from_id (void *database, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total)
 {
 	char *path;
 	entry_t *entry;
@@ -577,11 +577,11 @@ entry_t * entry_init_from_id (void *database, const char *id, unsigned int start
 	db = (database_t *) database;
 	if (db == NULL) {
 		path = entryid_path_from_id(id);
-		entry = entry_init_from_path(path, start, count, returned, total);
+		entry = upnpd_entry_init_from_path(path, start, count, returned, total);
 		free(path);
 		return entry;
 	} else {
-		de = database_query_parent(db, id, start, count, &ds);
+		de = upnpd_database_query_parent(db, id, start, count, &ds);
 		*total = ds;
 		if (*total == 0) {
 			return NULL;
@@ -609,7 +609,7 @@ entry_t * entry_init_from_id (void *database, const char *id, unsigned int start
 			*returned = *returned + 1;
 			tentry = tentry->next;
 		}
-		database_entry_free(de);
+		upnpd_database_entry_free(de);
 		debugf("returned: %d, total: %d\n", *returned, *total);
 		tentry = entry;
 		while (tentry != NULL) {
@@ -619,7 +619,7 @@ entry_t * entry_init_from_id (void *database, const char *id, unsigned int start
 	}
 }
 
-entry_t * entry_init_from_search (void *database, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total, const char *serach)
+entry_t * upnpd_entry_init_from_search (void *database, const char *id, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total, const char *serach)
 {
 	entry_t *entry;
 	entry_t *tentry;
@@ -632,7 +632,7 @@ entry_t * entry_init_from_search (void *database, const char *id, unsigned int s
 		debugf("search is not supported without database");
 		return NULL;
 	} else {
-		de = database_query_search(db, id, start, count, &ds, serach);
+		de = upnpd_database_query_search(db, id, start, count, &ds, serach);
 		*total = ds;
 		if (*total == 0) {
 			return NULL;
@@ -660,7 +660,7 @@ entry_t * entry_init_from_search (void *database, const char *id, unsigned int s
 			*returned = *returned + 1;
 			tentry = tentry->next;
 		}
-		database_entry_free(de);
+		upnpd_database_entry_free(de);
 		debugf("returned: %d, total: %d\n", *returned, *total);
 		tentry = entry;
 		while (tentry != NULL) {
@@ -670,7 +670,7 @@ entry_t * entry_init_from_search (void *database, const char *id, unsigned int s
 	}
 }
 
-entry_t * entry_init_from_path (const char *path, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total)
+entry_t * upnpd_entry_init_from_path (const char *path, unsigned int start, unsigned int count, unsigned int *returned, unsigned int *total)
 {
 	char *ptr;
 	dir_t *dir;
@@ -688,13 +688,13 @@ entry_t * entry_init_from_path (const char *path, unsigned int start, unsigned i
 	if (current == NULL) {
 		return NULL;
 	}
-	dir = file_opendir(path);
+	dir = upnpd_file_opendir(path);
 	if (dir == NULL) {
 		free(current);
 		return NULL;
 	}
 	debugf("looking into: %s", path);
-	while (file_readdir(dir, current) == 0) {
+	while (upnpd_file_readdir(dir, current) == 0) {
 		if (strncmp(current->name, ".", 1) == 0) {
 			/* will cover parent, self, hidden */
 			continue;
@@ -702,9 +702,9 @@ entry_t * entry_init_from_path (const char *path, unsigned int start, unsigned i
 		if (asprintf(&ptr, "%s/%s", path, current->name) < 0) {
 			continue;
 		}
-		next = entry_didl_from_path(ptr);
+		next = upnpd_entry_didl_from_path(ptr);
 		if (next == NULL) {
-			debugf("entry_didl_from_path(%s, %s) failed", ptr, path);
+			debugf("upnpd_entry_didl_from_path(%s, %s) failed", ptr, path);
 			free(ptr);
 			continue;
 		}
@@ -736,13 +736,13 @@ found:
 		*total = *total + 1;
 	}
 	free(current);
-	file_closedir(dir);
+	upnpd_file_closedir(dir);
 
 	while (entry != NULL && start > 0) {
 		tmp = entry;
 		entry = tmp->next;
 		tmp->next = NULL;
-		entry_uninit(tmp);
+		upnpd_entry_uninit(tmp);
 		start--;
 	}
 	tmp = entry;
@@ -758,13 +758,13 @@ found:
 		prev->next = NULL;
 	}
 	if (tmp != NULL) {
-		entry_uninit(tmp);
+		upnpd_entry_uninit(tmp);
 	}
 
 	return entry;
 }
 
-int entry_uninit (entry_t *root)
+int upnpd_entry_uninit (entry_t *root)
 {
 	entry_t *n;
 	entry_t *p;
@@ -875,9 +875,9 @@ static int entry_parser_callback (void *context, const char *path, const char *n
 				} else if (strcmp(atrr[a], "parentID") == 0) {
 					data->curr->didl.parentid = strdup(atrr[a + 1]);
 				} else if (strcmp(atrr[a], "childCount") == 0) {
-					data->curr->didl.childcount = strtoint32(atrr[a + 1]);
+					data->curr->didl.childcount = upnpd_strtoint32(atrr[a + 1]);
 				} else if (strcmp(atrr[a], "restricted") == 0) {
-					data->curr->didl.restricted = strtoint32(atrr[a + 1]);
+					data->curr->didl.restricted = upnpd_strtoint32(atrr[a + 1]);
 				}
 			}
 			if (data->curr->didl.entryid && data->curr->didl.parentid) {
@@ -941,7 +941,7 @@ static int entry_parser_callback (void *context, const char *path, const char *n
 				} else if (strcmp(path, "/DIDL-Lite/item/upnp:artist") == 0) {
 					strdup_safe(value, data->curr->didl.upnp.musictrack.artist);
 				} else if (strcmp(path, "/DIDL-Lite/item/upnp:originalTrackNumber") == 0) {
-					data->curr->didl.upnp.musictrack.originaltracknumber = strtouint32(value);
+					data->curr->didl.upnp.musictrack.originaltracknumber = upnpd_strtouint32(value);
 				} else if (strcmp(path, "/DIDL-Lite/item/upnp:playlist") == 0) {
 					strdup_safe(value, data->curr->didl.upnp.musictrack.playlist);
 				}
@@ -983,7 +983,7 @@ static int entry_parser_callback (void *context, const char *path, const char *n
 				break;
 			case DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER:
 				if (strcmp(path, "/DIDL-Lite/container/upnp:storageUsed") == 0) {
-					data->curr->didl.upnp.storagefolder.storageused = strtoint32(value);
+					data->curr->didl.upnp.storagefolder.storageused = upnpd_strtoint32(value);
 				}
 				break;
 			default:
@@ -1023,17 +1023,17 @@ static int entry_parser_callback (void *context, const char *path, const char *n
 	return 0;
 }
 
-entry_t * entry_from_result (const char *result)
+entry_t * upnpd_entry_from_result (const char *result)
 {
 	entry_parser_data_t data;
 	memset(&data, 0, sizeof(data));
-	if (xml_parse_buffer_callback(result, strlen(result), entry_parser_callback, &data) != 0) {
-		debugf("xml_parse_buffer_callback(result) failed\n");
+	if (upnpd_xml_parse_buffer_callback(result, strlen(result), entry_parser_callback, &data) != 0) {
+		debugf("upnpd_xml_parse_buffer_callback(result) failed\n");
 	}
 	return data.root;
 }
 
-char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)
+char * upnpd_entry_to_result (device_service_t *service, entry_t *entry, int metadata)
 {
 	int rc;
 	char *out;
@@ -1060,11 +1060,11 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)
 		return NULL;
 	}
 	while (entry) {
-		//entry_dump(entry);
-		id = xml_escape(entry->didl.entryid, 1);
-		pid = xml_escape(entry->didl.parentid, 1);
-		title = xml_escape(entry->didl.dc.title, 0);
-		path = uri_escape(entry->didl.entryid);
+		//upnpd_entry_dump(entry);
+		id = upnpd_xml_escape(entry->didl.entryid, 1);
+		pid = upnpd_xml_escape(entry->didl.parentid, 1);
+		title = upnpd_xml_escape(entry->didl.dc.title, 0);
+		path = upnpd_uri_escape(entry->didl.entryid);
 		if (strcmp(entry->didl.upnp.object.class, "object.container.storageFolder") == 0) {
 			static char *cfmt =
 				"<container id=\"%s\" parentID=\"%s\" childCount=\"%u\" restricted=\"%s\" searchable=\"%s\">"
@@ -1097,9 +1097,9 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)
 				" <upnp:longDescription>%s</upnp:longDescription>"
 				" <res protocolInfo=\"%s\" size=\"%llu\" %s%s%s>http://%s:%d/upnp/contentdirectory?id=%s</res>"
 				"</item>";
-			album = xml_escape(entry->didl.upnp.musictrack.album, 0);
-			artist = xml_escape(entry->didl.upnp.musictrack.artist, 0);
-			genre = xml_escape(entry->didl.upnp.audioitem.genre, 0);
+			album = upnpd_xml_escape(entry->didl.upnp.musictrack.album, 0);
+			artist = upnpd_xml_escape(entry->didl.upnp.musictrack.artist, 0);
+			genre = upnpd_xml_escape(entry->didl.upnp.audioitem.genre, 0);
 			rc = asprintf(&tmp, ifmt,
 				id, pid, (entry->didl.restricted == 1) ? "true" : "false",
 				title,
@@ -1122,7 +1122,7 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)
 				(entry->didl.res.duration) ? "duration=\"" : "",
 				(entry->didl.res.duration) ? entry->didl.res.duration : "",
 				(entry->didl.res.duration) ? "\"" : "",
-				upnp_getaddress(service->device->upnp), upnp_getport(service->device->upnp), path);
+				upnpd_upnp_getaddress(service->device->upnp), upnpd_upnp_getport(service->device->upnp), path);
 			free(album);
 			free(artist);
 			free(genre);
@@ -1168,7 +1168,7 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)
 				(entry->didl.res.duration) ? "duration=\"" : "",
 				(entry->didl.res.duration) ? entry->didl.res.duration : "",
 				(entry->didl.res.duration) ? "\"" : "",
-				upnp_getaddress(service->device->upnp), upnp_getport(service->device->upnp), path);
+				upnpd_upnp_getaddress(service->device->upnp), upnpd_upnp_getport(service->device->upnp), path);
 		} else if (strcmp(entry->didl.upnp.object.class, "object.item.imageItem.photo") == 0) {
 			static char *ifmt =
 				"<item id=\"%s\" parentID=\"%s\" restricted=\"%s\">"
@@ -1202,7 +1202,7 @@ char * entry_to_result (device_service_t *service, entry_t *entry, int metadata)
 				entry->didl.upnp.imageitem.rating,
 				entry->didl.upnp.imageitem.storagemedium,
 				entry->didl.upnp.photo.album,
-				entry->didl.res.protocolinfo, entry->didl.res.size, upnp_getaddress(service->device->upnp), upnp_getport(service->device->upnp), path);
+				entry->didl.res.protocolinfo, entry->didl.res.size, upnpd_upnp_getaddress(service->device->upnp), upnpd_upnp_getport(service->device->upnp), path);
 		} else {
 			debugf("unknown class '%s'", entry->didl.upnp.object.class);
 			free(out);

@@ -65,7 +65,7 @@ static int contentdirectory_get_search_capabilities (device_service_t *service, 
 {
 	int rc;
 	debugf("contentdir get search capabilities");
-	rc = upnp_add_response(request, service->type, "SearchCaps", "*");
+	rc = upnpd_upnp_add_response(request, service->type, "SearchCaps", "*");
 	return rc;
 }
 
@@ -73,7 +73,7 @@ static int contentdirectory_get_sort_capabilities (device_service_t *service, up
 {
 	int rc;
 	debugf("contentdirectory get sort capabilities");
-	rc = upnp_add_response(request, service->type, "SortCaps", "*");
+	rc = upnpd_upnp_add_response(request, service->type, "SortCaps", "*");
 	return rc;
 }
 
@@ -82,7 +82,7 @@ static int contentdirectory_get_system_update_id (device_service_t *service, upn
 	int rc;
 	char str[23];
 	debugf("contentdirectory get system update id");
-	rc = upnp_add_response(request, service->type, "Id", uint32tostr(str, ((contentdir_t *) service)->updateid));
+	rc = upnpd_upnp_add_response(request, service->type, "Id", upnpd_uint32tostr(str, ((contentdir_t *) service)->updateid));
 	return rc;
 }
 
@@ -110,10 +110,10 @@ static int contentdirectory_browse_callback (void *context, const char *path, co
 		data->filter = (value) ? strdup(value) : NULL;
 	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/StartingIndex") == 0 ||
 		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Browse/StartingIndex") == 0) {
-		data->startingindex = strtouint32(value);
+		data->startingindex = upnpd_strtouint32(value);
 	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/RequestedCount") == 0 ||
 		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Browse/RequestedCount") == 0) {
-		data->requestedcount = strtouint32(value);
+		data->requestedcount = upnpd_strtouint32(value);
 	} else if (strcmp(path, "/s:Envelope/s:Body/u:Browse/SortCriteria") == 0 ||
 		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Browse/SortCriteria") == 0) {
 		data->sortcriteria = (value) ? strdup(value) : NULL;
@@ -144,8 +144,8 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 	updateid = contentdir->updateid;
 
 	memset(&data, 0, sizeof(data));
-	if (xml_parse_buffer_callback(request->request, strlen(request->request), contentdirectory_browse_callback, &data) != 0) {
-		debugf("xml_parse_buffer_callback() failed");
+	if (upnpd_xml_parse_buffer_callback(request->request, strlen(request->request), contentdirectory_browse_callback, &data) != 0) {
+		debugf("upnpd_xml_parse_buffer_callback() failed");
 		request->errcode = UPNP_ERROR_PARAMETER_MISMATCH;
 		return 0;
 	}
@@ -165,7 +165,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 
 	if (strcmp(data.browseflag, "BrowseMetadata") == 0) {
 		if (data.objectid == NULL || strcmp(data.objectid, "0") == 0) {
-			entry = entry_didl_from_path(contentdir->rootpath);
+			entry = upnpd_entry_didl_from_path(contentdir->rootpath);
 			debugf("found entry %p", entry);
 			tmp = entry;
 			while (tmp != NULL) {
@@ -183,11 +183,11 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 			}
 		} else {
 			debugf("looking for '%s'", data.objectid);
-			entry = entry_didl_from_id(contentdir->database, data.objectid);
+			entry = upnpd_entry_didl_from_id(contentdir->database, data.objectid);
 		}
 		if (entry != NULL) {
 			if (contentdir->cached == 0) {
-				id = entryid_id_from_path(contentdir->rootpath);
+				id = upnpd_entryid_id_from_path(contentdir->rootpath);
 				if (strcmp(entry->didl.parentid, id) == 0) {
 					free(entry->didl.parentid);
 					entry->didl.parentid = strdup("0");
@@ -208,27 +208,27 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 		totalmatches = 1;
 		numberreturned = 1;
 		updateid = contentdir->updateid;
-		result = entry_to_result(service, entry, 1);
+		result = upnpd_entry_to_result(service, entry, 1);
 		if (result == NULL) {
 			request->errcode = UPNP_ERROR_CANNOT_PROCESS;
 			goto error;
 		}
 		numberreturned = 1;
 		totalmatches = 1;
-		upnp_add_response(request, service->type, "Result", result);
-		upnp_add_response(request, service->type, "NumberReturned", uint32tostr(str, numberreturned));
-		upnp_add_response(request, service->type, "TotalMatches", uint32tostr(str, totalmatches));
-		upnp_add_response(request, service->type, "UpdateID", uint32tostr(str, updateid));
+		upnpd_upnp_add_response(request, service->type, "Result", result);
+		upnpd_upnp_add_response(request, service->type, "NumberReturned", upnpd_uint32tostr(str, numberreturned));
+		upnpd_upnp_add_response(request, service->type, "TotalMatches", upnpd_uint32tostr(str, totalmatches));
+		upnpd_upnp_add_response(request, service->type, "UpdateID", upnpd_uint32tostr(str, updateid));
 		free(data.browseflag);
 		free(data.filter);
 		free(data.objectid);
 		free(data.sortcriteria);
 		free(result);
-		entry_uninit(entry);
+		upnpd_entry_uninit(entry);
 		return 0;
 	} else if (strcmp(data.browseflag, "BrowseDirectChildren") == 0) {
 		if (contentdir->cached == 0 && (data.objectid == NULL || strcmp(data.objectid, "0") == 0)) {
-			entry = entry_init_from_path(contentdir->rootpath, data.startingindex, data.requestedcount, &numberreturned, &totalmatches);
+			entry = upnpd_entry_init_from_path(contentdir->rootpath, data.startingindex, data.requestedcount, &numberreturned, &totalmatches);
 			tmp = entry;
 			while (tmp != NULL) {
 				free(tmp->didl.parentid);
@@ -242,35 +242,35 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 			}
 		} else {
 			debugf("looking for '%s'", data.objectid);
-			entry = entry_init_from_id(contentdir->database, data.objectid, data.startingindex, data.requestedcount, &numberreturned, &totalmatches);
+			entry = upnpd_entry_init_from_id(contentdir->database, data.objectid, data.startingindex, data.requestedcount, &numberreturned, &totalmatches);
 		}
 		if (entry == NULL) {
 			debugf("could not find any child object");
-			entry = entry_didl_from_id(contentdir->database, data.objectid);
+			entry = upnpd_entry_didl_from_id(contentdir->database, data.objectid);
 			if (entry == NULL) {
 				debugf("could not find any object");
 				request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
 				goto error;
 			}
-			entry_uninit(entry);
+			upnpd_entry_uninit(entry);
 			entry = NULL;
 		}
 		updateid = contentdir->updateid;
-		result = entry_to_result(service, entry, 0);
+		result = upnpd_entry_to_result(service, entry, 0);
 		if (result == NULL) {
 			request->errcode = UPNP_ERROR_CANNOT_PROCESS;
 			goto error;
 		}
-		upnp_add_response(request, service->type, "Result", result);
-		upnp_add_response(request, service->type, "NumberReturned", uint32tostr(str, numberreturned));
-		upnp_add_response(request, service->type, "TotalMatches", uint32tostr(str, totalmatches));
-		upnp_add_response(request, service->type, "UpdateID", uint32tostr(str, updateid));
+		upnpd_upnp_add_response(request, service->type, "Result", result);
+		upnpd_upnp_add_response(request, service->type, "NumberReturned", upnpd_uint32tostr(str, numberreturned));
+		upnpd_upnp_add_response(request, service->type, "TotalMatches", upnpd_uint32tostr(str, totalmatches));
+		upnpd_upnp_add_response(request, service->type, "UpdateID", upnpd_uint32tostr(str, updateid));
 		free(data.browseflag);
 		free(data.filter);
 		free(data.objectid);
 		free(data.sortcriteria);
 		free(result);
-		entry_uninit(entry);
+		upnpd_entry_uninit(entry);
 		return 0;
 	} else {
 		request->errcode = UPNP_ERROR_INVALIG_ARGS;
@@ -279,7 +279,7 @@ error:
 		free(data.filter);
 		free(data.objectid);
 		free(data.sortcriteria);
-		entry_uninit(entry);
+		upnpd_entry_uninit(entry);
 		return -1;
 	}
 }
@@ -308,10 +308,10 @@ static int contentdirectory_search_callback (void *context, const char *path, co
 		data->filter = (value) ? strdup(value) : NULL;
 	} else if (strcmp(path, "/s:Envelope/s:Body/u:Search/StartingIndex") == 0 ||
 		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Search/StartingIndex") == 0) {
-		data->startingindex = strtouint32(value);
+		data->startingindex = upnpd_strtouint32(value);
 	} else if (strcmp(path, "/s:Envelope/s:Body/u:Search/RequestedCount") == 0 ||
 		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Search/RequestedCount") == 0) {
-		data->requestedcount = strtouint32(value);
+		data->requestedcount = upnpd_strtouint32(value);
 	} else if (strcmp(path, "/s:Envelope/s:Body/u:Search/SortCriteria") == 0 ||
 		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:Search/SortCriteria") == 0) {
 		data->sortcriteria = (value) ? strdup(value) : NULL;
@@ -336,8 +336,8 @@ static int contentdirectory_search (device_service_t *service, upnp_event_action
 	contentdir = (contentdir_t *) service;
 
 	memset(&data, 0, sizeof(data));
-	if (xml_parse_buffer_callback(request->request, strlen(request->request), contentdirectory_search_callback, &data) != 0) {
-		debugf("xml_parse_buffer_callback() failed");
+	if (upnpd_xml_parse_buffer_callback(request->request, strlen(request->request), contentdirectory_search_callback, &data) != 0) {
+		debugf("upnpd_xml_parse_buffer_callback() failed");
 		request->errcode = UPNP_ERROR_PARAMETER_MISMATCH;
 		return 0;
 	}
@@ -355,28 +355,28 @@ static int contentdirectory_search (device_service_t *service, upnp_event_action
 		data.requestedcount,
 		data.sortcriteria);
 
-	entry = entry_init_from_search(contentdir->database, data.objectid, data.startingindex, data.requestedcount, &numberreturned, &totalmatches, data.searchflag);
+	entry = upnpd_entry_init_from_search(contentdir->database, data.objectid, data.startingindex, data.requestedcount, &numberreturned, &totalmatches, data.searchflag);
 	if (entry == NULL) {
 		debugf("could not find any object");
 		request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
 		goto error;
 	}
 	updateid = contentdir->updateid;
-	result = entry_to_result(service, entry, 0);
+	result = upnpd_entry_to_result(service, entry, 0);
 	if (result == NULL) {
 		request->errcode = UPNP_ERROR_CANNOT_PROCESS;
 		goto error;
 	}
-	upnp_add_response(request, service->type, "Result", result);
-	upnp_add_response(request, service->type, "NumberReturned", uint32tostr(str, numberreturned));
-	upnp_add_response(request, service->type, "TotalMatches", uint32tostr(str, totalmatches));
-	upnp_add_response(request, service->type, "UpdateID", uint32tostr(str, updateid));
+	upnpd_upnp_add_response(request, service->type, "Result", result);
+	upnpd_upnp_add_response(request, service->type, "NumberReturned", upnpd_uint32tostr(str, numberreturned));
+	upnpd_upnp_add_response(request, service->type, "TotalMatches", upnpd_uint32tostr(str, totalmatches));
+	upnpd_upnp_add_response(request, service->type, "UpdateID", upnpd_uint32tostr(str, updateid));
 	free(data.searchflag);
 	free(data.filter);
 	free(data.objectid);
 	free(data.sortcriteria);
 	free(result);
-	entry_uninit(entry);
+	upnpd_entry_uninit(entry);
 	return 0;
 
 	request->errcode = UPNP_ERROR_INVALIG_ARGS;
@@ -385,7 +385,7 @@ error:
 	free(data.filter);
 	free(data.objectid);
 	free(data.sortcriteria);
-	entry_uninit(entry);
+	upnpd_entry_uninit(entry);
 	return -1;
 }
 
@@ -509,11 +509,11 @@ typedef struct transcode_s {
 static char * contentdirectory_uniquename (void)
 {
 	char *name;
-	file_stat_t stat;
+	upnpd_file_stat_t stat;
 	name = (char *) malloc(sizeof(char) * 256);
 	while (1) {
 		sprintf(name, "/tmp/upnpd.transcode.%u", (unsigned int) rand());
-		if (file_stat(name, &stat) != 0) {
+		if (upnpd_file_stat(name, &stat) != 0) {
 			if (mkfifo(name, 0666) != 0) {
 				free(name);
 				return NULL;
@@ -529,7 +529,7 @@ static char * contentdirectory_subtitlefile (const char *fname)
 {
 	int l;
 	char *sf;
-	file_stat_t stat;
+	upnpd_file_stat_t stat;
 
 	l = strlen(fname);
 	sf = (char *) malloc(l + strlen(".srt") + 1);
@@ -544,7 +544,7 @@ static char * contentdirectory_subtitlefile (const char *fname)
 		memcpy(sf, fname, l);
 		memcpy(sf + l, ".srt", strlen(".srt"));
 		*(sf + l + strlen(".srt")) = '\0';
-		if (file_stat(sf, &stat) == 0) {
+		if (upnpd_file_stat(sf, &stat) == 0) {
 			break;
 		}
 		l--;
@@ -556,9 +556,9 @@ static char * contentdirectory_subtitlefile (const char *fname)
 static int contentdirectory_writer_running (transcode_t *transcode)
 {
 	int ret;
-	thread_mutex_lock(transcode->writer.mutex);
+	upnpd_thread_mutex_lock(transcode->writer.mutex);
 	ret = transcode->writer.running;
-	thread_mutex_unlock(transcode->writer.mutex);
+	upnpd_thread_mutex_unlock(transcode->writer.mutex);
 	return ret;
 }
 
@@ -575,12 +575,12 @@ static void * contentdirectory_reader (void *arg)
 
 	transcode = (transcode_t *) arg;
 
-	thread_mutex_lock(transcode->reader.mutex);
+	upnpd_thread_mutex_lock(transcode->reader.mutex);
 	transcode->reader.started = 1;
 	transcode->reader.running = 1;
 	transcode->reader.stopped = 0;
-	thread_cond_signal(transcode->reader.cond);
-	thread_mutex_unlock(transcode->reader.mutex);
+	upnpd_thread_cond_signal(transcode->reader.cond);
+	upnpd_thread_mutex_unlock(transcode->reader.mutex);
 
 	file = NULL;
 	buffer = NULL;
@@ -589,21 +589,21 @@ static void * contentdirectory_reader (void *arg)
 	if (buffer == NULL) {
 		goto out;
 	}
-	file = file_open(transcode->output, FILE_MODE_READ);
+	file = upnpd_file_open(transcode->output, FILE_MODE_READ);
 	if (file == NULL) {
 		goto out;
 	}
 
 	while (1) {
-		thread_mutex_lock(transcode->reader.mutex);
+		upnpd_thread_mutex_lock(transcode->reader.mutex);
 		if (transcode->reader.running == 0) {
-			thread_mutex_unlock(transcode->reader.mutex);
+			upnpd_thread_mutex_unlock(transcode->reader.mutex);
 			goto out;
 		}
 		s = MIN(TRANSCODE_BUFFER_SIZE - transcode->length, TRANSCODE_READ_SIZE);
-		thread_mutex_unlock(transcode->reader.mutex);
+		upnpd_thread_mutex_unlock(transcode->reader.mutex);
 
-		r = file_poll(file, POLL_EVENT_IN, &revent, 1000);
+		r = upnpd_file_poll(file, POLL_EVENT_IN, &revent, 1000);
 		if (r <= 0) {
 			if (contentdirectory_writer_running(transcode) == 1) {
 				sleep(1);
@@ -611,7 +611,7 @@ static void * contentdirectory_reader (void *arg)
 			}
 			break;
 		}
-		r = file_read(file, buffer, s);
+		r = upnpd_file_read(file, buffer, s);
 		if (r <= 0) {
 			if (contentdirectory_writer_running(transcode) == 1) {
 				sleep(1);
@@ -619,16 +619,16 @@ static void * contentdirectory_reader (void *arg)
 			}
 			break;
 		}
-		thread_mutex_lock(transcode->reader.mutex);
+		upnpd_thread_mutex_lock(transcode->reader.mutex);
 		if (transcode->reader.writing == 0 && transcode->length < TRANSCODE_BUFFER_SIZE / 2) {
 			debugf("transcoding started");
 			transcode->reader.writing = 1;
-			thread_cond_signal(transcode->reader.cond);
+			upnpd_thread_cond_signal(transcode->reader.cond);
 		}
 		i = 0;
 		while (i < r) {
 			if (transcode->reader.running == 0) {
-				thread_mutex_unlock(transcode->reader.mutex);
+				upnpd_thread_mutex_unlock(transcode->reader.mutex);
 				goto out;
 			}
 			debugf("transcode->offset: %u, transcode->length: %u", transcode->offset, transcode->length);
@@ -638,21 +638,21 @@ static void * contentdirectory_reader (void *arg)
 			transcode->length += l;
 			i += l;
 		}
-		thread_cond_signal(transcode->reader.cond);
-		thread_mutex_unlock(transcode->reader.mutex);
+		upnpd_thread_cond_signal(transcode->reader.cond);
+		upnpd_thread_mutex_unlock(transcode->reader.mutex);
 	}
 
 out:
 	debugf("reading finished");
 	free(buffer);
-	file_close(file);
+	upnpd_file_close(file);
 
-	thread_mutex_lock(transcode->reader.mutex);
+	upnpd_thread_mutex_lock(transcode->reader.mutex);
 	transcode->reader.started = 1;
 	transcode->reader.running = 0;
 	transcode->reader.stopped = 1;
-	thread_cond_signal(transcode->reader.cond);
-	thread_mutex_unlock(transcode->reader.mutex);
+	upnpd_thread_cond_signal(transcode->reader.cond);
+	upnpd_thread_mutex_unlock(transcode->reader.mutex);
 
 	return NULL;
 }
@@ -777,14 +777,14 @@ static void * contentdirectory_writer (void *arg)
 	buffer = NULL;
 	transcode = (transcode_t *) arg;
 
-	thread_mutex_lock(transcode->writer.mutex);
+	upnpd_thread_mutex_lock(transcode->writer.mutex);
 	transcode->writer.error = 0;
 	transcode->writer.started = 1;
 	transcode->writer.running = 1;
 	transcode->writer.stopped = 0;
 	transcode->writer.writing = 1;
-	thread_cond_signal(transcode->writer.cond);
-	thread_mutex_unlock(transcode->writer.mutex);
+	upnpd_thread_cond_signal(transcode->writer.cond);
+	upnpd_thread_mutex_unlock(transcode->writer.mutex);
 
 	args[4] = strdup(transcode->input);
 	args[24] = transcode->codepage;
@@ -805,22 +805,22 @@ static void * contentdirectory_writer (void *arg)
 	memset(buffer, 0, bsize);
 
 	debugf("running command: '%s'", "transcode");
-	thread_mutex_lock(transcode->writer.mutex);
+	upnpd_thread_mutex_lock(transcode->writer.mutex);
 	transcode->pid = pid;
-	thread_mutex_unlock(transcode->writer.mutex);
+	upnpd_thread_mutex_unlock(transcode->writer.mutex);
 
 	while (1) {
-		thread_mutex_lock(transcode->writer.mutex);
+		upnpd_thread_mutex_lock(transcode->writer.mutex);
 		if (transcode->writer.running == 0) {
-			thread_mutex_unlock(transcode->writer.mutex);
+			upnpd_thread_mutex_unlock(transcode->writer.mutex);
 			goto out;
 		}
 		if (transcode->writer.writing == 0 && strncmp(buffer, "Pos: ", 5) == 0) {
 			debugf("transcoding started");
 			transcode->writer.writing = 1;
-			thread_cond_signal(transcode->writer.cond);
+			upnpd_thread_cond_signal(transcode->writer.cond);
 		}
-		thread_mutex_unlock(transcode->writer.mutex);
+		upnpd_thread_mutex_unlock(transcode->writer.mutex);
 
 		if (fgets(buffer, bsize, fp) == NULL) {
 			goto out;
@@ -839,13 +839,13 @@ out:
 
 	debugf("updating status: %s", transcode->output);
 
-	thread_mutex_lock(transcode->writer.mutex);
+	upnpd_thread_mutex_lock(transcode->writer.mutex);
 	transcode->writer.error = err;
 	transcode->writer.started = 1;
 	transcode->writer.running = 0;
 	transcode->writer.stopped = 1;
-	thread_cond_signal(transcode->writer.cond);
-	thread_mutex_unlock(transcode->writer.mutex);
+	upnpd_thread_cond_signal(transcode->writer.cond);
+	upnpd_thread_mutex_unlock(transcode->writer.mutex);
 
 	return NULL;
 }
@@ -860,32 +860,32 @@ static int contentdirectory_stoptranscode (transcode_t *transcode)
 		waitpid(transcode->pid, &sts, 0);
 	}
 	debugf("closing reader: %s", transcode->output);
-	thread_mutex_lock(transcode->reader.mutex);
+	upnpd_thread_mutex_lock(transcode->reader.mutex);
 	transcode->reader.running = 0;
-	thread_cond_signal(transcode->reader.cond);
+	upnpd_thread_cond_signal(transcode->reader.cond);
 	debugf("waiting reader: %s", transcode->output);
 	while (transcode->reader.stopped == 0) {
-		thread_cond_wait(transcode->reader.cond, transcode->reader.mutex);
+		upnpd_thread_cond_wait(transcode->reader.cond, transcode->reader.mutex);
 	}
-	thread_mutex_unlock(transcode->reader.mutex);
-	thread_join(transcode->reader.thread);
+	upnpd_thread_mutex_unlock(transcode->reader.mutex);
+	upnpd_thread_join(transcode->reader.thread);
 	err = transcode->reader.error;
-	thread_mutex_destroy(transcode->reader.mutex);
-	thread_cond_destroy(transcode->reader.cond);
+	upnpd_thread_mutex_destroy(transcode->reader.mutex);
+	upnpd_thread_cond_destroy(transcode->reader.cond);
 
 	debugf("closing writer: %s", transcode->output);
-	thread_mutex_lock(transcode->writer.mutex);
+	upnpd_thread_mutex_lock(transcode->writer.mutex);
 	transcode->writer.running = 0;
-	thread_cond_signal(transcode->writer.cond);
+	upnpd_thread_cond_signal(transcode->writer.cond);
 	debugf("waiting writer: %s", transcode->output);
 	while (transcode->writer.stopped == 0) {
-		thread_cond_wait(transcode->writer.cond, transcode->writer.mutex);
+		upnpd_thread_cond_wait(transcode->writer.cond, transcode->writer.mutex);
 	}
-	thread_mutex_unlock(transcode->writer.mutex);
-	thread_join(transcode->writer.thread);
+	upnpd_thread_mutex_unlock(transcode->writer.mutex);
+	upnpd_thread_join(transcode->writer.thread);
 	err = transcode->writer.error;
-	thread_mutex_destroy(transcode->writer.mutex);
-	thread_cond_destroy(transcode->writer.cond);
+	upnpd_thread_mutex_destroy(transcode->writer.mutex);
+	upnpd_thread_cond_destroy(transcode->writer.cond);
 
 	debugf("removing file: %s", transcode->output);
 	unlink(transcode->output);
@@ -916,23 +916,23 @@ static transcode_t * contentdirectory_starttranscode (const char *input, const c
 	transcode->length = 0;
 	transcode->offset = 0;
 
-	transcode->writer.cond = thread_cond_init("transcoder-writer-cond");
-	transcode->writer.mutex = thread_mutex_init("transcoder-writer-mutex", 0);
-	thread_mutex_lock(transcode->writer.mutex);
-	transcode->writer.thread = thread_create("transcoder-writer", contentdirectory_writer, transcode);
+	transcode->writer.cond = upnpd_thread_cond_init("transcoder-writer-cond");
+	transcode->writer.mutex = upnpd_thread_mutex_init("transcoder-writer-mutex", 0);
+	upnpd_thread_mutex_lock(transcode->writer.mutex);
+	transcode->writer.thread = upnpd_thread_create("transcoder-writer", contentdirectory_writer, transcode);
 	while (transcode->writer.started == 0) {
-		thread_cond_wait(transcode->writer.cond, transcode->writer.mutex);
+		upnpd_thread_cond_wait(transcode->writer.cond, transcode->writer.mutex);
 	}
-	thread_mutex_unlock(transcode->writer.mutex);
+	upnpd_thread_mutex_unlock(transcode->writer.mutex);
 
-	transcode->reader.cond = thread_cond_init("transcoder-reader-cond");
-	transcode->reader.mutex = thread_mutex_init("transcoder-reader-mutex", 0);
-	thread_mutex_lock(transcode->reader.mutex);
-	transcode->reader.thread = thread_create("transcoder-reader", contentdirectory_reader, transcode);
+	transcode->reader.cond = upnpd_thread_cond_init("transcoder-reader-cond");
+	transcode->reader.mutex = upnpd_thread_mutex_init("transcoder-reader-mutex", 0);
+	upnpd_thread_mutex_lock(transcode->reader.mutex);
+	transcode->reader.thread = upnpd_thread_create("transcoder-reader", contentdirectory_reader, transcode);
 	while (transcode->reader.started == 0) {
-		thread_cond_wait(transcode->reader.cond, transcode->reader.mutex);
+		upnpd_thread_cond_wait(transcode->reader.cond, transcode->reader.mutex);
 	}
-	thread_mutex_unlock(transcode->reader.mutex);
+	upnpd_thread_mutex_unlock(transcode->reader.mutex);
 
 	debugf("created file: %s", transcode->output);
 	return transcode;
@@ -951,7 +951,7 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 {
 	char *ptr;
 	entry_t *entry;
-	file_stat_t stat;
+	upnpd_file_stat_t stat;
 	const char *ename;
 	contentdir_t *contentdir;
 	debugf("contentdirectory_vfsgetinfo '%s'", path);
@@ -966,7 +966,7 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 		*ptr = '\0';
 	}
 	debugf("entry name is '%s'", ename);
-	entry = entry_didl_from_id(contentdir->database, ename);
+	entry = upnpd_entry_didl_from_id(contentdir->database, ename);
 	if (entry == NULL) {
 		debugf("no entry found '%s'", ename);
 		return -1;
@@ -977,16 +977,16 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 		info->seekable = -1;
 	}
 	debugf("checking file: '%s'", entry->path);
-	if (file_access(entry->path, FILE_MODE_READ) == 0 &&
-	    file_stat(entry->path, &stat) == 0) {
+	if (upnpd_file_access(entry->path, FILE_MODE_READ) == 0 &&
+	    upnpd_file_stat(entry->path, &stat) == 0) {
 		info->size = entry->didl.res.size;
 		info->mtime = stat.mtime;
 		info->mimetype = strdup(entry->mime);
-		entry_uninit(entry);
+		upnpd_entry_uninit(entry);
 		return 0;
 	}
 	debugf("no file found '%s'", entry->path);
-	entry_uninit(entry);
+	upnpd_entry_uninit(entry);
 	return -1;
 }
 
@@ -1004,7 +1004,7 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 	}
 	ename = path + strlen("/upnp/contentdirectory?id=");
 	debugf("entry name is '%s'", ename);
-	entry = entry_didl_from_id(contentdir->database, ename);
+	entry = upnpd_entry_didl_from_id(contentdir->database, ename);
 	if (entry == NULL) {
 		debugf("no entry found '%s'", ename);
 		return NULL;
@@ -1013,7 +1013,7 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 	file = (upnp_file_t *) malloc(sizeof(upnp_file_t));
 	if (file == NULL) {
 		debugf("malloc failed");
-		entry_uninit(entry);
+		upnpd_entry_uninit(entry);
 		return NULL;
 	}
 	memset(file, 0, sizeof(upnp_file_t));
@@ -1027,42 +1027,42 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 		if (name == NULL) {
 			debugf("cannot create unique file");
 			free(file);
-			entry_uninit(entry);
+			upnpd_entry_uninit(entry);
 			return NULL;
 		}
 		file->transcode = 1;
 		t = contentdirectory_starttranscode(entry->path, name, contentdir->fontfile, contentdir->codepage);
-		thread_mutex_lock(t->writer.mutex);
+		upnpd_thread_mutex_lock(t->writer.mutex);
 		while (t->writer.running && t->writer.writing == 0) {
-			thread_cond_wait(t->writer.cond, t->writer.mutex);
+			upnpd_thread_cond_wait(t->writer.cond, t->writer.mutex);
 		}
-		thread_mutex_unlock(t->writer.mutex);
-		thread_mutex_lock(t->reader.mutex);
+		upnpd_thread_mutex_unlock(t->writer.mutex);
+		upnpd_thread_mutex_lock(t->reader.mutex);
 		while (t->reader.running && t->reader.writing == 0) {
-			thread_cond_wait(t->reader.cond, t->reader.mutex);
+			upnpd_thread_cond_wait(t->reader.cond, t->reader.mutex);
 		}
-		thread_mutex_unlock(t->reader.mutex);
+		upnpd_thread_mutex_unlock(t->reader.mutex);
 		file->buf = t;
 		file->file = NULL;
 		free(name);
 #else
 		debugf("transcode not supported for this build");
 		free(file);
-		entry_uninit(entry);
+		upnpd_entry_uninit(entry);
 		return NULL;
 #endif
 	} else {
 		file->transcode = 0;
-		file->file = file_open(entry->path, FILE_MODE_READ);
+		file->file = upnpd_file_open(entry->path, FILE_MODE_READ);
 		if (file->file == NULL) {
 			debugf("open(%s, O_RDONLY); failed", ename);
 			free(file);
-			entry_uninit(entry);
+			upnpd_entry_uninit(entry);
 			return NULL;
 		}
 	}
 	file->service = &contentdir->service;
-	entry_uninit(entry);
+	upnpd_entry_uninit(entry);
 	return file;
 }
 
@@ -1079,15 +1079,15 @@ static int contentdirectory_vfsread (void *cookie, void *handle, char *buffer, u
 		int l;
 		transcode_t *transcode;
 		transcode = (transcode_t *) file->buf;
-		thread_mutex_lock(transcode->reader.mutex);
+		upnpd_thread_mutex_lock(transcode->reader.mutex);
 		i = 0;
 		while (i < length) {
 			if (transcode->length == 0) {
 				while (transcode->reader.running != 0 && transcode->length == 0) {
-					thread_cond_wait(transcode->reader.cond, transcode->reader.mutex);
+					upnpd_thread_cond_wait(transcode->reader.cond, transcode->reader.mutex);
 				}
 				if (transcode->length == 0 && transcode->reader.running == 0) {
-					thread_mutex_unlock(transcode->reader.mutex);
+					upnpd_thread_mutex_unlock(transcode->reader.mutex);
 					return i;
 				}
 			}
@@ -1097,12 +1097,12 @@ static int contentdirectory_vfsread (void *cookie, void *handle, char *buffer, u
 			transcode->length = transcode->length - l;
 			i += l;
 		}
-		thread_mutex_unlock(transcode->reader.mutex);
+		upnpd_thread_mutex_unlock(transcode->reader.mutex);
 #else
 		return 0;
 #endif
 	} else {
-		i = file_read(file->file, buffer, length);
+		i = upnpd_file_read(file->file, buffer, length);
 	}
 	file->offset += i;
 	return i;
@@ -1137,9 +1137,9 @@ static unsigned long long contentdirectory_vfsseek (void *cookie, void *handle, 
 #endif
 	}
 	switch (whence) {
-		case GENA_SEEK_SET: return file_seek(file->file, offset, FILE_SEEK_SET);
-		case GENA_SEEK_CUR: return file_seek(file->file, offset, FILE_SEEK_CUR);
-		case GENA_SEEK_END: return file_seek(file->file, offset, FILE_SEEK_END);
+		case GENA_SEEK_SET: return upnpd_file_seek(file->file, offset, FILE_SEEK_SET);
+		case GENA_SEEK_CUR: return upnpd_file_seek(file->file, offset, FILE_SEEK_CUR);
+		case GENA_SEEK_END: return upnpd_file_seek(file->file, offset, FILE_SEEK_END);
 	}
 	return -1;
 }
@@ -1156,7 +1156,7 @@ static int contentdirectory_vfsclose (void *cookie, void *handle)
 		contentdirectory_stoptranscode((transcode_t *) file->buf);
 #endif
 	} else {
-		file_close(file->file);
+		upnpd_file_close(file->file);
 	}
 	free(file);
 	return 0;
@@ -1178,7 +1178,7 @@ static int contentdirectory_uninit (device_service_t *contentdir)
 	debugf("contentdirectory uninit");
 	debugf("uninitializing entry database");
 	if ((database_t *) ((contentdir_t *) contentdir)->database != NULL) {
-		database_uninit((database_t *) ((contentdir_t *) contentdir)->database, 0);
+		upnpd_database_uninit((database_t *) ((contentdir_t *) contentdir)->database, 0);
 	}
 	free(((contentdir_t *) contentdir)->rootpath);
 	for (i = 0; (variable = &contentdir->variables[i])->name != NULL; i++) {
@@ -1190,7 +1190,7 @@ static int contentdirectory_uninit (device_service_t *contentdir)
 	return 0;
 }
 
-device_service_t * contentdirectory_init (const char *directory, int cached, int transcode, const char *fontfile, const char *codepage)
+device_service_t * upnpd_contentdirectory_init (const char *directory, int cached, int transcode, const char *fontfile, const char *codepage)
 {
 	contentdir_t *contentdir;
 	service_variable_t *variable;
@@ -1219,13 +1219,13 @@ device_service_t * contentdirectory_init (const char *directory, int cached, int
 	contentdir->updateid = 0;
 
 	debugf("initializing content directory service");
-	if (service_init(&contentdir->service) != 0) {
-		debugf("service_init(&contentdir->service) failed");
+	if (upnpd_service_init(&contentdir->service) != 0) {
+		debugf("upnpd_service_init(&contentdir->service) failed");
 		free(contentdir);
 		contentdir = NULL;
 		goto out;
 	}
-	variable = service_variable_find(&contentdir->service, "SystemUpdateID");
+	variable = upnpd_service_variable_find(&contentdir->service, "SystemUpdateID");
 	if (variable != NULL) {
 		variable->value = strdup("0");
 	}
@@ -1243,7 +1243,7 @@ device_service_t * contentdirectory_init (const char *directory, int cached, int
 #endif
 
 	if (contentdir->cached) {
-		contentdir->database = entry_scan(contentdir->rootpath, (cached == 1) ? 0 : 1, (transcode == 1) ? 1 : 0);
+		contentdir->database = upnpd_entry_scan(contentdir->rootpath, (cached == 1) ? 0 : 1, (transcode == 1) ? 1 : 0);
 	}
 
 	debugf("initialized content directory service");

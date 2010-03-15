@@ -156,19 +156,19 @@ int main (int argc, char *argv[])
 	}
 
 	if (interface != NULL && strcmp(interface, "list") == 0) {
-		interface_printall();
+		upnpd_interface_printall();
 	}
 	if (device == NULL || interface == NULL) {
 		upnpd_help(argv[0]);
 		return -2;
 	}
-	ipaddress = interface_getaddr(interface);
+	ipaddress = upnpd_interface_getaddr(interface);
 	if (ipaddress == NULL) {
 		debugf("could not find interface %s", interface);
 		free(device);
 		return -3;
 	}
-	ifnetmask = interface_getmask(interface);
+	ifnetmask = upnpd_interface_getmask(interface);
 	if (ifnetmask == NULL) {
 		debugf("could not find interface netmask %s", interface);
 		free(device);

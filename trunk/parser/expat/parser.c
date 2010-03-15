@@ -154,9 +154,9 @@ static void xml_parse_character (void *xdata, const char *txt, int txtlen)
 	strncat(data->value, txt, txtlen);
 }
 
-int xml_parse_buffer_callback (const char *buffer, unsigned int len, int (*callback) (void *context, const char *path, const char *name, const char **atrr, const char *value), void *context)
+int upnpd_xml_parse_buffer_callback (const char *buffer, unsigned int len, int (*callback) (void *context, const char *path, const char *name, const char **atrr, const char *value), void *context)
 {
-	XML_Parser p;
+	upnpd_XML_Parser p;
 	xml_data_t *data;
 	data = (xml_data_t *) malloc(sizeof(xml_data_t));
 	if (data == NULL) {
@@ -165,18 +165,18 @@ int xml_parse_buffer_callback (const char *buffer, unsigned int len, int (*callb
 	memset(data, 0, sizeof(xml_data_t));
 	data->callback = callback;
 	data->context = context;
-	p = XML_ParserCreate(NULL);
-	XML_SetUserData(p, data);
-	XML_SetElementHandler(p, xml_parse_start, xml_parse_end);
-	XML_SetCharacterDataHandler(p, xml_parse_character);
-	if (!XML_Parse(p, buffer, len, 1)) {
-		debugf("Parse error at line %d:%s", (int) XML_GetCurrentLineNumber(p), XML_ErrorString(XML_GetErrorCode(p)));
-		XML_ParserFree(p);
+	p = upnpd_XML_ParserCreate(NULL);
+	upnpd_XML_SetUserData(p, data);
+	upnpd_XML_SetElementHandler(p, xml_parse_start, xml_parse_end);
+	upnpd_XML_SetCharacterDataHandler(p, xml_parse_character);
+	if (!upnpd_XML_Parse(p, buffer, len, 1)) {
+		debugf("Parse error at line %d:%s", (int) upnpd_XML_GetCurrentLineNumber(p), upnpd_XML_ErrorString(upnpd_XML_GetErrorCode(p)));
+		upnpd_XML_ParserFree(p);
 		free(data->path);
 		free(data);
 		return -1;
 	}
-	XML_ParserFree(p);
+	upnpd_XML_ParserFree(p);
 	free(data->path);
 	free(data);
 	return 0;

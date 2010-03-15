@@ -1311,7 +1311,7 @@ common(PROLOG_STATE *state, int tok)
 }
 
 void
-XmlPrologStateInit(PROLOG_STATE *state)
+upnpd_XmlPrologStateInit(PROLOG_STATE *state)
 {
   state->handler = prolog0;
 #ifdef XML_DTD
@@ -1324,7 +1324,7 @@ XmlPrologStateInit(PROLOG_STATE *state)
 #ifdef XML_DTD
 
 void
-XmlPrologStateInitExternalEntity(PROLOG_STATE *state)
+upnpd_XmlPrologStateInitExternalEntity(PROLOG_STATE *state)
 {
   state->handler = externalSubset0;
   state->documentEntity = 0;

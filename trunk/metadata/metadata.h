@@ -54,9 +54,9 @@ struct metadata_s {
 	unsigned long long size;
 };
 
-metadata_t * metadata_init (const char *path);
-int metadata_uninit (metadata_t *metadata);
+metadata_t * upnpd_metadata_init (const char *path);
+int upnpd_metadata_uninit (metadata_t *metadata);
 
-metadata_snapshot_t * metadata_snapshot_init (const char *path, int width, int height);
-int metadata_snapshot_uninit (metadata_snapshot_t *snapshot);
-unsigned char * metadata_snapshot_obtain (metadata_snapshot_t *snapshot, unsigned int seconds);
+metadata_snapshot_t * upnpd_metadata_snapshot_init (const char *path, int width, int height);
+int upnpd_metadata_snapshot_uninit (metadata_snapshot_t *snapshot);
+unsigned char * upnpd_metadata_snapshot_obtain (metadata_snapshot_t *snapshot, unsigned int seconds);
