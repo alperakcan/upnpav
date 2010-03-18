@@ -411,7 +411,8 @@ static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, const ch
 	upnpd_thread_mutex_lock(ssdp->mutex);
 	switch (request->type) {
 		case SSDP_TYPE_MSEARCH:
-			if (strcasecmp(request->request.search.st, "upnp:rootdevice") == 0) {
+			if (strcasecmp(request->request.search.st, "upnp:rootdevice") == 0 ||
+			    strcasecmp(request->request.search.st, "ssdp:all") == 0) {
 				list_for_each_entry(d, &ssdp->devices, head) {
 					buffer = ssdp_advertise_buffer(d, 1);
 					if (buffer != NULL) {
