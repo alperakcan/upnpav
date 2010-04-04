@@ -218,7 +218,7 @@ out:	return ret;
 }
 
 upnpd_application_t mediarenderer = {
-	.name = "mediarenderer",
-	.description = "upnp av mediarenderer device",
-	.main = &mediarenderer_main,
+	"mediarenderer",
+	"upnp av mediarenderer device",
+	&mediarenderer_main,
 };
