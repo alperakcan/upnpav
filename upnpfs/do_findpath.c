@@ -85,7 +85,7 @@ upnpfs_cache_t * do_findcache (const char *path)
 	upnpfs_cache_t *n;
 	debugfs("enter");
 	upnpd_thread_mutex_lock(priv.cache_mutex);
-	list_for_each_entry(c, &priv.cache, head) {
+	list_for_each_entry(c, &priv.cache, head, upnpfs_cache_t) {
 		if (strcmp(path, c->path) == 0) {
 			n = do_referencecache(c);
 			debugfs("returning cache entry %p", n);
@@ -104,7 +104,7 @@ upnpfs_cache_t * do_insertcache (const char *path, const char *device, entry_t *
 	upnpfs_cache_t *n;
 	debugfs("enter");
 	upnpd_thread_mutex_lock(priv.cache_mutex);
-	list_for_each_entry(c, &priv.cache, head) {
+	list_for_each_entry(c, &priv.cache, head, upnpfs_cache_t) {
 		if (strcmp(path, c->path) == 0) {
 			n = do_referencecache(c);
 			debugfs("returning cache entry '%p'", n);

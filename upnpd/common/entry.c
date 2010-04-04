@@ -30,8 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <inttypes.h>
+
 #include <assert.h>
 
 #include "platform.h"
@@ -46,20 +45,19 @@
 
 static char entryid_convert (const char c)
 {
-	switch (c) {
-		case 0 ... 9:
-			return '0' + c;
-		case 10 ... 15:
-			return 'a' + c - 10;
-		case '0' ... '9':
-			return c - '0';
-		case 'a' ... 'f':
-			return c - 'a' + 10;
-		case 'A' ... 'F':
-			return c - 'A' + 10;
-		default:
-			debugf("logic error %x", c);
-			assert(0);
+	if (c >= 0 && c <= 9)
+		return '0' + c;
+    else if (c >= 10 && c <= 15)
+		return 'a' + c - 10;
+    else if (c >= '0' && c <= '9')
+		return c - '0';
+    else if (c >= 'a' && c <= 'f')
+		return c - 'a' + 10;
+	else if (c >= 'A' && c <= 'F')
+		return c - 'A' + 10;
+    else {
+		debugf(_DBG, "logic error %x", c);
+		assert(0);
 	}
 	return 0;
 }
@@ -81,7 +79,7 @@ static char * entryid_path_from_id (const char *id)
 	for (i = 0; i < l; i++) {
 		path[i] = (entryid_convert(id[i * 2]) << 0x04) | entryid_convert(id[i * 2 + 1]);
 	}
-	debugf("entry path '%s'", path);
+	debugf(_DBG, "entry path '%s'", path);
 	return path;
 }
 
@@ -111,7 +109,7 @@ static char * entryid_init_value (const char *path)
 	char *id;
 	id = upnpd_entryid_id_from_path(path);
 	if (id == NULL) {
-		debugf("etnryid_id_from_path(); failed");
+		debugf(_DBG, "etnryid_id_from_path(); failed");
 		return NULL;
 	}
 	return id;
@@ -150,7 +148,7 @@ static entry_t * entry_init_from_database (database_entry_t *dentry)
 		entry->didl.entryid = strdup(dentry->id);
 		entry->didl.parentid = strdup(dentry->parent);
 		entry->path = strdup(dentry->path);
-		entry->didl.childcount = dentry->childs;
+		entry->didl.childcount =  (uint32_t) dentry->childs;
 		entry->didl.restricted = 1;
 		entry->didl.dc.title = strdup(dentry->title);
 		entry->didl.upnp.type = DIDL_UPNP_OBJECT_TYPE_STORAGEFOLDER;
@@ -267,7 +265,7 @@ entry_t * upnpd_entry_didl_from_path (const char *path)
 	metadata_t *metadata;
 	metadata = upnpd_metadata_init(path);
 	if (metadata == NULL) {
-		debugf("upnpd_metadata_init('%s') failed", path);
+		debugf(_DBG, "upnpd_metadata_init('%s') failed", path);
 		return NULL;
 	}
 	entry = (entry_t *) malloc(sizeof(entry_t));
@@ -492,7 +490,7 @@ static int upnpd_entry_scan_path (database_t *database, const char *path, const 
 		free(current);
 		return -1;
 	}
-	debugf("looking into: %s", path);
+	debugf(_DBG, "looking into: %s", path);
 	while (upnpd_file_readdir(dir, current) == 0) {
 		if (strncmp(current->name, ".", 1) == 0) {
 			/* will cover parent, self, hidden */
@@ -503,11 +501,11 @@ static int upnpd_entry_scan_path (database_t *database, const char *path, const 
 		}
 		entry = upnpd_entry_didl_from_path(ptr);
 		if (entry == NULL) {
-			debugf("upnpd_entry_didl_from_path(%s, %s) failed", ptr, path);
+			debugf(_DBG, "upnpd_entry_didl_from_path(%s, %s) failed", ptr, path);
 			free(ptr);
 			continue;
 		}
-		debugf("found: %s", entry->path);
+		debugf(_DBG, "found: %s", entry->path);
 		if (entry->didl.upnp.type != DIDL_UPNP_OBJECT_TYPE_UNKNOWN) {
 			size = entry->didl.res.size;
 			objectid = upnpd_database_insert(database,
@@ -527,7 +525,7 @@ static int upnpd_entry_scan_path (database_t *database, const char *path, const 
 				}
 			} else if (entry->didl.upnp.type == DIDL_UPNP_OBJECT_TYPE_MOVIE) {
 				if (transcode == 1) {
-					debugf("adding transcode mirror");
+					debugf(_DBG, "adding transcode mirror");
 					size = ~0ULL >> 1;
 					if (asprintf(&tmp, "%s%s", TRANSCODE_PREFIX, entry->didl.dc.title) > 0) {
 						objectid = upnpd_database_insert(database,
@@ -582,7 +580,7 @@ entry_t * upnpd_entry_init_from_id (void *database, const char *id, unsigned int
 		return entry;
 	} else {
 		de = upnpd_database_query_parent(db, id, start, count, &ds);
-		*total = ds;
+		*total = (unsigned int) ds;
 		if (*total == 0) {
 			return NULL;
 		}
@@ -610,7 +608,7 @@ entry_t * upnpd_entry_init_from_id (void *database, const char *id, unsigned int
 			tentry = tentry->next;
 		}
 		upnpd_database_entry_free(de);
-		debugf("returned: %d, total: %d\n", *returned, *total);
+		debugf(_DBG, "returned: %d, total: %d\n", *returned, *total);
 		tentry = entry;
 		while (tentry != NULL) {
 			tentry = tentry->next;
@@ -629,11 +627,11 @@ entry_t * upnpd_entry_init_from_search (void *database, const char *id, unsigned
 	unsigned long long ds;
 	db = (database_t *) database;
 	if (db == NULL) {
-		debugf("search is not supported without database");
+		debugf(_DBG, "search is not supported without database");
 		return NULL;
 	} else {
 		de = upnpd_database_query_search(db, id, start, count, &ds, serach);
-		*total = ds;
+		*total = (unsigned int) ds;
 		if (*total == 0) {
 			return NULL;
 		}
@@ -661,7 +659,7 @@ entry_t * upnpd_entry_init_from_search (void *database, const char *id, unsigned
 			tentry = tentry->next;
 		}
 		upnpd_database_entry_free(de);
-		debugf("returned: %d, total: %d\n", *returned, *total);
+		debugf(_DBG, "returned: %d, total: %d\n", *returned, *total);
 		tentry = entry;
 		while (tentry != NULL) {
 			tentry = tentry->next;
@@ -693,7 +691,7 @@ entry_t * upnpd_entry_init_from_path (const char *path, unsigned int start, unsi
 		free(current);
 		return NULL;
 	}
-	debugf("looking into: %s", path);
+	debugf(_DBG, "looking into: %s", path);
 	while (upnpd_file_readdir(dir, current) == 0) {
 		if (strncmp(current->name, ".", 1) == 0) {
 			/* will cover parent, self, hidden */
@@ -704,11 +702,11 @@ entry_t * upnpd_entry_init_from_path (const char *path, unsigned int start, unsi
 		}
 		next = upnpd_entry_didl_from_path(ptr);
 		if (next == NULL) {
-			debugf("upnpd_entry_didl_from_path(%s, %s) failed", ptr, path);
+			debugf(_DBG, "upnpd_entry_didl_from_path(%s, %s) failed", ptr, path);
 			free(ptr);
 			continue;
 		}
-		debugf("found: %s, %s, 0x%08x", next->didl.dc.title, next->didl.entryid, next->didl.upnp.type);
+		debugf(_DBG, "found: %s, %s, 0x%08x", next->didl.dc.title, next->didl.entryid, next->didl.upnp.type);
 		if (entry == NULL) {
 			entry = next;
 		} else {
@@ -929,11 +927,10 @@ static int entry_parser_callback (void *context, const char *path, const char *n
 		data->curr->didl.upnp.type = entry_upnp_type_from_class(value);
 	}
 	if (value != NULL && data->curr != NULL) {
-		#define strdup_safe(s, d) ({ \
+		#define strdup_safe(s, d) { \
 			free(d); \
 			d = (s) ? strdup(s) : NULL; \
-			d; \
-		})
+		}
 		switch (data->curr->didl.upnp.type) {
 			case DIDL_UPNP_OBJECT_TYPE_MUSICTRACK:
 				if (strcmp(path, "/DIDL-Lite/item/upnp:album") == 0) {
@@ -1028,7 +1025,7 @@ entry_t * upnpd_entry_from_result (const char *result)
 	entry_parser_data_t data;
 	memset(&data, 0, sizeof(data));
 	if (upnpd_xml_parse_buffer_callback(result, strlen(result), entry_parser_callback, &data) != 0) {
-		debugf("upnpd_xml_parse_buffer_callback(result) failed\n");
+		debugf(_DBG, "upnpd_xml_parse_buffer_callback(result) failed\n");
 	}
 	return data.root;
 }
@@ -1204,7 +1201,7 @@ char * upnpd_entry_to_result (device_service_t *service, entry_t *entry, int met
 				entry->didl.upnp.photo.album,
 				entry->didl.res.protocolinfo, entry->didl.res.size, upnpd_upnp_getaddress(service->device->upnp), upnpd_upnp_getport(service->device->upnp), path);
 		} else {
-			debugf("unknown class '%s'", entry->didl.upnp.object.class);
+			debugf(_DBG, "unknown class '%s'", entry->didl.upnp.object.class);
 			free(out);
 			free(id);
 			free(pid);
@@ -1217,7 +1214,7 @@ char * upnpd_entry_to_result (device_service_t *service, entry_t *entry, int met
 		free(path);
 		free(title);
 		if (rc < 0) {
-			debugf("rc < 0");
+			debugf(_DBG, "rc < 0");
 			free(out);
 			return NULL;
 		}
@@ -1226,7 +1223,7 @@ char * upnpd_entry_to_result (device_service_t *service, entry_t *entry, int met
 		free(ptr);
 		free(tmp);
 		if (rc < 0) {
-			debugf("rc < 0");
+			debugf(_DBG, "rc < 0");
 			return NULL;
 		}
 		if (metadata == 1) {
@@ -1239,7 +1236,7 @@ char * upnpd_entry_to_result (device_service_t *service, entry_t *entry, int met
 	rc = asprintf(&out, "%s%s", ptr, didk);
 	free(ptr);
 	if (rc < 0) {
-		debugf("asprintf(); failed");
+		debugf(_DBG, "asprintf(); failed");
 		return NULL;
 	}
 	return out;

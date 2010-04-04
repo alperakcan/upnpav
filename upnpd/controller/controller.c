@@ -127,7 +127,7 @@ upnpavd_device_t * upnpavd_controller_get_devices (upnpavd_controller_t *control
 	client = controller->client;
 
 	upnpd_thread_mutex_lock(client->mutex);
-	list_for_each_entry(device, &client->devices, head) {
+	list_for_each_entry(device, &client->devices, head, client_device_t) {
 		d = (upnpavd_device_t *) malloc(sizeof(upnpavd_device_t));
 		if (d == NULL) {
 			continue;
@@ -271,6 +271,7 @@ static int upnpavd_controller_free_item (upnpavd_item_t *item)
 	free(item->title);
 	free(item->class);
 	free(item->location);
+	free(item->duration);
 	free(item);
 	return 0;
 }

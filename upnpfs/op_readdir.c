@@ -55,7 +55,7 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 			goto out;
 		}
 		nd = 0;
-		list_for_each_entry(device, &priv.controller->devices, head) {
+		list_for_each_entry(device, &priv.controller->devices, head, client_device_t) {
 			d[nd] = strdup(device->name);
 			if (d[nd] != NULL) {
 				nd++;
@@ -90,7 +90,7 @@ int op_readdir (const char *path, void *buffer, fuse_fill_dir_t filler, off_t of
 			goto out;
 		}
 		nd = 0;
-		list_for_each_entry(device, &priv.controller->devices, head) {
+		list_for_each_entry(device, &priv.controller->devices, head, client_device_t) {
 			d[nd] = strdup(device->name);
 			if (d[nd] != NULL) {
 				nd++;

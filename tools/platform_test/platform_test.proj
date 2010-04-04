@@ -1,0 +1,16 @@
+#include "*/*.proj"
+
+WORKSPACE platform_test
+{
+  USE platform_test
+}
+
+CON platform_test
+{
+  USE upnpd_platform
+  USE upnpd_database
+ 
+  EXPINCLUDE .
+  
+  SOURCE platform_test.c
+}

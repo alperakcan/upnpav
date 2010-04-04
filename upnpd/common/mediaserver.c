@@ -30,9 +30,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
-#include <unistd.h>
-#include <inttypes.h>
+//#include <getopt.h>
+
+
 
 #include "platform.h"
 #include "parser.h"
@@ -120,8 +120,8 @@ device_t * upnpd_mediaserver_init (char *options)
 	int cached;
 	char *uuid;
 	char *value;
-	int transcode;
-	int daemonize;
+	int transcode = 0;
+	int daemonize = 0;
 	char *netmask;
 	char *codepage;
 	char *fontfile;
@@ -132,7 +132,7 @@ device_t * upnpd_mediaserver_init (char *options)
 	device_t *device;
 	device_service_t *service;
 
-	debugf("processing device options '%s'", options);
+	debugf(_DBG, "processing device options '%s'", options);
 
 	err = 0;
 	cached = 0;
@@ -150,7 +150,7 @@ device_t * upnpd_mediaserver_init (char *options)
 		switch (getsubopt(&suboptions, mediaserver_options, &value)) {
 			case OPT_IPADDR:
 				if (value == NULL) {
-					debugf("value is missing for ipaddr option");
+					debugf(_DBG, "value is missing for ipaddr option");
 					err = 1;
 					continue;
 				}
@@ -158,7 +158,7 @@ device_t * upnpd_mediaserver_init (char *options)
 				break;
 			case OPT_NETMASK:
 				if (value == NULL) {
-					debugf("value is missing for netmask option");
+					debugf(_DBG, "value is missing for netmask option");
 					err = 1;
 					continue;
 				}
@@ -166,7 +166,7 @@ device_t * upnpd_mediaserver_init (char *options)
 				break;
 			case OPT_DIRECTORY:
 				if (value == NULL) {
-					debugf("value is missing for directory option");
+					debugf(_DBG, "value is missing for directory option");
 					err = 1;
 					continue;
 				}
@@ -174,7 +174,7 @@ device_t * upnpd_mediaserver_init (char *options)
 				break;
 			case OPT_CACHED:
 				if (value == NULL) {
-					debugf("value is missing for cached option");
+					debugf(_DBG, "value is missing for cached option");
 					err = 1;
 					continue;
 				}
@@ -182,7 +182,7 @@ device_t * upnpd_mediaserver_init (char *options)
 				break;
 			case OPT_TRANSCODE:
 				if (value == NULL) {
-					debugf("value is missing for transcode option");
+					debugf(_DBG, "value is missing for transcode option");
 					err = 1;
 					continue;
 				}
@@ -190,7 +190,7 @@ device_t * upnpd_mediaserver_init (char *options)
 				break;
 			case OPT_FONTFILE:
 				if (value == NULL) {
-					debugf("value is missing for fontfile option");
+					debugf(_DBG, "value is missing for fontfile option");
 					err = 1;
 					continue;
 				}
@@ -198,7 +198,7 @@ device_t * upnpd_mediaserver_init (char *options)
 				break;
 			case OPT_CODEPAGE:
 				if (value == NULL) {
-					debugf("value is missing for codepage option");
+					debugf(_DBG, "value is missing for codepage option");
 					err = 1;
 					continue;
 				}
@@ -206,7 +206,7 @@ device_t * upnpd_mediaserver_init (char *options)
 				break;
 			case OPT_FRIENDLYNAME:
 				if (value == NULL) {
-					debugf("value is missing for firendlyname option");
+					debugf(_DBG, "value is missing for firendlyname option");
 					err = 1;
 					continue;
 				}
@@ -214,7 +214,7 @@ device_t * upnpd_mediaserver_init (char *options)
 				break;
 			case OPT_DAEMONIZE:
 				if (value == NULL) {
-					debugf("value is missing for daemonize option");
+					debugf(_DBG, "value is missing for daemonize option");
 					err = 1;
 					continue;
 				}
@@ -222,7 +222,7 @@ device_t * upnpd_mediaserver_init (char *options)
 				break;
 			case OPT_UUID:
 				if (value == NULL) {
-					debugf("value is missing for uuid option");
+					debugf(_DBG, "value is missing for uuid option");
 					err = 1;
 					continue;
 				}
@@ -236,7 +236,7 @@ device_t * upnpd_mediaserver_init (char *options)
 		}
 	}
 
-	debugf("starting mediaserver;\n"
+	debugf(_DBG, "starting mediaserver;\n"
 	       "\tuuid        : %s\n"
 	       "\tdaemonize   : %s\n"
 	       "\tipaddr   : %s\n"
@@ -258,10 +258,10 @@ device_t * upnpd_mediaserver_init (char *options)
 	       (codepage) ? codepage : "null",
 	       (friendlyname) ? friendlyname : "mediaserver");
 
-	debugf("initializing mediaserver device struct");
+	debugf(_DBG, "initializing mediaserver device struct");
 	device = (device_t *) malloc(sizeof(device_t));
 	if (device == NULL) {
-		debugf("device = (device_t *) malloc(sizeof(device_t)) failed");
+		debugf(_DBG, "device = (device_t *) malloc(sizeof(device_t)) failed");
 		goto error;
 	}
 	memset(device, 0, sizeof(device_t));
@@ -285,42 +285,42 @@ device_t * upnpd_mediaserver_init (char *options)
 
 	service = upnpd_contentdirectory_init(directory, cached, transcode, fontfile, codepage);
 	if (service == NULL) {
-		debugf("contendirectory_init() failed");
+		debugf(_DBG, "contendirectory_init() failed");
 		goto error;
 	}
 	if ((rc = upnpd_device_service_add(device, service)) != 0) {
-		debugf("upnpd_device_service_add(device, service) failed");
+		debugf(_DBG, "upnpd_device_service_add(device, service) failed");
 		goto error;
 	}
 	service = upnpd_connectionmanager_init();
 	if (service == NULL) {
-		debugf("upnpd_connectionmanager_init() failed");
+		debugf(_DBG, "upnpd_connectionmanager_init() failed");
 		goto error;
 	}
 	upnpd_connectionmanager_register_mimetype(service, "*");
 
 	if ((rc = upnpd_device_service_add(device, service)) != 0) {
-		debugf("upnpd_device_service_add(device, service) failed");
+		debugf(_DBG, "upnpd_device_service_add(device, service) failed");
 		goto error;
 	}
 
 	service = upnpd_registrar_init();
 	if (service == NULL) {
-		debugf("upnpd_registrar_init() failed");
+		debugf(_DBG, "upnpd_registrar_init() failed");
 		goto error;
 	}
 	if ((rc = upnpd_device_service_add(device, service)) != 0) {
-		debugf("upnpd_device_service_add(device, service) failed");
+		debugf(_DBG, "upnpd_device_service_add(device, service) failed");
 		goto error;
 	}
 
-	debugf("initializing mediaserver device");
+	debugf(_DBG, "initializing mediaserver device");
 	if ((rc = upnpd_device_init(device)) != 0) {
-		debugf("upnpd_device_init(device) failed");
+		debugf(_DBG, "upnpd_device_init(device) failed");
 		goto error;
 	}
 
-	debugf("initialized mediaserver device");
+	debugf(_DBG, "initialized mediaserver device");
 	return device;
 error:	upnpd_mediaserver_uninit(device);
 	return NULL;
@@ -328,15 +328,16 @@ error:	upnpd_mediaserver_uninit(device);
 
 int upnpd_mediaserver_refresh (device_t *mediaserver)
 {
-	debugf("refreshing content directory service");
+	debugf(_DBG, "refreshing content directory service");
+	// empty? rescan path and refresh db maybe?
 	return 0;
 }
 
 int upnpd_mediaserver_uninit (device_t *mediaserver)
 {
-	debugf("uninitializing mediaserver");
+	debugf(_DBG, "uninitializing mediaserver");
 	upnpd_device_uninit(mediaserver);
 	free(mediaserver);
-	debugf("uninitialized mediaserver");
+	debugf(_DBG, "uninitialized mediaserver");
 	return 0;
 }

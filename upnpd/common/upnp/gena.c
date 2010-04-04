@@ -30,9 +30,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <unistd.h>
+
 #include <string.h>
-#include <inttypes.h>
+
 #include <assert.h>
 
 #include "platform.h"
@@ -143,10 +143,10 @@ static int gena_connect (socket_t *socket, int timeout, const char *host, const 
 	int rc;
 	rc = upnpd_socket_connect(socket, host, port, timeout);
 	if (rc < 0) {
-		debugf("connect failed for '%s:%d'", host, port);
+		debugf(_DBG, "connect failed for '%s:%d'", host, port);
 		return -1;
 	} else {
-		debugf("connected to '%s:%d'", host, port);
+		debugf(_DBG, "connected to '%s:%d'", host, port);
 		return 0;
 	}
 }
@@ -163,14 +163,14 @@ static int gena_send (socket_t *socket, int timeout, const void *buf, unsigned i
 		pitem.events = POLL_EVENT_OUT;
 		rc = upnpd_socket_poll(&pitem, 1, timeout);
 		if (rc == 0) {
-			debugf("poll timeout");
+			debugf(_DBG, "poll timeout");
 			continue;
 		}
 		if (rc <= 0 || (pitem.revents & POLL_EVENT_OUT) == 0) {
-			debugf("poll failed (%d, 0x%x)", rc, pitem.revents);
+			debugf(_DBG, "poll failed (%d, 0x%x)", rc, pitem.revents);
 			break;
 		}
-		s = upnpd_socket_send(socket, buf + t, len - t);
+		s = upnpd_socket_send(socket, (const char *) buf + t, len - t);
 		if (s <= 0) {
 			break;
 		}
@@ -191,7 +191,7 @@ static int gena_getcontent (socket_t *socket, int timeout, char *buf, int buflen
 		pitem.events = POLL_EVENT_IN;
 		rc = upnpd_socket_poll(&pitem, 1, timeout);
 		if (rc <= 0 || (pitem.revents & POLL_EVENT_IN) == 0) {
-			debugf("poll failed rc:%d(0x%x)", rc, pitem.revents);
+			debugf(_DBG, "poll failed rc:%d(0x%x)", rc, pitem.revents);
 			return 0;
 		}
 		if (upnpd_socket_recv(socket, &c, 1) <= 0) {
@@ -217,7 +217,7 @@ static int gena_getline (socket_t *socket, int timeout, char *buf, int buflen)
 		pitem.events = POLL_EVENT_IN;
 		rc = upnpd_socket_poll(&pitem, 1, timeout);
 		if (rc <= 0 || (pitem.revents & POLL_EVENT_IN) == 0) {
-			debugf("poll failed rc:%d(0x%x)", rc, pitem.revents);
+			debugf(_DBG, "poll failed rc:%d(0x%x)", rc, pitem.revents);
 			return 0;
 		}
 		if (upnpd_socket_recv(socket, &c, 1) <= 0) {
@@ -229,7 +229,7 @@ static int gena_getline (socket_t *socket, int timeout, char *buf, int buflen)
 		}
 		if (c == '\n') {
 			buf[count] = '\0';
-			debugf("%s", buf);
+			debugf(_DBG, "%s", buf);
 			return count;
 		}
 		if (count < buflen - 1) {
@@ -243,8 +243,8 @@ static int gena_replace_escaped (char *in, int index, size_t *max)
 {
 	int tempInt = 0;
 	char tempChar = 0;
-	int i = 0;
-	int j = 0;
+	size_t i = 0;
+	size_t j = 0;
 
 	if (in[index] && in[index + 1] && in[index + 2]) {
 		if (in[index] == '%' && in[index + 1] == '2' && in[index + 2] == 'M') {
@@ -295,7 +295,7 @@ static int gena_replace_escaped (char *in, int index, size_t *max)
 
 static int gena_remove_escaped_chars (char *in)
 {
-	int i = 0;
+	size_t i = 0;
 	size_t size;
 	size = strlen(in);
 	for( i = 0; i < size; i++ ) {
@@ -334,7 +334,7 @@ static void gena_senderrorheader (socket_t *socket, gena_response_type_t type)
 	}
 	mimetype = "text/html";
 
-	upnpd_time_strftime(tmpstr, sizeof(tmpstr), timer);
+	upnpd_time_strftime(tmpstr, sizeof(tmpstr), TIME_FORMAT_RFC1123, timer, 0);
 	len = sprintf(header, "HTTP/1.0 %d %s\r\nContent-type: %s\r\n"
 			      "Date: %s\r\nConnection: close\r\n",
 			      responseNum, responseString, mimetype, tmpstr);
@@ -349,9 +349,9 @@ static void gena_senderrorheader (socket_t *socket, gena_response_type_t type)
 				responseNum, responseString, infoString);
 	}
 	header[len] = '\0';
-	debugf("sending header: %s", header);
+	debugf(_DBG, "sending header: %s", header);
 	if (gena_send(socket, GENA_SOCKET_TIMEOUT, header, len) != len) {
-		debugf("send() failed");
+		debugf(_DBG, "send() failed");
 	}
 	free(header);
 }
@@ -391,7 +391,7 @@ static void gena_sendfileheader (socket_t *socket, gena_fileinfo_internal_t *fil
 		}
 	}
 
-	upnpd_time_strftime(tmpstr, sizeof(tmpstr), timer);
+	upnpd_time_strftime(tmpstr, sizeof(tmpstr), TIME_FORMAT_RFC1123, timer, 0);
 	len = sprintf(header, "HTTP/1.0 %d %s\r\n"
 	                      "Content-type: %s\r\n"
 			      "Date: %s\r\n"
@@ -400,7 +400,7 @@ static void gena_sendfileheader (socket_t *socket, gena_fileinfo_internal_t *fil
 			      responseNum, responseString, fileinfo->fileinfo.mimetype, tmpstr);
 
 	t = fileinfo->fileinfo.mtime;
-	upnpd_time_strftime(tmpstr, sizeof(tmpstr), t * 1000);
+	upnpd_time_strftime(tmpstr, sizeof(tmpstr), TIME_FORMAT_RFC1123, t * 1000, 0);
 	if (type == GENA_RESPONSE_TYPE_PARTIAL_CONTENT) {
 		len += sprintf(header + len,
 			"Accept-Ranges: bytes\r\n"
@@ -435,9 +435,9 @@ static void gena_sendfileheader (socket_t *socket, gena_fileinfo_internal_t *fil
 	}
 	header[len] = '\0';
 
-	debugf("header: %s", header);
+	debugf(_DBG, "header: %s", header);
 	if (gena_send(socket, GENA_SOCKET_TIMEOUT, header, len) != len) {
-		debugf("send() failed");
+		debugf(_DBG, "send() failed");
 	}
 	free(header);
 }
@@ -459,7 +459,7 @@ static void gena_handler_unsubscribe (gena_thread_t *gena_thread, char *header, 
 		}
 	}
 
-	debugf("unsubscribe event;\n"
+	debugf(_DBG, "unsubscribe event;\n"
 	       "  path    : '%s'\n"
 	       "  host    : '%s'\n"
 	       "  sid     : '%s'\n",
@@ -528,7 +528,7 @@ static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, co
 		}
 	}
 
-	debugf("subscribe event;\n"
+	debugf(_DBG, "subscribe event;\n"
 	       "  path    : '%s'\n"
 	       "  host    : '%s'\n"
 	       "  nt      : '%s'\n"
@@ -570,9 +570,9 @@ static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, co
 		event.type = GENA_EVENT_TYPE_SUBSCRIBE_REQUEST;
 		if (gena_thread->callbacks->gena.event(gena_thread->callbacks->gena.cookie, &event) == 0) {
 			sprintf(header, fmt, event.event.subscribe.sid, 1800);
-			debugf("header:\n%s", header);
+			debugf(_DBG, "header:\n%s", header);
 			if (gena_send(gena_thread->socket, GENA_SOCKET_TIMEOUT, header, strlen(header)) != strlen(header)) {
-				debugf("send() failed");
+				debugf(_DBG, "send() failed");
 			} else {
 				event.type = GENA_EVENT_TYPE_SUBSCRIBE_ACCEPT;
 				gena_thread->callbacks->gena.event(gena_thread->callbacks->gena.cookie, &event);
@@ -587,9 +587,9 @@ static void gena_handler_subscribe (gena_thread_t *gena_thread, char *header, co
 		event.type = GENA_EVENT_TYPE_SUBSCRIBE_RENEW;
 		if (gena_thread->callbacks->gena.event(gena_thread->callbacks->gena.cookie, &event) == 0) {
 			sprintf(header, fmt, event.event.subscribe.sid, 1800);
-			debugf("header:\n%s", header);
+			debugf(_DBG, "header:\n%s", header);
 			if (gena_send(gena_thread->socket, GENA_SOCKET_TIMEOUT, header, strlen(header)) != strlen(header)) {
-				debugf("send() failed");
+				debugf(_DBG, "send() failed");
 			} else {
 				event.type = GENA_EVENT_TYPE_SUBSCRIBE_ACCEPT;
 				gena_thread->callbacks->gena.event(gena_thread->callbacks->gena.cookie, &event);
@@ -665,7 +665,7 @@ static void gena_handler_post (gena_thread_t *gena_thread, char *header, const c
 
 	event.type = GENA_EVENT_TYPE_ACTION;
 
-	debugf("post event;\n"
+	debugf(_DBG, "post event;\n"
 	       "  path: '%s'\n"
 	       "  host: '%s'\n"
 	       "  action: '%s'\n"
@@ -689,12 +689,12 @@ static void gena_handler_post (gena_thread_t *gena_thread, char *header, const c
 		goto out;
 	}
 	if (gena_thread->callbacks->gena.event(gena_thread->callbacks->gena.cookie, &event) == 0) {
-		debugf("sending action response");
+		debugf(_DBG, "sending action response");
 		sprintf(header, format, strlen(event.event.action.response));
 		if (gena_send(gena_thread->socket, GENA_SOCKET_TIMEOUT, header, strlen(header)) != strlen(header)) {
-			debugf("send() failed");
+			debugf(_DBG, "send() failed");
 		} else if (gena_send(gena_thread->socket, GENA_SOCKET_TIMEOUT, event.event.action.response, strlen(event.event.action.response)) != strlen(event.event.action.response)) {
-			debugf("send() failed");
+			debugf(_DBG, "send() failed");
 		}
 		goto out;
 	}
@@ -734,7 +734,7 @@ static void * gena_thread_loop (void *arg)
 	gena_thread = (gena_thread_t *) arg;
 
 	upnpd_thread_mutex_lock(gena_thread->mutex);
-	debugf("started gena child thread");
+	debugf(_DBG, "started gena child thread");
 	running = 1;
 	gena_thread->running = 1;
 	upnpd_thread_cond_signal(gena_thread->cond);
@@ -770,11 +770,11 @@ static void * gena_thread_loop (void *arg)
 	    strcasecmp(header, request_post) != 0 &&
 	    strcasecmp(header, request_subscribe) != 0 &&
 	    strcasecmp(header, request_unsubscribe) != 0) {
-		debugf("unsupported header: '%s'", header);
+		debugf(_DBG, "unsupported header: '%s'", header);
 		gena_senderrorheader(gena_thread->socket, GENA_RESPONSE_TYPE_NOT_IMPLEMENTED);
 		goto out;
 	}
-	debugf("header: %s", header);
+	debugf(_DBG, "header: %s", header);
 	while (*urlptr && (*urlptr == ' ' || *urlptr == '\t')) {
 		urlptr++;
 	}
@@ -789,25 +789,25 @@ static void * gena_thread_loop (void *arg)
 	*tmpptr = '\0';
 	pathptr = strdup(urlptr);
 	if (pathptr == NULL) {
-		debugf("strdup(%s) failed", urlptr);
+		debugf(_DBG, "strdup(%s) failed", urlptr);
 		gena_senderrorheader(gena_thread->socket, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
 		goto out;
 	}
 	gena_remove_escaped_chars(pathptr);
-	debugf("requested url is: %s", pathptr);
+	debugf(_DBG, "requested url is: %s", pathptr);
 
 	if (strcasecmp(header, request_unsubscribe) == 0) {
-		debugf("gena unsubscribe event");
+		debugf(_DBG, "gena unsubscribe event");
 		gena_handler_unsubscribe(gena_thread, header, pathptr);
 		goto out;
 	}
 	if (strcasecmp(header, request_subscribe) == 0) {
-		debugf("gena subscribe event");
+		debugf(_DBG, "gena subscribe event");
 		gena_handler_subscribe(gena_thread, header, pathptr);
 		goto out;
 	}
 	if (strcasecmp(header, request_post) == 0) {
-		debugf("gena post event");
+		debugf(_DBG, "gena post event");
 		gena_handler_post(gena_thread, header, pathptr);
 		goto out;
 	}
@@ -839,7 +839,7 @@ static void * gena_thread_loop (void *arg)
 					}
 				}
 			}
-			debugf("range requested %lu-%lu", fileinfo.filerange.start, fileinfo.filerange.stop);
+			debugf(_DBG, "range requested %lu-%lu", fileinfo.filerange.start, fileinfo.filerange.stop);
 		}
 	}
 
@@ -850,26 +850,26 @@ static void * gena_thread_loop (void *arg)
 	    gena_thread->callbacks->vfs.read == NULL ||
 	    gena_thread->callbacks->vfs.seek == NULL ||
 	    gena_thread->callbacks->vfs.close == NULL) {
-		debugf("no callbacks installed");
+		debugf(_DBG, "no callbacks installed");
 		gena_senderrorheader(gena_thread->socket, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
 		goto out;
 	}
 
-	debugf("reading file info");
+	debugf(_DBG, "reading file info");
 	if (gena_thread->callbacks->vfs.info(gena_thread->callbacks->vfs.cookie, pathptr, &fileinfo.fileinfo) < 0) {
-		debugf("info failed");
+		debugf(_DBG, "info failed");
 		gena_senderrorheader(gena_thread->socket, GENA_RESPONSE_TYPE_NOT_FOUND);
 		goto out;
 	}
-	debugf("opening file");
+	debugf(_DBG, "opening file");
 	filehandle = gena_thread->callbacks->vfs.open(gena_thread->callbacks->vfs.cookie, pathptr, GENA_FILEMODE_READ);
 	if (filehandle == NULL) {
-		debugf("open failed");
+		debugf(_DBG, "open failed");
 		gena_senderrorheader(gena_thread->socket, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
 		goto out;
 	}
 
-	debugf("calculating actual size");
+	debugf(_DBG, "calculating actual size");
 	/* calculate actual size */
 	if (fileinfo.filerange.stop == 0 && rangerequest == 1) {
 		/* we do support range as requested */
@@ -882,34 +882,34 @@ static void * gena_thread_loop (void *arg)
 		fileinfo.filerange.size = fileinfo.filerange.stop - fileinfo.filerange.start + 1;
 	}
 
-	debugf("sending file header");
+	debugf(_DBG, "sending file header");
 	/* send header */
 	gena_sendfileheader(gena_thread->socket, &fileinfo);
 	if (strcasecmp(header, request_head) == 0) {
-		debugf("only header is requested");
+		debugf(_DBG, "only header is requested");
 		goto close_out;
 	}
 
-	debugf("seeking file");
+	debugf(_DBG, "seeking file");
 	/* seek if requested */
 	if (gena_thread->callbacks->vfs.seek(gena_thread->callbacks->vfs.cookie, filehandle, fileinfo.filerange.start, GENA_SEEK_SET) != fileinfo.filerange.start) {
-		debugf("seek failed");
+		debugf(_DBG, "seek failed");
 		gena_senderrorheader(gena_thread->socket, GENA_RESPONSE_TYPE_INTERNAL_SERVER_ERROR);
 		goto close_out;
 	}
 
-	debugf("sending file");
+	debugf(_DBG, "sending file");
 	/* send file */
 	readlen = 0;
 	while (readlen < fileinfo.filerange.size) {
-		rlen = MIN(fileinfo.filerange.size - readlen, GENA_DATA_SIZE);
+		rlen = MIN((int) fileinfo.filerange.size - readlen, GENA_DATA_SIZE);
 		rlen = gena_thread->callbacks->vfs.read(gena_thread->callbacks->vfs.cookie, filehandle, data, rlen);
 		if (rlen <= 0) {
-			debugf("read failed");
+			debugf(_DBG, "read failed");
 			break;
 		}
 		if (gena_send(gena_thread->socket, GENA_SOCKET_TIMEOUT, data, rlen) != rlen) {
-			debugf("send() failed");
+			debugf(_DBG, "send() failed");
 			break;
 		}
 		upnpd_thread_mutex_lock(gena_thread->mutex);
@@ -922,11 +922,11 @@ static void * gena_thread_loop (void *arg)
 	}
 
 	if (readlen != fileinfo.filerange.size) {
-		debugf("file send failed");
+		debugf(_DBG, "file send failed");
 	}
 
 close_out:
-	debugf("closing file");
+	debugf(_DBG, "closing file");
 	gena_thread->callbacks->vfs.close(gena_thread->callbacks->vfs.cookie, filehandle);
 out:
 	free(pathptr);
@@ -934,7 +934,7 @@ out:
 	free(data);
 	free(header);
 	upnpd_thread_mutex_lock(gena_thread->mutex);
-	debugf("stopped gena child thread");
+	debugf(_DBG, "stopped gena child thread");
 	gena_thread->stopped = 1;
 	upnpd_thread_cond_signal(gena_thread->cond);
 	upnpd_thread_mutex_unlock(gena_thread->mutex);
@@ -958,7 +958,7 @@ static void * gena_loop (void *arg)
 	gena = (gena_t *) arg;
 
 	upnpd_thread_mutex_lock(gena->mutex);
-	debugf("started gena thread");
+	debugf(_DBG, "started gena thread");
 	running = 1;
 	timeout = 500;
 	gena->running = 1;
@@ -972,11 +972,11 @@ static void * gena_loop (void *arg)
 
 		upnpd_thread_mutex_lock(gena->mutex);
 		running = gena->running;
-		list_for_each_entry_safe(gena_thread, gena_thread_next, &gena->threads, head) {
+		list_for_each_entry_safe(gena_thread, gena_thread_next, &gena->threads, head, gena_thread_t) {
 			upnpd_thread_mutex_lock(gena_thread->mutex);
 			if (gena_thread->stopped == 1) {
 				upnpd_thread_join(gena_thread->thread);
-				debugf("closing stopped gena child threads");
+				debugf(_DBG, "closing stopped gena child threads");
 				list_del(&gena_thread->head);
 				upnpd_thread_mutex_unlock(gena_thread->mutex);
 				upnpd_thread_mutex_destroy(gena_thread->mutex);
@@ -988,8 +988,8 @@ static void * gena_loop (void *arg)
 			}
 		}
 		if (running == 0) {
-			debugf("stopping and closing remaining gena child threads");
-			list_for_each_entry_safe(gena_thread, gena_thread_next, &gena->threads, head) {
+			debugf(_DBG, "stopping and closing remaining gena child threads");
+			list_for_each_entry_safe(gena_thread, gena_thread_next, &gena->threads, head, gena_thread_t) {
 				upnpd_thread_mutex_lock(gena_thread->mutex);
 				if (gena_thread->stopped == 1) {
 					upnpd_thread_join(gena_thread->thread);
@@ -1001,7 +1001,7 @@ static void * gena_loop (void *arg)
 					}
 					upnpd_thread_join(gena_thread->thread);
 				} else {
-					debugf("this should not happen");
+					debugf(_DBG, "this should not happen");
 					assert(0);
 				}
 				list_del(&gena_thread->head);
@@ -1018,13 +1018,13 @@ static void * gena_loop (void *arg)
 			continue;
 		}
 
-		debugf("we have a new connection request");
+		debugf(_DBG, "we have a new connection request");
 		socket = upnpd_socket_accept(gena->socket);
 		if (socket != NULL) {
-			debugf("accepted new connection");
+			debugf(_DBG, "accepted new connection");
 			gena_thread = (gena_thread_t *) malloc(sizeof(gena_thread_t));
 			if (gena_thread == NULL) {
-				debugf("malloc(sizeof(gena_thread_t) failed");
+				debugf(_DBG, "malloc(sizeof(gena_thread_t) failed");
 				upnpd_socket_close(socket);
 				continue;
 			}
@@ -1039,13 +1039,13 @@ static void * gena_loop (void *arg)
 				upnpd_thread_cond_wait(gena_thread->cond, gena_thread->mutex);
 			}
 			list_add(&gena_thread->head, &gena->threads);
-			debugf("created and added new gena thread");
+			debugf(_DBG, "created and added new gena thread");
 			upnpd_thread_mutex_unlock(gena_thread->mutex);
 		}
 	}
 
 	upnpd_thread_mutex_lock(gena->mutex);
-	debugf("stopped gena thread");
+	debugf(_DBG, "stopped gena thread");
 	gena->stopped = 1;
 	upnpd_thread_cond_signal(gena->cond);
 	upnpd_thread_mutex_unlock(gena->mutex);
@@ -1063,35 +1063,30 @@ static int gena_init_server (gena_t *gena)
 		port = GENA_LISTEN_PORT;
 	}
 
-	socket = upnpd_socket_open(SOCKET_TYPE_STREAM);
+	socket = upnpd_socket_open(SOCKET_TYPE_STREAM, 1);
 	if (socket == NULL) {
-		debugf("socket() failed");
+		debugf(_DBG, "socket() failed");
 		return -1;
 	}
 	do {
 		port++;
-		debugf("trying port: %d", port);
-		if (upnpd_socket_bind(socket, gena->address, port) != -1) {
+		debugf(_DBG, "trying port: %d", port);
+		if (upnpd_socket_bind(socket, gena->address, port) != -1 &&
+		    upnpd_socket_listen(socket, GENA_LISTEN_MAX) != -1) {
 			break;
 		}
 	} while (1);
 
-	if (upnpd_socket_listen(socket, GENA_LISTEN_MAX) < 0) {
-		debugf("listen(%d) failed", GENA_LISTEN_MAX);
-		upnpd_socket_close(socket);
-		return -1;
-	}
-
 	gena->socket = socket;
 	gena->port = port;
-	debugf("gena started on port: %s:%u", gena->address, gena->port);
+	debugf(_DBG, "gena started on port: %s:%u", gena->address, gena->port);
 	return 0;
 }
 
 char * upnpd_upnp_gena_send_recv (gena_t *gena, const char *host, const unsigned short port, const char *header, const char *data)
 {
 	int r;
-	int t;
+	size_t t;
 	char *tmp;
 	char *buffer;
 	int contentlength;
@@ -1100,7 +1095,7 @@ char * upnpd_upnp_gena_send_recv (gena_t *gena, const char *host, const unsigned
 	socket_t *socket;
 	poll_item_t pitem;
 
-	socket = upnpd_socket_open(SOCKET_TYPE_STREAM);
+	socket = upnpd_socket_open(SOCKET_TYPE_STREAM, 0);
 	if (socket == NULL) {
 		return NULL;
 	}
@@ -1110,13 +1105,13 @@ char * upnpd_upnp_gena_send_recv (gena_t *gena, const char *host, const unsigned
 	}
 	if (gena_send(socket, GENA_SOCKET_TIMEOUT, header, strlen(header)) != strlen(header)) {
 		upnpd_socket_close(socket);
-		debugf("gena_send() failed");
+		debugf(_DBG, "gena_send() failed");
 		return NULL;
 	}
 	if (data != NULL) {
 		if (gena_send(socket, GENA_SOCKET_TIMEOUT, data, strlen(data)) != strlen(data)) {
 			upnpd_socket_close(socket);
-			debugf("gena_send() failed");
+			debugf(_DBG, "gena_send() failed");
 			return NULL;
 		}
 	}
@@ -1137,13 +1132,13 @@ char * upnpd_upnp_gena_send_recv (gena_t *gena, const char *host, const unsigned
 	if (contentlength == 1) {
 		if (length <= 0) {
 			upnpd_socket_close(socket);
-			debugf("no data received %d\n", length);
+			debugf(_DBG, "no data received %d\n", length);
 			return NULL;
 		}
 		buffer = malloc(sizeof(char) * (length + 1));
 		if (buffer == NULL) {
 			upnpd_socket_close(socket);
-			debugf("no data received %d", length);
+			debugf(_DBG, "no data received %d", length);
 			return NULL;
 		}
 		t = 0;
@@ -1174,7 +1169,7 @@ again:
 		if (tmp == NULL) {
 			upnpd_socket_close(socket);
 			free(buffer);
-			debugf("no data received %d", length);
+			debugf(_DBG, "no data received %d", length);
 			return NULL;
 		}
 		buffer = tmp;
@@ -1213,7 +1208,7 @@ char * upnpd_upnp_gena_download (gena_t *gena, const char *host, const unsigned 
 		"Connection: keep-alive\r\n"
 		"Cache-Control: max-age=0\r\n"
 		"\r\n";
-	debugf("downloading '/%s' from '%s:%u'", path, host, port);
+	debugf(_DBG, "downloading '/%s' from '%s:%u'", path, host, port);
 	if (asprintf(&buffer, format_get, path, host, port) < 0) {
 		return NULL;
 	}
@@ -1237,7 +1232,7 @@ gena_t * upnpd_upnp_gena_init (char *address, unsigned short port, gena_callback
 	gena_t *gena;
 	gena = (gena_t *) malloc(sizeof(gena_t));
 	if (gena == NULL) {
-		debugf("malloc(sizeof(gena_t)) failed");
+		debugf(_DBG, "malloc(sizeof(gena_t)) failed");
 		return NULL;
 	}
 	memset(gena, 0, sizeof(gena_t));
@@ -1255,15 +1250,15 @@ gena_t * upnpd_upnp_gena_init (char *address, unsigned short port, gena_callback
 	while (gena->running == 0) {
 		upnpd_thread_cond_wait(gena->cond, gena->mutex);
 	}
-	debugf("started gena loop");
+	debugf(_DBG, "started gena loop");
 	upnpd_thread_mutex_unlock(gena->mutex);
-	debugf("initialized gena");
+	debugf(_DBG, "initialized gena");
 	return gena;
 }
 
 int upnpd_upnp_gena_uninit (gena_t *gena)
 {
-	debugf("stopping gena thread");
+	debugf(_DBG, "stopping gena thread");
 	if (gena == NULL) {
 		goto out;
 	}
@@ -1280,6 +1275,6 @@ int upnpd_upnp_gena_uninit (gena_t *gena)
 	upnpd_socket_close(gena->socket);
 	free(gena->address);
 	free(gena);
-out:	debugf("gena uninited");
+out:	debugf(_DBG, "gena uninited");
 	return 0;
 }

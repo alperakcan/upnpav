@@ -29,9 +29,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+
 #include <string.h>
-#include <inttypes.h>
+
 
 #include <signal.h>
 
@@ -57,40 +57,40 @@ typedef struct upnp_error_s {
 	char *str;
 } upnp_error_t;
 
-static upnp_error_t *upnp_errors[] = {
-	&(upnp_error_t) { UPNP_ERROR_INVALID_ACTION,             401, "Invalid Action"},
-	&(upnp_error_t) { UPNP_ERROR_INVALIG_ARGS,               402, "Invalid Args"},
-	&(upnp_error_t) { UPNP_ERROR_INVALID_VAR,                404, "Invalid Var"},
-	&(upnp_error_t) { UPNP_ERROR_ACTION_FAILED,              501, "Action Failed"},
-	&(upnp_error_t) { UPNP_ERROR_NOSUCH_OBJECT,              701, "No Such Object"},
-	&(upnp_error_t) { UPNP_ERROR_INVALID_CURRENTTAG,         702, "Invalid CurrentTag Value"},
-	&(upnp_error_t) { UPNP_ERROR_INVALID_NEWTAG,             703, "Invalid NewTag Value"},
-	&(upnp_error_t) { UPNP_ERROR_REQUIRED_TAG,               704, "Required Tag"},
-	&(upnp_error_t) { UPNP_ERROR_READONLY_TAG,               705, "Read only Tag"},
-	&(upnp_error_t) { UPNP_ERROR_PARAMETER_MISMATCH,         706, "Parameter Mismatch"},
-	&(upnp_error_t) { UPNP_ERROR_INVALID_SEARCH_CRITERIA,    708, "Unsupported or Invalid Search Criteria"},
-	&(upnp_error_t) { UPNP_ERROR_INVALID_SORT_CRITERIA,      709, "Unsupported or Invalid Sort Criteria"},
-	&(upnp_error_t) { UPNP_ERROR_NOSUCH_CONTAINER,           710, "No Such Container"},
-	&(upnp_error_t) { UPNP_ERROR_RESTRICTED_OBJECT,          711, "Restricted Object"},
-	&(upnp_error_t) { UPNP_ERROR_BAD_METADATA,               712, "Bad Metadata"},
-	&(upnp_error_t) { UPNP_ERROR_RESTRICTED_PARENT_OBJECT,   713, "Restricted Parent Object"},
-	&(upnp_error_t) { UPNP_ERROR_NOSUCH_RESOURCE,            714, "No Such Source Resouce"},
-	&(upnp_error_t) { UPNP_ERROR_RESOURCE_ACCESS_DENIED,     715, "Source Resource Access Denied"},
-	&(upnp_error_t) { UPNP_ERROR_TRANSFER_BUSY,              716, "Transfer Busy"},
-	&(upnp_error_t) { UPNP_ERROR_NOSUCH_TRANSFER,            717, "No Such File Transfer"},
-	&(upnp_error_t) { UPNP_ERROR_NOSUCH_DESTRESOURCE,        718, "No Such Destination Resource"},
-	&(upnp_error_t) { UPNP_ERROR_INVALID_INSTANCEID,         718, "Invalid InstanceID"},
-	&(upnp_error_t) { UPNP_ERROR_DESTRESOURCE_ACCESS_DENIED, 719, "Destination Resource Access Denied"},
-	&(upnp_error_t) { UPNP_ERROR_CANNOT_PROCESS,             720, "Cannot Process The Request"},
-	NULL,
+static upnp_error_t upnp_errors[] = {
+	{ UPNP_ERROR_INVALID_ACTION,             401, "Invalid Action"},
+	{ UPNP_ERROR_INVALIG_ARGS,               402, "Invalid Args"},
+	{ UPNP_ERROR_INVALID_VAR,                404, "Invalid Var"},
+	{ UPNP_ERROR_ACTION_FAILED,              501, "Action Failed"},
+	{ UPNP_ERROR_NOSUCH_OBJECT,              701, "No Such Object"},
+	{ UPNP_ERROR_INVALID_CURRENTTAG,         702, "Invalid CurrentTag Value"},
+	{ UPNP_ERROR_INVALID_NEWTAG,             703, "Invalid NewTag Value"},
+	{ UPNP_ERROR_REQUIRED_TAG,               704, "Required Tag"},
+	{ UPNP_ERROR_READONLY_TAG,               705, "Read only Tag"},
+	{ UPNP_ERROR_PARAMETER_MISMATCH,         706, "Parameter Mismatch"},
+	{ UPNP_ERROR_INVALID_SEARCH_CRITERIA,    708, "Unsupported or Invalid Search Criteria"},
+	{ UPNP_ERROR_INVALID_SORT_CRITERIA,      709, "Unsupported or Invalid Sort Criteria"},
+	{ UPNP_ERROR_NOSUCH_CONTAINER,           710, "No Such Container"},
+	{ UPNP_ERROR_RESTRICTED_OBJECT,          711, "Restricted Object"},
+	{ UPNP_ERROR_BAD_METADATA,               712, "Bad Metadata"},
+	{ UPNP_ERROR_RESTRICTED_PARENT_OBJECT,   713, "Restricted Parent Object"},
+	{ UPNP_ERROR_NOSUCH_RESOURCE,            714, "No Such Source Resouce"},
+	{ UPNP_ERROR_RESOURCE_ACCESS_DENIED,     715, "Source Resource Access Denied"},
+	{ UPNP_ERROR_TRANSFER_BUSY,              716, "Transfer Busy"},
+	{ UPNP_ERROR_NOSUCH_TRANSFER,            717, "No Such File Transfer"},
+	{ UPNP_ERROR_NOSUCH_DESTRESOURCE,        718, "No Such Destination Resource"},
+	{ UPNP_ERROR_INVALID_INSTANCEID,         718, "Invalid InstanceID"},
+	{ UPNP_ERROR_DESTRESOURCE_ACCESS_DENIED, 719, "Destination Resource Access Denied"},
+	{ UPNP_ERROR_CANNOT_PROCESS,             720, "Cannot Process The Request"},
+	{ 0, 0, NULL }
 };
 
-typedef struct upnpd_upnp_subscribe_s {
+typedef struct upnp_subscribe_s {
 	list_t head;
 	char sid[50];
 	unsigned int sequence;
 	upnp_url_t url;
-} upnpd_upnp_subscribe_t;
+} upnp_subscribe_t;
 
 typedef struct upnp_service_s {
 	list_t head;
@@ -235,9 +235,9 @@ static unsigned long long gena_callback_seek (void *cookie, void *handle, unsign
 	}
 	if (file->virtual == 1) {
 		switch (whence) {
-			case GENA_SEEK_SET: file->offset = offset; break;
-			case GENA_SEEK_CUR: file->offset += offset; break;
-			case GENA_SEEK_END: file->offset = file->size + offset; break;
+			case GENA_SEEK_SET: file->offset = (unsigned int) offset; break;
+			case GENA_SEEK_CUR: file->offset += (unsigned int) offset; break;
+			case GENA_SEEK_END: file->offset = (unsigned int) (file->size + offset); break;
 		}
 		file->offset = MAX(0, file->offset);
 		file->offset = MIN(file->offset, file->size);
@@ -354,9 +354,9 @@ int upnpd_upnp_addtoactionresponse (upnp_event_action_t *response, const char *s
 static char * upnp_propertyset (const char **names, const char **values, unsigned int count)
 {
 	char *buffer;
-	int counter = 0;
+	unsigned int counter = 0;
 	int size = 0;
-	int temp_counter = 0;
+	unsigned int temp_counter = 0;
 
 	size += strlen("<e:propertyset xmlns:e=\"urn:schemas-upnp-org:event-1-0\">\n");
 	size += strlen("</e:propertyset>\n\n");
@@ -386,7 +386,7 @@ int upnpd_upnp_accept_subscription (upnp_t *upnp, const char *udn, const char *s
 	char *header;
 	char *propset;
 	upnp_service_t *s;
-	upnpd_upnp_subscribe_t *c;
+	upnp_subscribe_t *c;
 	const char *format =
 		"NOTIFY /%s HTTP/1.1\r\n"
 		"HOST: %s:%d\r\n"
@@ -400,10 +400,10 @@ int upnpd_upnp_accept_subscription (upnp_t *upnp, const char *udn, const char *s
 		"Cache-Control: no-cache\r\n"
 		"\r\n";
 	upnpd_thread_mutex_lock(upnp->mutex);
-	list_for_each_entry(s, &upnp->type.device.services, head) {
+	list_for_each_entry(s, &upnp->type.device.services, head, upnp_service_t) {
 		if (strcmp(s->serviceid, serviceid) == 0 &&
 		    strcmp(s->udn, udn) == 0) {
-			list_for_each_entry(c, &s->subscribers, head) {
+			list_for_each_entry(c, &s->subscribers, head, upnp_subscribe_t) {
 				if (strcmp(c->sid, sid) == 0) {
 					goto found;
 				}
@@ -411,12 +411,12 @@ int upnpd_upnp_accept_subscription (upnp_t *upnp, const char *udn, const char *s
 			break;
 		}
 	}
-	debugf("cannot find subscription: %s\n", sid);
+	debugf(_DBG, "cannot find subscription: %s\n", sid);
 	upnpd_thread_mutex_unlock(upnp->mutex);
 	return 0;
 
 found:
-	debugf("found subscription: %s\n", sid);
+	debugf(_DBG, "found subscription: %s\n", sid);
 	upnpd_thread_mutex_unlock(upnp->mutex);
 	propset = upnp_propertyset(variable_names, variable_values, variables_count);
 	if (propset == NULL) {
@@ -433,12 +433,12 @@ found:
 	}
 	c->sequence++;
 
-	debugf("header: %s\n", header);
-	debugf("propset: %s\n", propset);
+	debugf(_DBG, "header: %s\n", header);
+	debugf(_DBG, "propset: %s\n", propset);
 
 	data = upnpd_upnp_gena_send_recv(upnp->gena, c->url.host, c->url.port, header, propset);
 	if (data == NULL) {
-		//debugf("gena_send_recv() failed");
+		//debugf(_DBG, "gena_send_recv() failed");
 	}
 
 	free(data);
@@ -534,19 +534,19 @@ static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subsc
 	int ret;
 	uuid_gen_t uuid;
 	upnp_service_t *s;
-	upnpd_upnp_subscribe_t *c;
+	upnp_subscribe_t *c;
 	ret = -1;
-	debugf("enter");
+	debugf(_DBG, "enter");
 	upnpd_thread_mutex_lock(upnp->mutex);
-	list_for_each_entry(s, &upnp->type.device.services, head) {
-		debugf("eventurl: %s, callback: %s", s->eventurl, subscribe->callback);
+	list_for_each_entry(s, &upnp->type.device.services, head, upnp_service_t) {
+		debugf(_DBG, "eventurl: %s, callback: %s", s->eventurl, subscribe->callback);
 		if (strcmp(subscribe->path, s->eventurl) == 0) {
-			c = (upnpd_upnp_subscribe_t *) malloc(sizeof(upnpd_upnp_subscribe_t));
+			c = (upnp_subscribe_t *) malloc(sizeof(upnp_subscribe_t));
 			if (c == NULL) {
 				ret = -1;
 				goto out;
 			}
-			memset(c, 0, sizeof(upnpd_upnp_subscribe_t));
+			memset(c, 0, sizeof(upnp_subscribe_t));
 			upnpd_upnp_uuid_generate(&uuid);
 			sprintf(c->sid, "uuid:%s", uuid.uuid);
 			subscribe->sid = strdup(c->sid);
@@ -556,7 +556,7 @@ static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subsc
 				goto out;
 			}
 			if (upnpd_upnp_url_parse(subscribe->callback, &c->url) != 0) {
-				debugf("upnpd_upnp_url_parse(%s) failed", subscribe->callback);
+				debugf(_DBG, "upnpd_upnp_url_parse(%s) failed", subscribe->callback);
 				free(c);
 				ret = -1;
 				goto out;
@@ -567,7 +567,7 @@ static int gena_callback_event_subscribe_request (upnp_t *upnp, gena_event_subsc
 		}
 	}
 out:	upnpd_thread_mutex_unlock(upnp->mutex);
-	debugf("ret: %d", ret);
+	debugf(_DBG, "ret: %d", ret);
 	return ret;
 }
 
@@ -577,9 +577,9 @@ static int gena_callback_event_subscribe_accept (upnp_t *upnp, gena_event_subscr
 	upnp_event_t e;
 	upnp_service_t *s;
 	ret = -1;
-	debugf("enter");
+	debugf(_DBG, "enter");
 	upnpd_thread_mutex_lock(upnp->mutex);
-	list_for_each_entry(s, &upnp->type.device.services, head) {
+	list_for_each_entry(s, &upnp->type.device.services, head, upnp_service_t) {
 		if (strcmp(subscribe->path, s->eventurl) == 0) {
 			memset(&e, 0, sizeof(upnp_event_t));
 			e.type = UPNP_EVENT_TYPE_SUBSCRIBE_REQUEST;
@@ -596,7 +596,7 @@ static int gena_callback_event_subscribe_accept (upnp_t *upnp, gena_event_subscr
 		}
 	}
 out:	upnpd_thread_mutex_unlock(upnp->mutex);
-	debugf("ret: %d", ret);
+	debugf(_DBG, "ret: %d", ret);
 	return ret;
 }
 
@@ -604,12 +604,12 @@ static int gena_callback_event_subscribe_renew (upnp_t *upnp, gena_event_subscri
 {
 	int ret;
 	upnp_service_t *s;
-	upnpd_upnp_subscribe_t *c;
+	upnp_subscribe_t *c;
 	ret = -1;
 	upnpd_thread_mutex_lock(upnp->mutex);
-	list_for_each_entry(s, &upnp->type.device.services, head) {
+	list_for_each_entry(s, &upnp->type.device.services, head, upnp_service_t) {
 		if (strcmp(subscribe->path, s->eventurl) == 0) {
-			list_for_each_entry(c, &s->subscribers, head) {
+			list_for_each_entry(c, &s->subscribers, head, upnp_subscribe_t) {
 				if (strcmp(c->sid, subscribe->sid) == 0) {
 					ret = 0;
 					goto out;
@@ -624,12 +624,12 @@ out:	upnpd_thread_mutex_unlock(upnp->mutex);
 static int gena_callback_event_subscribe_drop (upnp_t *upnp, gena_event_unsubscribe_t *unsubscribe)
 {
 	upnp_service_t *s;
-	upnpd_upnp_subscribe_t *c;
-	upnpd_upnp_subscribe_t *cn;
+	upnp_subscribe_t *c;
+	upnp_subscribe_t *cn;
 	upnpd_thread_mutex_lock(upnp->mutex);
-	list_for_each_entry(s, &upnp->type.device.services, head) {
+	list_for_each_entry(s, &upnp->type.device.services, head, upnp_service_t) {
 		if (strcmp(unsubscribe->path, s->eventurl) == 0) {
-			list_for_each_entry_safe(c, cn, &s->subscribers, head) {
+			list_for_each_entry_safe(c, cn, &s->subscribers, head, upnp_subscribe_t) {
 				if (strcmp(c->sid, unsubscribe->sid) == 0) {
 					list_del(&c->head);
 					free(c->url.host);
@@ -651,7 +651,7 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 	char *response;
 	upnp_event_t e;
 	upnp_service_t *s;
-	upnp_error_t **error;
+	upnp_error_t *error;
 	upnp_event_action_node_t *n;
 	upnp_event_action_node_t *n_;
 	const char *envelope =
@@ -682,7 +682,7 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 
 	ret = -1;
 	upnpd_thread_mutex_lock(upnp->mutex);
-	list_for_each_entry(s, &upnp->type.device.services, head) {
+	list_for_each_entry(s, &upnp->type.device.services, head, upnp_service_t) {
 		if (strcmp(action->path, s->controlurl) == 0) {
 			memset(&e, 0, sizeof(upnp_event_t));
 			e.type = UPNP_EVENT_TYPE_ACTION;
@@ -706,7 +706,7 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 				} else {
 					response = tmp;
 					tmp = NULL;
-					list_for_each_entry(n, &e.event.action.response.nodes, head) {
+					list_for_each_entry(n, &e.event.action.response.nodes, head, upnp_event_action_node_t) {
 						if (asprintf(&tmp,
 								"%s<%s>%s</%s>\n",
 								response,
@@ -748,10 +748,12 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 					response = NULL;
 				}
 			} else {
+				int i;
 				response = NULL;
-				for (error = upnp_errors; *error; error++) {
-					if ((*error)->error == e.event.action.errcode) {
-						if (asprintf(&action->response, fault, (*error)->code, (*error)->str) < 0) {
+				for (i = 0; upnp_errors[i].str != NULL; i++) {
+					error = &upnp_errors[i];
+					if (error->error == e.event.action.errcode) {
+						if (asprintf(&action->response, fault, error->code, error->str) < 0) {
 							action->response = NULL;
 						}
 						break;
@@ -760,7 +762,7 @@ static int gena_callback_event_action (upnp_t *upnp, gena_event_action_t *action
 			}
 			e.event.action.request = NULL;
 			free(e.event.action.response.service);
-			list_for_each_entry_safe(n, n_, &e.event.action.response.nodes, head) {
+			list_for_each_entry_safe(n, n_, &e.event.action.response.nodes, head, upnp_event_action_node_t ) {
 				list_del(&n->head);
 				free(n->variable);
 				free(n->value);
@@ -962,20 +964,20 @@ int upnpd_upnp_register_device (upnp_t *upnp, const char *description, int (*cal
 	upnp->type.device.callback = callback;
 	upnp->type.device.cookie = cookie;
 	if (upnp->type.device.description == NULL) {
-		debugf("upnp->type.device.description can not be null");
+		debugf(_DBG, "upnp->type.device.description can not be null");
 		upnpd_thread_mutex_unlock(upnp->mutex);
 		return -1;
 	}
 	if (asprintf(&upnp->type.device.location, "http://%s:%d/description.xml", upnp->host, upnp->port) < 0) {
 		free(upnp->type.device.description);
-		debugf("upnp->type.device.location can not be null");
+		debugf(_DBG, "upnp->type.device.location can not be null");
 		upnpd_thread_mutex_unlock(upnp->mutex);
 		return -1;
 	}
 
 	memset(&data, 0, sizeof(upnp_parser_data_t));
 	if (upnpd_xml_parse_buffer_callback(description, strlen(description), upnp_parser_callback, &data) != 0) {
-		debugf("upnpd_xml_parse_buffer_callback() failed");
+		debugf(_DBG, "upnpd_xml_parse_buffer_callback() failed");
 		free(upnp->type.device.description);
 		free(upnp->type.device.location);
 		upnpd_thread_mutex_unlock(upnp->mutex);
@@ -987,9 +989,9 @@ int upnpd_upnp_register_device (upnp_t *upnp, const char *description, int (*cal
 			continue;
 		}
 
-		debugf("registering device to ssdp");
-		debugf("  deviceType:'%s'", data.devices[d].deviceType);
-		debugf("  UDN       :'%s'", data.devices[d].UDN);
+		debugf(_DBG, "registering device to ssdp");
+		debugf(_DBG, "  deviceType:'%s'", data.devices[d].deviceType);
+		debugf(_DBG, "  UDN       :'%s'", data.devices[d].UDN);
 
 		/* ssdp entries for device */
 		if (asprintf(&deviceusn, "%s::%s", data.devices[d].UDN, "upnp:rootdevice") > 0) {
@@ -1010,11 +1012,11 @@ int upnpd_upnp_register_device (upnp_t *upnp, const char *description, int (*cal
 			    data.devices[d].services[s].serviceId == NULL) {
 				continue;
 			}
-			debugf("registering service to ssdp");
-			debugf("  serviceType:'%s'", data.devices[d].services[s].serviceType);
-			debugf("  serviceId  :'%s'", data.devices[d].services[s].serviceId);
-			debugf("  eventSubURL:'%s'", data.devices[d].services[s].eventSubURL);
-			debugf("  controlURL :'%s'", data.devices[d].services[s].controlURL);
+			debugf(_DBG, "registering service to ssdp");
+			debugf(_DBG, "  serviceType:'%s'", data.devices[d].services[s].serviceType);
+			debugf(_DBG, "  serviceId  :'%s'", data.devices[d].services[s].serviceId);
+			debugf(_DBG, "  eventSubURL:'%s'", data.devices[d].services[s].eventSubURL);
+			debugf(_DBG, "  controlURL :'%s'", data.devices[d].services[s].controlURL);
 			if (asprintf(&deviceusn, "%s::%s", data.devices[d].UDN, data.devices[d].services[s].serviceType) > 0) {
 				if (upnpd_upnp_ssdp_register(upnp->ssdp, data.devices[d].services[s].serviceType, deviceusn, upnp->type.device.location, SERVER_NAME, 100000) == 0) {
 					service = (upnp_service_t *) malloc(sizeof(upnp_service_t));
@@ -1029,7 +1031,7 @@ int upnpd_upnp_register_device (upnp_t *upnp, const char *description, int (*cal
 							service->eventurl = data.devices[d].services[s].eventSubURL;
 							service->controlurl = data.devices[d].services[s].controlURL;
 							service->serviceid = data.devices[d].services[s].serviceId;
-							debugf("adding service: %s", data.devices[d].services[s].serviceId);
+							debugf(_DBG, "adding service: %s", data.devices[d].services[s].serviceId);
 							list_add(&service->head, &upnp->type.device.services);
 							data.devices[d].services[s].controlURL = NULL;
 							data.devices[d].services[s].eventSubURL = NULL;
@@ -1074,11 +1076,11 @@ unsigned short upnpd_upnp_getport (upnp_t *upnp)
 upnp_t * upnpd_upnp_init (const char *host, const char *mask, const unsigned short port, gena_callback_vfs_t *vfscallbacks, void *vfscookie)
 {
 	upnp_t *upnp;
-	debugf("setting seed");
-	upnpd_rand_srand(upnpd_time_gettimeofday());
-	debugf("ignoring sigpipe signal");
+	debugf(_DBG, "setting seed");
+	upnpd_rand_srand((unsigned int) upnpd_time_gettimeofday());
+	debugf(_DBG, "ignoring sigpipe signal");
 	signal(SIGPIPE, SIG_IGN);
-	debugf("initializing upnp stack");
+	debugf(_DBG, "initializing upnp stack");
 	upnp = (upnp_t *) malloc(sizeof(upnp_t));
 	if (upnp == NULL) {
 		return NULL;
@@ -1137,19 +1139,19 @@ int upnpd_upnp_uninit (upnp_t *upnp)
 {
 	upnp_service_t *s;
 	upnp_service_t *sn;
-	upnpd_upnp_subscribe_t *c;
-	upnpd_upnp_subscribe_t *cn;
+	upnp_subscribe_t *c;
+	upnp_subscribe_t *cn;
 	if (upnp == NULL) {
 		return 0;
 	}
-	debugf("calling ssdp_uninit");
+	debugf(_DBG, "calling ssdp_uninit");
 	upnpd_upnp_ssdp_uninit(upnp->ssdp);
-	debugf("calling gena_uninit");
+	debugf(_DBG, "calling gena_uninit");
 	upnpd_upnp_gena_uninit(upnp->gena);
-	debugf("free device memory");
+	debugf(_DBG, "free device memory");
 	if (upnp->type.type == UPNP_TYPE_DEVICE) {
-		list_for_each_entry_safe(s, sn, &upnp->type.device.services, head) {
-			list_for_each_entry_safe(c, cn, &s->subscribers, head) {
+		list_for_each_entry_safe(s, sn, &upnp->type.device.services, head, upnp_service_t) {
+			list_for_each_entry_safe(c, cn, &s->subscribers, head, upnp_subscribe_t) {
 				list_del(&c->head);
 				free(c->url.host);
 				free(c->url.url);
@@ -1247,10 +1249,10 @@ char * upnpd_upnp_makeaction (upnp_t *upnp, const char *actionname, const char *
 			buffer) < 0) {
 	}
 	free(buffer);
-	debugf("sending action data:\n'%s'\n", data);
+	debugf(_DBG, "sending action data:\n'%s'\n", data);
 	result = upnpd_upnp_gena_send_recv(upnp->gena, url.host, url.port, data, NULL);
 	free(data);
-	debugf("result: '%s'", result);
+	debugf(_DBG, "result: '%s'", result);
 	upnpd_upnp_url_uninit(&url);
 	return result;
 }
@@ -1266,7 +1268,7 @@ int upnpd_upnp_search (upnp_t *upnp, int timeout, const char *uuid)
 
 int upnpd_upnp_subscribe (upnp_t *upnp, const char *serviceurl, int *timeout, char **sid)
 {
-	debugf("upnp subscribe is not supported, yet");
+	debugf(_DBG, "upnp subscribe is not supported, yet");
 	return 0;
 }
 

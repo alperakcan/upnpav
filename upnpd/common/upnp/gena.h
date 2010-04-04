@@ -59,7 +59,7 @@ typedef struct gena_file_s {
 typedef struct gena_fileinfo_s {
 	unsigned long long size;
 	char *mimetype;
-	unsigned long mtime;
+	unsigned long long mtime;
 	int seekable;
 } gena_fileinfo_t;
 

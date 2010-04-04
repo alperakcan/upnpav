@@ -31,9 +31,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <fnmatch.h>
 #include <dirent.h>
 #include <inttypes.h>
@@ -72,10 +72,12 @@ static inline int file_mode_open (file_mode_t mode)
 		m = O_RDWR;
 	}
 //	m |= O_LARGEFILE;
+	if (mode & FILE_MODE_CREATE)
+		m |= O_CREAT;
 	return m;
 }
 
-static inline int file_whence_seek (upnpd_file_seek_t whence)
+static inline int file_whence_seek (file_seek_t whence)
 {
 	if (whence == FILE_SEEK_SET) return SEEK_SET;
 	if (whence == FILE_SEEK_CUR) return SEEK_CUR;
@@ -83,7 +85,7 @@ static inline int file_whence_seek (upnpd_file_seek_t whence)
 	return SEEK_SET;
 }
 
-static inline int file_flag_match (upnpd_file_match_t flag)
+static inline int file_flag_match (file_match_t flag)
 {
 	int f;
 	f = 0;
@@ -91,7 +93,7 @@ static inline int file_flag_match (upnpd_file_match_t flag)
 	return f;
 }
 
-int upnpd_file_match (const char *path, const char *string, upnpd_file_match_t flag)
+int upnpd_file_match (const char *path, const char *string, file_match_t flag)
 {
 	int f;
 	f = file_flag_match(flag);
@@ -105,7 +107,7 @@ int upnpd_file_access (const char *path, file_mode_t mode)
 	return access(path, m);
 }
 
-int upnpd_file_stat (const char *path, upnpd_file_stat_t *st)
+int upnpd_file_stat (const char *path, file_stat_t *st)
 {
 	struct stat stbuf;
 	if (stat(path, &stbuf) < 0) {
@@ -154,11 +156,11 @@ int upnpd_file_write (file_t *file, const void *buffer, int length)
 	return write(file->fd, buffer, length);
 }
 
-unsigned long long upnpd_file_seek (file_t *file, unsigned long long offset, upnpd_file_seek_t whence)
+unsigned long long upnpd_file_seek (file_t *file, unsigned long long offset, file_seek_t whence)
 {
 	int s;
 	int rc;
-	upnpd_file_stat_t stat;
+	file_stat_t stat;
 	unsigned long long r;
 	s = file_whence_seek(whence);
 	rc = upnpd_file_stat(file->path, &stat);
@@ -254,3 +256,9 @@ int upnpd_file_poll (file_t *file, poll_event_t request, poll_event_t *result, i
 	}
 	return rc;
 }
+
+int upnpd_file_unlink(const char *path)
+{    
+	return unlink(path);
+}
+

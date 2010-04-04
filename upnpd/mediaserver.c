@@ -148,7 +148,7 @@ int mediaserver_main (char *options)
 
 	mediaserver = upnpd_mediaserver_init(options);
 	if (mediaserver == NULL) {
-		debugf("upnpd_mediaserver_init() failed");
+		debugf(_DBG, "upnpd_mediaserver_init() failed");
 		goto out;
 	}
 
@@ -177,7 +177,7 @@ int mediaserver_main (char *options)
 
 	rc = upnpd_mediaserver_uninit(mediaserver);
 	if (rc != 0) {
-		debugf("upnpd_mediaserver_uninit(mediaserver) failed");
+		debugf(_DBG, "upnpd_mediaserver_uninit(mediaserver) failed");
 		goto out;
 	}
 	ret = 0;

@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
+
 
 #include "platform.h"
 #include "uuid.h"
@@ -59,5 +59,5 @@ void upnpd_upnp_uuid_generate (uuid_gen_t *uuid)
 		uuid->clock_seq,
 		uuid->node[0], uuid->node[1], uuid->node[2],
 		uuid->node[3], uuid->node[4], uuid->node[5]);
-	debugf("generated uuid:'%s'", uuid->uuid);
+	debugf(_DBG, "generated uuid:'%s'", uuid->uuid);
 }

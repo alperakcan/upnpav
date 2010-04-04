@@ -6,12 +6,15 @@ LIB upnpd_database
   EXPINCLUDE .
 
   IF ENABLE_DATABASE_SQLITE3
-  DEFINE SQLITE_OMIT_LOAD_EXTENSION
+    DEFINE SQLITE_OMIT_LOAD_EXTENSION
 
-  SOURCE sqlite3/database.c
-  SOURCE sqlite3/sqlite3.c
+    SOURCE sqlite3/database.c
+    SOURCE sqlite3/sqlite3.c
 
-  HEADER sqlite3/sqlite3.h
+    HEADER sqlite3/sqlite3.h
+  ELIF ENABLE_DATABASE_COREDB
+    USE common
+    SOURCE coredb/database.c 
   ENDIF
 
   HEADER database.h

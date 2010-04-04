@@ -112,7 +112,7 @@ device_t * upnpd_mediarenderer_init (char *options)
 	device_t *device;
 	device_service_t *service;
 
-	debugf("processing device options '%s'", options);
+	debugf(_DBG, "processing device options '%s'", options);
 
 	err = 0;
 	daemonize = 0;
@@ -125,7 +125,7 @@ device_t * upnpd_mediarenderer_init (char *options)
 		switch (getsubopt(&suboptions, mediarenderer_options, &value)) {
 			case OPT_IPADDR:
 				if (value == NULL) {
-					debugf("value is missing for ipaddr option");
+					debugf(_DBG, "value is missing for ipaddr option");
 					err = 1;
 					continue;
 				}
@@ -133,7 +133,7 @@ device_t * upnpd_mediarenderer_init (char *options)
 				break;
 			case OPT_NETMASK:
 				if (value == NULL) {
-					debugf("value is missing for netmask option");
+					debugf(_DBG, "value is missing for netmask option");
 					err = 1;
 					continue;
 				}
@@ -141,7 +141,7 @@ device_t * upnpd_mediarenderer_init (char *options)
 				break;
 			case OPT_FRIENDLYNAME:
 				if (value == NULL) {
-					debugf("value is missing for firendlyname option");
+					debugf(_DBG, "value is missing for firendlyname option");
 					err = 1;
 					continue;
 				}
@@ -149,7 +149,7 @@ device_t * upnpd_mediarenderer_init (char *options)
 				break;
 			case OPT_DAEMONIZE:
 				if (value == NULL) {
-					debugf("value is missing for daemonize option");
+					debugf(_DBG, "value is missing for daemonize option");
 					err = 1;
 					continue;
 				}
@@ -157,7 +157,7 @@ device_t * upnpd_mediarenderer_init (char *options)
 				break;
 			case OPT_UUID:
 				if (value == NULL) {
-					debugf("value is missing for uuid option");
+					debugf(_DBG, "value is missing for uuid option");
 					err = 1;
 					continue;
 				}
@@ -171,7 +171,7 @@ device_t * upnpd_mediarenderer_init (char *options)
 		}
 	}
 
-	debugf("starting mediarenderer;\n"
+	debugf(_DBG, "starting mediarenderer;\n"
 	       "\tuuid        : %s\n"
 	       "\tdaemonize   : %s\n"
 	       "\tipaddr   : %s\n"
@@ -183,10 +183,10 @@ device_t * upnpd_mediarenderer_init (char *options)
 	       (netmask) ? netmask : "null",
 	       (friendlyname) ? friendlyname : "mediarenderer");
 
-	debugf("initializing mediarenderer device struct");
+	debugf(_DBG, "initializing mediarenderer device struct");
 	device = (device_t *) malloc(sizeof(device_t));
 	if (device == NULL) {
-		debugf("device = (device_t *) malloc(sizeof(device_t)) failed");
+		debugf(_DBG, "device = (device_t *) malloc(sizeof(device_t)) failed");
 		goto error;
 	}
 	memset(device, 0, sizeof(device_t));
@@ -210,21 +210,21 @@ device_t * upnpd_mediarenderer_init (char *options)
 
 	service = upnpd_registrar_init();
 	if (service == NULL) {
-		debugf("upnpd_registrar_init() failed");
+		debugf(_DBG, "upnpd_registrar_init() failed");
 		goto error;
 	}
 	if ((rc = upnpd_device_service_add(device, service)) != 0) {
-		debugf("upnpd_device_service_add(device, service) failed");
+		debugf(_DBG, "upnpd_device_service_add(device, service) failed");
 		goto error;
 	}
 
-	debugf("initializing mediarenderer device");
+	debugf(_DBG, "initializing mediarenderer device");
 	if ((rc = upnpd_device_init(device)) != 0) {
-		debugf("upnpd_device_init(device) failed");
+		debugf(_DBG, "upnpd_device_init(device) failed");
 		goto error;
 	}
 
-	debugf("initialized mediarenderer device");
+	debugf(_DBG, "initialized mediarenderer device");
 	return device;
 error:	upnpd_mediarenderer_uninit(device);
 	return NULL;
@@ -232,9 +232,9 @@ error:	upnpd_mediarenderer_uninit(device);
 
 int upnpd_mediarenderer_uninit (device_t *mediarenderer)
 {
-	debugf("uninitializing mediarenderer");
+	debugf(_DBG, "uninitializing mediarenderer");
 	upnpd_device_uninit(mediarenderer);
 	free(mediarenderer);
-	debugf("uninitialized mediarenderer");
+	debugf(_DBG, "uninitialized mediarenderer");
 	return 0;
 }

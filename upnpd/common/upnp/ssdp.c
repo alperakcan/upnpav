@@ -29,9 +29,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+
 #include <string.h>
-#include <inttypes.h>
+
 
 #include "platform.h"
 #include "ssdp.h"
@@ -155,7 +155,7 @@ static ssdp_device_t * ssdp_upnpd_device_init (char *nt, char *usn, char *locati
 	d->usn = strdup(usn);
 	d->location = strdup(location);
 	d->server = strdup(server);
-	d->age = (age < ssdp_recv_timeout) ? ssdp_recv_timeout : age;
+	d->age = (age < (int) ssdp_recv_timeout) ? ssdp_recv_timeout : age;
 	d->interval = d->age;
 	if (d->nt == NULL ||
 	    d->usn == NULL ||
@@ -283,7 +283,7 @@ static int ssdp_request_valid (const char *address, const char *netmask,ssdp_req
 			if (request->request.notify.nt == NULL ||
 			    request->request.notify.nts == NULL ||
 			    request->request.notify.usn == NULL) {
-				debugf("notify not valid");
+				debugf(_DBG, "notify not valid");
 				return -1;
 			}
 			if (strcasecmp(request->request.notify.nts, "ssdp:alive") == 0 &&
@@ -292,13 +292,13 @@ static int ssdp_request_valid (const char *address, const char *netmask,ssdp_req
 			} else if (strcasecmp(request->request.notify.nts, "ssdp:byebye") == 0) {
 				return 0;
 			}
-			debugf("notify not valid");
+			debugf(_DBG, "notify not valid");
 			break;
 		case SSDP_TYPE_ANSWER:
 			if (request->request.answer.st == NULL ||
 			    request->request.answer.location == NULL ||
 			    request->request.answer.usn == NULL) {
-				debugf("answer not valid");
+				debugf(_DBG, "answer not valid");
 				return-1;
 			}
 			return ssdp_request_mask(address, netmask, request);
@@ -343,7 +343,7 @@ static ssdp_request_t * ssdp_parse (const char *address, const char *netmask, ch
 			request->type = SSDP_TYPE_NOTIFY;
 		} else if (strncasecmp(line, "HTTP/1.1", 8) == 0 &&
 			   strstr(line, "200") != NULL &&
-			   strcasestr(line, "OK") != NULL) {
+			   (strstr(line, "OK") != NULL || strstr(line, "Ok") != NULL || strstr(line, "ok") != NULL)) {
 			if (request->type != SSDP_TYPE_UNKNOWN) {
 				free(request);
 				return NULL;
@@ -413,7 +413,7 @@ static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, const ch
 		case SSDP_TYPE_MSEARCH:
 			if (strcasecmp(request->request.search.st, "upnp:rootdevice") == 0 ||
 			    strcasecmp(request->request.search.st, "ssdp:all") == 0) {
-				list_for_each_entry(d, &ssdp->devices, head) {
+				list_for_each_entry(d, &ssdp->devices, head, ssdp_device_t) {
 					buffer = ssdp_advertise_buffer(d, 1);
 					if (buffer != NULL) {
 						ssdp_advertise_send(ssdp->announce, buffer, address, port);
@@ -421,7 +421,7 @@ static int ssdp_request_handler (ssdp_t *ssdp, ssdp_request_t *request, const ch
 					}
 				}
 			} else {
-				list_for_each_entry(d, &ssdp->devices, head) {
+				list_for_each_entry(d, &ssdp->devices, head, ssdp_device_t) {
 					if (strncasecmp(d->nt, request->request.search.st, strlen(request->request.search.st)) == 0) {
 						buffer = ssdp_advertise_buffer(d, 1);
 						if (buffer != NULL) {
@@ -510,7 +510,7 @@ static void * ssdp_thread_loop (void *arg)
 	while (1) {
 		upnpd_thread_mutex_lock(ssdp->mutex);
 		times[1] = upnpd_time_gettimeofday();
-		list_for_each_entry(d, &ssdp->devices, head) {
+		list_for_each_entry(d, &ssdp->devices, head, ssdp_device_t) {
 			d->interval -= (times[1] - times[0]);
 			if (d->interval < (d->age / 2) || d->interval > d->age) {
 				buf = ssdp_advertise_buffer(d, 0);
@@ -569,35 +569,35 @@ out:
 
 static int ssdp_init_server (ssdp_t *ssdp)
 {
-	ssdp->socket = upnpd_socket_open(SOCKET_TYPE_DGRAM);
-	ssdp->announce = upnpd_socket_open(SOCKET_TYPE_DGRAM);
+	ssdp->socket = upnpd_socket_open(SOCKET_TYPE_DGRAM, 1);
+	ssdp->announce = upnpd_socket_open(SOCKET_TYPE_DGRAM, 0);
 	if (ssdp->socket == NULL || ssdp->announce == NULL) {
-		debugf("upnpd_socket_open() failed");
+		debugf(_DBG, "upnpd_socket_open() failed");
 		upnpd_socket_close(ssdp->socket);
 		upnpd_socket_close(ssdp->announce);
 		return -1;
 	}
 	if (upnpd_socket_option_multicastttl(ssdp->announce, ssdp_ttl) < 0) {
-		debugf("upnpd_socket_option_multicastttl() failed");
+		debugf(_DBG, "upnpd_socket_option_multicastttl() failed");
 		upnpd_socket_close(ssdp->socket);
 		upnpd_socket_close(ssdp->announce);
 		return -2;
 	}
 
 	if (upnpd_socket_option_reuseaddr(ssdp->socket, 1) < 0) {
-		debugf("upnpd_socket_option_reuseaddr() failed");
+		debugf(_DBG, "upnpd_socket_option_reuseaddr() failed");
 		upnpd_socket_close(ssdp->socket);
 		upnpd_socket_close(ssdp->announce);
 		return -2;
 	}
 	if (upnpd_socket_bind(ssdp->socket, ssdp_ip, ssdp_port) < 0) {
-		debugf("upnpd_socket_bind() failed");
+		debugf(_DBG, "upnpd_socket_bind() failed");
 		upnpd_socket_close(ssdp->socket);
 		upnpd_socket_close(ssdp->announce);
 		return -3;
 	}
 	if (upnpd_socket_option_membership(ssdp->socket, ssdp_ip, 1) < 0) {
-		debugf("upnpd_socket_option_membership() failed");
+		debugf(_DBG, "upnpd_socket_option_membership() failed");
 		upnpd_socket_close(ssdp->socket);
 		upnpd_socket_close(ssdp->announce);
 		return -4;
@@ -739,7 +739,7 @@ int upnpd_upnp_ssdp_advertise (ssdp_t *ssdp)
 	char *buffer;
 	ssdp_device_t *d;
 	upnpd_thread_mutex_lock(ssdp->mutex);
-	list_for_each_entry(d, &ssdp->devices, head) {
+	list_for_each_entry(d, &ssdp->devices, head, ssdp_device_t) {
 		buffer = ssdp_advertise_buffer(d, 0);
 		ssdp_advertise_send(ssdp->announce, buffer, ssdp_ip, ssdp_port);
 		free(buffer);
@@ -753,8 +753,8 @@ int upnpd_upnp_ssdp_byebye (ssdp_t *ssdp)
 	char *buffer;
 	ssdp_device_t *d;
 	upnpd_thread_mutex_lock(ssdp->mutex);
-	list_for_each_entry(d, &ssdp->devices, head) {
-		debugf("sending byebye notify for '%s'", d->nt);
+	list_for_each_entry(d, &ssdp->devices, head, ssdp_device_t) {
+		debugf(_DBG, "sending byebye notify for '%s'", d->nt);
 		buffer = ssdp_byebye_buffer(d);
 		ssdp_advertise_send(ssdp->announce, buffer, ssdp_ip, ssdp_port);
 		free(buffer);
@@ -803,7 +803,7 @@ ssdp_t * upnpd_upnp_ssdp_init (const char *address, const char *netmask, int (*c
 	ssdp->callback = callback;
 	list_init(&ssdp->devices);
 	if (ssdp_init_server(ssdp) != 0) {
-		debugf("ssdp_init_server() failed");
+		debugf(_DBG, "ssdp_init_server() failed");
 		free(ssdp->address);
 		free(ssdp->netmask);
 		free(ssdp);
@@ -815,20 +815,20 @@ ssdp_t * upnpd_upnp_ssdp_init (const char *address, const char *netmask, int (*c
 int upnpd_upnp_ssdp_uninit (ssdp_t *ssdp)
 {
 	ssdp_device_t *d, *dn;
-	debugf("sending ssdp:byebye");
+	debugf(_DBG, "sending ssdp:byebye");
 	upnpd_upnp_ssdp_byebye(ssdp);
-	debugf("setting ssdp->running to 0");
+	debugf(_DBG, "setting ssdp->running to 0");
 	upnpd_thread_mutex_lock(ssdp->mutex);
 	ssdp->running = 0;
-	debugf("signalling ssdp->cond");
+	debugf(_DBG, "signalling ssdp->cond");
 	upnpd_thread_cond_signal(ssdp->cond);
 	while (ssdp->stopped == 0) {
-		debugf("waiting for ssdp->stopped");
+		debugf(_DBG, "waiting for ssdp->stopped");
 		upnpd_thread_cond_wait(ssdp->cond, ssdp->mutex);
 	}
-	debugf("joining ssdp->thread");
+	debugf(_DBG, "joining ssdp->thread");
 	upnpd_thread_join(ssdp->thread);
-	list_for_each_entry_safe(d, dn, &ssdp->devices, head) {
+	list_for_each_entry_safe(d, dn, &ssdp->devices, head, ssdp_device_t) {
 		list_del(&d->head);
 		ssdp_upnpd_device_uninit(d);
 	}

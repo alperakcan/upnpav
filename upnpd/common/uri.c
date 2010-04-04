@@ -29,8 +29,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <inttypes.h>
+
+
 
 #include "platform.h"
 #include "parser.h"
@@ -85,7 +85,7 @@ char * upnpd_uri_escape (const char *str)
 	upnpd_uri_escape_real(str, NULL, &len);
 	out = malloc(len + 1);
 	if (out == NULL) {
-		debugf("malloc(len + 1) failed");
+		debugf(_DBG, "malloc(len + 1) failed");
 		return NULL;
 	}
 	upnpd_uri_escape_real(str, out, NULL);

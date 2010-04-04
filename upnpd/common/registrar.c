@@ -30,8 +30,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <inttypes.h>
+
+
 
 #include "platform.h"
 #include "database.h"
@@ -63,7 +63,7 @@ static service_variable_t registrar_variables[] = {
 static int registrar_is_authorized (device_service_t *service, upnp_event_action_t *request)
 {
 	int rc;
-	debugf("registrar is authorized");
+	debugf(_DBG, "registrar is authorized");
 	rc = upnpd_upnp_add_response(request, service->type, "Result", "1");
 	return rc;
 }
@@ -83,7 +83,7 @@ static int registrar_uninit (device_service_t *registrar)
 {
 	int i;
 	service_variable_t *variable;
-	debugf("registrar uninit");
+	debugf(_DBG, "registrar uninit");
 	for (i = 0; (variable = &registrar->variables[i])->name != NULL; i++) {
 		free(variable->value);
 	}
@@ -96,10 +96,10 @@ device_service_t * upnpd_registrar_init (void)
 	registrar_t *registrar;
 	service_variable_t *variable;
 	registrar = NULL;
-	debugf("initializing content directory service struct");
+	debugf(_DBG, "initializing content directory service struct");
 	registrar = (registrar_t *) malloc(sizeof(registrar_t));
 	if (registrar == NULL) {
-		debugf("malloc(sizeof(registrar_t)) failed");
+		debugf(_DBG, "malloc(sizeof(registrar_t)) failed");
 		goto out;
 	}
 	memset(registrar, 0, sizeof(registrar_t));
@@ -114,9 +114,9 @@ device_service_t * upnpd_registrar_init (void)
 	registrar->service.vfscallbacks = NULL;
 	registrar->service.uninit = registrar_uninit;
 
-	debugf("initializing content directory service");
+	debugf(_DBG, "initializing content directory service");
 	if (upnpd_service_init(&registrar->service) != 0) {
-		debugf("upnpd_service_init(&registrar->service) failed");
+		debugf(_DBG, "upnpd_service_init(&registrar->service) failed");
 		free(registrar);
 		registrar = NULL;
 		goto out;
@@ -126,7 +126,7 @@ device_service_t * upnpd_registrar_init (void)
 		variable->value = strdup("0");
 	}
 
-	debugf("initialized content directory service");
+	debugf(_DBG, "initialized content directory service");
 out:	return &registrar->service;
 }
 

@@ -30,8 +30,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <inttypes.h>
+
+
 
 #include "platform.h"
 #include "database.h"
@@ -64,7 +64,7 @@ typedef struct contentdir_s {
 static int contentdirectory_get_search_capabilities (device_service_t *service, upnp_event_action_t *request)
 {
 	int rc;
-	debugf("contentdir get search capabilities");
+	debugf(_DBG, "contentdir get search capabilities");
 	rc = upnpd_upnp_add_response(request, service->type, "SearchCaps", "*");
 	return rc;
 }
@@ -72,7 +72,7 @@ static int contentdirectory_get_search_capabilities (device_service_t *service, 
 static int contentdirectory_get_sort_capabilities (device_service_t *service, upnp_event_action_t *request)
 {
 	int rc;
-	debugf("contentdirectory get sort capabilities");
+	debugf(_DBG, "contentdirectory get sort capabilities");
 	rc = upnpd_upnp_add_response(request, service->type, "SortCaps", "*");
 	return rc;
 }
@@ -81,7 +81,7 @@ static int contentdirectory_get_system_update_id (device_service_t *service, upn
 {
 	int rc;
 	char str[23];
-	debugf("contentdirectory get system update id");
+	debugf(_DBG, "contentdirectory get system update id");
 	rc = upnpd_upnp_add_response(request, service->type, "Id", upnpd_uint32tostr(str, ((contentdir_t *) service)->updateid));
 	return rc;
 }
@@ -145,11 +145,11 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 
 	memset(&data, 0, sizeof(data));
 	if (upnpd_xml_parse_buffer_callback(request->request, strlen(request->request), contentdirectory_browse_callback, &data) != 0) {
-		debugf("upnpd_xml_parse_buffer_callback() failed");
+		debugf(_DBG, "upnpd_xml_parse_buffer_callback() failed");
 		request->errcode = UPNP_ERROR_PARAMETER_MISMATCH;
 		return 0;
 	}
-	debugf("contentdirectory browse:\n"
+	debugf(_DBG, "contentdirectory browse:\n"
 		"  objectid      : %s\n"
 		"  browseflag    : %s\n"
 		"  filter        : %s\n"
@@ -166,7 +166,7 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 	if (strcmp(data.browseflag, "BrowseMetadata") == 0) {
 		if (data.objectid == NULL || strcmp(data.objectid, "0") == 0) {
 			entry = upnpd_entry_didl_from_path(contentdir->rootpath);
-			debugf("found entry %p", entry);
+			debugf(_DBG, "found entry %p", entry);
 			tmp = entry;
 			while (tmp != NULL) {
 				free(entry->didl.entryid);
@@ -175,14 +175,14 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 				entry->didl.parentid = strdup("-1");
 				if (entry->didl.entryid == NULL ||
 				    entry->didl.parentid == NULL) {
-					debugf("strdup('0') failed");
+					debugf(_DBG, "strdup('0') failed");
 					request->errcode = UPNP_ERROR_CANNOT_PROCESS;
 					goto error;
 				}
 				tmp = tmp->next;
 			}
 		} else {
-			debugf("looking for '%s'", data.objectid);
+			debugf(_DBG, "looking for '%s'", data.objectid);
 			entry = upnpd_entry_didl_from_id(contentdir->database, data.objectid);
 		}
 		if (entry != NULL) {
@@ -192,14 +192,14 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 					free(entry->didl.parentid);
 					entry->didl.parentid = strdup("0");
 					if (entry->didl.parentid == NULL) {
-						debugf("strdup('0') failed");
+						debugf(_DBG, "strdup('0') failed");
 						request->errcode = UPNP_ERROR_CANNOT_PROCESS;
 						goto error;				}
 				}
 				free(id);
 			}
 		} else {
-			debugf("could not find object '%s'", data.objectid);
+			debugf(_DBG, "could not find object '%s'", data.objectid);
 		}
 		if (entry == NULL) {
 			request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
@@ -234,21 +234,21 @@ static int contentdirectory_browse (device_service_t *service, upnp_event_action
 				free(tmp->didl.parentid);
 				tmp->didl.parentid = strdup("0");
 				if (entry->didl.parentid == NULL) {
-					debugf("strdup('0') failed");
+					debugf(_DBG, "strdup('0') failed");
 					request->errcode = UPNP_ERROR_CANNOT_PROCESS;
 					goto error;
 				}
 				tmp = tmp->next;
 			}
 		} else {
-			debugf("looking for '%s'", data.objectid);
+			debugf(_DBG, "looking for '%s'", data.objectid);
 			entry = upnpd_entry_init_from_id(contentdir->database, data.objectid, data.startingindex, data.requestedcount, &numberreturned, &totalmatches);
 		}
 		if (entry == NULL) {
-			debugf("could not find any child object");
+			debugf(_DBG, "could not find any child object");
 			entry = upnpd_entry_didl_from_id(contentdir->database, data.objectid);
 			if (entry == NULL) {
-				debugf("could not find any object");
+				debugf(_DBG, "could not find any object");
 				request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
 				goto error;
 			}
@@ -337,11 +337,11 @@ static int contentdirectory_search (device_service_t *service, upnp_event_action
 
 	memset(&data, 0, sizeof(data));
 	if (upnpd_xml_parse_buffer_callback(request->request, strlen(request->request), contentdirectory_search_callback, &data) != 0) {
-		debugf("upnpd_xml_parse_buffer_callback() failed");
+		debugf(_DBG, "upnpd_xml_parse_buffer_callback() failed");
 		request->errcode = UPNP_ERROR_PARAMETER_MISMATCH;
 		return 0;
 	}
-	debugf("contentdirectory search:\n"
+	debugf(_DBG, "contentdirectory search:\n"
 		"  objectid      : %s\n"
 		"  searchflag    : %s\n"
 		"  filter        : %s\n"
@@ -357,7 +357,7 @@ static int contentdirectory_search (device_service_t *service, upnp_event_action
 
 	entry = upnpd_entry_init_from_search(contentdir->database, data.objectid, data.startingindex, data.requestedcount, &numberreturned, &totalmatches, data.searchflag);
 	if (entry == NULL) {
-		debugf("could not find any object");
+		debugf(_DBG, "could not find any object");
 		request->errcode = UPNP_ERROR_NOSUCH_OBJECT;
 		goto error;
 	}
@@ -621,7 +621,7 @@ static void * contentdirectory_reader (void *arg)
 		}
 		upnpd_thread_mutex_lock(transcode->reader.mutex);
 		if (transcode->reader.writing == 0 && transcode->length < TRANSCODE_BUFFER_SIZE / 2) {
-			debugf("transcoding started");
+			debugf(_DBG, "transcoding started");
 			transcode->reader.writing = 1;
 			upnpd_thread_cond_signal(transcode->reader.cond);
 		}
@@ -631,7 +631,7 @@ static void * contentdirectory_reader (void *arg)
 				upnpd_thread_mutex_unlock(transcode->reader.mutex);
 				goto out;
 			}
-			debugf("transcode->offset: %u, transcode->length: %u", transcode->offset, transcode->length);
+			debugf(_DBG, "transcode->offset: %u, transcode->length: %u", transcode->offset, transcode->length);
 			s = (transcode->offset + transcode->length) % TRANSCODE_BUFFER_SIZE;
 			l = MIN(TRANSCODE_BUFFER_SIZE - s, r - i);
 			memcpy(transcode->buffer + s, buffer + i, l);
@@ -643,7 +643,7 @@ static void * contentdirectory_reader (void *arg)
 	}
 
 out:
-	debugf("reading finished");
+	debugf(_DBG, "reading finished");
 	free(buffer);
 	upnpd_file_close(file);
 
@@ -700,11 +700,11 @@ static FILE * contentdirectory_popen (char * const args[], const char *type, lon
 		close(p[1]);
 
 		execvp("mencoder", args);
-		debugf("execl() failed");
+		debugf(_DBG, "execl() failed");
 	} else {
 		close(p[0]);
 		close(p[1]);
-		debugf("fork() failure");
+		debugf(_DBG, "fork() failure");
 	}
 
 	return NULL;
@@ -804,7 +804,7 @@ static void * contentdirectory_writer (void *arg)
 	}
 	memset(buffer, 0, bsize);
 
-	debugf("running command: '%s'", "transcode");
+	debugf(_DBG, "running command: '%s'", "transcode");
 	upnpd_thread_mutex_lock(transcode->writer.mutex);
 	transcode->pid = pid;
 	upnpd_thread_mutex_unlock(transcode->writer.mutex);
@@ -816,7 +816,7 @@ static void * contentdirectory_writer (void *arg)
 			goto out;
 		}
 		if (transcode->writer.writing == 0 && strncmp(buffer, "Pos: ", 5) == 0) {
-			debugf("transcoding started");
+			debugf(_DBG, "transcoding started");
 			transcode->writer.writing = 1;
 			upnpd_thread_cond_signal(transcode->writer.cond);
 		}
@@ -828,7 +828,7 @@ static void * contentdirectory_writer (void *arg)
 	}
 
 out:
-	debugf("transcoding finished: %s", transcode->output);
+	debugf(_DBG, "transcoding finished: %s", transcode->output);
 
 	err = fclose(fp);
 	free(buffer);
@@ -837,7 +837,7 @@ out:
 	free(args[40]);
 	free(args[48]);
 
-	debugf("updating status: %s", transcode->output);
+	debugf(_DBG, "updating status: %s", transcode->output);
 
 	upnpd_thread_mutex_lock(transcode->writer.mutex);
 	transcode->writer.error = err;
@@ -859,11 +859,11 @@ static int contentdirectory_stoptranscode (transcode_t *transcode)
 		kill(transcode->pid, 9);
 		waitpid(transcode->pid, &sts, 0);
 	}
-	debugf("closing reader: %s", transcode->output);
+	debugf(_DBG, "closing reader: %s", transcode->output);
 	upnpd_thread_mutex_lock(transcode->reader.mutex);
 	transcode->reader.running = 0;
 	upnpd_thread_cond_signal(transcode->reader.cond);
-	debugf("waiting reader: %s", transcode->output);
+	debugf(_DBG, "waiting reader: %s", transcode->output);
 	while (transcode->reader.stopped == 0) {
 		upnpd_thread_cond_wait(transcode->reader.cond, transcode->reader.mutex);
 	}
@@ -873,11 +873,11 @@ static int contentdirectory_stoptranscode (transcode_t *transcode)
 	upnpd_thread_mutex_destroy(transcode->reader.mutex);
 	upnpd_thread_cond_destroy(transcode->reader.cond);
 
-	debugf("closing writer: %s", transcode->output);
+	debugf(_DBG, "closing writer: %s", transcode->output);
 	upnpd_thread_mutex_lock(transcode->writer.mutex);
 	transcode->writer.running = 0;
 	upnpd_thread_cond_signal(transcode->writer.cond);
-	debugf("waiting writer: %s", transcode->output);
+	debugf(_DBG, "waiting writer: %s", transcode->output);
 	while (transcode->writer.stopped == 0) {
 		upnpd_thread_cond_wait(transcode->writer.cond, transcode->writer.mutex);
 	}
@@ -887,8 +887,8 @@ static int contentdirectory_stoptranscode (transcode_t *transcode)
 	upnpd_thread_mutex_destroy(transcode->writer.mutex);
 	upnpd_thread_cond_destroy(transcode->writer.cond);
 
-	debugf("removing file: %s", transcode->output);
-	unlink(transcode->output);
+	debugf(_DBG, "removing file: %s", transcode->output);
+	file_unlink(transcode->output);
 	free(transcode->input);
 	free(transcode->output);
 	free(transcode->codepage);
@@ -934,7 +934,7 @@ static transcode_t * contentdirectory_starttranscode (const char *input, const c
 	}
 	upnpd_thread_mutex_unlock(transcode->reader.mutex);
 
-	debugf("created file: %s", transcode->output);
+	debugf(_DBG, "created file: %s", transcode->output);
 	return transcode;
 }
 #endif
@@ -951,13 +951,13 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 {
 	char *ptr;
 	entry_t *entry;
-	upnpd_file_stat_t stat;
+	file_stat_t stat;
 	const char *ename;
 	contentdir_t *contentdir;
-	debugf("contentdirectory_vfsgetinfo '%s'", path);
+	debugf(_DBG, "contentdirectory_vfsgetinfo '%s'", path);
 	contentdir = (contentdir_t *) cookie;
 	if (strncmp(path, "/upnp/contentdirectory?id=", strlen("/upnp/contentdirectory?id=")) != 0) {
-		debugf("file is not belong to content directory");
+		debugf(_DBG, "file is not belong to content directory");
 		return -1;
 	}
 	ename = path + strlen("/upnp/contentdirectory?id=");
@@ -965,18 +965,18 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 	if (ptr != NULL) {
 		*ptr = '\0';
 	}
-	debugf("entry name is '%s'", ename);
+	debugf(_DBG, "entry name is '%s'", ename);
 	entry = upnpd_entry_didl_from_id(contentdir->database, ename);
 	if (entry == NULL) {
-		debugf("no entry found '%s'", ename);
+		debugf(_DBG, "no entry found '%s'", ename);
 		return -1;
 	}
-	debugf("entry path: '%s', title: '%s'", entry->path, entry->didl.dc.title);
+	debugf(_DBG, "entry path: '%s', title: '%s'", entry->path, entry->didl.dc.title);
 	if (contentdirectory_istranscode(entry->didl.dc.title) == 0) {
-		debugf("transcode file requested, preparing fake file");
+		debugf(_DBG, "transcode file requested, preparing fake file");
 		info->seekable = -1;
 	}
-	debugf("checking file: '%s'", entry->path);
+	debugf(_DBG, "checking file: '%s'", entry->path);
 	if (upnpd_file_access(entry->path, FILE_MODE_READ) == 0 &&
 	    upnpd_file_stat(entry->path, &stat) == 0) {
 		info->size = entry->didl.res.size;
@@ -985,7 +985,7 @@ static int contentdirectory_vfsgetinfo (void *cookie, char *path, gena_fileinfo_
 		upnpd_entry_uninit(entry);
 		return 0;
 	}
-	debugf("no file found '%s'", entry->path);
+	debugf(_DBG, "no file found '%s'", entry->path);
 	upnpd_entry_uninit(entry);
 	return -1;
 }
@@ -996,23 +996,23 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 	upnp_file_t *file;
 	const char *ename;
 	contentdir_t *contentdir;
-	debugf("contentdirectory_vfsopen");
+	debugf(_DBG, "contentdirectory_vfsopen");
 	contentdir = (contentdir_t *) cookie;
 	if (strncmp(path, "/upnp/contentdirectory?id=", strlen("/upnp/contentdirectory?id=")) != 0) {
-		debugf("file is not belong to content directory");
+		debugf(_DBG, "file is not belong to content directory");
 		return NULL;
 	}
 	ename = path + strlen("/upnp/contentdirectory?id=");
-	debugf("entry name is '%s'", ename);
+	debugf(_DBG, "entry name is '%s'", ename);
 	entry = upnpd_entry_didl_from_id(contentdir->database, ename);
 	if (entry == NULL) {
-		debugf("no entry found '%s'", ename);
+		debugf(_DBG, "no entry found '%s'", ename);
 		return NULL;
 	}
-	debugf("entry path: '%s', title: '%s'", entry->path, entry->didl.dc.title);
+	debugf(_DBG, "entry path: '%s', title: '%s'", entry->path, entry->didl.dc.title);
 	file = (upnp_file_t *) malloc(sizeof(upnp_file_t));
 	if (file == NULL) {
-		debugf("malloc failed");
+		debugf(_DBG, "malloc failed");
 		upnpd_entry_uninit(entry);
 		return NULL;
 	}
@@ -1022,10 +1022,10 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 #if defined(ENABLE_TRANSCODE)
 		char *name;
 		transcode_t *t;
-		debugf("transcode file requested, preparing fake file");
+		debugf(_DBG, "transcode file requested, preparing fake file");
 		name = contentdirectory_uniquename();
 		if (name == NULL) {
-			debugf("cannot create unique file");
+			debugf(_DBG, "cannot create unique file");
 			free(file);
 			upnpd_entry_uninit(entry);
 			return NULL;
@@ -1046,7 +1046,7 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 		file->file = NULL;
 		free(name);
 #else
-		debugf("transcode not supported for this build");
+		debugf(_DBG, "transcode not supported for this build");
 		free(file);
 		upnpd_entry_uninit(entry);
 		return NULL;
@@ -1055,7 +1055,7 @@ static void * contentdirectory_vfsopen (void *cookie, char *path, gena_filemode_
 		file->transcode = 0;
 		file->file = upnpd_file_open(entry->path, FILE_MODE_READ);
 		if (file->file == NULL) {
-			debugf("open(%s, O_RDONLY); failed", ename);
+			debugf(_DBG, "open(%s, O_RDONLY); failed", ename);
 			free(file);
 			upnpd_entry_uninit(entry);
 			return NULL;
@@ -1071,7 +1071,7 @@ static int contentdirectory_vfsread (void *cookie, void *handle, char *buffer, u
 	int i;
 	upnp_file_t *file;
 	contentdir_t *contentdir;
-	debugf("contentdirectory_vfsread: %u", length)
+	debugf(_DBG, "contentdirectory_vfsread: %u", length);
 	file = (upnp_file_t *) handle;
 	contentdir = (contentdir_t *) cookie;
 	if (file->transcode == 1) {
@@ -1111,7 +1111,7 @@ static int contentdirectory_vfsread (void *cookie, void *handle, char *buffer, u
 static int contentdirectory_vfswrite (void *cookie, void *handle, char *buffer, unsigned int length)
 {
 	contentdir_t *contentdir;
-	debugf("contentdirectory_vfswrite");
+	debugf(_DBG, "contentdirectory_vfswrite");
 	contentdir = (contentdir_t *) cookie;
 	return -1;
 }
@@ -1120,7 +1120,7 @@ static unsigned long long contentdirectory_vfsseek (void *cookie, void *handle, 
 {
 	upnp_file_t *file;
 	contentdir_t *contentdir;
-	debugf("contentdirectory_vfsseek");
+	debugf(_DBG, "contentdirectory_vfsseek");
 	file = (upnp_file_t *) handle;
 	contentdir = (contentdir_t *) cookie;
 	if (file->transcode == 1) {
@@ -1128,7 +1128,7 @@ static unsigned long long contentdirectory_vfsseek (void *cookie, void *handle, 
 		transcode_t *transcode;
 		transcode = (transcode_t *) file->buf;
 		if (whence != GENA_SEEK_SET) {
-			debugf("seek is partially supported for transcode files (%s)", transcode->output);
+			debugf(_DBG, "seek is partially supported for transcode files (%s)", transcode->output);
 			return 0;
 		}
 		return file->offset;
@@ -1148,7 +1148,7 @@ static int contentdirectory_vfsclose (void *cookie, void *handle)
 {
 	upnp_file_t *file;
 	contentdir_t *contentdir;
-	debugf("contentdirectory_vfsclose");
+	debugf(_DBG, "contentdirectory_vfsclose");
 	file = (upnp_file_t *) handle;
 	contentdir = (contentdir_t *) cookie;
 	if (file->transcode == 1) {
@@ -1175,8 +1175,8 @@ static int contentdirectory_uninit (device_service_t *contentdir)
 {
 	int i;
 	service_variable_t *variable;
-	debugf("contentdirectory uninit");
-	debugf("uninitializing entry database");
+	debugf(_DBG, "contentdirectory uninit");
+	debugf(_DBG, "uninitializing entry database");
 	if ((database_t *) ((contentdir_t *) contentdir)->database != NULL) {
 		upnpd_database_uninit((database_t *) ((contentdir_t *) contentdir)->database, 0);
 	}
@@ -1196,13 +1196,13 @@ device_service_t * upnpd_contentdirectory_init (const char *directory, int cache
 	service_variable_t *variable;
 	contentdir = NULL;
 	if (directory == NULL) {
-		debugf("please specify a database directory for contentdirectory service");
+		debugf(_DBG, "please specify a database directory for contentdirectory service");
 		goto out;
 	}
-	debugf("initializing content directory service struct");
+	debugf(_DBG, "initializing content directory service struct");
 	contentdir = (contentdir_t *) malloc(sizeof(contentdir_t));
 	if (contentdir == NULL) {
-		debugf("malloc(sizeof(contentdir_t)) failed");
+		debugf(_DBG, "malloc(sizeof(contentdir_t)) failed");
 		goto out;
 	}
 	memset(contentdir, 0, sizeof(contentdir_t));
@@ -1218,9 +1218,9 @@ device_service_t * upnpd_contentdirectory_init (const char *directory, int cache
 	contentdir->service.uninit = contentdirectory_uninit;
 	contentdir->updateid = 0;
 
-	debugf("initializing content directory service");
+	debugf(_DBG, "initializing content directory service");
 	if (upnpd_service_init(&contentdir->service) != 0) {
-		debugf("upnpd_service_init(&contentdir->service) failed");
+		debugf(_DBG, "upnpd_service_init(&contentdir->service) failed");
 		free(contentdir);
 		contentdir = NULL;
 		goto out;
@@ -1229,7 +1229,7 @@ device_service_t * upnpd_contentdirectory_init (const char *directory, int cache
 	if (variable != NULL) {
 		variable->value = strdup("0");
 	}
-	debugf("initializing entry database");
+	debugf(_DBG, "initializing entry database");
 	contentdir->rootpath = strdup(directory);
 	contentdir->cached = cached;
 
@@ -1246,6 +1246,6 @@ device_service_t * upnpd_contentdirectory_init (const char *directory, int cache
 		contentdir->database = upnpd_entry_scan(contentdir->rootpath, (cached == 1) ? 0 : 1, (transcode == 1) ? 1 : 0);
 	}
 
-	debugf("initialized content directory service");
+	debugf(_DBG, "initialized content directory service");
 out:	return &contentdir->service;
 }
