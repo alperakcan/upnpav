@@ -185,7 +185,7 @@ out:	return ret;
 }
 
 upnpd_application_t mediaserver = {
-	.name = "mediaserver",
-	.description = "upnp av mediaserver device",
-	.main = &mediaserver_main,
+	"mediaserver",
+	"upnp av mediaserver device",
+	&mediaserver_main,
 };

@@ -304,7 +304,7 @@ out:	return ret;
 }
 
 upnpd_application_t controller = {
-	.name = "controller",
-	.description = "upnp av controller device",
-	.main = &controller_main,
+	"controller",
+	"upnp av controller device",
+	&controller_main,
 };
