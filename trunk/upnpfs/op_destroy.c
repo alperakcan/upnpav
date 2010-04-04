@@ -34,7 +34,7 @@ void op_destroy (void *userdata)
 	debugfs("enter");
 	upnpd_controller_uninit(priv.controller);
 	free(priv.options);
-	list_for_each_entry_safe(c, cn, &priv.cache, head) {
+	list_for_each_entry_safe(c, cn, &priv.cache, head, upnpfs_cache_t) {
 		list_del(&c->head);
 		free(c->path);
 		free(c->device);

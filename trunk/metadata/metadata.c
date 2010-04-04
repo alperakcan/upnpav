@@ -30,9 +30,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <inttypes.h>
-#include <time.h>
 
 #if defined(ENABLE_LIBFFMPEG)
 #include <libavformat/avformat.h>
@@ -58,7 +55,7 @@ static int metadata_video_ffmpeg (metadata_t *metadata)
 	AVFormatContext *ctx;
 	av_register_all();
 	if (av_open_input_file(&ctx, metadata->pathname, NULL, 0, NULL) != 0) {
-		debugf("av_open_input_file(%s) failed", metadata->pathname);
+		debugf(_DBG, "av_open_input_file(%s) failed", metadata->pathname);
 		return 0;
 	}
 	av_find_stream_info(ctx);
@@ -73,14 +70,14 @@ static int metadata_video_ffmpeg (metadata_t *metadata)
 		}
 	}
 	if (vstream == -1) {
-		debugf("%s is not a video file", metadata->pathname);
+		debugf(_DBG, "%s is not a video file", metadata->pathname);
 		av_close_input_file(ctx);
 		return -1;
 	}
-	debugf("%s info:", metadata->basename);
-	debugf("  resolution: %d, %d", ctx->streams[vstream]->codec->width, ctx->streams[vstream]->codec->height);
+	debugf(_DBG, "%s info:", metadata->basename);
+	debugf(_DBG, "  resolution: %d, %d", ctx->streams[vstream]->codec->width, ctx->streams[vstream]->codec->height);
 	if (ctx->bit_rate > 8) {
-		debugf("  bitrate: %u", ctx->bit_rate / 8);
+		debugf(_DBG, "  bitrate: %u", ctx->bit_rate / 8);
 	}
 	if (ctx->duration > 0) {
 		int duration = (int) (ctx->duration / AV_TIME_BASE);
@@ -88,12 +85,12 @@ static int metadata_video_ffmpeg (metadata_t *metadata)
 		int min = (int) (duration / 60 % 60);
 		int sec = (int) (duration % 60);
 		int ms = (int) (ctx->duration / (AV_TIME_BASE / 1000) % 1000);
-		debugf("  duration: %d:%02d:%02d.%03d", hours, min, sec, ms);
+		debugf(_DBG, "  duration: %d:%02d:%02d.%03d", hours, min, sec, ms);
 		asprintf(&metadata->duration, "%d:%02d:%02d.%03d", hours, min, sec, ms);
 	}
 	switch (ctx->streams[vstream]->codec->codec_id) {
 		default:
-			debugf("unknown codec_id: 0x%08x (%u)", ctx->streams[vstream]->codec->codec_id, ctx->streams[vstream]->codec->codec_id);
+			debugf(_DBG, "unknown codec_id: 0x%08x (%u)", ctx->streams[vstream]->codec->codec_id, ctx->streams[vstream]->codec->codec_id);
 			break;
 	}
 	av_close_input_file(ctx);
@@ -163,10 +160,8 @@ metadata_t * upnpd_metadata_init (const char *path)
 {
 	int i;
 	char *p;
-	time_t mtime;
 	metadata_t *m;
-	upnpd_file_stat_t stat;
-	struct tm modtime;
+	file_stat_t stat;
 	metadata_info_t *info;
 
 	if (upnpd_file_access(path, FILE_MODE_READ) != 0) {
@@ -191,10 +186,7 @@ metadata_t * upnpd_metadata_init (const char *path)
 		m->size = stat.size;
 		m->date = (char *) malloc(sizeof(char) * 30);
 		if (m->date != NULL) {
-			mtime = stat.mtime;
-			localtime_r(&mtime, &modtime);
-			stat.mtime = mtime;
-			strftime(m->date, 30, "%F %T", &modtime);
+			upnpd_time_strftime(m->date, 30, TIME_FORMAT_RFC1123, stat.mtime * 1000, 1);
 		}
 		for (i = 0; (info = &metadata_info[i])->type != METADATA_TYPE_UNKNOWN; i++) {
 			if (upnpd_file_match(info->extension, m->basename, FILE_MATCH_CASEFOLD) == 0) {

@@ -31,8 +31,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include <unistd.h>
-#include <inttypes.h>
+
+
 
 #include "platform.h"
 #include "parser.h"
@@ -100,19 +100,19 @@ static uint32_t connection_instance_init (uint32_t instanceid)
 {
 	connection_instance_t *inst;
 	if (instance_ids[instanceid] == 1) {
-		debugf("instanceid '%u' is in use", instanceid);
+		debugf(_DBG, "instanceid '%u' is in use", instanceid);
 		return (uint32_t) -1;
 	}
 	inst = (connection_instance_t *) malloc(sizeof(connection_instance_t));
 	if (inst == NULL) {
-		debugf("malloc() failed");
+		debugf(_DBG, "malloc() failed");
 		return (uint32_t) -1;
 	}
 	memset(inst, 0, sizeof(connection_instance_t));
 	list_add(&inst->head, &instance_list);
 	inst->connectionid = instanceid;
 	instance_ids[instanceid] = 1;
-	debugf("created new connection instance '%u'", inst->connectionid);
+	debugf(_DBG, "created new connection instance '%u'", inst->connectionid);
 	return inst->connectionid;
 }
 
@@ -131,7 +131,7 @@ uint32_t upnpd_connection_instance_new (void)
 connection_instance_t * upnpd_connection_instance_get (uint32_t id)
 {
 	connection_instance_t *inst;
-	list_for_each_entry(inst, &instance_list, head) {
+	list_for_each_entry(inst, &instance_list, head, connection_instance_t) {
 		if (instance_ids[id] == 1 && inst->connectionid == id) {
 			return inst;
 		}
@@ -142,7 +142,7 @@ connection_instance_t * upnpd_connection_instance_get (uint32_t id)
 static int connectionmanager_get_protocol_info (device_service_t *service, upnp_event_action_t *request)
 {
 	service_variable_t *variable;
-	debugf("connectionmanager get protocol info");
+	debugf(_DBG, "connectionmanager get protocol info");
 	variable = upnpd_service_variable_find(service, "SourceProtocolInfo");
 	if (variable != NULL) {
 		upnpd_upnp_add_response(request, service->type, "Source", variable->value);
@@ -157,7 +157,7 @@ static int connectionmanager_get_protocol_info (device_service_t *service, upnp_
 static int connectionmanager_get_current_connection_ids (device_service_t *service, upnp_event_action_t *request)
 {
 	service_variable_t *variable;
-	debugf("connectionmanager get current connection ids");
+	debugf(_DBG, "connectionmanager get current connection ids");
 	variable = upnpd_service_variable_find(service, "CurrentConnectionIDs");
 	if (variable != NULL) {
 		upnpd_upnp_add_response(request, service->type, "ConnectionIDs", variable->value);
@@ -190,11 +190,11 @@ static int connectionmanager_get_current_connection_info (device_service_t *serv
 	char *direction;
 	char *status;
 
-	debugf("connectionmanager get current connection info");
+	debugf(_DBG, "connectionmanager get current connection info");
 
 	memset(&data, 0, sizeof(data));
 	if (upnpd_xml_parse_buffer_callback(request->request, strlen(request->request), connectionmanager_parser_callback, &data) != 0) {
-		debugf("upnpd_xml_parse_buffer_callback() failed");
+		debugf(_DBG, "upnpd_xml_parse_buffer_callback() failed");
 		request->errcode = UPNP_ERROR_PARAMETER_MISMATCH;
 		return 0;
 	}
@@ -260,7 +260,7 @@ static int connectionmanager_notify_currentids (device_service_t *service)
 	currentids = upnpd_service_variable_find(service, "CurrentConnectionIDs");
 	if (currentids != NULL) {
 		str = NULL;
-		list_for_each_entry(cinstance, &instance_list, head) {
+		list_for_each_entry(cinstance, &instance_list, head, connection_instance_t) {
 			if (list_is_last(&cinstance->head, &instance_list) == 1) {
 				strprintf(&str, "%u", cinstance->connectionid);
 			} else {
@@ -300,7 +300,7 @@ static int connectionmanager_prepare_for_connection (device_service_t *service, 
 	peerconnectionid = xml_get_ui4(request->ActionRequest, "PeerConnectionID");
 	direction = xml_get_string(request->ActionRequest, "Direction");
 
-	debugf("connectionmanager prepare for connection;"
+	debugf(_DBG, "connectionmanager prepare for connection;"
 	       "  remoteprotocolinfo   : %s\n"
 	       "  peerconnectionmanager: %s\n"
 	       "  peerconnectionid     : %u\n"
@@ -312,7 +312,7 @@ static int connectionmanager_prepare_for_connection (device_service_t *service, 
 
 	cinstance = upnpd_connection_instance_get(upnpd_connection_instance_new());
 	if (cinstance == NULL) {
-		debugf("upnpd_connection_instance_get() failed");
+		debugf(_DBG, "upnpd_connection_instance_get() failed");
 		ret = -1;
 		goto out;
 	}
@@ -323,7 +323,7 @@ static int connectionmanager_prepare_for_connection (device_service_t *service, 
 	cinstance->transportid = transport_instance_new(service->device);
 	cinstance->rcsid = 0;
 
-	debugf("cinstance\n"
+	debugf(_DBG, "cinstance\n"
 		"  remoteprotocolinfo   : %s\n"
 		"  peerconnectionid     : %u\n"
 		"  peerconnectionmanager: %s\n"
@@ -356,7 +356,7 @@ static int connectionmanager_connection_complete (device_service_t *service, str
 	uint32_t connectionid;
 	connection_instance_t *cinstance;
 
-	debugf("connectionmanager connection complete");
+	debugf(_DBG, "connectionmanager connection complete");
 	connectionid = xml_get_ui4(request->ActionRequest, "ConnectionID");
 	cinstance = upnpd_connection_instance_get(connectionid);
 	if (cinstance == NULL) {
@@ -463,7 +463,7 @@ static int upnpd_connectionmanager_register_mimetype_actual (device_service_t *s
 	connection_mimetype_t *mt;
 	service_variable_t *variable;
 
-	list_for_each_entry(mt, &mimetype_list, head) {
+	list_for_each_entry(mt, &mimetype_list, head, connection_mimetype_t) {
 		if (strcmp(mt->mimetype, mime) == 0) {
 			return 0;
 		}
@@ -471,16 +471,16 @@ static int upnpd_connectionmanager_register_mimetype_actual (device_service_t *s
 
 	mt = (connection_mimetype_t *) malloc(sizeof(connection_mimetype_t));
 	if (mt == NULL) {
-		debugf("malloc() failed");
+		debugf(_DBG, "malloc() failed");
 		return -1;
 	}
 
-	debugf("registering mime type '%s'", mime);
+	debugf(_DBG, "registering mime type '%s'", mime);
 	memset(mt, 0, sizeof(connection_mimetype_t));
 	list_add(&mt->head, &mimetype_list);
 	mt->mimetype = strdup(mime);
 
-	debugf("changing source protocol info variable");
+	debugf(_DBG, "changing source protocol info variable");
 	variable = upnpd_service_variable_find(service, "SourceProtocolInfo");
 	if (variable != NULL) {
 		if (variable->value == NULL) {
@@ -588,14 +588,14 @@ static int upnpd_connectionmanager_register_mimetype_actual (device_service_t *s
 		if (variable->value != NULL) {
 			tmp = variable->value;
 			if (asprintf(&variable->value, "%s,http-get:*:%s:*", tmp, mime) < 0) {
-				debugf("asprintf() failed");
+				debugf(_DBG, "asprintf() failed");
 				variable->value = tmp;
 				return -1;
 			}
 			free(tmp);
 		} else {
 			if (asprintf(&variable->value, "http-get:*:%s:*", mime) < 0) {
-				debugf("asprintf() failed");
+				debugf(_DBG, "asprintf() failed");
 				variable->value = strdup("");
 				return -1;
 			}
@@ -606,14 +606,14 @@ static int upnpd_connectionmanager_register_mimetype_actual (device_service_t *s
 		if (variable->value != NULL) {
 			tmp = variable->value;
 			if (asprintf(&variable->value, "%s,http-get:*:%s:*", tmp, mime) < 0) {
-				debugf("asprintf() failed");
+				debugf(_DBG, "asprintf() failed");
 				variable->value = tmp;
 				return -1;
 			}
 			free(tmp);
 		} else {
 			if (asprintf(&variable->value, "http-get:*:%s:*", mime) < 0) {
-				debugf("asprintf() failed");
+				debugf(_DBG, "asprintf() failed");
 				variable->value = strdup("");
 				return -1;
 			}
@@ -639,17 +639,17 @@ int upnpd_connectionmanager_uninit (device_service_t *service)
 	connection_mimetype_t *mnext;
 	connection_instance_t *inext;
 	service_variable_t *variable;
-	debugf("uninitializing connection manager service");
-	list_for_each_entry_safe(inst, inext, &instance_list, head) {
-		debugf("uninitializing connection instance '%u'", inst->connectionid);
+	debugf(_DBG, "uninitializing connection manager service");
+	list_for_each_entry_safe(inst, inext, &instance_list, head, connection_instance_t) {
+		debugf(_DBG, "uninitializing connection instance '%u'", inst->connectionid);
 		connection_instance_uninit(inst);
 	}
-	debugf("uninitializing mimetype list");
-	list_for_each_entry_safe(mime, mnext, &mimetype_list, head) {
+	debugf(_DBG, "uninitializing mimetype list");
+	list_for_each_entry_safe(mime, mnext, &mimetype_list, head, connection_mimetype_t) {
 		free(mime->mimetype);
 		free(mime);
 	}
-	debugf("uninitializing service variables");
+	debugf(_DBG, "uninitializing service variables");
 	for (i = 0; (variable = &service->variables[i])->name != NULL; i++) {
 		free(variable->value);
 	}
@@ -662,10 +662,10 @@ device_service_t * upnpd_connectionmanager_init (void)
 	int i;
 	connection_t *connection;
 	service_variable_t *variable;
-	debugf("initializing connection manager service struct");
+	debugf(_DBG, "initializing connection manager service struct");
 	connection = (connection_t *) malloc(sizeof(connection_t));
 	if (connection == NULL) {
-		debugf("malloc(sizeof(connection_t)) failed");
+		debugf(_DBG, "malloc(sizeof(connection_t)) failed");
 		goto out;
 	}
 	memset(connection, 0, sizeof(connection_t));
@@ -679,9 +679,9 @@ device_service_t * upnpd_connectionmanager_init (void)
 	connection->service.variables = connectionmanager_variables;
 	connection->service.uninit = upnpd_connectionmanager_uninit;
 
-	debugf("initializing connection manager service");
+	debugf(_DBG, "initializing connection manager service");
 	if (upnpd_service_init(&connection->service) != 0) {
-		debugf("upnpd_service_init(&connection->service) failed");
+		debugf(_DBG, "upnpd_service_init(&connection->service) failed");
 		free(connection);
 		connection = NULL;
 		goto out;
@@ -689,7 +689,7 @@ device_service_t * upnpd_connectionmanager_init (void)
 
 	list_init(&mimetype_list);
 
-	debugf("initializing ac transport instances");
+	debugf(_DBG, "initializing ac transport instances");
 	for (i = 0; i < CONNECTION_INSTANCE_MAX; i++) {
 		instance_ids[i] = 0;
 	}
@@ -703,7 +703,7 @@ device_service_t * upnpd_connectionmanager_init (void)
 		connection_instance_t *cinstance;
 		cinstance = upnpd_connection_instance_get(connection_instance_init(0));
 		if (cinstance == NULL) {
-			debugf("creating special instance '0' failed");
+			debugf(_DBG, "creating special instance '0' failed");
 			free(connection);
 			connection = NULL;
 			goto out;
@@ -719,6 +719,6 @@ device_service_t * upnpd_connectionmanager_init (void)
 #endif
 	}
 
-	debugf("initialized connection manager service");
+	debugf(_DBG, "initialized connection manager service");
 out:	return (device_service_t *) connection;
 }

@@ -1,8 +1,8 @@
 /*
  * upnpavd - UPNP AV Daemon
  *
- * Copyright (C) 2009 - 20010 Alper Akcan, alper.akcan@gmail.com
- * Copyright (C) 2009 - 20010 CoreCodec, Inc., http://www.CoreCodec.com
+ * Copyright (C) 2010 Alper Akcan, alper.akcan@gmail.com
+ * Copyright (C) 2010 CoreCodec, Inc., http://www.CoreCodec.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,6 +24,25 @@
  * Commercial non-LGPL licensing of this software is possible.
  * For more info contact CoreCodec through info@corecodec.com
  */
+
+#include "config.h"
+#include <stdio.h>
+
+#ifdef ENABLE_PLATFORM_COREC
+#include "portab.h"
+typedef long long off_t;
+#else
+#include <unistd.h>
+#include <inttypes.h>
+#undef INLINE
+#ifdef _MSC_VER
+#define INLINE __forceinline
+#elif defined(__GNUC__) && (__GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ > 0) && !defined(always_inline)
+#define INLINE __attribute__((always_inline)) inline
+#else
+#define INLINE inline
+#endif
+#endif
 
 /**
  * @defgroup platform platform api
@@ -208,6 +227,7 @@ typedef enum {
 	SOCKET_TYPE_DGRAM  = 0x01,
 } socket_type_t;
 
+
 /**
  * @brief poll event types
  */
@@ -241,7 +261,7 @@ typedef struct socket_s socket_t;
  *
  * @returns socket object on success, otherwise NULL
  */
-socket_t * upnpd_socket_open (socket_type_t type);
+socket_t * upnpd_socket_open (socket_type_t type, int server);
 
 /**
  * @brief binds a socket to a given address and port
@@ -413,6 +433,8 @@ typedef enum {
 	FILE_MODE_READ  = 0x01,
 	/** write mode */
 	FILE_MODE_WRITE = 0x02,
+	/** create mode flag*/
+	FILE_MODE_CREATE = 0x04,
 } file_mode_t;
 
 /**
@@ -425,7 +447,7 @@ typedef enum {
 	FILE_SEEK_CUR = 0x01,
 	/** seek from end of file */
 	FILE_SEEK_END = 0x02,
-} upnpd_file_seek_t;
+} file_seek_t;
 
 /**
  * @brief file types
@@ -445,7 +467,7 @@ typedef enum {
 typedef enum {
 	/** ignore case sensitive matching */
 	FILE_MATCH_CASEFOLD = 0x01,
-} upnpd_file_match_t;
+} file_match_t;
 
 /**
  * @brief exported file structure
@@ -464,10 +486,10 @@ typedef struct upnpd_file_stat_s {
 	/** file size */
 	unsigned long long size;
 	/** file modification time */
-	unsigned int mtime;
+	unsigned long long mtime;
 	/** file type */
 	file_type_t type;
-} upnpd_file_stat_t;
+} file_stat_t;
 
 /**
  * @brief directory entry information
@@ -487,15 +509,16 @@ typedef struct dir_entry_s {
  */
 #define FILE_ISDIR(type) (type & FILE_TYPE_DIRECTORY)
 
-int upnpd_file_match (const char *path, const char *string, upnpd_file_match_t flag);
+int upnpd_file_match (const char *path, const char *string, file_match_t flag);
 int upnpd_file_access (const char *path, file_mode_t mode);
-int upnpd_file_stat (const char *path, upnpd_file_stat_t *stat);
+int upnpd_file_stat (const char *path, file_stat_t *stat);
 file_t * upnpd_file_open (const char *path, file_mode_t mode);
 int upnpd_file_read (file_t *file, void *buffer, int length);
 int upnpd_file_write (file_t *file, const void *buffer, int length);
-unsigned long long upnpd_file_seek (file_t *file, unsigned long long offset, upnpd_file_seek_t whence);
+unsigned long long upnpd_file_seek (file_t *file, unsigned long long offset, file_seek_t whence);
 int upnpd_file_poll (file_t *socket, poll_event_t request, poll_event_t *result, int timeout);
 int upnpd_file_close (file_t *file);
+int upnpd_file_unlink(const char *path);
 
 dir_t * upnpd_file_opendir (const char *path);
 int upnpd_file_readdir (dir_t *dir, dir_entry_t *entry);
@@ -507,15 +530,93 @@ int upnpd_rand_rand (void);
 void upnpd_time_sleep (unsigned int secs);
 void upnpd_time_usleep (unsigned int usecs);
 unsigned long long upnpd_time_gettimeofday (void);
-int upnpd_time_strftime (char *str, int max, unsigned long long tm);
+#define TIME_FORMAT_RFC1123 "%a, %d %b %Y %H:%M:%S GMT"
+int upnpd_time_strftime (char *str, int max, const char *format, unsigned long long tm, int local);
 
 char * upnpd_interface_getaddr (const char *ifname);
 char * upnpd_interface_getmask (const char *ifname);
 int upnpd_interface_printall (void);
 
 extern int platform_debug;
-#define debugf(fmt...) upnpd_debug_debugf(__FILE__, __LINE__, __FUNCTION__, fmt);
 void upnpd_debug_debugf (char *file, int line, const char *func, char *fmt, ...);
+
+#ifdef _MSC_VER
+
+int snprintf (char *str, size_t size, const char *fmt, ...);
+int asprintf (char **strp, const char *fmt, ...);
+int vasprintf (char **strp, const char *fmt, va_list args);
+int getdelim (char **lineptr, size_t *n, int terminator, FILE *stream);
+
+extern char *optarg;
+struct option {
+	const char *name;
+	int has_arg;
+	int *flag;
+	int val;
+};
+int getopt_long (int argc, char *const *argv, const char *shortopts, const struct option *longopts, int *longind);
+extern char *suboptarg;
+int getsubopt(char **optionp, char * const *keylistp, char **valuep);
+
+#define atoll atol
+#define strtoull strtoul
+
+#define SIGPIPE
+#define SIGHUP
+#define SIGKILL
+#if !defined(SIG_IGN)
+#define SIG_IGN
+#endif
+#define	signal(x, y)
+
+#else
+
+#include <getopt.h>
+#include <signal.h>
+
+#endif
+
+#define _DBG	__FILE__, __LINE__, __FUNCTION__
+#define debugf upnpd_debug_debugf
+
+#ifdef ENABLE_PLATFORM_POSIX
+#define platform_init() ({ 0; })
+#define platform_uninit() ({ 0; })
+#endif
+
+#ifdef ENABLE_PLATFORM_COREC
+int platform_init();
+void platform_uninit();
+char *UTF8Dup(tchar_t *ts);
+
+void *platform_context;
+
+#ifdef COREMAKE_UNICODE
+#define TCHAR_DEF(b, s)			tchar_t b[s]
+#define TCHAR_IN(a, b)			if(a)Node_FromUTF8(platform_context, b, TSIZEOF(b), (char *) a);else *b=0;
+#define TCHAR_DEF_IN(b, s, a)	TCHAR_DEF(b, s); TCHAR_IN(a, b)
+#define TCHAR_USE(a, b)			b
+#define TCHAR_OUT_CONV(a, s, b)	Node_ToUTF8(platform_context, (char *) a, s, b);
+#define TCHAR_OUT_DUP(b)		UTF8Dup(b);
+#else
+#define TCHAR_DEF(b, s)
+#define TCHAR_IN(a, b)
+#define TCHAR_DEF_IN(b, s, a)
+#define TCHAR_USE(a, b)			a
+#define TCHAR_OUT_CONV(a, s, b) strncpy(a, b, s);
+#define TCHAR_OUT_DUP(b)		strdup(b);
+#endif
+
+#define COREC_UNIX_DATETIME_OFFSET     0x3A4FC880
+#endif
+
+#define init_table(tab, tabs, max) { \
+	int ii; \
+	for (ii = 0; ii < max; ++ii) { \
+		tab[ii] = &tabs[ii]; \
+	} \
+	tab[max] = NULL; \
+}
 
 /* link list derived from linux kernel */
 
@@ -526,11 +627,12 @@ struct list_s {
 	struct list_s *prev;
 };
 
+/* link list derived from linux kernel */
+
 #define offsetof_(type, member) ((size_t) &((type *) 0)->member)
 
-#define containerof_(ptr, type, member) ({			\
-	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
-	(type *)( (char *)__mptr - offsetof_(type,member) );})
+#define containerof_(ptr, type, member) \
+	(type *)( (char *)(void*)(ptr) - offsetof_(type,member) )
 
 #define list_entry(ptr, type, member) \
 	containerof_(ptr, type, member)
@@ -544,18 +646,18 @@ struct list_s {
 #define list_for_each_safe(pos, n, head) \
 	for (pos = (head)->next, n = pos->next; pos != (head); pos = n, n = pos->next)
 
-#define list_for_each_entry(pos, head, member)				\
-	for (pos = list_entry((head)->next, typeof(*pos), member);	\
+#define list_for_each_entry(pos, head, member, type)				\
+	for (pos = list_entry((head)->next, type, member);	\
 	     &pos->member != (head);					\
-	     pos = list_entry(pos->member.next, typeof(*pos), member))
+	     pos = list_entry(pos->member.next, type, member))
 
-#define list_for_each_entry_safe(pos, n, head, member)			\
-	for (pos = list_entry((head)->next, typeof(*pos), member),	\
-	     n = list_entry(pos->member.next, typeof(*pos), member);	\
+#define list_for_each_entry_safe(pos, n, head, member, type)			\
+	for (pos = list_entry((head)->next, type, member),	\
+	     n = list_entry(pos->member.next, type, member);	\
 	     &pos->member != (head); 					\
-	     pos = n, n = list_entry(n->member.next, typeof(*n), member))
+	     pos = n, n = list_entry(n->member.next, type, member))
 
-static inline int list_count (const list_t *head)
+static INLINE int list_count (list_t *head)
 {
 	int count;
 	list_t *entry;
@@ -566,7 +668,7 @@ static inline int list_count (const list_t *head)
 	return count;
 }
 
-static inline void list_add_actual (list_t *new, list_t *prev, list_t *next)
+static INLINE void list_add_actual (list_t *new, list_t *prev, list_t *next)
 {
 	next->prev = new;
 	new->next = next;
@@ -574,40 +676,40 @@ static inline void list_add_actual (list_t *new, list_t *prev, list_t *next)
 	prev->next = new;
 }
 
-static inline void list_del_actual (list_t *prev, list_t *next)
+static INLINE void list_del_actual (list_t *prev, list_t *next)
 {
 	next->prev = prev;
 	prev->next = next;
 }
 
-static inline void list_add_tail (list_t *new, list_t *head)
+static INLINE void list_add_tail (list_t *new, list_t *head)
 {
 	list_add_actual(new, head->prev, head);
 }
 
-static inline void list_add (list_t *new, list_t *head)
+static INLINE void list_add (list_t *new, list_t *head)
 {
 	list_add_actual(new, head, head->next);
 }
 
-static inline void list_del (list_t *entry)
+static INLINE void list_del (list_t *entry)
 {
 	list_del_actual(entry->prev, entry->next);
 	entry->next = NULL;
 	entry->prev = NULL;
 }
 
-static inline int list_is_first (list_t *list, list_t *head)
+static INLINE int list_is_first (list_t *list, list_t *head)
 {
 	return head->next == list;
 }
 
-static inline int list_is_last (list_t *list, list_t *head)
+static INLINE int list_is_last (list_t *list, list_t *head)
 {
 	return list->next == head;
 }
 
-static inline void list_init (list_t *head)
+static INLINE void list_init (list_t *head)
 {
 	head->next = head;
 	head->prev = head;

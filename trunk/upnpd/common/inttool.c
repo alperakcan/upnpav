@@ -27,7 +27,8 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <inttypes.h>
+
+#include "platform.h"
 
 char * upnpd_uint32tostr (char *out, uint32_t val)
 {

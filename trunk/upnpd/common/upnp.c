@@ -30,8 +30,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <inttypes.h>
+
+
 #include <assert.h>
 
 #include "platform.h"
@@ -221,7 +221,7 @@ char * upnpd_description_generate_from_service (device_service_t *service)
 	}
 	return ret;
 error:
-	debugf("generate_scpd(service) failed");
+	debugf(_DBG, "generate_scpd(service) failed");
 	free(ret);
 	return NULL;
 }
@@ -237,7 +237,7 @@ char * upnpd_description_generate_from_device (device_t *device)
 	}
 	return ret;
 error:
-	debugf("generate_description(device) failed");
+	debugf(_DBG, "generate_description(device) failed");
 	free(ret);
 	return NULL;
 }
@@ -245,10 +245,10 @@ error:
 int upnpd_upnp_add_response (upnp_event_action_t *request, char *servicetype, char *key, const char *value)
 {
 	int rc;
-	debugf("adding '%s'='%s' to response", key, value);
+	debugf(_DBG, "adding '%s'='%s' to response", key, value);
 	rc = upnpd_upnp_addtoactionresponse(request, servicetype, key, value);
 	if (rc != 0) {
-		debugf("upnpd_upnp_addtoactionresponse() failed");
+		debugf(_DBG, "upnpd_upnp_addtoactionresponse() failed");
 		request->errcode = UPNP_ERROR_ACTION_FAILED;
 		return -1;
 	}

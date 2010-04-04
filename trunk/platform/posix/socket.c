@@ -76,7 +76,7 @@ static inline poll_event_t socket_bsd_event (int bsd)
 	return event;
 }
 
-socket_t * upnpd_socket_open (socket_type_t type)
+socket_t * upnpd_socket_open (socket_type_t type, int server)
 {
 	socket_t *s;
 	s = (socket_t *) malloc(sizeof(socket_t));

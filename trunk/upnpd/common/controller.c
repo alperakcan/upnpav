@@ -30,8 +30,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <inttypes.h>
 
 #include "platform.h"
 #include "parser.h"
@@ -41,7 +39,7 @@
 
 typedef enum {
 	OPT_IPADDR    = 0,
-	OPT_NETMASK      = 1,
+	OPT_NETMASK   = 1,
 } controller_options_t;
 
 static char *controller_options[] = {
@@ -73,8 +71,8 @@ static device_description_t controller_devices[] = {
 };
 
 static client_t controller = {
-	.name = "controller",
-	.descriptions = controller_devices,
+	"controller",
+	controller_devices,
 };
 
 client_t * upnpd_controller_init (char *options)
@@ -90,12 +88,12 @@ client_t * upnpd_controller_init (char *options)
 	netmask = NULL;
 	ipaddr = NULL;
 	suboptions = options;
-	debugf("options: %s\n", options);
+	debugf(_DBG, "options: %s\n", options);
 	while (suboptions && *suboptions != '\0' && !err) {
 		switch (getsubopt(&suboptions, controller_options, &value)) {
 			case OPT_IPADDR:
 				if (value == NULL) {
-					debugf("value is missing for ipaddr option");
+					debugf(_DBG, "value is missing for ipaddr option");
 					err = 1;
 					continue;
 				}
@@ -103,7 +101,7 @@ client_t * upnpd_controller_init (char *options)
 				break;
 			case OPT_NETMASK:
 				if (value == NULL) {
-					debugf("value is missing for ipaddr option");
+					debugf(_DBG, "value is missing for ipaddr option");
 					err = 1;
 					continue;
 				}
@@ -112,7 +110,7 @@ client_t * upnpd_controller_init (char *options)
 		}
 	}
 
-	debugf("starting controller;\n"
+	debugf(_DBG, "starting controller;\n"
 	       "\tipaddr  : %s\n"
 	       "\tnetmask : %s\n",
 	       (ipaddr) ? ipaddr : "null",
@@ -121,21 +119,21 @@ client_t * upnpd_controller_init (char *options)
 	controller.ipaddr = ipaddr;
 	controller.ifmask = netmask;
 
-	debugf("initializing controller client");
+	debugf(_DBG, "initializing controller client");
 	rc = upnpd_client_init(&controller);
 	if (rc != 0) {
-		debugf("upnpd_client_init(&controller) failed");
+		debugf(_DBG, "upnpd_client_init(&controller) failed");
 		return NULL;
 	}
-	debugf("initialized controller client");
+	debugf(_DBG, "initialized controller client");
 	return &controller;
 }
 
 int upnpd_controller_uninit (client_t *controller)
 {
-	debugf("uninitializing controller client");
+	debugf(_DBG, "uninitializing controller client");
 	upnpd_client_uninit(controller);
-	debugf("uninitialized controller client");
+	debugf(_DBG, "uninitialized controller client");
 	return 0;
 }
 
@@ -168,7 +166,7 @@ static int controller_parser_callback (void *context, const char *path, const ch
 		   strcmp(path, "/SOAP-ENV:Envelope/SOAP-ENV:Body/m:BrowseResponse/Result") == 0) {
 		tentry = upnpd_entry_from_result(value);
 		if (tentry == NULL) {
-			debugf("upnpd_entry_from_result() failed");
+			debugf(_DBG, "upnpd_entry_from_result() failed");
 		} else {
 			if (data->entry == NULL) {
 				data->entry = tentry;
@@ -209,7 +207,7 @@ entry_t * upnpd_controller_browse_children (client_t *controller, const char *de
 
 	values[3] = (char *) malloc(sizeof(char) * 40);
 	if (values[3] == NULL) {
-		debugf("malloc failed");
+		debugf(_DBG, "malloc failed");
 		goto out;
 	}
 
@@ -221,23 +219,23 @@ entry_t * upnpd_controller_browse_children (client_t *controller, const char *de
 		values[4] = "50";
 		values[5] = "+dc:title";
 
-		debugf("browsing '%s':'%s'", device, object);
+		debugf(_DBG, "browsing '%s':'%s'", device, object);
 		action = upnpd_client_action(controller, device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
 		if (action == NULL) {
-			debugf("upnpd_client_action() failed");
+			debugf(_DBG, "upnpd_client_action() failed");
 			goto out;
 		}
 		data.numberreturned = 0;
 		data.totalmatches = 0;
 		data.updateid = 0;
 		if (upnpd_xml_parse_buffer_callback(action, strlen(action), controller_parser_callback, &data) != 0) {
-			debugf("upnpd_xml_parse_buffer_callback() failed");
+			debugf(_DBG, "upnpd_xml_parse_buffer_callback() failed");
 			free(action);
 			goto out;
 		}
 		free(action);
 		if (data.totalmatches == 0 || data.numberreturned == 0) {
-			debugf("total matches (%d) or number returned (%d) is zero", data.totalmatches, data.numberreturned);
+			debugf(_DBG, "total matches (%d) or number returned (%d) is zero", data.totalmatches, data.numberreturned);
 			goto out;
 		}
 		count += data.numberreturned;
@@ -275,15 +273,15 @@ entry_t * upnpd_controller_browse_metadata (client_t *controller, const char *de
 	values[4] = "0";
 	values[5] = "+dc:title";
 
-	debugf("browsing '%s':'%s'", device, object);
+	debugf(_DBG, "browsing '%s':'%s'", device, object);
 	action = upnpd_client_action(controller, device, "urn:schemas-upnp-org:service:ContentDirectory:1", "Browse", params, values, 6);
 	if (action == NULL) {
-		debugf("upnpd_client_action() failed");
+		debugf(_DBG, "upnpd_client_action() failed");
 		goto out;
 	}
 	memset(&data, 0, sizeof(data));
 	if (upnpd_xml_parse_buffer_callback(action, strlen(action), controller_parser_callback, &data) != 0) {
-		debugf("upnpd_xml_parse_buffer_callback() failed");
+		debugf(_DBG, "upnpd_xml_parse_buffer_callback() failed");
 	}
 	free(action);
 out:

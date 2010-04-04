@@ -30,10 +30,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <getopt.h>
-#include <signal.h>
-#include <inttypes.h>
 
 #include "platform.h"
 #include "parser.h"
@@ -41,6 +37,10 @@
 #include "upnp.h"
 #include "upnpd.h"
 #include "common.h"
+
+#ifdef ENABLE_PLATFORM_COREC
+#define DISABLE_DEMONIZE
+#endif
 
 #if defined(ENABLE_CONTROLLER)
 extern upnpd_application_t controller;
@@ -72,7 +72,9 @@ static const struct option upnpd_options[] = {
 	{"interface", 1, 0, 'i'},
 	{"options", 1, 0, 'o'},
 	{"verbose", 0, 0, 'v'},
+#ifndef DISABLE_DEMONIZE
 	{"background", 0, 0, 'b'},
+#endif
 	{0, 0, 0, 0},
 };
 
@@ -86,7 +88,9 @@ int upnpd_help (char *pname)
 	"  -i, --interface <name>  use network interface named <name>\n"
 	"                          give name as 'list' to see the interfaces\n"
 	"  -o, --options <options> device options comma separated\n"
+#ifndef DISABLE_DEMONIZE
 	"  -b, --background        daemonize\n"
+#endif
 	"  -v, --verbose           noisy debug\n",
 	pname);
 	printf("\n"
@@ -99,6 +103,7 @@ int upnpd_help (char *pname)
 	return 0;
 }
 
+#ifndef DISABLE_DEMONIZE
 static void signal_handler (int sig)
 {
 	switch (sig) {
@@ -108,12 +113,15 @@ static void signal_handler (int sig)
 			break;
 	}
 }
+#endif
 
 int main (int argc, char *argv[])
 {
 	int ret;
 	int opt;
+#ifndef DISABLE_DEMONIZE
 	pid_t pid;
+#endif
 	int daemonize;
 	int opt_index;
 	char *device;
@@ -142,7 +150,7 @@ int main (int argc, char *argv[])
 			case 'd':
 				device = strdup(optarg);
 				if (device == NULL) {
-					debugf("strdup('%s') failed", optarg);
+					debugf(_DBG, "strdup('%s') failed", optarg);
 					return -1;
 				}
 				break;
@@ -155,43 +163,54 @@ int main (int argc, char *argv[])
 			case 'v':
 				platform_debug = 1;
 				break;
+#ifndef DISABLE_DEMONIZE
 			case 'b':
 				daemonize = 1;
+#endif
 				break;
 		}
 	}
 
+	if (platform_init() < 0) {
+		debugf(_DBG, "platform init failed");
+		return -1;
+	}
 	if (interface != NULL && strcmp(interface, "list") == 0) {
 		upnpd_interface_printall();
 	}
 	if (device == NULL || interface == NULL) {
 		upnpd_help(argv[0]);
+		platform_uninit();
 		return -2;
 	}
 	ipaddress = upnpd_interface_getaddr(interface);
 	if (ipaddress == NULL) {
-		debugf("could not find interface %s", interface);
+		debugf(_DBG, "could not find interface %s", interface);
 		free(device);
+		platform_uninit();
 		return -3;
 	}
 	ifnetmask = upnpd_interface_getmask(interface);
 	if (ifnetmask == NULL) {
-		debugf("could not find interface netmask %s", interface);
+		debugf(_DBG, "could not find interface netmask %s", interface);
 		free(device);
+		platform_uninit();
 		return -3;
 	}
 
 	if (asprintf(&device_options, "daemonize=%d,interface=%s,ipaddr=%s,netmask=%s%s%s", daemonize, interface, ipaddress, ifnetmask, (options) ? "," : "", (options) ? options : "") < 0) {
-		debugf("asprintf failed for device_options");
+		debugf(_DBG, "asprintf failed for device_options");
 		free(device);
 		free(ipaddress);
+		platform_uninit();
 		return -4;
 	}
 
+#ifndef DISABLE_DEMONIZE
 	if (daemonize == 1) {
 		pid = fork();
 		if (pid < 0) {
-			debugf("fork(); failed");
+			debugf(_DBG, "fork(); failed");
 			exit(1);
 		}
 		if (pid > 0) {
@@ -206,22 +225,24 @@ int main (int argc, char *argv[])
 		signal(SIGHUP,signal_handler); /* catch hangup signal */
 		signal(SIGTERM,signal_handler); /* catch kill signal */
 	}
+#endif
 
-	debugf("starting with options: '%s'", device_options);
+	debugf(_DBG, "starting with options: '%s'", device_options);
 
 	ret = -5;
 	for (a = upnpd_applications; *a; a++) {
 		if (strcmp((*a)->name, device) == 0) {
-			debugf("starting %s device", device);
+			debugf(_DBG, "starting %s device", device);
 			ret = (*a)->main(device_options);
 			goto out;
 		}
 	}
-	debugf("could not find device %s", device);
+	debugf(_DBG, "could not find device %s", device);
 out:
 	free(device);
 	free(ifnetmask);
 	free(ipaddress);
 	free(device_options);
+	platform_uninit();
 	return ret;
 }

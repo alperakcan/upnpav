@@ -30,10 +30,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
+
 
 #include "platform.h"
-#include "parser.h"
+#include "../parser.h"
 
 #include "expat.h"
 
@@ -59,9 +59,9 @@ static void xml_parse_start (void *xdata, const char *el, const char **xattr)
 	data = (xml_data_t *) xdata;
 	if (data->callback != NULL) {
 		if (data->started) {
-			debugf("callback;");
-			debugf("  path : '%s'", data->path);
-			debugf("  name : '%s'", data->name);
+			debugf(_DBG, "callback;");
+			debugf(_DBG, "  path : '%s'", data->path);
+			debugf(_DBG, "  name : '%s'", data->name);
 			data->callback(data->context, data->path, data->name, (const char **) data->attrs, NULL);
 		}
 	}
@@ -107,10 +107,10 @@ static void xml_parse_end (void *xdata, const char *el)
 	data = (xml_data_t *) xdata;
 	if (data->callback != NULL) {
 		if (data->name != NULL) {
-			debugf("callback;");
-			debugf("  path : '%s'", data->path);
-			debugf("  name : '%s'", data->name);
-			debugf("  value: '%s'", data->value);
+			debugf(_DBG, "callback;");
+			debugf(_DBG, "  path : '%s'", data->path);
+			debugf(_DBG, "  name : '%s'", data->name);
+			debugf(_DBG, "  value: '%s'", data->value);
 			data->callback(data->context, data->path, data->name, (const char **) data->attrs, data->value);
 		}
 	}
@@ -170,7 +170,7 @@ int upnpd_xml_parse_buffer_callback (const char *buffer, unsigned int len, int (
 	upnpd_XML_SetElementHandler(p, xml_parse_start, xml_parse_end);
 	upnpd_XML_SetCharacterDataHandler(p, xml_parse_character);
 	if (!upnpd_XML_Parse(p, buffer, len, 1)) {
-		debugf("Parse error at line %d:%s", (int) upnpd_XML_GetCurrentLineNumber(p), upnpd_XML_ErrorString(upnpd_XML_GetErrorCode(p)));
+		debugf(_DBG, "Parse error at line %d:%s", (int) upnpd_XML_GetCurrentLineNumber(p), upnpd_XML_ErrorString(upnpd_XML_GetErrorCode(p)));
 		upnpd_XML_ParserFree(p);
 		free(data->path);
 		free(data);

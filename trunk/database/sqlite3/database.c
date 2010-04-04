@@ -352,7 +352,7 @@ unsigned long long upnpd_database_insert (database_t *database,
 	upnpd_sqlite3_exec(database->database, sql, 0, 0, 0);
 	upnpd_sqlite3_free(sql);
 
-	debugf("inserted '%s' (%llu) under %s", path, detailid, parentid);
+	debugf(_DBG, "inserted '%s' (%llu) under %s", path, detailid, parentid);
 
 	return detailid;
 }

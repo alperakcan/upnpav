@@ -30,8 +30,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <inttypes.h>
+
+
 
 #include "platform.h"
 #include "parser.h"
@@ -43,21 +43,21 @@ int upnpd_service_init (device_service_t *service)
 {
 	int ret;
 	ret = -1;
-	debugf("initializing service '%s'", service->name);
+	debugf(_DBG, "initializing service '%s'", service->name);
 	service->mutex = upnpd_thread_mutex_init("service->mutex", 0);
 	if (service->mutex == NULL) {
-		debugf("upnpd_thread_mutex_init(service->mutex, 0) failed");
+		debugf(_DBG, "upnpd_thread_mutex_init(service->mutex, 0) failed");
 		goto out;
 	}
-	debugf("generating service '%s' description", service->name);
+	debugf(_DBG, "generating service '%s' description", service->name);
 	service->description = upnpd_description_generate_from_service(service);
 	if (service->description == NULL) {
-		debugf("upnpd_description_generate_from_service(service) failed");
+		debugf(_DBG, "upnpd_description_generate_from_service(service) failed");
 		upnpd_thread_mutex_destroy(service->mutex);
 		goto out;
 	}
 	ret = 0;
-	debugf("initialized service\n"
+	debugf(_DBG, "initialized service\n"
 	       "  name       : %s\n"
 	       "  description: %s\n",
 	       service->name,

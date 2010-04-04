@@ -212,10 +212,10 @@ static upnpfs_http_t * http_open (const char *path, unsigned long long offset)
 	}
 	memset(h, 0, sizeof(upnpfs_http_t));
 	if (upnpd_upnp_url_parse(path, &h->url) != 0) {
-		debugf("upnpd_upnp_url_parse('%s') failed", path);
+		debugf(_DBG, "upnpd_upnp_url_parse('%s') failed", path);
 		goto error;
 	}
-	h->socket = upnpd_socket_open(SOCKET_TYPE_STREAM);
+	h->socket = upnpd_socket_open(SOCKET_TYPE_STREAM, 0);
 	if (h->socket == NULL) {
 		debugfs("socket() failed");
 		goto error;
@@ -327,9 +327,9 @@ int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse
 		len = 0;
 		siz = 0;
 		ptr = NULL;
-		debugf("reading '%s' info", f->dname);
+		debugf(_DBG, "reading '%s' info", f->dname);
 		upnpd_thread_mutex_lock(priv.controller->mutex);
-		list_for_each_entry(device, &priv.controller->devices, head) {
+		list_for_each_entry(device, &priv.controller->devices, head, client_device_t) {
 			if (strcmp(device->name, f->dname) == 0) {
 				i = asprintf(&tmp, "%s\n", device->name);
 				if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
@@ -339,7 +339,7 @@ int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse
 				if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
 				i = asprintf(&tmp, "%s  expiretime   : %d\n", ptr, device->expiretime);
 				if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
-				list_for_each_entry(service, &device->services, head) {
+				list_for_each_entry(service, &device->services, head, client_service_t) {
 					i = asprintf(&tmp, "%s  -- type       : %s\n", ptr, service->type);
 					if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
 					i = asprintf(&tmp, "%s     id         : %s\n", ptr, service->id);
@@ -350,7 +350,7 @@ int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse
 					if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
 					i = asprintf(&tmp, "%s     eventurl   : %s\n", ptr, service->eventurl);
 					if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
-					list_for_each_entry(variable, &service->variables, head) {
+					list_for_each_entry(variable, &service->variables, head, client_variable_t) {
 						i = asprintf(&tmp, "%s    -- name  : %s\n", ptr, variable->name);
 						if (i < 0) { len = 0; break; } else { len += i; free(ptr); ptr = tmp; }
 						i = asprintf(&tmp, "%s       value : %s\n", ptr, variable->value);
@@ -372,7 +372,7 @@ int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse
 		if (f->protocol == NULL) {
 			h = http_open(f->cache->source, offset);
 			if (h == NULL) {
-				debugf("http_open('%s', '%llu') failed", f->cache->source, offset);
+				debugf(_DBG, "http_open('%s', '%llu') failed", f->cache->source, offset);
 				return -EIO;
 			}
 			f->protocol = (void *) h;
@@ -381,7 +381,7 @@ int op_read (const char *path, char *buf, size_t size, off_t offset, struct fuse
 		if (h->offset != offset) {
 			n = http_open(f->cache->source, offset);
 			if (n == NULL) {
-				debugf("http_open('%s', '%llu') failed", f->cache->source, offset);
+				debugf(_DBG, "http_open('%s', '%llu') failed", f->cache->source, offset);
 			} else {
 				http_close(h);
 				h = n;

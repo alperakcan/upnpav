@@ -1,0 +1,15 @@
+#include "*/*.proj"
+
+WORKSPACE server_test
+{
+  USE server_test
+}
+
+CON server_test
+{
+  USE upnpd_platform
+ 
+  EXPINCLUDE .
+  
+  SOURCE server_test.c
+}

@@ -10,4 +10,6 @@ WORKSPACE upnpd
   USE metadata
   USE upnpd
   USE upnpfs
+  USE platform_test
+  USE server_test
 }

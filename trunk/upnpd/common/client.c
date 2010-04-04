@@ -30,8 +30,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include <inttypes.h>
+
+
 
 #include "platform.h"
 #include "parser.h"
@@ -54,7 +54,7 @@ static int client_upnpd_service_uninit (client_service_t *service)
 {
 	client_variable_t *variable;
 	client_variable_t *variablen;
-	list_for_each_entry_safe(variable, variablen, &service->variables, head) {
+	list_for_each_entry_safe(variable, variablen, &service->variables, head, client_variable_t) {
 		list_del(&variable->head);
 		client_variable_uninit(variable);
 	}
@@ -71,7 +71,7 @@ static int client_upnpd_device_uninit (client_device_t *device)
 {
 	client_service_t *service;
 	client_service_t *servicen;
-	list_for_each_entry_safe(service, servicen, &device->services, head) {
+	list_for_each_entry_safe(service, servicen, &device->services, head, client_service_t) {
 		list_del(&service->head);
 		client_upnpd_service_uninit(service);
 	}
@@ -116,11 +116,11 @@ static int client_service_subscribe (client_t *client, client_service_t *service
 {
 	int t;
 	int rc;
-	debugf("subscribing to '%s'", service->eventurl);
+	debugf(_DBG, "subscribing to '%s'", service->eventurl);
 	t = 1801;
 	rc = upnpd_upnp_subscribe(upnp, service->eventurl, &t, &service->sid);
 	if (rc != 0) {
-		debugf("upnpd_upnp_subscribe() failed");
+		debugf(_DBG, "upnpd_upnp_subscribe() failed");
 		return -1;
 	}
 	return 0;
@@ -227,7 +227,7 @@ static client_service_t * client_upnpd_service_init (client_parser_device_t *dev
 	}
 	for (s = 0; s < device->nservices; s++) {
 		if (strcmp(device->services[s].serviceType, servicetype) == 0) {
-			debugf("found service: %s", servicetype);
+			debugf(_DBG, "found service: %s", servicetype);
 			service = (client_service_t *) malloc(sizeof(client_service_t));
 			if (service == NULL) {
 				break;
@@ -242,7 +242,7 @@ static client_service_t * client_upnpd_service_init (client_parser_device_t *dev
 			if (service->controlurl) {
 				ret = upnpd_upnp_resolveurl(base, relcontrolURL, service->controlurl);
 				if (ret != 0) {
-					debugf("error generating control url from '%s' + '%s'", base, relcontrolURL);
+					debugf(_DBG, "error generating control url from '%s' + '%s'", base, relcontrolURL);
 					free(service->controlurl);
 					service->controlurl = NULL;
 				}
@@ -253,7 +253,7 @@ static client_service_t * client_upnpd_service_init (client_parser_device_t *dev
 			if (service->eventurl != NULL) {
 				ret = upnpd_upnp_resolveurl(base, releventURL, service->eventurl);
 				if (ret != 0) {
-					debugf("error generating event url from '%s' + '%s'", base, releventURL);
+					debugf(_DBG, "error generating event url from '%s' + '%s'", base, releventURL);
 					free(service->eventurl);
 					service->eventurl = NULL;
 				}
@@ -265,11 +265,11 @@ static client_service_t * client_upnpd_service_init (client_parser_device_t *dev
 				client_upnpd_service_uninit(service);
 				service = NULL;
 			} else {
-				debugf("adding new service:");
-				debugf("  type      :'%s'", service->type);
-				debugf("  id        :'%s'", service->id);
-				debugf("  controlurl:'%s'", service->controlurl);
-				debugf("  eventurl  :'%s'", service->eventurl);
+				debugf(_DBG, "adding new service:");
+				debugf(_DBG, "  type      :'%s'", service->type);
+				debugf(_DBG, "  id        :'%s'", service->id);
+				debugf(_DBG, "  controlurl:'%s'", service->controlurl);
+				debugf(_DBG, "  eventurl  :'%s'", service->eventurl);
 			}
 			break;
 		}
@@ -296,28 +296,28 @@ static int client_event_advertisement_alive (client_t *client, upnp_event_advert
 	}
 	return 0;
 found:
-	list_for_each_entry(device, &client->devices, head) {
+	list_for_each_entry(device, &client->devices, head, client_device_t) {
 		if (strcmp(advertisement->uuid, device->uuid) == 0) {
 			device->expiretime = advertisement->expires;
 			return 0;
 		}
 	}
-	debugf("downloading device description from '%s'", advertisement->location);
+	debugf(_DBG, "downloading device description from '%s'", advertisement->location);
 	memset(&data, 0, sizeof(client_parser_data_t));
 	buffer = upnpd_upnp_download(upnp, advertisement->location);
 	if (buffer == NULL) {
-		debugf("upnpd_upnp_download('%s') failed", advertisement->location);
+		debugf(_DBG, "upnpd_upnp_download('%s') failed", advertisement->location);
 		goto out;
 	}
 	if (upnpd_xml_parse_buffer_callback(buffer, strlen(buffer), client_parser_callback, &data) != 0) {
-		debugf("upnpd_xml_parse_buffer_callback() failed");
+		debugf(_DBG, "upnpd_xml_parse_buffer_callback() failed");
 		goto out;
 	}
 	for (d = 0; d < data.ndevices; d++) {
 		if (data.devices[d].UDN != NULL &&
 		    data.devices[d].deviceType != NULL &&
 		    data.devices[d].friendlyName != NULL) {
-			debugf("new device:\n"
+			debugf(_DBG, "new device:\n"
 				   "  UDN         : '%s'\n"
 				   "  devceType   : '%s'\n"
 				   "  friendlyName: '%s'\n",
@@ -331,7 +331,7 @@ found:
 					if (service != NULL) {
 						list_add(&service->head, &device->services);
 						if (client_service_subscribe(client, service) != 0) {
-							debugf("client_service_subscribe(service); failed");
+							debugf(_DBG, "client_service_subscribe(service); failed");
 							client_upnpd_device_uninit(device);
 							goto out;
 						}
@@ -340,14 +340,14 @@ found:
 			}
 		}
 	}
-	list_for_each_entry(dev, &client->devices, head) {
+	list_for_each_entry(dev, &client->devices, head, client_device_t) {
 		if (strcmp(dev->name, device->name) > 0) {
 			list_add(&device->head, dev->head.prev);
 			goto added;
 		}
 	}
 	list_add_tail(&device->head, &client->devices);
-added:	debugf("added '%s' to device list", device->uuid);
+added:	debugf(_DBG, "added '%s' to device list", device->uuid);
 out:	free(buffer);
 	for (d = 0; d < data.ndevices; d++) {
 		for (s = 0; s < data.devices[d].nservices; s++) {
@@ -380,10 +380,10 @@ static int client_event_advertisement_byebye (client_t *client, upnp_event_adver
 	}
 	return 0;
 found:
-	list_for_each_entry_safe(device, devicen, &client->devices, head) {
+	list_for_each_entry_safe(device, devicen, &client->devices, head, client_device_t) {
 		if (strcmp(advertisement->uuid, device->uuid) == 0) {
 			list_del(&device->head);
-			debugf("removed '%s' from device list", device->uuid);
+			debugf(_DBG, "removed '%s' from device list", device->uuid);
 			client_upnpd_device_uninit(device);
 		}
 	}
@@ -422,7 +422,7 @@ static void * client_timer (void *arg)
 	stamp = 30;
 
 	upnpd_thread_mutex_lock(client->mutex);
-	debugf("started timer thread");
+	debugf(_DBG, "started timer thread");
 	client->timer_running = 1;
 	upnpd_thread_cond_broadcast(client->cond);
 	upnpd_thread_mutex_unlock(client->mutex);
@@ -433,23 +433,23 @@ static void * client_timer (void *arg)
 		if (client->running == 0) {
 			goto out;
 		}
-		debugf("checking for expire times");
-		list_for_each_entry_safe(device, devicen, &client->devices, head) {
+		debugf(_DBG, "checking for expire times");
+		list_for_each_entry_safe(device, devicen, &client->devices, head, client_device_t) {
 			device->expiretime -= stamp;
 			if (device->expiretime < 0) {
 				list_del(&device->head);
-				debugf("removed '%s' from device list", device->uuid);
+				debugf(_DBG, "removed '%s' from device list", device->uuid);
 				client_upnpd_device_uninit(device);
 			} else if (device->expiretime < stamp) {
 #if 1
-				debugf("sending search request for '%s'", "upnp:rootdevice");
+				debugf(_DBG, "sending search request for '%s'", "upnp:rootdevice");
 				if (upnpd_upnp_search(upnp, 2, "upnp:rootdevice") != 0) {
-					debugf("error sending search request for %s", "upnp:rootdevice");
+					debugf(_DBG, "error sending search request for %s", "upnp:rootdevice");
 				}
 #else
-				debugf("sending search request for '%s'", device->uuid);
+				debugf(_DBG, "sending search request for '%s'", device->uuid);
 				if (upnpd_upnp_search(upnp, 2, device->uuid) != 0) {
-					debugf("error sending search request for %s", device->uuid);
+					debugf(_DBG, "error sending search request for %s", device->uuid);
 				}
 #endif
 			}
@@ -457,7 +457,7 @@ static void * client_timer (void *arg)
 		upnpd_thread_mutex_unlock(client->mutex);
 	}
 out:	client->timer_running = 0;
-	debugf("stopped timer thread");
+	debugf(_DBG, "stopped timer thread");
 	upnpd_thread_cond_broadcast(client->cond);
 	upnpd_thread_mutex_unlock(client->mutex);
 
@@ -468,31 +468,31 @@ int upnpd_client_init (client_t *client)
 {
 	int ret;
 	ret = -1;
-	debugf("initializing client '%s'", client->name);
+	debugf(_DBG, "initializing client '%s'", client->name);
 	client->mutex = upnpd_thread_mutex_init("client->mutex", 0);
 	if (client->mutex == NULL) {
-		debugf("upnpd_thread_mutex_init(client->mutex, 0) failed");
+		debugf(_DBG, "upnpd_thread_mutex_init(client->mutex, 0) failed");
 		goto out;
 	}
 	client->cond = upnpd_thread_cond_init("client->cond");
 	if (client->cond == NULL) {
-		debugf("upnpd_thread_cond_init(client->cond) failed");
+		debugf(_DBG, "upnpd_thread_cond_init(client->cond) failed");
 		upnpd_thread_mutex_destroy(client->mutex);
 		goto out;
 	}
-	debugf("initializing devices list");
+	debugf(_DBG, "initializing devices list");
 	list_init(&client->devices);
-	debugf("initializing upnp stack");
+	debugf(_DBG, "initializing upnp stack");
 	upnp = upnpd_upnp_init(client->ipaddr, client->ifmask, 0, NULL, NULL);
 	if (upnp == NULL) {
-		debugf("upnpd_upnp_init() failed");
+		debugf(_DBG, "upnpd_upnp_init() failed");
 		upnpd_thread_cond_destroy(client->cond);
 		upnpd_thread_mutex_destroy(client->mutex);
 		goto out;
 	}
 	client->port = upnpd_upnp_getport(upnp);
 	client->ipaddress = upnpd_upnp_getaddress(upnp);
-	debugf("registering client device '%s'", client->name);
+	debugf(_DBG, "registering client device '%s'", client->name);
 	if (upnpd_upnp_register_client(upnp, client_event_handler, client)) {
 		upnpd_upnp_uninit(upnp);
 		upnpd_thread_cond_destroy(client->cond);
@@ -500,7 +500,7 @@ int upnpd_client_init (client_t *client)
 		goto out;
 	}
 	client->running = 1;
-	debugf("started client '%s'\n"
+	debugf(_DBG, "started client '%s'\n"
 	       "  ipaddress  : %s\n"
 	       "  port       : %d",
 	       client->name,
@@ -508,12 +508,12 @@ int upnpd_client_init (client_t *client)
 	       client->port);
 
 	upnpd_thread_mutex_lock(client->mutex);
-	debugf("starting timer thread");
+	debugf(_DBG, "starting timer thread");
 	client->timer_thread = upnpd_thread_create("client_timer", client_timer, client);
 	while (client->timer_running == 0) {
 		upnpd_thread_cond_wait(client->cond, client->mutex);
 	}
-	debugf("timer is up and running");
+	debugf(_DBG, "timer is up and running");
 	upnpd_thread_mutex_unlock(client->mutex);
 
 	upnpd_client_refresh(client, 1);
@@ -527,28 +527,28 @@ int upnpd_client_uninit (client_t *client)
 	client_device_t *device;
 	client_device_t *devicen;
 	ret = -1;
-	debugf("uninitializing client '%s'", client->name);
+	debugf(_DBG, "uninitializing client '%s'", client->name);
 	upnpd_upnp_uninit(upnp);
 	upnpd_thread_mutex_lock(client->mutex);
 	client->running = 0;
 	upnpd_thread_cond_broadcast(client->cond);
 	upnpd_thread_mutex_unlock(client->mutex);
-	debugf("waiting for timer thread to finish");
+	debugf(_DBG, "waiting for timer thread to finish");
 	upnpd_thread_mutex_lock(client->mutex);
 	while (client->timer_running != 0) {
 		upnpd_thread_cond_wait(client->cond, client->mutex);
 	}
-	debugf("joining timer thread");
+	debugf(_DBG, "joining timer thread");
 	upnpd_thread_join(client->timer_thread);
-	list_for_each_entry_safe(device, devicen, &client->devices, head) {
+	list_for_each_entry_safe(device, devicen, &client->devices, head, client_device_t) {
 		list_del(&device->head);
 		client_upnpd_device_uninit(device);
 	}
-	debugf("unregistering client '%s'", client->name);
+	debugf(_DBG, "unregistering client '%s'", client->name);
 	upnpd_thread_mutex_unlock(client->mutex);
 	upnpd_thread_cond_destroy(client->cond);
 	upnpd_thread_mutex_destroy(client->mutex);
-	debugf("uninitialized client '%s'", client->name);
+	debugf(_DBG, "uninitialized client '%s'", client->name);
 	return 0;
 }
 
@@ -559,26 +559,26 @@ int upnpd_client_refresh (client_t *client, int remove)
 	client_device_t *devicen;
 	ret = 0;
 	upnpd_thread_mutex_lock(client->mutex);
-	debugf("refreshing device list");
+	debugf(_DBG, "refreshing device list");
 	if (remove != 0) {
-		debugf("cleaning device list");
-		list_for_each_entry_safe(device, devicen, &client->devices, head) {
+		debugf(_DBG, "cleaning device list");
+		list_for_each_entry_safe(device, devicen, &client->devices, head, client_device_t) {
 			list_del(&device->head);
 			client_upnpd_device_uninit(device);
 		}
 	}
-	debugf("sending requests");
+	debugf(_DBG, "sending requests");
 #if 0
 	int d;
 	device_description_t *description;
 	for (d = 0; (description = client->descriptions[d]) != NULL; d++) {
 		if (upnpd_upnp_search(upnp, 2, description->device) != 0) {
-			debugf("error sending search request for %s", description->device);
+			debugf(_DBG, "error sending search request for %s", description->device);
 		}
 	}
 #else
 	if (upnpd_upnp_search(upnp, 2, "upnp:rootdevice") != 0) {
-		debugf("error sending search request for %s", "upnp:rootdevice");
+		debugf(_DBG, "error sending search request for %s", "upnp:rootdevice");
 	}
 #endif
 	upnpd_thread_mutex_unlock(client->mutex);
@@ -596,30 +596,30 @@ char * upnpd_client_action (client_t *client, const char *devicename, const char
 	response = NULL;
 
 	upnpd_thread_mutex_lock(client->mutex);
-	list_for_each_entry(device, &client->devices, head) {
+	list_for_each_entry(device, &client->devices, head, client_device_t) {
 		if (strcmp(device->name, devicename) == 0) {
 			goto found_device;
 		}
 	}
-	debugf("could not find device");
+	debugf(_DBG, "could not find device");
 	upnpd_thread_mutex_unlock(client->mutex);
 	return NULL;
 
 found_device:
-	list_for_each_entry(service, &device->services, head) {
+	list_for_each_entry(service, &device->services, head, client_service_t) {
 		if (strcmp(service->type, servicetype) == 0) {
 			goto found_service;
 		}
 	}
-	debugf("could not find service");
+	debugf(_DBG, "could not find service");
 	upnpd_thread_mutex_unlock(client->mutex);
 	return NULL;
 
 found_service:
-	debugf("generating action");
+	debugf(_DBG, "generating action");
 	response = upnpd_upnp_makeaction(upnp, actionname, service->controlurl, service->type, param_count, param_name, param_val);
 	if (response == NULL) {
-		debugf("upnpd_upnp_makeaction() failed");
+		debugf(_DBG, "upnpd_upnp_makeaction() failed");
 		upnpd_thread_mutex_unlock(client->mutex);
 		return NULL;
 	}

@@ -4,16 +4,32 @@ LIB upnpd_platform
   EXPINCLUDE .
 
   IF ENABLE_PLATFORM_POSIX
-  SOURCE posix/debug.c
-  SOURCE posix/thread.c
-  SOURCE posix/socket.c
-  SOURCE posix/file.c
-  SOURCE posix/time.c
-  SOURCE posix/rand.c
-  SOURCE posix/interface.c
+    SOURCE posix/debug.c
+    SOURCE posix/thread.c
+    SOURCE posix/socket.c
+    SOURCE posix/file.c
+    SOURCE posix/time.c
+    SOURCE posix/rand.c
+    SOURCE posix/interface.c
+  
+    LIBS pthread
+
+  ELIF ENABLE_PLATFORM_COREC
+    USE common
+    USE network
+    SOURCE corec/platformbase.c
+    SOURCE corec/winplus.c
+    SOURCE corec/getopt.c
+    SOURCE corec/getsubopt.c
+    SOURCE corec/rand.c
+    SOURCE corec/time.c
+    SOURCE corec/debug.c
+    SOURCE corec/file.c
+    SOURCE corec/thread.c
+    SOURCE corec/socket.c
+    SOURCE corec/interface.c
   ENDIF
 
   HEADER platform.h
   
-  LIBS pthread
 }

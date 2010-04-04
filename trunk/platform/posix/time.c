@@ -1,8 +1,8 @@
 /*
  * upnpavd - UPNP AV Daemon
  *
- * Copyright (C) 2009 - 2010 Alper Akcan, alper.akcan@gmail.com
- * Copyright (C) 2009 - 2010 CoreCodec, Inc., http://www.CoreCodec.com
+ * Copyright (C) 2010 Alper Akcan, alper.akcan@gmail.com
+ * Copyright (C) 2010 CoreCodec, Inc., http://www.CoreCodec.com
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,14 +31,14 @@
 #include <time.h>
 #include <sys/time.h>
 
-int upnpd_time_sleep (unsigned int secs)
+void upnpd_time_sleep (unsigned int secs)
 {
-	return sleep(secs);
+	sleep(secs);
 }
 
-int upnpd_time_usleep (unsigned int usecs)
+void upnpd_time_usleep (unsigned int usecs)
 {
-	return usleep(usecs);
+	usleep(usecs);
 }
 
 unsigned long long upnpd_time_gettimeofday (void)
@@ -54,10 +54,14 @@ unsigned long long upnpd_time_gettimeofday (void)
 	return tsec + tusec;
 }
 
-int upnpd_time_strftime (char *str, int max, unsigned long long tm)
+int upnpd_time_strftime (char *str, int max, const char *format, unsigned long long tm, int local)
 {
 	time_t t;
-	static const char RFC1123FMT[] = "%a, %d %b %Y %H:%M:%S GMT";
+	struct tm tl;
 	t = tm / 1000;
-	return strftime(str, max, RFC1123FMT, gmtime(&t));
+	if (local) {
+		return strftime(str, max, format, localtime_r(&t, &tl));
+	} else {
+		return strftime(str, max, format, gmtime(&t));
+	}
 }
