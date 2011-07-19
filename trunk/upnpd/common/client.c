@@ -568,10 +568,10 @@ int upnpd_client_refresh (client_t *client, int remove)
 		}
 	}
 	debugf(_DBG, "sending requests");
-#if 0
+#if 1
 	int d;
 	device_description_t *description;
-	for (d = 0; (description = client->descriptions[d]) != NULL; d++) {
+	for (d = 0; (description = &client->descriptions[d])->device != NULL; d++) {
 		if (upnpd_upnp_search(upnp, 2, description->device) != 0) {
 			debugf(_DBG, "error sending search request for %s", description->device);
 		}
